@@ -12,7 +12,7 @@ import scala.scalanative.runtime.{
   LongArray,
   MemoryPool,
   fromRawPtr,
-  toRawPtr
+  toRawPtr,
 }
 import scala.scalanative.loop._
 import scala.scalanative.loop.LibUV._
@@ -47,7 +47,7 @@ private[httpclient] object CurlImpl {
       curlHandle,
       sockfd,
       flags,
-      runningHandles
+      runningHandles,
     )
 
     checkMultiInfo()
@@ -70,7 +70,7 @@ private[httpclient] object CurlImpl {
       sockfd: Int,
       action: Int,
       userp: Ptr[Byte],
-      socketp: Ptr[Byte]
+      socketp: Ptr[Byte],
   ) => {
     val context =
       Intrinsics.castRawPtrToObject(toRawPtr(socketp)).asInstanceOf[CurlContext]
@@ -81,7 +81,7 @@ private[httpclient] object CurlImpl {
       easy: Ptr[Byte],
       sockfd: Int,
       action: Int,
-      socketp: CurlContext
+      socketp: CurlContext,
   ): Int = {
     action match {
       case CURL_POLL_IN | CURL_POLL_OUT | CURL_POLL_INOUT =>
@@ -93,11 +93,11 @@ private[httpclient] object CurlImpl {
         curl_multi_assign(
           curlHandle,
           sockfd,
-          fromRawPtr[Byte](Intrinsics.castObjectToRawPtr(curlContext))
+          fromRawPtr[Byte](Intrinsics.castObjectToRawPtr(curlContext)),
         )
         curlContext.poll
-          .start((action & CURL_POLL_IN) != 0, (action & CURL_POLL_OUT) != 0) {
-            rwResult => curlPerform(rwResult, sockfd)
+          .start((action & CURL_POLL_IN) != 0, (action & CURL_POLL_OUT) != 0) { rwResult =>
+            curlPerform(rwResult, sockfd)
           }
       case CURL_POLL_REMOVE =>
         if (socketp != null) {
@@ -107,7 +107,7 @@ private[httpclient] object CurlImpl {
         }
       case other =>
         throw new java.lang.RuntimeException(
-          s"Action code not supported $other"
+          s"Action code not supported $other",
         )
     }
     0
@@ -126,12 +126,12 @@ private[httpclient] object CurlImpl {
               curlHandle,
               CURL_SOCKET_TIMEOUT,
               0,
-              running_handles
+              running_handles,
             )
             checkMultiInfo()
           },
           newTimeout,
-          0
+          0,
         )
       }
       0
@@ -140,12 +140,12 @@ private[httpclient] object CurlImpl {
 
   val writeMemoryCallback: CurlDataCallback =
     (ptr: Ptr[Byte], size: CSize, nmemb: CSize, data: Ptr[CurlBuffer]) => {
-      val index: CSize = (!data)._2
+      val index: CSize = !data._2
       val increment: CSize = size * nmemb
-      (!data)._2 = (!data)._2 + increment
-      (!data)._1 = realloc((!data)._1, (!data)._2 + 1.toUInt)
-      memcpy((!data)._1 + index, ptr, increment)
-      !(!data)._1.+((!data)._2) = 0.toByte
+      !data._2 = !data._2 + increment
+      !data._1 = realloc(!data._1, !data._2 + 1.toUInt)
+      memcpy(!data._1 + index, ptr, increment)
+      ! !data._1.+(!data._2) = 0.toByte
       size * nmemb
     }
 
@@ -162,17 +162,17 @@ private[httpclient] object CurlImpl {
           curl_easy_getinfo(
             easyHandle,
             CURLINFO_RESPONSE_CODE,
-            responseCode.asInstanceOf[Ptr[Byte]]
+            responseCode.asInstanceOf[Ptr[Byte]],
           )
           val request = HandleUtils.getData[Request](easyHandle)
           val response = Response(
-            code = (!responseCode).toInt,
+            code = !responseCode.toInt,
             body = StringUtils
-              .fromCStringAndSize(request.memory._1, request.memory._2.toInt)
+              .fromCStringAndSize(request.memory._1, request.memory._2.toInt),
           )
-          try {
+          try
             request.callback(response)
-          } finally {
+          finally {
             free(request.memory._1)
             free(request.memory.asInstanceOf[Ptr[Byte]])
             curl_slist_free_all(request.headersList)

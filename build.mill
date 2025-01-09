@@ -1,36 +1,60 @@
-import mill._, scalalib._, scalanativelib._, publish._
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.1.4`
-import de.tobiasroeser.mill.vcs.version.VcsVersion
+package build
 
-trait Publish extends PublishModule {
+import mill._
+import scalalib.DepSyntax // for `ivy` string interpolator
+import scalalib.{CrossScalaModule, TestModule, PublishModule}
+import scalalib.scalafmt
+import scalalib.publish.{Developer, License, PomSettings, VersionControl}
+import scalanativelib.{ScalaNativeModule, TestScalaNativeModule}
+
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
+import $ivy.`com.goyeau::mill-scalafix::0.4.0`
+// import $ivy.`com.github.lolgab::mill-mima::0.0.24`
+
+import de.tobiasroeser.mill.vcs.version.VcsVersion
+import com.goyeau.mill.scalafix
+
+val scalaNextVersion = sys.props.get("scalaNextVersion")
+val scalaVersions = Seq("2.12.20", "2.13.15", "3.3.4") ++ scalaNextVersion
+
+def format = scalafmt.ScalafmtModule
+
+trait HttpPublishModule extends PublishModule {
   def pomSettings = PomSettings(
-    description = "Async Scala Native HTTP Client",
-    organization = "com.github.lolgab",
-    url = "https://github.com/lolgab/scala-native-http-client-async",
+    description = "Scala Native HTTP Client",
+    organization = "com.github.lqhuang",
+    url = "https://github.com/lqhuang/scala-native-http",
     licenses = Seq(License.MIT),
-    versionControl = VersionControl.github("lolgab", "scala-native-http-client-async"),
+    versionControl = VersionControl.github("lqhuang", "scala-native-http"),
     developers = Seq(
-        Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab")
-      )
+      Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab"),
+      Developer("lqhuang", "Lanqing Huang", "https://github.com/lqhuang"),
+    ),
   )
+
   def publishVersion = VcsVersion.vcsState().format()
 }
 
-object httpclient extends Cross[HttpClientModule]("2.13.8", "3.1.2")
-class HttpClientModule(val crossScalaVersion: String) extends CrossScalaModule with ScalaNativeModule with Publish {
-  def scalaNativeVersion = "0.4.5"
+object `scala-native-http` extends Cross[ScalaNtiveHttpModule](scalaVersions)
+trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with HttpPublishModule {
+  def scalaNativeVersion = "0.5.6"
 
-  def ivyDeps = Agg(
-    ivy"com.github.lolgab::native-loop-core::0.2.1"
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
   )
+
+  // def ivyDeps = Agg(
+  //   ivy"com.github.lolgab::native-loop-core::0.2.1"
+  // )
+  // def scalafixIvyDeps = Agg(ivy"com.github.liancheng::organize-imports:0.6.0")
 
   def nativeCompileOptions = super.nativeCompileOptions() ++ Seq(
-    "-I/usr/local/opt/curl/include"
+    "-I/usr/include/x86_64-linux-gnu/curl",
   )
 
-  object test extends Tests with TestModule.Utest {
+  object test extends ScalaNativeTests with TestModule.Utest {
     def ivyDeps = Agg(
-      ivy"com.lihaoyi::utest::0.7.11"
+      ivy"com.lihaoyi::utest::0.8.3",
     )
   }
 }

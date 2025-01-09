@@ -14,7 +14,7 @@ private[httpclient] object HandleUtils {
     curl_easy_getinfo(
       handle,
       CURLINFO_PRIVATE,
-      ptrOfPtr.asInstanceOf[Ptr[Byte]]
+      ptrOfPtr.asInstanceOf[Ptr[Byte]],
     )
     val dataPtr = !ptrOfPtr
     if (dataPtr == null) null.asInstanceOf[T]
@@ -23,18 +23,14 @@ private[httpclient] object HandleUtils {
       castRawPtrToObject(rawptr).asInstanceOf[T]
     }
   }
-  @inline def setData(handle: Ptr[Byte], obj: Object): Unit = {
-    if (obj != null) {
-      references.put(obj, references.get(obj) + 1)
-      val rawptr = castObjectToRawPtr(obj)
-      curl_easy_setopt(handle, CURLOPT_PRIVATE, fromRawPtr[Byte](rawptr))
-    }
+  @inline def setData(handle: Ptr[Byte], obj: Object): Unit = if (obj != null) {
+    references.put(obj, references.get(obj) + 1)
+    val rawptr = castObjectToRawPtr(obj)
+    curl_easy_setopt(handle, CURLOPT_PRIVATE, fromRawPtr[Byte](rawptr))
   }
-  @inline def unref(obj: Object): Unit = {
-    if (obj != null) {
-      val current = references.get(obj)
-      if (current > 1) references.put(obj, current - 1)
-      else references.remove(obj)
-    }
+  @inline def unref(obj: Object): Unit = if (obj != null) {
+    val current = references.get(obj)
+    if (current > 1) references.put(obj, current - 1)
+    else references.remove(obj)
   }
 }

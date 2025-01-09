@@ -12,7 +12,7 @@ import scala.scalanative.runtime.{
   LongArray,
   MemoryPool,
   fromRawPtr,
-  toRawPtr
+  toRawPtr,
 }
 import scala.scalanative.loop._
 import com.github.lolgab.httpclient._
@@ -33,19 +33,19 @@ class Request private (handle: Ptr[Byte]) {
   curl_easy_setopt(
     handle,
     CURLOPT_WRITEDATA,
-    memory.asInstanceOf[Ptr[Byte]]
+    memory.asInstanceOf[Ptr[Byte]],
   )
   curl_easy_setopt(
     handle,
     CURLOPT_WRITEFUNCTION,
-    writeMemoryCallback
+    writeMemoryCallback,
   )
   HandleUtils.setData(handle, this)
   def method(value: Method): Request = Zone { implicit z =>
     curl_easy_setopt(
       handle,
       CURLOPT_CUSTOMREQUEST,
-      toCString(value.name)
+      toCString(value.name),
     )
     this
   }
@@ -59,7 +59,7 @@ class Request private (handle: Ptr[Byte]) {
     curl_easy_setopt(
       handle,
       CURLOPT_COPYPOSTFIELDS,
-      toCString(value)
+      toCString(value),
     )
     this
   }
@@ -75,7 +75,7 @@ class Request private (handle: Ptr[Byte]) {
     curl_easy_setopt(
       handle,
       CURLOPT_HTTPHEADER,
-      headersList.asInstanceOf[Ptr[Byte]]
+      headersList.asInstanceOf[Ptr[Byte]],
     )
     curl_multi_add_handle(curlHandle, handle)
   }

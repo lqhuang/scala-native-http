@@ -7,16 +7,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object HttpClientTests extends TestSuite {
   val tests = Tests {
     test("get request") {
-      Request().method(Method.GET).url("http://httpbin.org/get").future().map {
-        response =>
-          response.code ==> 200
-          assert(response.body.contains(""""url": "http://httpbin.org/get""""))
+      Request().method(Method.GET).url("http://httpbin.org/get").future().map { response =>
+        response.code ==> 200
+        assert(response.body.contains(""""url": "http://httpbin.org/get""""))
       }
     }
     test("header") {
-      Request().url("http://httpbin.org/get").header("Foo: bar").future().map {
-        response =>
-          assert(response.body.contains(""""Foo": "bar""""))
+      Request().url("http://httpbin.org/get").header("Foo: bar").future().map { response =>
+        assert(response.body.contains(""""Foo": "bar""""))
       }
     }
     test("post request") {
@@ -42,10 +40,9 @@ object HttpClientTests extends TestSuite {
         }
     }
     test("put request") {
-      Request().method(Method.PUT).url("http://httpbin.org/put").future().map {
-        response =>
-          response.code ==> 200
-          assert(response.body.contains(""""url": "http://httpbin.org/put""""))
+      Request().method(Method.PUT).url("http://httpbin.org/put").future().map { response =>
+        response.code ==> 200
+        assert(response.body.contains(""""url": "http://httpbin.org/put""""))
       }
     }
   }

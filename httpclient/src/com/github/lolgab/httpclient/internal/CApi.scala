@@ -75,34 +75,34 @@ import scala.scalanative.unsafe._
   def curl_easy_setopt(
       handle: Ptr[Byte],
       option: CInt,
-      parameter: CVarArgList
+      parameter: CVarArgList,
   ): CInt = extern
 
   def curl_easy_setopt(
       handle: Ptr[Byte],
       option: CInt,
-      parameter: Ptr[Byte]
+      parameter: Ptr[Byte],
   ): CInt =
     extern
 
   def curl_easy_setopt(
       handle: Ptr[Byte],
       option: CInt,
-      parameter: CFuncPtr
+      parameter: CFuncPtr,
   ): CInt =
     extern
 
   def curl_easy_setopt(
       handle: Ptr[Byte],
       option: CInt,
-      parameter: Long
+      parameter: Long,
   ): CInt =
     extern
 
   def curl_easy_getinfo(
       handle: Ptr[Byte],
       info: CInt,
-      parameter: Ptr[Byte]
+      parameter: Ptr[Byte],
   ): CInt =
     extern
 
@@ -117,31 +117,31 @@ import scala.scalanative.unsafe._
   def curl_multi_setopt(
       multi: Ptr[Byte],
       option: CInt,
-      parameter: Ptr[Byte]
+      parameter: Ptr[Byte],
   ): CInt = extern
 
   def curl_multi_setopt(
       multi: Ptr[Byte],
       option: CInt,
-      parameter: CFuncPtr
+      parameter: CFuncPtr,
   ): CInt = extern
 
   def curl_multi_assign(
       multi: Ptr[Byte],
       socket: Int,
-      socket_data: Ptr[Byte]
+      socket_data: Ptr[Byte],
   ): Int = extern
 
   def curl_multi_socket_action(
       multi: Ptr[Byte],
       socket: Int,
       events: Int,
-      numhandles: Ptr[Int]
+      numhandles: Ptr[Int],
   ): Int = extern
 
   def curl_multi_info_read(
       multi: Ptr[Byte],
-      message: Ptr[Int]
+      message: Ptr[Int],
   ): Ptr[CurlMessage] =
     extern
 
@@ -153,7 +153,7 @@ import scala.scalanative.unsafe._
 
   def curl_slist_append(
       slist: Ptr[CurlSList],
-      string: CString
+      string: CString,
   ): Ptr[CurlSList] =
     extern
 

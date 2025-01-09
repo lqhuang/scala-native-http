@@ -8,9 +8,9 @@ Still working in progress, any kind of help is welcome and appreciated.
 
 `java.net.http` provides Provides high-level client interfaces to HTTP (versions 1.1 and 2) and low-level client interfaces to WebSocket. There are four main types defined:
 
-- HttpClient
-- HttpRequest
-- HttpResponse
-- WebSocket
+- `HttpClient`
+- `HttpRequest`
+- `HttpResponse`
+- `WebSocket`
 
 The development of first three types is the milestone in current stage.
