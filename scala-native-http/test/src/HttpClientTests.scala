@@ -1,6 +1,6 @@
 package httpclient
 
-import com.github.lolgab.httpclient._
+import snhttp._
 import utest._
 import scala.concurrent.ExecutionContext.Implicits.global
 

@@ -43,9 +43,9 @@ trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with 
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
   )
 
-  // def ivyDeps = Agg(
-  //   ivy"com.github.lolgab::native-loop-core::0.2.1"
-  // )
+  def ivyDeps = Agg(
+    ivy"com.github.lolgab::native-loop-core::0.3.0"
+  )
   // def scalafixIvyDeps = Agg(ivy"com.github.liancheng::organize-imports:0.6.0")
 
   def nativeCompileOptions = super.nativeCompileOptions() ++ Seq(

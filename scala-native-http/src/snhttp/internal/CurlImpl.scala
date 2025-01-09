@@ -1,4 +1,4 @@
-package com.github.lolgab.httpclient.internal
+package snhttp.internal
 
 import scala.scalanative.unsafe._
 import scala.scalanative.unsigned._
@@ -17,10 +17,11 @@ import scala.scalanative.runtime.{
 import scala.scalanative.loop._
 import scala.scalanative.loop.LibUV._
 import scala.scalanative.loop.LibUVConstants._
-import com.github.lolgab.httpclient._
 import scala.annotation.tailrec
 
-private[httpclient] object CurlImpl {
+import snhttp._
+
+private[snhttp] object CurlImpl {
   import CApi._
   import CApiOps._
 
@@ -145,7 +146,7 @@ private[httpclient] object CurlImpl {
       !data._2 = !data._2 + increment
       !data._1 = realloc(!data._1, !data._2 + 1.toUInt)
       memcpy(!data._1 + index, ptr, increment)
-      ! !data._1.+(!data._2) = 0.toByte
+        ! (!data._1.+(!data._2) = 0.toByte)
       size * nmemb
     }
 

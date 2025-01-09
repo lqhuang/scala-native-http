@@ -1,3 +1,3 @@
-package com.github.lolgab.httpclient
+package java.net.http
 
 case class Response(code: Int, body: String)

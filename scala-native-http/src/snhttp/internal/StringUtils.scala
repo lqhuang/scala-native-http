@@ -1,4 +1,4 @@
-package com.github.lolgab.httpclient.internal
+package snhttp.internal
 
 import java.nio.charset.Charset
 import scala.scalanative.unsafe._

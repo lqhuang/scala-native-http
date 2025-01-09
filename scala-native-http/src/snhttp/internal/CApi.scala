@@ -1,9 +1,9 @@
-package com.github.lolgab.httpclient.internal
+package snhttp.internal
 
 import scala.scalanative.unsafe._
 
 @link("curl")
-@extern private[httpclient] object CApi {
+@extern private[snhttp] object CApi {
   type CurlBuffer = CStruct2[CString, CSize]
   type CurlOption = Int
   type CurlRequest = CStruct4[Ptr[Byte], Long, Long, Int]

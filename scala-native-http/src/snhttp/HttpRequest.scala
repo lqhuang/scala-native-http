@@ -1,4 +1,4 @@
-package com.github.lolgab.httpclient
+package java.net.http
 
 import scala.scalanative.unsafe._
 import scala.scalanative.unsigned._
@@ -15,19 +15,19 @@ import scala.scalanative.runtime.{
   toRawPtr,
 }
 import scala.scalanative.loop._
-import com.github.lolgab.httpclient._
-import com.github.lolgab.httpclient.internal._
+import snhttp._
+import snhttp.internal._
 import scala.annotation.tailrec
 import scala.concurrent._
 
-class Request private (handle: Ptr[Byte]) {
+class HttpRequest private (handle: Ptr[Byte]) {
   import CurlImpl._
   import CApi._
   import CApiOps._
-  private[httpclient] var callback: Response => Unit = null
-  private[httpclient] val memory: Ptr[Memory] =
+  private[snhttp] var callback: Response => Unit = null
+  private[snhttp] val memory: Ptr[Memory] =
     malloc(sizeof[Memory]).asInstanceOf[Ptr[Memory]]
-  private[httpclient] var headersList: Ptr[CurlSList] = null
+  private[snhttp] var headersList: Ptr[CurlSList] = null
   memory._1 = malloc(0.toULong)
   memory._2 = 0.toULong
   curl_easy_setopt(
@@ -90,7 +90,8 @@ class Request private (handle: Ptr[Byte]) {
     perform()
   }
 }
-object Request {
+
+object HttpRequest {
   import CApi._
   def apply(): Request = new Request(curl_easy_init())
 }

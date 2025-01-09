@@ -1,4 +1,4 @@
-package com.github.lolgab.httpclient
+package java.net.http
 
 class Method(val name: String)
 object Method {

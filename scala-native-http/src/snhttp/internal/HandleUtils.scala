@@ -1,4 +1,4 @@
-package com.github.lolgab.httpclient.internal
+package snhttp.internal
 
 import scala.scalanative.runtime._
 import scala.scalanative.runtime.Intrinsics._
@@ -6,7 +6,7 @@ import scala.scalanative.unsafe.{Ptr, stackalloc}
 import scala.scalanative.libc.stdlib
 import CApi._
 
-private[httpclient] object HandleUtils {
+private[snhttp] object HandleUtils {
   private val references = new java.util.IdentityHashMap[Object, Int]()
 
   @inline def getData[T <: Object](handle: Ptr[Byte]): T = {
