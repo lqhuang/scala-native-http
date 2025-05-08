@@ -20,6 +20,63 @@ import snhttp.internal._
 import scala.annotation.tailrec
 import scala.concurrent._
 
+import java.net.URI
+
+class HttpRequest private (
+    val uri: URI,
+    val method: String,
+    val headers: Map[String, String],
+    val body: Option[String],
+) {
+
+  def getUri: URI = uri
+
+  def getMethod: String = method
+
+  def getHeaders: Map[String, String] = headers
+
+  def getBody: Option[String] = body
+
+  override def toString: String =
+    s"HttpRequest(method=$method, uri=$uri, headers=$headers, body=$body)"
+}
+
+object HttpRequest {
+  def builder(): HttpRequestBuilder = new HttpRequestBuilder()
+
+  class HttpRequestBuilder {
+    private var uri: URI = _
+    private var method: String = "GET"
+    private var headers: Map[String, String] = Map()
+    private var body: Option[String] = None
+
+    def setUri(uri: URI): HttpRequestBuilder = {
+      this.uri = uri
+      this
+    }
+
+    def setMethod(method: String): HttpRequestBuilder = {
+      this.method = method
+      this
+    }
+
+    def addHeader(name: String, value: String): HttpRequestBuilder = {
+      headers += (name -> value)
+      this
+    }
+
+    def setBody(body: String): HttpRequestBuilder = {
+      this.body = Some(body)
+      this
+    }
+
+    def build(): HttpRequest = {
+      if (uri == null) throw new IllegalArgumentException("URI must not be null")
+      new HttpRequest(uri, method, headers, body)
+    }
+  }
+}
+
 class HttpRequest private (handle: Ptr[Byte]) {
   import CurlImpl._
   import CApi._
