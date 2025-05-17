@@ -1,6 +1,6 @@
 package build
 
-import mill._
+import mill.{scalalib, scalanativelib}
 import scalalib.DepSyntax // for `ivy` string interpolator
 import scalalib.{CrossScalaModule, TestModule, PublishModule}
 import scalalib.scalafmt
@@ -41,11 +41,14 @@ trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with 
   def scalaNativeVersion = "0.5.7"
 
   val scalac213Options =
-    if (crossScalaVersion.startsWith("2.13")) Seq("-Xsource:3-cross")
+    if (crossScalaVersion.startsWith("2.13")) Seq("-Xsource:3-cross", "-Xcheckinit")
+    else Seq.empty
+  val scalac3Options =
+    if (crossScalaVersion.startsWith("3")) Seq("-Wsafe-init")
     else Seq.empty
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
-  ) ++ scalac213Options
+  ) ++ scalac213Options ++ scalac3Options
 
   def ivyDeps = Agg(
     ivy"com.github.lolgab::native-loop-core::0.3.0",

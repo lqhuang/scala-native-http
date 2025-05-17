@@ -7,8 +7,8 @@ import java.net.http.HttpResponse
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse.{BodyHandler, ResponseInfo, BodySubscriber}
 import java.nio.file.{OpenOption, Files, Path, Paths}
-import java.util.List
-import java.util.Set
+import java.util.{List, Set}
+import java.util.function.Function
 import java.util.regex.{Matcher, Pattern}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 
@@ -30,7 +30,7 @@ object ResponseBodyHandlers {
   }
 
   class PushPromisesHandlerWithMap[T](
-      pushPromiseHandler: HttpRequest => BodyHandler[T],
+      pushPromiseHandler: Function[HttpRequest, BodyHandler[T]],
       pushPromisesMap: ConcurrentMap[HttpRequest, CompletableFuture[HttpResponse[T]]],
   ) extends HttpResponse.PushPromiseHandler[T] {
     import FileDownloadBodyHandler.*

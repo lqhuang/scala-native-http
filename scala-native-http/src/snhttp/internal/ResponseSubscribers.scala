@@ -3,8 +3,9 @@ package snhttp.internal
 import java.io.{InputStream, BufferedReader, InputStreamReader}
 import java.net.http.HttpResponse.BodySubscriber
 import java.nio.ByteBuffer
-import java.nio.file.{Path, OpenOption}
+import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.channels.FileChannel
+import java.nio.file.{Path, OpenOption}
 import java.util.{List, ArrayList, Objects, Optional}
 import java.util.stream.Stream
 import java.util.concurrent.CompletableFuture
@@ -12,8 +13,7 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 import java.util.concurrent.Flow
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
-import java.nio.charset.{Charset, StandardCharsets}
+import java.util.function.{Consumer, Function}
 
 object ResponseSubscribers {
   trait TrustedSubscriber[T] extends BodySubscriber[T] {
@@ -28,7 +28,7 @@ object ResponseSubscribers {
   }
 
   class ConsumerSubscriber(private val consumer: Consumer[Optional[Array[Byte]]])
-      extends TrustedSubscriber[Unit] {
+      extends TrustedSubscriber[Void] {
     private var subscription: Flow.Subscription = null
     private val result = new CompletableFuture[Unit]()
     private val subscribed = new AtomicBoolean()
@@ -184,13 +184,13 @@ object ResponseSubscribers {
     override def getBody(): CompletionStage[T] = result
   }
 
-  class HttpResponseInputStream extends InputStream with TrustedSubscriber[InputStream]
+  class InputStreamSubscriber extends InputStream with TrustedSubscriber[InputStream]
 
-  class NullSubscriber[T](private val result: Option[T]) extends TrustedSubscriber[T] {
+  class NullSubscriber[T](private val result: Optional[T]) extends TrustedSubscriber[T] {
     private val cf = new CompletableFuture[T]()
     private val subscribed = new AtomicBoolean()
 
-    override def onSubscribe(subscription: java.util.concurrent.Flow.Subscription): Unit =
+    override def onSubscribe(subscription: Flow.Subscription): Unit =
       if (!subscribed.compareAndSet(false, true)) subscription.cancel()
       else subscription.request(Long.MaxValue)
 
@@ -198,7 +198,8 @@ object ResponseSubscribers {
 
     override def onError(throwable: Throwable): Unit = cf.completeExceptionally(throwable)
 
-    override def onComplete(): Unit = cf.complete(result.orNull(null))
+    override def onComplete(): Unit =
+      if (result.isPresent()) cf.complete(result.get()) else cf.complete(null.asInstanceOf[T])
 
     override def getBody(): CompletionStage[T] = cf
   }
@@ -231,9 +232,19 @@ object ResponseSubscribers {
     ???
   }
 
+  class BufferingSubscriber[T](
+      private val downstreamSubscriber: BodySubscriber[T],
+      private val bufferSize: Int,
+  ) extends TrustedSubscriber[T] {}
+
+  class LimitingSubscriber[T](
+      private val downstreamSubscriber: BodySubscriber[T],
+      private val capacity: Long,
+  ) extends TrustedSubscriber[T] {}
+
   final class SubscriberAdapter[S <: Flow.Subscriber[? >: List[ByteBuffer]], R](
       subscriber: S,
-      finisher: S => R,
+      finisher: Function[? >: S, ? <: R],
   ) extends TrustedSubscriber[R] {
     private val cf = new CompletableFuture[R]()
     private var subscription: Flow.Subscription = _
@@ -262,6 +273,17 @@ object ResponseSubscribers {
     override def getBody(): CompletionStage[R] = cf
   }
 
+  final class LineSubscriberAdapter[S <: Flow.Subscriber[? >: String], R](
+      subscriber: S,
+      finisher: Function[? >: S, ? <: R],
+      charset: Charset,
+      eol: String,
+  ) extends TrustedSubscriber[R] {
+    private val cf = new CompletableFuture[R]()
+    private var downstream: Flow.Subscription = _
+    private val subscribed = new AtomicBoolean()
+  }
+
   /// major public methods for ResponseSubscribers
 
   def createLineStream(): BodySubscriber[Stream[String]] = createLineStream(StandardCharsets.UTF_8)
@@ -269,7 +291,7 @@ object ResponseSubscribers {
   def createLineStream(charset: Charset): BodySubscriber[Stream[String]] = {
     Objects.requireNonNull(charset)
 
-    val s = new HttpResponseInputStream()
+    val s = new InputStreamSubscriber()
     return new MappingSubscriber[InputStream, Stream[String]](
       s,
       (stream: InputStream) =>

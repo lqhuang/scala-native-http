@@ -1,4 +1,4 @@
-package snhttp.utils
+package snhttp.constants
 
 object Method {
   final val GET = "GET"
