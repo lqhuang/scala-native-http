@@ -1,6 +1,6 @@
 package java.net.http
 
-/** @since 11 */
+/// @since
 class HttpConnectTimeoutException(s: String) extends HttpTimeoutException(s)
 
 object HttpConnectTimeoutException {

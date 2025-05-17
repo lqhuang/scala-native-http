@@ -2,7 +2,7 @@ package java.net.http;
 
 import java.io.IOException;
 
-/** @since 11 */
+/// @since 11
 class WebSocketHandshakeException(
     @transient
     final private val response: HttpResponse,
