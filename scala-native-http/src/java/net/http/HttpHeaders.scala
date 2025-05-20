@@ -24,12 +24,12 @@ final class HttpHeaders(private val headers: Map[String, List[String]]) {
 
   def map(): Map[String, List[String]] = headers
 
-  final def equals(obj: Any): Boolean = obj match {
+  final override def equals(obj: Any): Boolean = obj match {
     case other: HttpHeaders => this.map().equals(other.map())
     case _                  => false
   }
 
-  final def hashCode(): Int =
+  final override def hashCode(): Int =
     headers.asScala.map {
       case (key, value) =>
         val keyHash = key.toLowerCase(Locale.ROOT).hashCode
