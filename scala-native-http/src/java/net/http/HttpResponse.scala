@@ -16,8 +16,8 @@ import java.util.stream.Stream
 import javax.net.ssl.SSLSession
 
 import snhttp.internal.Utils.charsetFrom
-import snhttp.internal.ResponseSubscribers
-import snhttp.internal.ResponseBodyHandlers.{
+import snhttp.jdk.ResponseSubscribers
+import snhttp.jdk.ResponseBodyHandlers.{
   PathBodyHandler,
   FileDownloadBodyHandler,
   PushPromisesHandlerWithMap,

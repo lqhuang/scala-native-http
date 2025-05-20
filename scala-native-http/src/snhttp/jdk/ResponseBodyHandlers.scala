@@ -1,4 +1,4 @@
-package snhttp.internal
+package snhttp.jdk
 
 import java.io.{IOException, UncheckedIOException}
 import java.util.concurrent.{CompletableFuture, ConcurrentMap}
@@ -12,7 +12,7 @@ import java.util.function.Function
 import java.util.regex.{Matcher, Pattern}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 
-import snhttp.internal.ResponseSubscribers.PathSubscriber
+import snhttp.jdk.ResponseSubscribers.PathSubscriber
 
 object ResponseBodyHandlers {
 

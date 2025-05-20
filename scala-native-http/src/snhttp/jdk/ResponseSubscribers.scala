@@ -1,4 +1,4 @@
-package snhttp.internal
+package snhttp.jdk
 
 import java.io.{InputStream, BufferedReader, InputStreamReader}
 import java.net.http.HttpResponse.BodySubscriber
