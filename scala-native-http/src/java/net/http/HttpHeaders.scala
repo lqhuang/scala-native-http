@@ -5,7 +5,7 @@ import java.util.{Locale, Optional, OptionalLong, List, Map, Objects}
 import java.util.function.BiPredicate
 
 import scala.collection.immutable.{TreeMap, TreeSet}
-import scala.jdk.CollectionConverters.{MapHasAsScala, ListHasAsScala, MapHasAsJava}
+import scala.jdk.CollectionConverters.{MapHasAsScala, ListHasAsScala, MapHasAsJava, BufferHasAsJava}
 
 import Ordering.comparatorToOrdering
 import String.CASE_INSENSITIVE_ORDER
@@ -62,20 +62,19 @@ object HttpHeaders {
     if (headerNames.distinct.size != headerNames.size)
       throw new IllegalArgumentException(s"duplicate key: ${headerNames.mkString(",")}")
 
-    val newHeaderMap = headerMap.asScala.filter {
+    val newHeaderMap = headerMap.asScala.map {
       case (key, values) =>
         val headerName = key.trim() // tested in the previous step
         val headerValues = values.asScala
           .map(s => Objects.requireNonNull(s).trim())
           .filter(s => s.nonEmpty && filter.test(headerName, s))
-
         if (headerValues.isEmpty) throw new IllegalArgumentException(s"empty values")
-        true
+        (headerName, headerValues.asJava)
     }
 
     if newHeaderMap.isEmpty
     then NO_HEADERS
-    else new HttpHeaders(headerMap)
+    else new HttpHeaders(newHeaderMap.asJava)
   }
 
 }

@@ -7,13 +7,12 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Path
 import java.time.Duration
-import java.util.Optional
+import java.util.{List, Optional}
 import java.util.concurrent.Flow
-import java.util.function.{BiPredicate, Supplier}
+import java.util.function.{BiConsumer, BiPredicate, Consumer, Supplier}
 import java.util.stream.Stream
 
 import snhttp.jdk.HttpRequestBuilderImpl
-import snhttp.jdk.ResponseBodyHandlers
 
 trait HttpRequest extends Closeable {
   import HttpRequest.BodyPublisher
@@ -47,12 +46,42 @@ trait HttpRequest extends Closeable {
 }
 
 object HttpRequest {
+  import snhttp.jdk.BodyPublishers
 
   def newBuilder(): Builder = new HttpRequestBuilderImpl()
 
-  def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(uri)
+  def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(Some(uri))
 
-  def newBuilder(request: HttpRequest, filter: BiPredicate[String, String]): Builder = ???
+  def newBuilder(request: HttpRequest, filter: BiPredicate[String, String]): Builder = {
+    require(request != null, "request must be non-null")
+    require(filter != null, "filter must be non-null")
+
+    val builder =
+      newBuilder(request.uri()).expectContinue(request.expectContinue())
+
+    if request.version().isPresent() then builder.version(request.version().get())
+    if request.timeout().isPresent() then builder.timeout(request.timeout().get())
+
+    if request.bodyPublisher().isPresent() then
+      builder.method(request.method(), request.bodyPublisher().get())
+    else builder.method(request.method(), BodyPublishers.noBody())
+
+    HttpHeaders
+      .of(request.headers().map(), filter)
+      .map()
+      .forEach(
+        new BiConsumer[String, List[String]] {
+          override def accept(name: String, values: List[String]): Unit =
+            values.forEach(
+              new Consumer[String] {
+                override def accept(name: String, value: String): Unit = builder.header(name, value)
+              },
+            )
+        },
+      )
+
+    builder
+  }
 
   trait Builder {
     def uri(uri: URI): Builder
@@ -90,7 +119,6 @@ object HttpRequest {
     def contentLength(): Long
   }
 
-  import snhttp.jdk.BodyPublishers
   trait BodyPublishers {
     def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher
 
@@ -113,5 +141,4 @@ object HttpRequest {
 
     def concat(publishers: BodyPublisher*): BodyPublisher
   }
-
 }
