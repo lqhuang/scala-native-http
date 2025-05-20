@@ -1,5 +1,6 @@
 package snhttp.jdk
 
+import java.io.IOException
 import java.io.{InputStream, BufferedReader, InputStreamReader}
 import java.net.http.HttpResponse.BodySubscriber
 import java.nio.ByteBuffer
@@ -62,7 +63,7 @@ object ResponseSubscribers {
 
     override def onComplete(): Unit = {
       consumer.accept(Optional.empty())
-      result.complete(null)
+      result.complete(())
     }
   }
 
@@ -86,8 +87,8 @@ object ResponseSubscribers {
       try
         out = FileChannel.open(file, _options*)
       catch {
-        case ioe: java.io.IOException =>
-          result.completeExceptionally(ioe)
+        case exc: IOException =>
+          result.completeExceptionally(exc)
           subscription.cancel()
           return
       }
@@ -102,10 +103,10 @@ object ResponseSubscribers {
           buffers.exists(_.hasRemaining)
         }) ()
       } catch {
-        case ex: java.io.IOException =>
+        case exc: IOException =>
           close()
           subscription.cancel()
-          result.completeExceptionally(ex)
+          result.completeExceptionally(exc)
       }
       subscription.request(1)
     }
