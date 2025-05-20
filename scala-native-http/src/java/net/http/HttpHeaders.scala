@@ -4,7 +4,7 @@ import java.lang.Long as JLong
 import java.util.{Locale, Optional, OptionalLong, List, Map, Objects}
 import java.util.function.BiPredicate
 
-import scala.collection.immutable.{TreeMap, TreeSet, Map as ScalaMap}
+import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.jdk.CollectionConverters.{MapHasAsScala, ListHasAsScala, MapHasAsJava}
 
 import Ordering.comparatorToOrdering
@@ -37,11 +37,12 @@ final class HttpHeaders(private val headers: Map[String, List[String]]) {
         keyHash ^ valueHash
     }.sum
 
-  override def toString: String =
-    s"${super.toString} { ${map()} }"
+  override def toString: String = s"${super.toString()} { ${map()} }"
+
 }
 
 object HttpHeaders {
+
   private val NO_HEADERS = new HttpHeaders(Map.of())
 
   val httpOrdering: Ordering[String] = comparatorToOrdering(CASE_INSENSITIVE_ORDER)
@@ -55,17 +56,14 @@ object HttpHeaders {
       "headerMap and filter must not be null",
     )
 
-    val headers = TreeMap.from[String, List[String]](headerMap.asScala)(using httpOrdering)
-    val notAdded = TreeSet.empty[String](using httpOrdering)
+    val headerNames = headerMap.asScala.keys.toSeq.map(_.trim()).filter(_.nonEmpty)
+    if (headerNames.isEmpty) throw new IllegalArgumentException("empty key")
+    if (headerNames.distinct.size != headerNames.size)
+      throw new IllegalArgumentException(s"duplicate key: ${headerNames.mkString(",")}")
 
-    val newHeaderMap = headers.filter {
+    val newHeaderMap = headerMap.asScala.filter {
       case (key, values) =>
-        val headerName = Option(key)
-          .map(_.trim())
-          .filter(_.nonEmpty)
-          .getOrElse(
-            throw new IllegalArgumentException("empty key"),
-          )
+        val headerName = key.trim() // tested in the previous step
         val headerValues = values.asScala
           .map(s => Objects.requireNonNull(s).trim())
           .filter(s => s.nonEmpty && filter.test(headerName, s))
@@ -74,7 +72,9 @@ object HttpHeaders {
         true
     }
 
-    if (newHeaderMap.isEmpty) NO_HEADERS
+    if newHeaderMap.isEmpty
+    then NO_HEADERS
     else new HttpHeaders(headerMap)
   }
+
 }
