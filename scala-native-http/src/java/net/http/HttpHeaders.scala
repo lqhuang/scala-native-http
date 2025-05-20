@@ -24,8 +24,9 @@ final class HttpHeaders(private val headers: Map[String, List[String]]) {
 
   def map(): Map[String, List[String]] = headers
 
+  /// Two HTTP headers are equal if each of their corresponding maps are equal.
   final override def equals(obj: Any): Boolean = obj match {
-    case other: HttpHeaders => this.map().equals(other.map())
+    case other: HttpHeaders => this.map() == other.map()
     case _                  => false
   }
 

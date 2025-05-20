@@ -44,27 +44,6 @@ trait HttpResponse[T] {
 
   def version(): HttpClient.Version
 
-  final override def equals(that: Any): Boolean = that match {
-    case other: HttpResponse[?] =>
-      this.uri() == other.uri() &&
-      this.statusCode() == other.statusCode() &&
-      this.request() == other.request() &&
-      this.headers() == other.headers() &&
-      this.body() == other.body() &&
-      this.sslSession() == other.sslSession()
-    case _ => false
-  }
-
-  final override def hashCode(): Int = {
-    val uriHash = uri().hashCode
-    val statusCodeHash = statusCode()
-    val requestHash = request().hashCode
-    val headersHash = headers().hashCode
-    val bodyHash = body().hashCode
-    val sslSessionHash = sslSession().hashCode
-
-    uriHash ^ statusCodeHash ^ requestHash ^ headersHash ^ bodyHash ^ sslSessionHash
-  }
 }
 
 object HttpResponse {

@@ -32,27 +32,18 @@ trait HttpRequest extends Closeable {
 
   def headers(): HttpHeaders
 
+  /// Two HTTP requests are equal if their URI, method, and headers fields are all equal.
   final override def equals(that: Any): Boolean = that match {
     case other: HttpRequest =>
       this.uri() == other.uri() &&
       this.method() == other.method() &&
-      this.timeout() == other.timeout() &&
-      this.expectContinue() == other.expectContinue() &&
-      this.version() == other.version() &&
       this.headers() == (other.headers())
     case _ => false
   }
 
-  final override def hashCode(): Int = {
-    val uriHash = uri().hashCode
-    val methodHash = method().hashCode
-    val timeoutHash = timeout().hashCode
-    val expectContinueHash = expectContinue().hashCode
-    val versionHash = version().hashCode
-    val headersHash = headers().hashCode
-
-    uriHash ^ methodHash ^ timeoutHash ^ expectContinueHash ^ versionHash ^ headersHash
-  }
+  /// The hash code is based upon the HTTP request's URI, method, and header components
+  final override def hashCode(): Int =
+    uri().hashCode + method().hashCode + headers().hashCode
 }
 
 object HttpRequest {
