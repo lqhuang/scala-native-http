@@ -47,8 +47,7 @@ abstract class HttpClient extends AutoCloseable {
       pushPromiseHandler: HttpResponse.PushPromiseHandler[T],
   ): CompletableFuture[HttpResponse[T]]
 
-  def newWebSocketBuilder(): WebSocket.Builder =
-    throw new UnsupportedOperationException()
+  def newWebSocketBuilder(): WebSocket.Builder
 
   def shutdown(): Unit
 
@@ -60,7 +59,6 @@ abstract class HttpClient extends AutoCloseable {
 
   override def close(): Unit = {
     var interrupted = false
-
     while (!isTerminated()) {
       shutdown()
       try
@@ -73,7 +71,6 @@ abstract class HttpClient extends AutoCloseable {
           }
       }
     }
-
     if (interrupted) Thread.currentThread().interrupt()
   }
 
@@ -113,7 +110,7 @@ object HttpClient {
 
     def authenticator(authenticator: Authenticator): Builder
 
-    def localAddress(localAddr: InetAddress): Builder = throw UnsupportedOperationException()
+    def localAddress(localAddr: InetAddress): Builder
 
     def build(): HttpClient
   }

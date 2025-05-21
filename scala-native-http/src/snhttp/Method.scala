@@ -1,13 +1,20 @@
 package snhttp.constants
 
+enum Method(val value: String) {
+  case GET extends Method("GET")
+  case HEAD extends Method("HEAD")
+  case POST extends Method("POST")
+  case PUT extends Method("PUT")
+  case DELETE extends Method("DELETE")
+  case CONNECT extends Method("CONNECT")
+  case OPTIONS extends Method("OPTIONS")
+  case TRACE extends Method("TRACE")
+  case PATCH extends Method("PATCH")
+
+  override def toString: String = value
+}
+
 object Method {
-  final val GET = "GET"
-  final val HEAD = "HEAD"
-  final val POST = "POST"
-  final val PUT = "PUT"
-  final val DELETE = "DELETE"
-  final val CONNECT = "CONNECT"
-  final val OPTIONS = "OPTIONS"
-  final val TRACE = "TRACE"
-  final val PATCH = "PATCH"
+  def apply(value: String): Option[Method] =
+    values.find(_.value == value)
 }

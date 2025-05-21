@@ -8,7 +8,8 @@ import java.nio.file.OpenOption
 import java.nio.file.{Files, Path, Paths}
 import java.nio.file.StandardOpenOption.{READ, DELETE_ON_CLOSE, CREATE, WRITE}
 import java.net.URI
-import java.util.{List, Objects, Optional}
+import java.util.{List, Optional}
+import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, CompletionStage, ConcurrentMap}
 import java.util.concurrent.Flow.{Subscriber, Publisher, Subscription}
 import java.util.function.{Function, Consumer}
@@ -65,7 +66,7 @@ object HttpResponse {
   /// @since 11
   object BodyHandlers {
     def fromSubscriber(subscriber: Subscriber[? >: List[ByteBuffer]]): BodyHandler[Void] = {
-      Objects.requireNonNull(subscriber)
+      requireNonNull(subscriber)
       return responseInfo => BodySubscribers.fromSubscriber(subscriber, (_: Any) => null)
     }
 
@@ -73,13 +74,13 @@ object HttpResponse {
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
     ): BodyHandler[T] = {
-      Objects.requireNonNull(subscriber)
-      Objects.requireNonNull(finisher)
+      requireNonNull(subscriber)
+      requireNonNull(finisher)
       return responseInfo => BodySubscribers.fromSubscriber(subscriber, finisher)
     }
 
     def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] = {
-      Objects.requireNonNull(subscriber)
+      requireNonNull(subscriber)
       return responseInfo =>
         BodySubscribers.fromLineSubscriber(
           subscriber,
@@ -94,8 +95,8 @@ object HttpResponse {
         finisher: Function[? >: S, ? <: T],
         lineSeparator: String,
     ): BodyHandler[T] = {
-      Objects.requireNonNull(subscriber)
-      Objects.requireNonNull(finisher)
+      requireNonNull(subscriber)
+      requireNonNull(finisher)
       require(lineSeparator == null || lineSeparator.nonEmpty, "empty line separator")
       return responseInfo =>
         BodySubscribers.fromLineSubscriber(
@@ -111,16 +112,16 @@ object HttpResponse {
     def replacing[U](value: U): BodyHandler[U] = _ => BodySubscribers.replacing(value)
 
     def ofString(charset: Charset): BodyHandler[String] = {
-      Objects.requireNonNull(charset)
+      requireNonNull(charset)
       return _ => BodySubscribers.ofString(charset)
     }
 
     def ofFile(file: Path, openOptions: OpenOption*): BodyHandler[Path] = {
-      Objects.requireNonNull(file)
-      if (openOptions.contains(DELETE_ON_CLOSE) || openOptions.contains(READ))
-        throw new IllegalArgumentException(
-          s"invalid openOptions: $openOptions",
-        )
+      requireNonNull(file)
+      require(
+        !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
+        s"invalid openOptions: $openOptions",
+      )
 
       val opts = List.of(openOptions*)
       return PathBodyHandler.create(file, opts)
@@ -129,12 +130,8 @@ object HttpResponse {
     def ofFile(file: Path): BodyHandler[Path] = ofFile(file, CREATE, WRITE)
 
     def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] = {
-      Objects.requireNonNull(directory)
-      if (openOptions.contains(DELETE_ON_CLOSE))
-        throw new IllegalArgumentException(
-          s"invalid openOptions: ${DELETE_ON_CLOSE}",
-        )
-
+      requireNonNull(directory)
+      require(!openOptions.contains(DELETE_ON_CLOSE), s"invalid openOptions: ${openOptions}")
       val opts = List.of(openOptions*)
       return FileDownloadBodyHandler.create(directory, opts)
     }
@@ -209,7 +206,7 @@ object HttpResponse {
       new ResponseSubscribers.LineSubscriberAdapter(subscriber, finisher, charset, lineSeparator)
 
     def ofString(charset: Charset): BodySubscriber[String] = {
-      Objects.requireNonNull(charset)
+      requireNonNull(charset)
       new ResponseSubscribers.ByteArraySubscriber(bytes => new String(bytes, charset))
     }
 
@@ -222,7 +219,7 @@ object HttpResponse {
     ): BodySubscriber[Path] = {
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
-        s"invalid openOptions: $opts",
+        s"invalid openOptions: ${openOptions}",
       )
       val opts = List.of(openOptions*)
       return ResponseSubscribers.PathSubscriber.create(file, opts)

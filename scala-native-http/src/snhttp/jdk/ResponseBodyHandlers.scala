@@ -16,7 +16,7 @@ import snhttp.jdk.ResponseSubscribers.PathSubscriber
 
 object ResponseBodyHandlers {
 
-  /** A Path body handler. */
+  /// A Path body handler.
   class PathBodyHandler(
       private val file: Path,
       private val openOptions: List[OpenOption],
@@ -35,7 +35,13 @@ object ResponseBodyHandlers {
   ) extends HttpResponse.PushPromiseHandler[T] {
     import FileDownloadBodyHandler.*
 
-    override def applyPushPromise(
+    def applyPushPromise(
+        initiatingRequest: HttpRequest,
+        pushPromiseRequest: HttpRequest,
+        acceptor: Function[BodyHandler[T], CompletableFuture[HttpResponse[T]]],
+    ): Unit = ???
+
+    def applyPushPromise(
         initiatingRequest: HttpRequest,
         pushRequest: HttpRequest,
         acceptor: BodyHandler[T] => CompletableFuture[HttpResponse[T]],
@@ -54,7 +60,7 @@ object ResponseBodyHandlers {
     val NOT_ALLOWED_IN_TOKEN = Set.of('(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[',
       ']', '?', '=', '{', '}', ' ', '\t')
 
-    /** Factory for creating FileDownloadBodyHandler. */
+    /// Factory for creating FileDownloadBodyHandler.
     def create(directory: Path, openOptions: List[OpenOption]): FileDownloadBodyHandler = {
       try
         directory.toFile.getPath()
@@ -63,13 +69,9 @@ object ResponseBodyHandlers {
           throw new IllegalArgumentException(s"invalid path: $directory", uoe)
       }
 
-      if (Files.notExists(directory))
-        throw new IllegalArgumentException(s"non-existent directory: $directory")
-      if (!Files.isDirectory(directory))
-        throw new IllegalArgumentException(s"not a directory: $directory")
-      if (!Files.isWritable(directory))
-        throw new IllegalArgumentException(s"non-writable directory: $directory")
-
+      require(!Files.notExists(directory), s"non-existent directory: $directory")
+      require(Files.isDirectory(directory), s"not a directory: $directory")
+      require(Files.isWritable(directory), s"non-writable directory: $directory")
       return new FileDownloadBodyHandler(directory, openOptions)
     }
 

@@ -71,12 +71,8 @@ object HttpRequest {
       .map()
       .forEach(
         new BiConsumer[String, List[String]] {
-          override def accept(name: String, values: List[String]): Unit =
-            values.forEach(
-              new Consumer[String] {
-                override def accept(name: String, value: String): Unit = builder.header(name, value)
-              },
-            )
+          override def accept(name: String, values: List[String]) =
+            values.forEach(v => builder.header(name, v))
         },
       )
 

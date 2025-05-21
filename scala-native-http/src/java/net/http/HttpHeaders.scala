@@ -1,7 +1,8 @@
 package java.net.http
 
 import java.lang.Long as JLong
-import java.util.{Locale, Optional, OptionalLong, List, Map, Objects}
+import java.util.{Locale, Optional, OptionalLong, List, Map}
+import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
 import scala.collection.immutable.{TreeMap, TreeSet}
@@ -58,17 +59,19 @@ object HttpHeaders {
     )
 
     val headerNames = headerMap.asScala.keys.toSeq.map(_.trim()).filter(_.nonEmpty)
-    if (headerNames.isEmpty) throw new IllegalArgumentException("empty key")
-    if (headerNames.distinct.size != headerNames.size)
-      throw new IllegalArgumentException(s"duplicate key: ${headerNames.mkString(",")}")
+    require(!headerNames.isEmpty, "empty key")
+    require(
+      headerNames.distinct.size == headerNames.size,
+      s"duplicate key: ${headerNames.mkString(",")}",
+    )
 
     val newHeaderMap = headerMap.asScala.map {
       case (key, values) =>
         val headerName = key.trim() // tested in the previous step
         val headerValues = values.asScala
-          .map(s => Objects.requireNonNull(s).trim())
+          .map(s => requireNonNull(s).trim())
           .filter(s => s.nonEmpty && filter.test(headerName, s))
-        if (headerValues.isEmpty) throw new IllegalArgumentException(s"empty values")
+        require(!headerValues.isEmpty, s"empty values")
         (headerName, headerValues.asJava)
     }
 

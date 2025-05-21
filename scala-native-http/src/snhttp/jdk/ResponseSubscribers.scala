@@ -7,12 +7,14 @@ import java.nio.ByteBuffer
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.channels.FileChannel
 import java.nio.file.{Path, OpenOption}
-import java.util.{List, ArrayList, Objects, Optional}
+import java.util.{List, ArrayList, Optional}
+import java.util.Objects.requireNonNull
 import java.util.stream.Stream
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 import java.util.concurrent.Flow
+import java.util.concurrent.Flow.{Publisher, Subscription, Subscriber}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.{Consumer, Function}
 
@@ -30,13 +32,13 @@ object ResponseSubscribers {
 
   class ConsumerSubscriber(private val consumer: Consumer[Optional[Array[Byte]]])
       extends TrustedSubscriber[Void] {
-    private var subscription: Flow.Subscription = null
-    private val result = new CompletableFuture[Unit]()
+    private var subscription: Subscription = null
+    private val result = new CompletableFuture[Void]()
     private val subscribed = new AtomicBoolean()
 
-    override def getBody(): CompletionStage[Unit] = result
+    override def getBody(): CompletionStage[Void] = result
 
-    override def onSubscribe(subscription: Flow.Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit =
       if (!subscribed.compareAndSet(false, true)) {
         subscription.cancel()
       } else {
@@ -45,7 +47,7 @@ object ResponseSubscribers {
       }
 
     override def onNext(items: List[ByteBuffer]): Unit = {
-      Objects.requireNonNull(items)
+      requireNonNull(items)
       val it = items.iterator()
       while (it.hasNext) {
         val item = it.next()
@@ -57,13 +59,13 @@ object ResponseSubscribers {
     }
 
     override def onError(throwable: Throwable): Unit = {
-      Objects.requireNonNull(throwable)
+      requireNonNull(throwable)
       result.completeExceptionally(throwable)
     }
 
     override def onComplete(): Unit = {
       consumer.accept(Optional.empty())
-      result.complete(())
+      result.complete(null)
     }
   }
 
@@ -73,11 +75,11 @@ object ResponseSubscribers {
     private val result = new CompletableFuture[Path]()
     private val subscribed = new AtomicBoolean()
 
-    @volatile private var subscription: Flow.Subscription = _
+    @volatile private var subscription: Subscription = _
     @volatile private var out: FileChannel = _
 
-    override def onSubscribe(subscription: Flow.Subscription): Unit = {
-      Objects.requireNonNull(subscription)
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
       if (!subscribed.compareAndSet(false, true)) {
         subscription.cancel()
         return
@@ -138,9 +140,9 @@ object ResponseSubscribers {
     private val result = new CompletableFuture[T]()
     private val received = new ArrayList[ByteBuffer]()
 
-    @volatile private var subscription: Flow.Subscription = _
+    @volatile private var subscription: Subscription = _
 
-    override def onSubscribe(subscription: Flow.Subscription): Unit = {
+    override def onSubscribe(subscription: Subscription): Unit = {
       if (this.subscription != null) {
         subscription.cancel()
         return
@@ -150,7 +152,7 @@ object ResponseSubscribers {
     }
 
     override def onNext(items: List[ByteBuffer]): Unit = {
-      Objects.requireNonNull(items)
+      requireNonNull(items)
       require(!items.isEmpty()) // TODO: pending to be rewriten
       received.addAll(items)
     }
@@ -185,13 +187,27 @@ object ResponseSubscribers {
     override def getBody(): CompletionStage[T] = result
   }
 
-  class InputStreamSubscriber extends InputStream with TrustedSubscriber[InputStream]
+  class InputStreamSubscriber extends InputStream with TrustedSubscriber[InputStream] {
+
+    override def read(): Int = ???
+
+    override def onSubscribe(subscription: Subscription): Unit = ???
+
+    override def onNext(item: List[ByteBuffer]): Unit = ???
+
+    override def onComplete(): Unit = ???
+
+    override def onError(throwable: Throwable): Unit = ???
+
+    override def getBody(): CompletionStage[InputStream] = ???
+
+  }
 
   class NullSubscriber[T](private val result: Optional[T]) extends TrustedSubscriber[T] {
     private val cf = new CompletableFuture[T]()
     private val subscribed = new AtomicBoolean()
 
-    override def onSubscribe(subscription: Flow.Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit =
       if (!subscribed.compareAndSet(false, true)) subscription.cancel()
       else subscription.request(Long.MaxValue)
 
@@ -219,7 +235,7 @@ object ResponseSubscribers {
 
     override def getBody(): CompletionStage[U] = upstream.getBody().thenApply(mapper)
 
-    override def onSubscribe(subscription: Flow.Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit =
       upstream.onSubscribe(subscription)
 
     override def onNext(item: List[ByteBuffer]): Unit = upstream.onNext(item)
@@ -229,28 +245,60 @@ object ResponseSubscribers {
     override def onComplete(): Unit = upstream.onComplete()
   }
 
-  class PublishingBodySubscriber extends TrustedSubscriber[Flow.Publisher[List[ByteBuffer]]] {
-    ???
+  class PublishingBodySubscriber extends TrustedSubscriber[Publisher[List[ByteBuffer]]] {
+
+    override def onSubscribe(subscription: Subscription): Unit = ???
+
+    override def onNext(item: List[ByteBuffer]): Unit = ???
+
+    override def onComplete(): Unit = ???
+
+    override def onError(throwable: Throwable): Unit = ???
+
+    override def getBody(): CompletionStage[Publisher[List[ByteBuffer]]] = ???
+
   }
 
   class BufferingSubscriber[T](
       private val downstreamSubscriber: BodySubscriber[T],
       private val bufferSize: Int,
-  ) extends TrustedSubscriber[T] {}
+  ) extends TrustedSubscriber[T] {
+
+    override def onSubscribe(subscription: Subscription): Unit = ???
+
+    override def onNext(item: List[ByteBuffer]): Unit = ???
+
+    override def onComplete(): Unit = ???
+
+    override def onError(throwable: Throwable): Unit = ???
+
+    override def getBody(): CompletionStage[T] = ???
+  }
 
   class LimitingSubscriber[T](
       private val downstreamSubscriber: BodySubscriber[T],
       private val capacity: Long,
-  ) extends TrustedSubscriber[T] {}
+  ) extends TrustedSubscriber[T] {
 
-  final class SubscriberAdapter[S <: Flow.Subscriber[? >: List[ByteBuffer]], R](
+    override def onSubscribe(subscription: Subscription): Unit = ???
+
+    override def onNext(item: List[ByteBuffer]): Unit = ???
+
+    override def onComplete(): Unit = ???
+
+    override def onError(throwable: Throwable): Unit = ???
+
+    override def getBody(): CompletionStage[T] = ???
+  }
+
+  final class SubscriberAdapter[S <: Subscriber[? >: List[ByteBuffer]], R](
       subscriber: S,
       finisher: Function[? >: S, ? <: R],
   ) extends TrustedSubscriber[R] {
     private val cf = new CompletableFuture[R]()
-    private var subscription: Flow.Subscription = _
+    private var subscription: Subscription = _
 
-    override def onSubscribe(subscription: Flow.Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit =
       if (this.subscription != null) subscription.cancel()
       else {
         this.subscription = subscription
@@ -274,15 +322,25 @@ object ResponseSubscribers {
     override def getBody(): CompletionStage[R] = cf
   }
 
-  final class LineSubscriberAdapter[S <: Flow.Subscriber[? >: String], R](
+  final class LineSubscriberAdapter[S <: Subscriber[? >: String], R](
       subscriber: S,
       finisher: Function[? >: S, ? <: R],
       charset: Charset,
       eol: String,
   ) extends TrustedSubscriber[R] {
     private val cf = new CompletableFuture[R]()
-    private var downstream: Flow.Subscription = _
+    private var downstream: Subscription = _
     private val subscribed = new AtomicBoolean()
+
+    override def onSubscribe(subscription: Subscription): Unit = ???
+
+    override def onNext(item: List[ByteBuffer]): Unit = ???
+
+    override def onComplete(): Unit = ???
+
+    override def onError(throwable: Throwable): Unit = ???
+
+    override def getBody(): CompletionStage[R] = ???
   }
 
   /// major public methods for ResponseSubscribers
@@ -290,7 +348,7 @@ object ResponseSubscribers {
   def createLineStream(): BodySubscriber[Stream[String]] = createLineStream(StandardCharsets.UTF_8)
 
   def createLineStream(charset: Charset): BodySubscriber[Stream[String]] = {
-    Objects.requireNonNull(charset)
+    requireNonNull(charset)
 
     val s = new InputStreamSubscriber()
     return new MappingSubscriber[InputStream, Stream[String]](
@@ -303,7 +361,7 @@ object ResponseSubscribers {
     )
   }
 
-  def createPublisher(): BodySubscriber[Flow.Publisher[List[ByteBuffer]]] =
+  def createPublisher(): BodySubscriber[Publisher[List[ByteBuffer]]] =
     new PublishingBodySubscriber()
 
   def getBodyAsync[T](
