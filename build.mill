@@ -1,26 +1,28 @@
 package build
 
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
+import $ivy.`com.goyeau::mill-scalafix::0.4.0`
+import $ivy.`com.github.lolgab::mill-mima::0.0.24`
+import $ivy.`com.lihaoyi::mill-contrib-bloop:`
+
 import mill.{Cross, Agg}
 import mill.{scalalib, scalanativelib}
+import mill.contrib.bloop.Bloop
 import scalalib.DepSyntax // for `ivy` string interpolator
 import scalalib.{CrossScalaModule, TestModule, PublishModule}
 import scalalib.publish.{Developer, License, PomSettings, VersionControl}
 import scalalib.scalafmt.ScalafmtModule
-import scalanativelib.{ScalaNativeModule, TestScalaNativeModule}
+import scalanativelib.ScalaNativeModule
 import scalanativelib.api.ReleaseMode
 
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
-import $ivy.`com.goyeau::mill-scalafix::0.4.0`
-import $ivy.`com.github.lolgab::mill-mima::0.0.24`
-
 import de.tobiasroeser.mill.vcs.version.VcsVersion
-import com.goyeau.mill.scalafix
+import com.goyeau.mill.scalafix.ScalafixModule
 
 val scalaNextVersion = sys.props.get("scalaNextVersion")
 val scalaVersions = Seq("3.3.4") ++ scalaNextVersion
 
 def format = ScalafmtModule
-// def scalafixIvyDeps = Agg(ivy"com.github.liancheng::organize-imports:0.6.0")
+def bloop = Bloop
 
 trait HttpPublishModule extends PublishModule {
   def pomSettings = PomSettings(
@@ -38,8 +40,16 @@ trait HttpPublishModule extends PublishModule {
   def publishVersion = VcsVersion.vcsState().format()
 }
 
+trait ConfiguredScalafix extends ScalafixModule {
+  def scalafixIvyDeps = Agg(ivy"com.github.liancheng::organize-imports:0.6.0")
+}
+
 object `scala-native-http` extends Cross[ScalaNtiveHttpModule](scalaVersions)
-trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with HttpPublishModule {
+trait ScalaNtiveHttpModule
+    extends CrossScalaModule
+    with ScalaNativeModule
+    with HttpPublishModule
+    with ConfiguredScalafix {
   def scalaNativeVersion = "0.5.7"
 
   def scalacOptions = super.scalacOptions() ++ Seq(
