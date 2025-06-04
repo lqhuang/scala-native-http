@@ -5,8 +5,9 @@ import $ivy.`com.goyeau::mill-scalafix::0.4.0`
 import $ivy.`com.github.lolgab::mill-mima::0.0.24`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:`
 
-import mill.{Cross, Agg}
 import mill.{scalalib, scalanativelib}
+import mill.Agg
+import mill.define.{Cross, Task}
 import mill.contrib.bloop.Bloop
 import scalalib.DepSyntax // for `ivy` string interpolator
 import scalalib.{CrossScalaModule, TestModule, PublishModule}
@@ -40,21 +41,17 @@ trait HttpPublishModule extends PublishModule {
   def publishVersion = VcsVersion.vcsState().format()
 }
 
-trait ConfiguredScalafix extends ScalafixModule {
-  def scalafixIvyDeps = Agg(ivy"com.github.liancheng::organize-imports:0.6.0")
-}
-
 object `scala-native-http` extends Cross[ScalaNtiveHttpModule](scalaVersions)
 trait ScalaNtiveHttpModule
     extends CrossScalaModule
     with ScalaNativeModule
     with HttpPublishModule
-    with ConfiguredScalafix {
+    with ScalafixModule {
+
   def scalaNativeVersion = "0.5.7"
 
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
-    "-Wsafe-init",
   )
 
   def ivyDeps = Agg(
@@ -72,11 +69,16 @@ trait ScalaNtiveHttpModule
   )
   def nativeLinkingOptions = Seq("-L" + millSourcePath.toString + "/target")
 
+  // // Set nativeWorkdir directory to `newDir`
+  // def nativeWorkdir = Task { Task.dest  }
+
   /// Define testing
   object test extends ScalaNativeTests with TestModule.Munit {
     def ivyDeps = Agg(
       ivy"org.scalameta::munit::1.0.4",
-      ivy"com.dimafeng::testcontainers-scala-munit:0.43.0",
     )
+    // def toolsIvyDeps = Agg(
+    //   ivy"com.dimafeng::testcontainers-scala-munit:0.43.0",
+    // )
   }
 }
