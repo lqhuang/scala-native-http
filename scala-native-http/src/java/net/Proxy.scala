@@ -2,13 +2,10 @@ package java.net
 
 import java.util.Objects.requireNonNull
 
-class Proxy(private val proxyType: Proxy.Type, private val sa: Option[SocketAddress]) {
+class Proxy(private val proxyType: Proxy.Type, private val sa: SocketAddress) {
   def `type`(): Proxy.Type = proxyType
 
-  def address(): SocketAddress = sa match {
-    case Some(address) => address
-    case None          => null
-  }
+  def address(): SocketAddress = sa
 
   override def toString: String =
     if proxyType == Proxy.Type.DIRECT
@@ -21,10 +18,10 @@ class Proxy(private val proxyType: Proxy.Type, private val sa: Option[SocketAddr
     case _ => false
   }
 
-  override def hashCode(): Int = sa match {
-    case Some(sa) => proxyType.hashCode() + sa.hashCode()
-    case None     => proxyType.hashCode()
-  }
+  override def hashCode(): Int =
+    if sa == null
+    then proxyType.hashCode()
+    else proxyType.hashCode() + sa.hashCode()
 }
 
 object Proxy {
@@ -32,15 +29,14 @@ object Proxy {
     case DIRECT, HTTP, SOCKS
   }
 
-  val NO_PROXY: Proxy = new Proxy(Type.DIRECT, None)
+  val NO_PROXY: Proxy = new Proxy(Type.DIRECT, null)
 
   def apply(proxyType: Type, sa: SocketAddress): Proxy = {
     requireNonNull(proxyType, "proxy type can not be null")
-    requireNonNull(sa, "socket address can not be null")
 
-    if proxyType == Type.DIRECT || !sa.isInstanceOf[InetSocketAddress] then
+    if proxyType != Type.DIRECT && !sa.isInstanceOf[InetSocketAddress] then
       throw new IllegalArgumentException(s"type $proxyType is not compatible with address $sa")
 
-    new Proxy(proxyType, Some(sa))
+    new Proxy(proxyType, sa)
   }
 }

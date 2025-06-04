@@ -1,9 +1,11 @@
 package java.net
 
 import java.io.IOException
-import java.net.{InetSocketAddress, Proxy, URI}
+import java.net.{InetSocketAddress, SocketAddress, URI}
+import java.net.Proxy
 import java.util.List
-import java.util.Objects.requireNonNull
+
+import scala.collection.mutable.HashMap
 
 abstract class ProxySelector {
   def select(uri: URI): List[Proxy]
@@ -11,28 +13,27 @@ abstract class ProxySelector {
 }
 
 private class StaticProxySelector(address: InetSocketAddress) extends ProxySelector {
-  private val NO_PROXY_LIST = List.of(Proxy.NO_PROXY)
-
-  private val list: List[Proxy] =
-    val p =
-      if address == null then Proxy(Proxy.Type.HTTP, address)
-      else Proxy(Proxy.Type.HTTP, address)
-    List.of(p)
+  private val proxies = HashMap[Option[SocketAddress], Proxy](
+    if address == null
+    then None -> Proxy.NO_PROXY
+    else Some(address) -> Proxy(Proxy.Type.HTTP, address),
+  )
 
   def connectFailed(uri: URI, sa: SocketAddress, e: IOException): Unit =
-    requireNonNull(uri, "uri can not be null.")
-    requireNonNull(sa, "socket address can not be null.")
-    requireNonNull(e, "exception can not be null.")
+    require(uri != null, "uri can not be null.")
+    require(sa != null, "socket address can not be null.")
+    require(e != null, "exception can not be null.")
+    // val p = proxies(Some(sa))
 
   def select(uri: URI): List[Proxy] = {
-    requireNonNull(uri, "uri can not be null")
+    require(uri != null, "uri can not be null")
 
     val scheme = uri.getScheme()
-    requireNonNull(scheme, "protocol can not be null")
+    require(scheme != null, "protocol can not be null")
 
     if scheme.toLowerCase == "http" || scheme.toLowerCase == "https"
-    then list
-    else NO_PROXY_LIST
+    then List.of(proxies.get(Some(address)).getOrElse(Proxy.NO_PROXY))
+    else List.of(Proxy.NO_PROXY)
   }
 }
 
