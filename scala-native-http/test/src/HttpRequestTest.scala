@@ -6,7 +6,7 @@ import java.net.http.HttpRequest.BodyPublishers
 
 import munit.FunSuite
 
-object HttpRequestTests extends FunSuite {
+class HttpRequestTest extends FunSuite {
 
   test("newBuilder / constructor") {
     val request = HttpRequest.newBuilder(new URI("http://httpbin.org/get")).GET().build()
