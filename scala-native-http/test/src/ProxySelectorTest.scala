@@ -1,13 +1,14 @@
 import java.net.{Proxy, ProxySelector}
+import java.net.{URI, URL, InetSocketAddress, SocketAddress}
 import java.io.IOException
-import java.util.List
+import java.util.List as JList
 
 import munit.FunSuite
 
 class ProxySelectorTest extends FunSuite {
 
   private class TestProxySelector extends ProxySelector {
-    override def select(uri: URI): List[Proxy] = List.of(Proxy.NO_PROXY)
+    override def select(uri: URI): JList[Proxy] = JList.of(Proxy.NO_PROXY)
     override def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = {}
   }
 
@@ -44,6 +45,17 @@ class ProxySelectorTest extends FunSuite {
 
     assertEquals(ftpProxies.size(), 1)
     assertEquals(ftpProxies.get(0), Proxy.NO_PROXY)
+  }
+
+  test("NullSelector will raise an exception on select") {
+    val url = new URL("http://127.0.0.1/");
+    ProxySelector.setDefault(null);
+    val con = url.openConnection();
+    con.setConnectTimeout(500);
+
+    intercept[IOException] {
+      con.connect()
+    }
   }
 
   test("of with valid address should create selector for HTTP/HTTPS") {
@@ -147,4 +159,15 @@ class ProxySelectorTest extends FunSuite {
     assertEquals(httpsProxies.get(0), expectedProxy)
   }
 
+  test("-Djava.net.useSystemProxies=true") {
+    val useSystemProxies = System.getProperty("java.net.useSystemProxies")
+    val systemSelector = ProxySelector.getDefault()
+    assert(systemSelector != null, "System proxy selector should not be null")
+    val localURIs = List(
+      "local",
+      "localhost",
+      "127.0.0.1",
+    )
+    /// TODO: unfinished test
+  }
 }

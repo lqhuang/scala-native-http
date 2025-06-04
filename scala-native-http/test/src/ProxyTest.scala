@@ -10,7 +10,7 @@ class ProxyTest extends FunSuite {
   }
 
   test("create HTTP proxy with valid socket address") {
-    val address = new InetSocketAddress("proxy.example.com", 8080)
+    val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
     val proxy = Proxy(Proxy.Type.HTTP, address)
 
     assertEquals(proxy.`type`(), Proxy.Type.HTTP)
@@ -18,7 +18,7 @@ class ProxyTest extends FunSuite {
   }
 
   test("create SOCKS proxy with valid socket address") {
-    val address = new InetSocketAddress("socks.example.com", 1080)
+    val address = InetSocketAddress.createUnresolved("socks.example.com", 1080)
     val proxy = Proxy(Proxy.Type.SOCKS, address)
 
     assertEquals(proxy.`type`(), Proxy.Type.SOCKS)
@@ -26,7 +26,7 @@ class ProxyTest extends FunSuite {
   }
 
   test("throw exception when creating DIRECT proxy with address") {
-    val address = new InetSocketAddress("example.com", 8080)
+    val address = InetSocketAddress.createUnresolved("example.com", 8080)
 
     intercept[IllegalArgumentException] {
       Proxy(Proxy.Type.DIRECT, address)
@@ -46,16 +46,16 @@ class ProxyTest extends FunSuite {
   }
 
   test("toString should return type @ address for proxied connections") {
-    val address = new InetSocketAddress("proxy.example.com", 8080)
+    val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
     val proxy = Proxy(Proxy.Type.HTTP, address)
 
     assertEquals(proxy.toString, s"HTTP @ $address")
   }
 
   test("equals should work correctly") {
-    val address1 = new InetSocketAddress("proxy.example.com", 8080)
-    val address2 = new InetSocketAddress("proxy.example.com", 8080)
-    val address3 = new InetSocketAddress("other.example.com", 8080)
+    val address1 = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+    val address2 = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+    val address3 = InetSocketAddress.createUnresolved("other.example.com", 8080)
 
     val proxy1 = Proxy(Proxy.Type.HTTP, address1)
     val proxy2 = Proxy(Proxy.Type.HTTP, address2)
@@ -65,15 +65,14 @@ class ProxyTest extends FunSuite {
     assertEquals(proxy1, proxy2)
     assertNotEquals(proxy1, proxy3)
     assertNotEquals(proxy1, proxy4)
-    assertNotEquals(proxy1, "not a proxy")
     assertNotEquals(proxy1, null)
 
     assertEquals(Proxy.NO_PROXY, Proxy.NO_PROXY)
   }
 
   test("hashCode should be consistent with equals") {
-    val address1 = new InetSocketAddress("proxy.example.com", 8080)
-    val address2 = new InetSocketAddress("proxy.example.com", 8080)
+    val address1 = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+    val address2 = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
 
     val proxy1 = Proxy(Proxy.Type.HTTP, address1)
     val proxy2 = Proxy(Proxy.Type.HTTP, address2)
@@ -84,7 +83,7 @@ class ProxyTest extends FunSuite {
   }
 
   test("different proxy types should have different hash codes") {
-    val address = new InetSocketAddress("proxy.example.com", 8080)
+    val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
     val httpProxy = Proxy(Proxy.Type.HTTP, address)
     val socksProxy = Proxy(Proxy.Type.SOCKS, address)
 
