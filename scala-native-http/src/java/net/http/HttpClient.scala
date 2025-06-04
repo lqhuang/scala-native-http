@@ -1,7 +1,8 @@
 package java.net.http
 
 import java.io.{IOException, UncheckedIOException}
-import java.net.{Authenticator, CookieHandler, InetAddress, InetSocketAddress, Proxy, ProxySelector}
+import java.net.{Authenticator, CookieHandler, InetAddress, InetSocketAddress}
+import java.net.{Proxy, ProxySelector}
 import java.time.Duration
 import java.util.{Objects, Optional}
 import java.util.concurrent.{CompletableFuture, Executor}
@@ -73,11 +74,9 @@ abstract class HttpClient extends AutoCloseable {
     }
     if (interrupted) Thread.currentThread().interrupt()
   }
-
 }
 
 object HttpClient {
-
   enum Version extends Enum[Version] {
     case HTTP_1_1, HTTP_2
   }

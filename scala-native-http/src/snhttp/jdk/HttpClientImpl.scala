@@ -1,7 +1,8 @@
 package snhttp.jdk
 
 import java.io.{IOException, UncheckedIOException}
-import java.net.{Authenticator, CookieHandler, InetAddress, InetSocketAddress, Proxy, ProxySelector}
+import java.net.{Authenticator, CookieHandler, InetAddress, InetSocketAddress}
+import java.net.{Proxy, ProxySelector}
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -132,13 +133,13 @@ class HttpClientImpl extends HttpClient {
       pushPromiseHandler: PushPromiseHandler[T],
   ): CompletableFuture[HttpResponse[T]] = ???
 
-  override def shutdown(): Unit = ???
+  def shutdown(): Unit = ???
 
-  override def awaitTermination(duration: Duration): Boolean = ???
+  def awaitTermination(duration: Duration): Boolean = ???
 
-  override def isTerminated(): Boolean = ???
+  def isTerminated(): Boolean = ???
 
-  override def shutdownNow(): Unit = ???
+  def shutdownNow(): Unit = ???
 
   override def newWebSocketBuilder(): Builder = ???
 
