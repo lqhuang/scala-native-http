@@ -14,7 +14,7 @@ import java.util.concurrent.{CompletableFuture, CompletionStage, ConcurrentMap}
 import java.util.concurrent.Flow.{Subscriber, Publisher, Subscription}
 import java.util.function.{Function, Consumer}
 import java.util.stream.Stream
-import javax.net.ssl.SSLSession
+// import javax.net.ssl.SSLSession
 
 import snhttp.internal.Utils.charsetFrom
 import snhttp.jdk.ResponseSubscribers
@@ -39,7 +39,7 @@ trait HttpResponse[T] {
 
   def body(): T
 
-  def sslSession(): Optional[SSLSession]
+  // def sslSession(): Optional[SSLSession]
 
   def uri(): URI
 

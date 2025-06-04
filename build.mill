@@ -55,6 +55,9 @@ trait ScalaNtiveHttpModule
   )
 
   def ivyDeps = Agg(
+    ivy"io.github.cquiroz::scala-java-locales::1.5.4",
+    ivy"io.github.cquiroz::scala-java-time::2.6.0",
+    ivy"com.github.lolgab::scala-native-crypto::0.2.0",
     ivy"com.github.lolgab::native-loop-core::0.3.0",
   )
 

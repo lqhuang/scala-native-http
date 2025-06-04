@@ -1,12 +1,13 @@
 package java.net.http
 
 import java.io.{IOException, UncheckedIOException}
-import java.net.{Authenticator, CookieHandler, InetAddress, InetSocketAddress}
-import java.net.{Proxy, ProxySelector}
+import java.net.{InetAddress, InetSocketAddress}
+//import java.net.{CookieHandler, Authenticator} // not implement Scala Native yet
+import java.net.{Proxy, ProxySelector} // not implement in Scala Native yet
 import java.time.Duration
-import java.util.{Objects, Optional}
+import java.util.Optional
 import java.util.concurrent.{CompletableFuture, Executor}
-import javax.net.ssl.{SSLContext, SSLParameters}
+// import javax.net.ssl.{SSLContext, SSLParameters}
 
 import snhttp.jdk.HttpClientBuilderImpl
 
@@ -14,7 +15,7 @@ import snhttp.jdk.HttpClientBuilderImpl
 abstract class HttpClient extends AutoCloseable {
   import HttpClient.{Redirect, Version}
 
-  def cookieHandler(): Optional[CookieHandler]
+  // def cookieHandler(): Optional[CookieHandler]
 
   def connectTimeout(): Optional[Duration]
 
@@ -22,11 +23,11 @@ abstract class HttpClient extends AutoCloseable {
 
   def proxy(): Optional[ProxySelector]
 
-  def sslContext(): SSLContext
+  // def sslContext(): SSLContext
 
-  def sslParameters(): SSLParameters
+  // def sslParameters(): SSLParameters
 
-  def authenticator(): Optional[Authenticator]
+  // def authenticator(): Optional[Authenticator]
 
   def version(): Version
 
@@ -89,13 +90,13 @@ object HttpClient {
   trait Builder {
     final val NO_PROXY: ProxySelector = ProxySelector.of(null)
 
-    def cookieHandler(cookieHandler: CookieHandler): Builder
+    // def cookieHandler(cookieHandler: CookieHandler): Builder
 
     def connectTimeout(duration: Duration): Builder
 
-    def sslContext(sslContext: SSLContext): Builder
+    // def sslContext(sslContext: SSLContext): Builder
 
-    def sslParameters(sslParameters: SSLParameters): Builder
+    // def sslParameters(sslParameters: SSLParameters): Builder
 
     def executor(executor: Executor): Builder
 
@@ -107,7 +108,7 @@ object HttpClient {
 
     def proxy(proxySelector: ProxySelector): Builder
 
-    def authenticator(authenticator: Authenticator): Builder
+    // def authenticator(authenticator: Authenticator): Builder
 
     def localAddress(localAddr: InetAddress): Builder
 

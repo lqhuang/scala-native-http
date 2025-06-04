@@ -1,38 +1,39 @@
 package snhttp.jdk
 
 import java.io.{IOException, UncheckedIOException}
-import java.net.{Authenticator, CookieHandler, InetAddress, InetSocketAddress}
+import java.net.{InetAddress, InetSocketAddress}
+// import java.net.{Authenticator, CookieHandler} // not implemented in Scala Native yet
 import java.net.{Proxy, ProxySelector}
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.http.HttpClient.{Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
+import java.net.http.WebSocket.Builder
 import java.time.Duration
 import java.util.{List, Optional}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, Executor}
-import javax.net.ssl.{SSLContext, SSLParameters}
-import java.net.http.WebSocket.Builder
+// import javax.net.ssl.{SSLContext, SSLParameters}
 
 class HttpClientBuilderImpl extends HttpClient.Builder {
-  private var cookieHandler: Option[CookieHandler] = None
+  // private var cookieHandler: Option[CookieHandler] = None
   private var connectTimeout: Option[Duration] = None
   private var followRedirects: Redirect = Redirect.NORMAL
   private var proxy: Option[ProxySelector] = None
-  private var authenticator: Option[Authenticator] = None
+  // private var authenticator: Option[Authenticator] = None
   private var version: Version = Version.HTTP_1_1
   private var executor: Option[Executor] = None
-  private var sslContext: Option[SSLContext] = None
-  private var sslParams: Option[SSLParameters] = None
+  // private var sslContext: Option[SSLContext] = None
+  // private var sslParams: Option[SSLParameters] = None
   private var priority: Int = -1
   private var localAddr: Option[InetAddress] = None
 
-  def cookieHandler(cookieHandler: CookieHandler): HttpClient.Builder = {
-    requireNonNull(cookieHandler)
-    this.cookieHandler = Some(cookieHandler)
-    this
-  }
+  // def cookieHandler(cookieHandler: CookieHandler): HttpClient.Builder = {
+  //   requireNonNull(cookieHandler)
+  //   this.cookieHandler = Some(cookieHandler)
+  //   this
+  // }
 
   def connectTimeout(duration: Duration): HttpClient.Builder = {
     requireNonNull(duration)
@@ -41,17 +42,17 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     this
   }
 
-  def sslContext(sslContext: SSLContext): HttpClient.Builder = {
-    requireNonNull(sslContext)
-    this.sslContext = Some(sslContext)
-    this
-  }
+  // def sslContext(sslContext: SSLContext): HttpClient.Builder = {
+  //   requireNonNull(sslContext)
+  //   this.sslContext = Some(sslContext)
+  //   this
+  // }
 
-  def sslParameters(sslParams: SSLParameters): HttpClient.Builder = {
-    requireNonNull(sslParams)
-    this.sslParams = Some(sslParams)
-    this
-  }
+  // def sslParameters(sslParams: SSLParameters): HttpClient.Builder = {
+  //   requireNonNull(sslParams)
+  //   this.sslParams = Some(sslParams)
+  //   this
+  // }
 
   def executor(executor: Executor): HttpClient.Builder = {
     requireNonNull(executor)
@@ -83,13 +84,13 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     this
   }
 
-  def authenticator(authenticator: Authenticator): HttpClient.Builder = {
-    requireNonNull(authenticator)
-    this.authenticator = Some(authenticator)
-    this
-  }
+  // def authenticator(authenticator: Authenticator): HttpClient.Builder = {
+  //   requireNonNull(authenticator)
+  //   this.authenticator = Some(authenticator)
+  //   this
+  // }
 
-  def localAddress(localAddr: InetAddress): HttpClient.Builder = {
+  override def localAddress(localAddr: InetAddress): HttpClient.Builder = {
     requireNonNull(localAddr)
     this.localAddr = Some(localAddr)
     this
@@ -101,7 +102,7 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
 
 class HttpClientImpl extends HttpClient {
 
-  override def cookieHandler(): Optional[CookieHandler] = ???
+  // override def cookieHandler(): Optional[CookieHandler] = ???
 
   override def connectTimeout(): Optional[Duration] = ???
 
@@ -109,11 +110,11 @@ class HttpClientImpl extends HttpClient {
 
   override def proxy(): Optional[ProxySelector] = ???
 
-  override def sslContext(): SSLContext = ???
+  // override def sslContext(): SSLContext = ???
 
-  override def sslParameters(): SSLParameters = ???
+  // override def sslParameters(): SSLParameters = ???
 
-  override def authenticator(): Optional[Authenticator] = ???
+  // override def authenticator(): Optional[Authenticator] = ???
 
   override def version(): Version = ???
 
@@ -133,13 +134,13 @@ class HttpClientImpl extends HttpClient {
       pushPromiseHandler: PushPromiseHandler[T],
   ): CompletableFuture[HttpResponse[T]] = ???
 
-  def shutdown(): Unit = ???
+  override def shutdown(): Unit = ???
 
-  def awaitTermination(duration: Duration): Boolean = ???
+  override def awaitTermination(duration: Duration): Boolean = ???
 
-  def isTerminated(): Boolean = ???
+  override def isTerminated(): Boolean = ???
 
-  def shutdownNow(): Unit = ???
+  override def shutdownNow(): Unit = ???
 
   override def newWebSocketBuilder(): Builder = ???
 
