@@ -14,3 +14,16 @@ Still working in progress, any kind of help is welcome and appreciated.
 - `WebSocket`
 
 The development of first three types is the milestone in current stage.
+
+## Development
+
+This project is developed in Scala 3 and Scala Native 0.5.7 with mill build tool.
+
+## Notes
+
+This package also implement two missing required classes in Scala Native
+
+- `java.net.Proxy`
+- `java.net.ProxySelector`
+
+We may port them to Scala Native core in the future.

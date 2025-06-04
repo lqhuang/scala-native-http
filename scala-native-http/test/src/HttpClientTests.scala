@@ -1,49 +1,62 @@
-package httpclient
+import java.net.URI
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
 
-import snhttp._
-import utest._
-import scala.concurrent.ExecutionContext.Implicits.global
+// import scala.concurrent.ExecutionContext.Implicits.global
 
-object HttpClientTests extends TestSuite {
-  val tests = Tests {
-    test("get request") {
-      Request().method(Method.GET).url("http://httpbin.org/get").future().map { response =>
-        response.code ==> 200
-        assert(response.body.contains(""""url": "http://httpbin.org/get""""))
-      }
-    }
-    test("header") {
-      Request().url("http://httpbin.org/get").header("Foo: bar").future().map { response =>
-        assert(response.body.contains(""""Foo": "bar""""))
-      }
-    }
-    test("post request") {
-      Request()
-        .method(Method.POST)
-        .url("http://httpbin.org/post")
-        .future()
-        .map { response =>
-          response.code ==> 200
-          assert(response.body.contains(""""url": "http://httpbin.org/post""""))
-        }
-    }
-    test("post body") {
-      val text = "Some text to send in the body"
-      Request()
-        .method(Method.POST)
-        .url("http://httpbin.org/post")
-        .header("Content-Type: text/plain")
-        .body(text)
-        .future()
-        .map { response =>
-          assert(response.body.contains(s""""data": "$text""""))
-        }
-    }
-    test("put request") {
-      Request().method(Method.PUT).url("http://httpbin.org/put").future().map { response =>
-        response.code ==> 200
-        assert(response.body.contains(""""url": "http://httpbin.org/put""""))
-      }
-    }
+import munit.FunSuite
+
+object HttpRequestTests extends FunSuite {
+
+  test("newBuilder / constructor") {
+    val request = HttpRequest.newBuilder(new URI("http://httpbin.org/get")).GET().build()
+
+    assertEquals(request.method(), "GET")
+    assertEquals(request.uri(), new URI("http://httpbin.org/get"))
+    assertEquals(request.headers().map().size(), 0)
+  }
+
+  test("newBuilder / uri") {
+    val request = HttpRequest.newBuilder().uri(new URI("http://httpbin.org/get")).GET().build()
+  }
+
+  test("newBuilder / method") {
+    val request = HttpRequest
+      .newBuilder()
+      .uri(new URI("http://httpbin.org/get"))
+      .method("GET", BodyPublishers.noBody())
+      .build()
+
+  }
+
+  test("newBuilder / header") {
+    val request =
+      HttpRequest.newBuilder(new URI("http://httpbin.org/get")).header("Foo", "bar").build()
+  }
+
+  test("newBuilder / POST request") {
+    val request = HttpRequest
+      .newBuilder()
+      .uri(new URI("http://httpbin.org/post"))
+      .POST(BodyPublishers.ofString("hello"))
+      .build()
+  }
+
+  test("newBuilder / POST with header") {
+    val text = "Some text to send in the body"
+    HttpRequest
+      .newBuilder()
+      .uri(new URI("http://httpbin.org/post"))
+      .POST(BodyPublishers.ofString(text))
+      .header("Content-Type", "text/plain")
+      .build()
+  }
+
+  test("newBuilder / PUT request") {
+    val request =
+      HttpRequest
+        .newBuilder()
+        .uri(new URI("http://httpbin.org/put"))
+        .build()
   }
 }
