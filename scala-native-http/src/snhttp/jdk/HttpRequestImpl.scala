@@ -4,6 +4,8 @@ import java.net.URI
 import java.time.Duration
 import java.util.function.BiPredicate
 import java.util.{Optional, Locale}
+import java.util.List as JList
+import java.util.Map as JMap
 import java.util.Objects.requireNonNull
 import java.io.Closeable
 import java.net.http.HttpClient
@@ -12,18 +14,16 @@ import java.net.http.HttpHeaders
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.{Builder, BodyPublisher, BodyPublishers}
 
-import scala.collection.mutable.Map
-
 import snhttp.constants.Method
 
 class HttpRequestBuilderImpl(
-    private var uri: Option[URI] = None,
-    private var expectContinue: Boolean = false,
-    private var version: Version = Version.HTTP_1_1,
-    private var timeout: Option[Duration] = None,
-    private var method: String = Method.GET.value,
-    private var bodyPublisher: BodyPublisher = BodyPublishers.noBody(),
-    private val headerMap: Map[String, List[String]] = Map.empty,
+    var uri: Option[URI] = None,
+    var expectContinue: Boolean = false,
+    var version: Version = Version.HTTP_1_1,
+    var timeout: Option[Duration] = None,
+    var method: String = Method.GET.value,
+    var bodyPublisher: BodyPublisher = BodyPublishers.noBody(),
+    val headerMap: JMap[String, JList[String]] = JMap.of(),
 ) extends HttpRequest.Builder {
 
   def uri(uri: URI): Builder = {
@@ -62,8 +62,11 @@ class HttpRequestBuilderImpl(
   /// If the header already exists, the value is appended to the existing values.
   def header(name: String, value: String): Builder = {
     val (key, valueTrimmed) = checkHeader(name, value)
-    val values = headerMap.getOrElse(key, Nil)
-    headerMap += (key -> (values :+ valueTrimmed))
+
+    if headerMap.containsKey(key)
+    then headerMap.get(key).add(valueTrimmed)
+    else headerMap.put(key, JList.of(valueTrimmed))
+
     this
   }
 
@@ -71,7 +74,7 @@ class HttpRequestBuilderImpl(
   /// If the header already exists, the original value is replaced.
   def setHeader(name: String, value: String): Builder = {
     val (key, valueTrimmed) = checkHeader(name, value)
-    headerMap(key) = valueTrimmed :: Nil
+    this.headerMap.replace(key, JList.of(valueTrimmed))
     this
   }
 
@@ -129,19 +132,21 @@ class HttpRequestBuilderImpl(
 
   def build(): HttpRequest = {
     require(!this.uri.isEmpty, "URI must be set")
-
-    new HttpRequestImpl(
-      // uri,
-      // method,
-      // headers,
-      // bodyPublisher,
-      // expectContinue,
-      // version,
-      // timeout,
-    )
+    HttpRequestImpl(this)
   }
 
   def copy(): Builder =
+    /// deep copy for headerMap
+    val newHeaderMap: JMap[String, JList[String]] = JMap.of()
+    val entries = this.headerMap
+      .entrySet()
+      .stream()
+      .forEach { entry =>
+        val key = entry.getKey
+        val values = entry.getValue
+        newHeaderMap.put(key, JList.copyOf(values))
+      }
+
     return new HttpRequestBuilderImpl(
       uri = this.uri,
       expectContinue = this.expectContinue,
@@ -149,27 +154,35 @@ class HttpRequestBuilderImpl(
       timeout = this.timeout,
       method = this.method,
       bodyPublisher = this.bodyPublisher,
-      headerMap = this.headerMap.clone(),
+      headerMap = newHeaderMap,
     )
 }
 
-class HttpRequestImpl extends HttpRequest {
+case class HttpRequestImpl(private val builder: HttpRequestBuilderImpl) extends HttpRequest {
 
-  override def close(): Unit = ???
+  def close(): Unit = ()
 
-  override def bodyPublisher(): Optional[BodyPublisher] = ???
+  override def bodyPublisher(): Optional[BodyPublisher] =
+    Optional.ofNullable(builder.bodyPublisher)
 
-  override def method(): String = ???
+  override def method(): String = builder.method
 
-  override def timeout(): Optional[Duration] = ???
+  override def timeout(): Optional[Duration] =
+    builder.timeout match {
+      case Some(duration) => Optional.ofNullable(duration)
+      case None           => Optional.empty()
+    }
 
-  override def expectContinue(): Boolean = ???
+  override def expectContinue(): Boolean = builder.expectContinue
 
-  override def uri(): URI = ???
+  override def uri(): URI =
+    builder.uri match {
+      case Some(uri) => uri
+      case None => throw new IllegalStateException("Unreachable. URI must be set in the builder")
+    }
 
-  override def version(): Optional[Version] = ???
+  override def version(): Optional[Version] = Optional.ofNullable(builder.version)
 
-  override def headers(): HttpHeaders = ???
-
+  override def headers(): HttpHeaders =
+    HttpHeaders.of(builder.headerMap, (name: String, value: String) => true)
 }
-object HttpRequestImpl {}

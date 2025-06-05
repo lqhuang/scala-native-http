@@ -15,6 +15,9 @@ compile:
 test:
 	./mill ${TASK_TARGET}.test
 
+clean:
+	./mill clean
+
 debug-native:
 	./mill show ${TASK_TARGET}.bridgeFullClassPath
 	./mill show ${TASK_TARGET}.runClasspath
