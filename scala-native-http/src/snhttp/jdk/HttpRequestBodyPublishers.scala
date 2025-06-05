@@ -14,11 +14,11 @@ import java.util.stream.Stream
 import java.net.http.HttpRequest.BodyPublisher
 
 case class NoBodyPublisher() extends BodyPublisher {
-  val delegate: Flow.Publisher[ByteBuffer] = ???
+  val delegate: Flow.Publisher[ByteBuffer] = new PullPublisher(Iterable(ByteBuffer.allocate(0)))
 
   def contentLength() = 0
 
-  def subscribe(subscriber: Flow.Subscriber[? <: ByteBuffer]) =
+  def subscribe(subscriber: Flow.Subscriber[? >: ByteBuffer]) =
     delegate.subscribe(subscriber)
 }
 

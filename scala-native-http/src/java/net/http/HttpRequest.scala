@@ -12,6 +12,7 @@ import java.util.concurrent.Flow
 import java.util.function.{BiConsumer, BiPredicate, Consumer, Supplier}
 import java.util.stream.Stream
 
+import snhttp.jdk.HttpRequestBodyPublishers
 import snhttp.jdk.HttpRequestBuilderImpl
 
 trait HttpRequest extends Closeable {
@@ -46,8 +47,6 @@ trait HttpRequest extends Closeable {
 }
 
 object HttpRequest {
-  import snhttp.jdk.BodyPublishers
-
   def newBuilder(): Builder = new HttpRequestBuilderImpl()
 
   def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(Some(uri))
@@ -115,26 +114,26 @@ object HttpRequest {
     def contentLength(): Long
   }
 
-  trait BodyPublishers {
-    def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher
+  object BodyPublishers {
+    def noBody(): BodyPublisher = HttpRequestBodyPublishers.noBody()
 
-    def fromPublisher(
-        publisher: Flow.Publisher[? <: ByteBuffer],
-        contentLength: Long,
-    ): BodyPublisher
+    // def concat(publishers: BodyPublisher*): BodyPublisher
 
-    def ofInputStream(streamSupplier: Supplier[? <: InputStream]): BodyPublisher
+    // def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher
 
-    def ofByteArray(buf: Array[Byte]): BodyPublisher
+    // def fromPublisher(
+    //     publisher: Flow.Publisher[? <: ByteBuffer],
+    //     contentLength: Long,
+    // ): BodyPublisher
 
-    def ofByteArray(buf: Array[Byte], offset: Int, length: Int): BodyPublisher
+    // def ofInputStream(streamSupplier: Supplier[? <: InputStream]): BodyPublisher
 
-    def ofFile(path: Path): BodyPublisher
+    // def ofByteArray(buf: Array[Byte]): BodyPublisher
 
-    def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher
+    // def ofByteArray(buf: Array[Byte], offset: Int, length: Int): BodyPublisher
 
-    def noBody(): BodyPublisher
+    // def ofFile(path: Path): BodyPublisher
 
-    def concat(publishers: BodyPublisher*): BodyPublisher
+    // def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher
   }
 }
