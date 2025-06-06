@@ -77,11 +77,12 @@ object HttpHeaders {
         }
         .filter { s =>
           val r = filter.test(headerKey, s)
-          println(s"filter header: ${headerKey} -> ${s}, result: ${r}")
+          // println(s"filter header: ${headerKey} -> ${s}, result: ${r}")
           r
         }
         .toList()
-      println(s"headerValues = ${headerValues.size()}")
+      // TODO: bug? even if test returns false, the headerValues will not be empty
+      // println(s"headerValues = ${headerValues.size()}")
 
       if (!headerValues.isEmpty) newHeaderMap.put(headerKey, headerValues)
     }

@@ -1,19 +1,16 @@
 package snhttp.jdk
 
+import java.io.Closeable
 import java.net.URI
+import java.net.http.{HttpClient, HttpHeaders, HttpRequest}
+import java.net.http.HttpClient.Version
+import java.net.http.HttpRequest.{Builder, BodyPublisher, BodyPublishers}
 import java.time.Duration
-import java.util.function.BiPredicate
-import java.util.{Optional, Locale}
 import java.util.List as JList
 import java.util.Map as JMap
+import java.util.{ArrayList, Locale, Optional, TreeMap}
 import java.util.Objects.requireNonNull
-import java.io.Closeable
-import java.net.http.HttpClient
-import java.net.http.HttpClient.Version
-import java.net.http.HttpHeaders
-import java.net.http.HttpRequest
-import java.net.http.HttpRequest.{Builder, BodyPublisher, BodyPublishers}
-import java.util.TreeMap
+import java.util.function.BiPredicate
 
 import snhttp.jdk.PropertyUtils
 import snhttp.Method
@@ -67,7 +64,7 @@ class HttpRequestBuilderImpl(
 
     if headerMap.containsKey(key)
     then headerMap.get(key).add(valueTrimmed)
-    else headerMap.put(key, JList.of(valueTrimmed))
+    else headerMap.put(key, new ArrayList(JList.of(valueTrimmed)))
 
     this
   }
@@ -76,9 +73,7 @@ class HttpRequestBuilderImpl(
   /// If the header already exists, the original value is replaced.
   def setHeader(name: String, value: String): Builder = {
     val (key, valueTrimmed) = checkHeader(name, value)
-    // if (headerMap.containsKey(key))
-    //   headerMap.remove(key)
-    headerMap.put(key, JList.of(valueTrimmed))
+    headerMap.put(key, new ArrayList(JList.of(valueTrimmed)))
     this
   }
 
@@ -153,7 +148,7 @@ class HttpRequestBuilderImpl(
       .forEach { entry =>
         val key = entry.getKey
         val values = entry.getValue
-        newHeaderMap.put(key, JList.copyOf(values))
+        newHeaderMap.put(key, new ArrayList(JList.copyOf(values)))
       }
     newHeaderMap
 
