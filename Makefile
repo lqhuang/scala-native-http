@@ -1,20 +1,25 @@
 TASK_TARGET := scala-native-http[]
 
+.PHONY: bloop
 bloop:
 	./mill bloop.install
 
+.PHONY: fmt
 fmt:
 	./mill format
 
 fix-check:
 	./mill ${TASK_TARGET}.fix --check
 
+.PHONY: compile
 compile:
 	./mill ${TASK_TARGET}.compile
 
+.PHONY: test
 test:
 	./mill ${TASK_TARGET}.test
 
+.PHONY: clean
 clean:
 	./mill clean
 

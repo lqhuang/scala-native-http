@@ -13,17 +13,19 @@ import java.net.http.HttpClient.Version
 import java.net.http.HttpHeaders
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.{Builder, BodyPublisher, BodyPublishers}
+import java.util.TreeMap
 
-import snhttp.constants.Method
+import snhttp.jdk.PropertyUtils
+import snhttp.Method
 
 class HttpRequestBuilderImpl(
     var uri: Option[URI] = None,
     var expectContinue: Boolean = false,
-    var version: Version = Version.HTTP_1_1,
-    var timeout: Option[Duration] = None,
     var method: String = Method.GET.value,
-    var bodyPublisher: BodyPublisher = BodyPublishers.noBody(),
-    val headerMap: JMap[String, JList[String]] = JMap.of(),
+    var version: Option[Version] = None,
+    var timeout: Option[Duration] = None,
+    var bodyPublisher: Option[BodyPublisher] = None,
+    val headerMap: TreeMap[String, JList[String]] = new TreeMap(String.CASE_INSENSITIVE_ORDER),
 ) extends HttpRequest.Builder {
 
   def uri(uri: URI): Builder = {
@@ -45,13 +47,13 @@ class HttpRequestBuilderImpl(
 
   def version(version: HttpClient.Version): Builder = {
     requireNonNull(version)
-    this.version = version
+    this.version = Some(version)
     this
   }
 
   private def checkHeader(name: String, value: String): (String, String) =
-    requireNonNull(name)
-    requireNonNull(value)
+    requireNonNull(name, "Header key can not be null")
+    requireNonNull(value, "Header value can not be null")
     val key = name.trim()
     require(!key.isEmpty, s"invalid header name ${name}")
     val valueTrimmed = value.trim()
@@ -74,7 +76,9 @@ class HttpRequestBuilderImpl(
   /// If the header already exists, the original value is replaced.
   def setHeader(name: String, value: String): Builder = {
     val (key, valueTrimmed) = checkHeader(name, value)
-    this.headerMap.replace(key, JList.of(valueTrimmed))
+    // if (headerMap.containsKey(key))
+    //   headerMap.remove(key)
+    headerMap.put(key, JList.of(valueTrimmed))
     this
   }
 
@@ -94,39 +98,45 @@ class HttpRequestBuilderImpl(
   def method(method: String, bodyPublisher: BodyPublisher): Builder = {
     requireNonNull(method)
     requireNonNull(bodyPublisher)
-    require(!method.isEmpty, "Method must not be null or empty")
-    this.method = method
-    this.bodyPublisher = bodyPublisher
+
+    Method(method.trim().toUpperCase()) match {
+      case None =>
+        throw new IllegalArgumentException(s"Invalid HTTP method: ${method}")
+      case Some(m) =>
+        this.method = m.value
+        this.bodyPublisher = Some(bodyPublisher)
+    }
+
     this
   }
 
   def GET(): Builder = {
     this.method = Method.GET.value
-    this.bodyPublisher = BodyPublishers.noBody()
+    this.bodyPublisher = None
     this
   }
 
   def POST(bodyPublisher: BodyPublisher): Builder = {
     this.method = Method.POST.value
-    this.bodyPublisher = bodyPublisher
+    this.bodyPublisher = Some(bodyPublisher)
     this
   }
 
   def PUT(bodyPublisher: BodyPublisher): Builder = {
     this.method = Method.PUT.value
-    this.bodyPublisher = bodyPublisher
+    this.bodyPublisher = Some(bodyPublisher)
     this
   }
 
   def DELETE(): Builder = {
     this.method = Method.DELETE.value
-    this.bodyPublisher = BodyPublishers.noBody()
+    this.bodyPublisher = None
     this
   }
 
   def HEAD(): Builder = {
     this.method = Method.HEAD.value
-    this.bodyPublisher = BodyPublishers.noBody()
+    this.bodyPublisher = None
     this
   }
 
@@ -135,26 +145,27 @@ class HttpRequestBuilderImpl(
     HttpRequestImpl(this)
   }
 
-  def copy(): Builder =
+  private def deepcloneHeaderMap(): TreeMap[String, JList[String]] =
     /// deep copy for headerMap
-    val newHeaderMap: JMap[String, JList[String]] = JMap.of()
+    val newHeaderMap: TreeMap[String, JList[String]] = new TreeMap(String.CASE_INSENSITIVE_ORDER)
     val entries = this.headerMap
       .entrySet()
-      .stream()
       .forEach { entry =>
         val key = entry.getKey
         val values = entry.getValue
         newHeaderMap.put(key, JList.copyOf(values))
       }
+    newHeaderMap
 
-    return new HttpRequestBuilderImpl(
+  def copy(): Builder =
+    new HttpRequestBuilderImpl(
       uri = this.uri,
       expectContinue = this.expectContinue,
       version = this.version,
-      timeout = this.timeout,
       method = this.method,
+      timeout = this.timeout,
       bodyPublisher = this.bodyPublisher,
-      headerMap = newHeaderMap,
+      headerMap = deepcloneHeaderMap(),
     )
 }
 
@@ -163,7 +174,10 @@ case class HttpRequestImpl(private val builder: HttpRequestBuilderImpl) extends 
   def close(): Unit = ()
 
   override def bodyPublisher(): Optional[BodyPublisher] =
-    Optional.ofNullable(builder.bodyPublisher)
+    builder.bodyPublisher match {
+      case Some(publisher) => Optional.ofNullable(publisher)
+      case None            => Optional.empty()
+    }
 
   override def method(): String = builder.method
 
@@ -181,8 +195,12 @@ case class HttpRequestImpl(private val builder: HttpRequestBuilderImpl) extends 
       case None => throw new IllegalStateException("Unreachable. URI must be set in the builder")
     }
 
-  override def version(): Optional[Version] = Optional.ofNullable(builder.version)
+  override def version(): Optional[Version] =
+    builder.version match {
+      case Some(version) => Optional.ofNullable(version)
+      case None          => Optional.empty()
+    }
 
   override def headers(): HttpHeaders =
-    HttpHeaders.of(builder.headerMap, (name: String, value: String) => true)
+    HttpHeaders.of(builder.headerMap, PropertyUtils.allowedHeadersPredicate)
 }

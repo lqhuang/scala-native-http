@@ -21,9 +21,36 @@ This project is developed in Scala 3 and Scala Native 0.5.7 with mill build tool
 
 ## Notes
 
-This package also implement two missing required classes in Scala Native
+This package also implement missing required classes in Scala Native
 
 - `java.net.Proxy`
 - `java.net.ProxySelector`
 
 We may port them to Scala Native core in the future.
+
+## Known Issues
+
+Not all HTTP Client properties listed in [Java Networking Docs](https://docs.oracle.com/en/java/javase/24/core/java-networking.html#GUID-86B96A42-74FE-4E7D-8E60-D64A03862083) are supported, but we may try to implement them in the future. Currently supported properties are:
+
+- [ ] `jdk.httpclient.allowRestrictedHeaders`
+- [ ] `jdk.httpclient.auth.retrylimit`
+- [ ] `jdk.httpclient.bufsize`
+- [ ] `jdk.httpclient.connectionPoolSize`
+- [ ] `jdk.httpclient.connectionWindowSize`
+- [ ] `jdk.httpclient.disableRetryConnect`
+- [ ] `jdk.httpclient.enableAllMethodRetry`
+- [ ] `jdk.httpclient.enablepush`
+- [ ] `jdk.httpclient.hpack.maxheadertablesize`
+- [ ] `jdk.httpclient.HttpClient.log`
+- [ ] `jdk.httpclient.keepalive.timeout`
+- [ ] `jdk.httpclient.keepalive.timeout.h2`
+- [ ] `jdk.httpclient.maxframesize`
+- [ ] `jdk.httpclient.maxLiteralWithIndexing`
+- [ ] `jdk.httpclient.maxNonFinalResponses`
+- [ ] `jdk.httpclient.maxstreams`
+- [ ] `jdk.httpclient.receiveBufferSize`
+- [ ] `jdk.httpclient.redirects.retrylimit`
+- [ ] `jdk.httpclient.sendBufferSize`
+- [ ] `jdk.httpclient.websocket.writeBufferSize`
+- [ ] `jdk.httpclient.windowsize`
+- [ ] `jdk.internal.httpclient.disableHostnameVerification`

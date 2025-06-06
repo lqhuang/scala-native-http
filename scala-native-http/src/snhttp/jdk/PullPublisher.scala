@@ -50,9 +50,10 @@ class PullPublisher[T] private (
         return
 
       var continue = true
-      while continue && decrementDemand() && !cancelled do
+      while continue && decDemand() && !cancelled do
         try
-          if iter == null || !iter.hasNext then continue = false
+          if iter == null || !iter.hasNext
+          then continue = false
           else
             val next = iter.next()
             subscriber.onNext(next)
@@ -63,7 +64,6 @@ class PullPublisher[T] private (
             subscriber.onError(t1)
             return
         }
-      end while
 
       if iter != null && !iter.hasNext && !cancelled then
         completed = true
@@ -71,13 +71,14 @@ class PullPublisher[T] private (
         subscriber.onComplete()
     }
 
-    private def decrementDemand(): Boolean =
+    private def decDemand(): Boolean =
       demand.updateAndGet(current => if current > 0 then current - 1 else 0) > 0
 
     override def request(n: Long): Unit = {
       if cancelled then return
 
-      if n <= 0 then error = new IllegalArgumentException(s"non-positive subscription request: $n")
+      if n <= 0
+      then error = new IllegalArgumentException(s"non-positive subscription request: $n")
       else demand.addAndGet(n)
 
       pullScheduler.runOrSchedule()

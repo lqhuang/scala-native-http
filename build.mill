@@ -70,7 +70,8 @@ trait ScalaNtiveHttpModule
     "-I/usr/include/x86_64-linux-gnu/curl",
     // "-I/opt/homebrew/opt/curl/include" on macOS
   )
-  def nativeLinkingOptions = Seq("-L" + millSourcePath.toString + "/target")
+
+  // def nativeLinkingOptions = Seq("-L" + millSourcePath.toString + "/target")
 
   // // Set nativeWorkdir directory to `newDir`
   // def nativeWorkdir = Task { Task.dest  }

@@ -1,4 +1,4 @@
-package snhttp.constants
+package snhttp
 
 enum Method(val value: String) {
   case GET extends Method("GET")

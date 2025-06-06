@@ -10,6 +10,8 @@ import scala.collection.mutable.ListBuffer
 
 class PullPublisherTest extends munit.FunSuite {
 
+  test("placeholder for PullPublisher tests") {}
+
   // test("publish empty iterable should complete immediately") {
   //   val publisher = PullPublisher(List.empty[String])
   //   val subscriber = new TestSubscriber[String]()
