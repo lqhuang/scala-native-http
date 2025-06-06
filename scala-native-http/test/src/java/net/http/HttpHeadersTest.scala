@@ -1,5 +1,7 @@
 import java.net.http.HttpHeaders
-import java.util.{List as JList, Map as JMap, TreeMap}
+import java.util.List as JList
+import java.util.Map as JMap
+import java.util.TreeMap
 import java.util.function.BiPredicate
 
 class HttpHeadersTest extends munit.FunSuite {
@@ -138,14 +140,17 @@ class HttpHeadersTest extends munit.FunSuite {
     assertEquals(values.get(0), "application/json")
   }
 
-  test("HttpHeaders.of headers can not construct when all values are filtered out") {
-    val headerMap = JMap.of("Accept", JList.of("text/html"))
+  test("HttpHeaders.of headers can construct when all values are filtered out") {
+    val headerMap =
+      JMap.of(
+        "Accept",
+        JList.of("text/html"),
+        "Content-Type",
+        JList.of("application/xml", "text/plain"),
+      )
     val filter: BiPredicate[String, String] = (_, value) => false
-
-    intercept[IllegalArgumentException] {
-      HttpHeaders.of(headerMap, filter)
-    }
-
+    val headers = HttpHeaders.of(headerMap, filter)
+    assertEquals(headers.map().size(), 0)
   }
 
   /**

@@ -1,14 +1,14 @@
 package java.net.http
 
 import java.io.InputStream
+import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.OpenOption
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, OpenOption, Path, Paths}
 import java.nio.file.StandardOpenOption.{READ, DELETE_ON_CLOSE, CREATE, WRITE}
-import java.net.URI
-import java.util.{List, Optional}
+import java.util.List as JList
+import java.util.Optional
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, CompletionStage, ConcurrentMap}
 import java.util.concurrent.Flow.{Subscriber, Publisher, Subscription}
@@ -65,12 +65,12 @@ object HttpResponse {
 
   /// @since 11
   object BodyHandlers {
-    def fromSubscriber(subscriber: Subscriber[? >: List[ByteBuffer]]): BodyHandler[Void] = {
+    def fromSubscriber(subscriber: Subscriber[? >: JList[ByteBuffer]]): BodyHandler[Void] = {
       requireNonNull(subscriber)
       return responseInfo => BodySubscribers.fromSubscriber(subscriber, (_: Any) => null)
     }
 
-    def fromSubscriber[S <: Subscriber[? >: List[ByteBuffer]], T](
+    def fromSubscriber[S <: Subscriber[? >: JList[ByteBuffer]], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
     ): BodyHandler[T] = {
@@ -123,7 +123,7 @@ object HttpResponse {
         s"invalid openOptions: $openOptions",
       )
 
-      val opts = List.of(openOptions*)
+      val opts = JList.of(openOptions*)
       return PathBodyHandler.create(file, opts)
     }
 
@@ -132,7 +132,7 @@ object HttpResponse {
     def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] = {
       requireNonNull(directory)
       require(!openOptions.contains(DELETE_ON_CLOSE), s"invalid openOptions: ${openOptions}")
-      val opts = List.of(openOptions*)
+      val opts = JList.of(openOptions*)
       return FileDownloadBodyHandler.create(directory, opts)
     }
 
@@ -149,7 +149,8 @@ object HttpResponse {
 
     def ofString(): BodyHandler[String] = ri => BodySubscribers.ofString(charsetFrom(ri.headers()))
 
-    def ofPublisher(): BodyHandler[Publisher[List[ByteBuffer]]] = _ => BodySubscribers.ofPublisher()
+    def ofPublisher(): BodyHandler[Publisher[JList[ByteBuffer]]] = _ =>
+      BodySubscribers.ofPublisher()
 
     def buffering[T](downstreamHandler: BodyHandler[T], bufferSize: Int): BodyHandler[T] = {
       require(bufferSize > 0, "must be greater than 0")
@@ -178,17 +179,17 @@ object HttpResponse {
   }
 
   /// @since 11
-  trait BodySubscriber[T] extends Subscriber[List[ByteBuffer]] {
+  trait BodySubscriber[T] extends Subscriber[JList[ByteBuffer]] {
     def getBody(): CompletionStage[T]
   }
 
   object BodySubscribers {
     def fromSubscriber(
-        subscriber: Subscriber[? >: List[ByteBuffer]],
+        subscriber: Subscriber[? >: JList[ByteBuffer]],
     ): BodySubscriber[Void] =
       new ResponseSubscribers.SubscriberAdapter(subscriber, (_: Any) => null)
 
-    def fromSubscriber[S <: Subscriber[? >: List[ByteBuffer]], T](
+    def fromSubscriber[S <: Subscriber[? >: JList[ByteBuffer]], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
     ): BodySubscriber[T] =
@@ -221,7 +222,7 @@ object HttpResponse {
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
         s"invalid openOptions: ${openOptions}",
       )
-      val opts = List.of(openOptions*)
+      val opts = JList.of(openOptions*)
       return ResponseSubscribers.PathSubscriber.create(file, opts)
     }
 
@@ -241,7 +242,7 @@ object HttpResponse {
     ): BodySubscriber[Stream[String]] =
       ResponseSubscribers.createLineStream(charset)
 
-    def ofPublisher(): BodySubscriber[Publisher[List[ByteBuffer]]] =
+    def ofPublisher(): BodySubscriber[Publisher[JList[ByteBuffer]]] =
       ResponseSubscribers.createPublisher()
 
     def replacing[U](value: U): BodySubscriber[U] =

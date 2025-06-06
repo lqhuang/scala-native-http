@@ -2,27 +2,43 @@ package snhttp.internal
 
 import java.nio.charset.Charset
 import java.net.http.HttpHeaders
+import java.nio.charset.StandardCharsets
+
+import scala.util.Try
 
 object Utils {
+  /// Get the `Charset` from `Content-type` field. Defaults to `UTF_8`
+  ///
+  /// Reference for `Content-type` header:
+  ///   https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type
+  def charsetFrom(headers: HttpHeaders): Charset = {
+    val contentType = headers
+      .firstValue("Content-Type")
+      .orElse("text/html; charset=utf-8")
 
-  /** Get the `Charset` from `Content-Encoding` field. Defaults to `UTF_8` */
-  def charsetFrom(headers: HttpHeaders): Charset = ???
-  // {
-  //   val contentType = headers
-  //     .firstValue("Content-type")
-  //     .orElse("text/html; charset=utf-8");
-  //   int.i = contentType.indexOf(";");
-  //   if (i >= 0) contentType = contentType.substring(i + 1);
-  //   try {
-  //     HeaderParser.parser = new HeaderParser(contentType);
-  //     String.value = parser.findValue("charset");
-  //     if (value == null) return StandardCharsets.UTF_8;
-  //     return Charset.forName(value);
-  //   } catch
-  //     Throwable.x {
-  //       Log.logTrace("Can't find charset in \"{0}\" ({1})", contentType, x);
-  //       return StandardCharsets.UTF_8;
-  //     }
-  // }
+    val parts = contentType.split(";")
+
+    if parts.isEmpty
+    then StandardCharsets.UTF_8
+    else {
+      val charsetPart = parts
+        .map(_.trim())
+        .find(_.toLowerCase().startsWith("charset="))
+        .getOrElse("charset=utf-8")
+
+      val charsetName = charsetPart
+        .split("=")
+        .lastOption
+        .map(_.trim())
+        .getOrElse("utf-8")
+
+      // TODO: Should we throw an exception if the charset is invalid?
+      //       Or warn the user that the charset is not supported?
+      //       For now, we return UTF-8 if the charset is invalid
+      Try(Charset.forName(charsetName))
+        .getOrElse(StandardCharsets.UTF_8)
+    }
+
+  }
 
 }

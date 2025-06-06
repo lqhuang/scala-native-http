@@ -133,7 +133,13 @@ class HttpRequestTest extends munit.FunSuite {
   }
 
   /**
-   * TODO: add test cases for system properties `java.net.http.HttpHeaders.allowDuplicateHeaders`
+   * TODO:
+   *
+   *   1. add test cases for system properties `java.net.http.HttpHeaders.allowDuplicateHeaders`
+   *   2. add test cases for copy Builder and modify it
+   *   3. add test cases for `headers` method
+   *   4. add test cases for `equals` method
+   *   5. add test cases for `hashCode` method
    */
 
   // test("newBuilder / method") {

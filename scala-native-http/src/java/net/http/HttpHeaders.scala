@@ -4,7 +4,7 @@ import java.lang.Long as JLong
 import java.util.Locale
 import java.util.List as JList
 import java.util.Map as JMap
-import java.util.{Optional, OptionalLong, TreeMap, TreeSet}
+import java.util.{Collections, Optional, OptionalLong, TreeMap, TreeSet}
 import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
@@ -20,7 +20,7 @@ final class HttpHeaders(private val headers: JMap[String, JList[String]]) {
   def firstValueAsLong(name: String): OptionalLong =
     allValues(name).stream().mapToLong(JLong.parseLong).findFirst()
 
-  def map(): JMap[String, JList[String]] = headers
+  def map(): JMap[String, JList[String]] = Collections.unmodifiableMap(headers)
 
   /// Two HTTP headers are equal if each of their corresponding maps are equal.
   final override def equals(obj: Any): Boolean = obj match {
@@ -37,7 +37,7 @@ final class HttpHeaders(private val headers: JMap[String, JList[String]]) {
     }
     hash
 
-  override def toString: String = s"${super.toString()} { ${headers} }"
+  override def toString: String = s"${super.toString()} { ${map()} }"
 }
 
 object HttpHeaders {
@@ -54,8 +54,8 @@ object HttpHeaders {
     val newHeaderMap = new TreeMap[String, JList[String]](String.CASE_INSENSITIVE_ORDER)
 
     headerMap.entrySet().forEach { entry =>
-      val key = entry.getKey
-      val values = entry.getValue
+      val key = entry.getKey()
+      val values = entry.getValue()
 
       requireNonNull(key)
       requireNonNull(values, s"values for key '${key}' can not be null")
