@@ -1,68 +1,127 @@
-import snhttp.internal.Utils
 import java.net.http.HttpHeaders
+import java.nio.charset.{Charset, StandardCharsets}
+import java.util.Collections
 import java.util.List as JList
 import java.util.Map as JMap
-import java.nio.charset.{Charset, StandardCharsets}
 import java.util.function.BiPredicate
+
+import snhttp.internal.Utils
 
 class UtilsTest extends munit.FunSuite {
 
-  val acceptAllFilter: BiPredicate[String, String] = (_, _) => true
+  private val acceptAllFilter: BiPredicate[String, String] = (_, _) => true
+  private def createHeaders(contentType: String): HttpHeaders = {
+    val headerMap = JMap.of("Content-Type", JList.of(contentType))
+    HttpHeaders.of(headerMap, acceptAllFilter)
+  }
 
   test("charsetFrom returns UTF-8 for missing Content-Type header") {
-    val headers = HttpHeaders.of(JMap.of(), acceptAllFilter)
+
+    Seq(
+      JMap[String, JList[String]].of(),
+      Collections.emptyMap[String, JList[String]](),
+    ).foreach { headerMap =>
+      val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+      val charset = Utils.charsetFrom(headers)
+      assertEquals(charset, StandardCharsets.UTF_8)
+    }
+
+  }
+
+  test("charsetFrom should default to UTF-8 when no charset specified") {
+    val headers = createHeaders("text/plain")
     val charset = Utils.charsetFrom(headers)
     assertEquals(charset, StandardCharsets.UTF_8)
   }
 
   test("charsetFrom returns UTF-8 for Content-Type without charset") {
-    val headerMap = JMap.of("Content-Type", JList.of("application/json"))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+    val headers = createHeaders("application/json")
     val charset = Utils.charsetFrom(headers)
     assertEquals(charset, StandardCharsets.UTF_8)
   }
 
-  test("charsetFrom parses charset from Content-Type header") {
-    val headerMap = JMap.of("Content-Type", JList.of("text/html; charset=iso-8859-1"))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
-    val charset = Utils.charsetFrom(headers)
-    assertEquals(charset, Charset.forName("iso-8859-1"))
-  }
-
-  test("charsetFrom handles UTF-8 charset") {
-    val headerMap = JMap.of("Content-Type", JList.of("application/json; charset=utf-8"))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+  test("charsetFrom should extract UTF-8 from Content-Type header") {
+    val headers = createHeaders("text/plain; charset=utf-8")
     val charset = Utils.charsetFrom(headers)
     assertEquals(charset, StandardCharsets.UTF_8)
   }
 
-  test("charsetFrom handles charset with extra spaces") {
-    val headerMap = JMap.of("Content-Type", JList.of("text/plain;  charset=utf-16  "))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+  test("charsetFrom should extract ISO-8859-1 from Content-Type header") {
+    val headers = createHeaders("text/html; charset=ISO-8859-1")
     val charset = Utils.charsetFrom(headers)
-    assertEquals(charset, StandardCharsets.UTF_16)
+    assertEquals(charset, StandardCharsets.ISO_8859_1)
   }
 
-  test("charsetFrom handles multiple parameters with charset") {
-    val headerMap =
-      JMap.of("Content-Type", JList.of("text/html; boundary=something; charset=utf-16"))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
-    val charset = Utils.charsetFrom(headers)
-    assertEquals(charset, StandardCharsets.UTF_16)
+  test("charsetFrom should handle case-insensitive charset parameter") {
+    Seq(
+      "text/plain; charset=us-ascii",
+      "text/plain; CHARSET=us-ascii",
+      "text/plain; charset = US-ASCII",
+      "text/plain; charset=US-ASCII; other=value",
+      "text/plain; CHARSET=US-ASCII; other=value",
+    ).foreach { contentType =>
+      val headers = createHeaders(contentType)
+      val charset = Utils.charsetFrom(headers)
+      assertEquals(charset, StandardCharsets.US_ASCII)
+    }
   }
 
-  test("charsetFrom handles case-insensitive charset parameter") {
-    val headerMap = JMap.of("Content-Type", JList.of("text/html; CHARSET=utf-8"))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+  test("charsetFrom should handle charset with spaces") {
+    Seq(
+      "text/plain; charset=utf-16",
+      "text/plain;      charset = utf-16   ",
+      "text/plain;charset = utf-16",
+      "text/plain; charset =utf-16    ; other=value",
+      "text/plain;charset=utf-16;other=value",
+    ).foreach { contentType =>
+      val headers = createHeaders(contentType)
+      val charset = Utils.charsetFrom(headers)
+      assertEquals(charset, StandardCharsets.UTF_16)
+    }
+  }
+
+  test("charsetFrom should handle multiple parameters") {
+    val headers = createHeaders("text/plain; boundary=something; charset=utf-8; other=value")
     val charset = Utils.charsetFrom(headers)
     assertEquals(charset, StandardCharsets.UTF_8)
   }
 
-  test("charsetFrom returns UTF-8 for malformed charset parameter") {
-    val headerMap = JMap.of("Content-Type", JList.of("text/html; charset="))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+  test("charsetFrom should default to UTF-8 for invalid charset") {
+    val headers = createHeaders("text/plain; charset=invalid-charset")
     val charset = Utils.charsetFrom(headers)
     assertEquals(charset, StandardCharsets.UTF_8)
+  }
+
+  test("charsetFrom should handle malformed charset value") {
+    Seq(
+      "charset=",
+      "text/plain; charset=",
+      "charset=;utf-16",
+      "text/plain; charset=;utf-16",
+      "text/plain; charset=invalid;",
+      "text/plain; charset=; invalid",
+    ).foreach { contentType =>
+      val headers = createHeaders(contentType)
+      val charset = Utils.charsetFrom(headers)
+      assertEquals(charset, StandardCharsets.UTF_8)
+    }
+  }
+
+  test("charsetFrom should handle charset at beginning of Content-Type") {
+    val headers = createHeaders("charset=utf-8; text/plain")
+    val charset = Utils.charsetFrom(headers)
+    assertEquals(charset, StandardCharsets.UTF_8)
+  }
+
+  test("charsetFrom should fetch first charset if multiple are present") {
+    Seq(
+      "text/plain; charset=utf-16; charset=iso-8859-1",
+      "text/plain; timezone=utc; other=another; charset=utf-16; good; charset=iso-8859-1",
+    ).foreach { contentType =>
+      val headers = createHeaders(contentType)
+      val charset = Utils.charsetFrom(headers)
+      assertEquals(charset, StandardCharsets.UTF_16)
+    }
   }
 
   test("charsetFrom returns UTF-8 for empty Content-Type") {
@@ -75,16 +134,8 @@ class UtilsTest extends munit.FunSuite {
     assertEquals(charset, StandardCharsets.UTF_8)
   }
 
-  test("charsetFrom returns UTF-8 for unqualified charset name") {
-    val headerMap = JMap.of("Content-Type", JList.of("text/html; charset=non-existent-charset"))
-    val headers = HttpHeaders.of(headerMap, acceptAllFilter)
-    val charset = Utils.charsetFrom(headers)
-    assertEquals(charset, StandardCharsets.UTF_8)
-  }
-
   // test("charsetFrom handles quoted charset values") {
-  //   val headerMap = JMap.of("Content-Type", JList.of("text/html; charset=\"utf-8\""))
-  //   val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+  //   val headers = createHeaders("application/json; charset=\"utf-8\"")
   //   // Note: This test may fail with current implementation if quotes aren't handled
   //   // The charset name would be "utf-8" including quotes, which might not be valid
   //   intercept[Exception] {
