@@ -17,8 +17,8 @@ import java.util.stream.Stream
 // import javax.net.ssl.SSLSession
 
 import snhttp.internal.Utils.charsetFrom
-import snhttp.jdk.ResponseSubscribers
-import snhttp.jdk.ResponseBodyHandlers.{
+import snhttp.jdk.BodySubscribersImpl
+import snhttp.jdk.BodyHandlersImpl.{
   PathBodyHandler,
   FileDownloadBodyHandler,
   PushPromisesHandlerWithMap,
@@ -122,9 +122,7 @@ object HttpResponse {
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
         s"invalid openOptions: $openOptions",
       )
-
-      val opts = JList.of(openOptions*)
-      return PathBodyHandler.create(file, opts)
+      return PathBodyHandler.create(file, openOptions)
     }
 
     def ofFile(file: Path): BodyHandler[Path] = ofFile(file, CREATE, WRITE)
@@ -156,11 +154,6 @@ object HttpResponse {
       require(bufferSize > 0, "must be greater than 0")
       ri => BodySubscribers.buffering(downstreamHandler(ri), bufferSize)
     }
-
-    def limiting[T](downstreamHandler: BodyHandler[T], capacity: Long): BodyHandler[T] = {
-      require(capacity >= 0, s"capacity must not be negative: $capacity")
-      ri => { val dsSub = downstreamHandler(ri); BodySubscribers.limiting(dsSub, capacity) }
-    }
   }
 
   trait PushPromiseHandler[T] {
@@ -187,13 +180,13 @@ object HttpResponse {
     def fromSubscriber(
         subscriber: Subscriber[? >: JList[ByteBuffer]],
     ): BodySubscriber[Void] =
-      new ResponseSubscribers.SubscriberAdapter(subscriber, (_: Any) => null)
+      new BodySubscribersImpl.SubscriberAdapter(subscriber, _ => null)
 
     def fromSubscriber[S <: Subscriber[? >: JList[ByteBuffer]], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
     ): BodySubscriber[T] =
-      new ResponseSubscribers.SubscriberAdapter(subscriber, finisher)
+      new BodySubscribersImpl.SubscriberAdapter(subscriber, finisher)
 
     def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodySubscriber[Void] =
       fromLineSubscriber(subscriber, (_: Any) => null, UTF_8, null)
@@ -203,28 +196,24 @@ object HttpResponse {
         finisher: Function[? >: S, ? <: T],
         charset: Charset,
         lineSeparator: String,
-    ): BodySubscriber[T] =
-      new ResponseSubscribers.LineSubscriberAdapter(subscriber, finisher, charset, lineSeparator)
+    ): BodySubscriber[T] = BodySubscribersImpl.fromLineSubscriber(
+      subscriber,
+      finisher,
+      charset,
+      lineSeparator,
+    )
 
-    def ofString(charset: Charset): BodySubscriber[String] = {
-      requireNonNull(charset)
-      new ResponseSubscribers.ByteArraySubscriber(bytes => new String(bytes, charset))
-    }
+    def ofString(charset: Charset): BodySubscriber[String] =
+      BodySubscribersImpl.ofByteArray(bytes => new String(bytes, charset))
 
     def ofByteArray(): BodySubscriber[Array[Byte]] =
-      new ResponseSubscribers.ByteArraySubscriber(identity)
+      BodySubscribersImpl.ofByteArray(identity)
 
     def ofFile(
         file: Path,
         openOptions: OpenOption*,
-    ): BodySubscriber[Path] = {
-      require(
-        !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
-        s"invalid openOptions: ${openOptions}",
-      )
-      val opts = JList.of(openOptions*)
-      return ResponseSubscribers.PathSubscriber.create(file, opts)
-    }
+    ): BodySubscriber[Path] =
+      BodySubscribersImpl.ofFile(file, openOptions)
 
     def ofFile(file: Path): BodySubscriber[Path] =
       ofFile(file, CREATE, WRITE)
@@ -232,40 +221,33 @@ object HttpResponse {
     def ofByteArrayConsumer(
         consumer: Consumer[Optional[Array[Byte]]],
     ): BodySubscriber[Void] =
-      new ResponseSubscribers.ConsumerSubscriber(consumer)
+      BodySubscribersImpl.ofByteArrayConsumer(consumer)
 
     def ofInputStream(): BodySubscriber[InputStream] =
-      new ResponseSubscribers.InputStreamSubscriber()
+      BodySubscribersImpl.ofInputStream()
 
-    def ofLines(
-        charset: Charset,
-    ): BodySubscriber[Stream[String]] =
-      ResponseSubscribers.createLineStream(charset)
+    def ofLines(charset: Charset): BodySubscriber[Stream[String]] =
+      BodySubscribersImpl.ofLines(charset)
 
     def ofPublisher(): BodySubscriber[Publisher[JList[ByteBuffer]]] =
-      ResponseSubscribers.createPublisher()
+      BodySubscribersImpl.ofPublisher()
 
     def replacing[U](value: U): BodySubscriber[U] =
-      new ResponseSubscribers.NullSubscriber(Optional.ofNullable(value))
+      BodySubscribersImpl.replacing(value)
 
     def discarding(): BodySubscriber[Void] =
-      new ResponseSubscribers.NullSubscriber(Optional.empty())
+      BodySubscribersImpl.discarding()
 
     def buffering[T](downstream: BodySubscriber[T], bufferSize: Int): BodySubscriber[T] = {
       require(bufferSize > 0, "must be greater than 0")
-      new ResponseSubscribers.BufferingSubscriber(downstream, bufferSize)
+      BodySubscribersImpl.BufferingSubscriber(downstream, bufferSize)
     }
 
     def mapping[T, U](
         upstream: BodySubscriber[T],
         mapper: Function[? >: T, ? <: U],
     ): BodySubscriber[U] =
-      new ResponseSubscribers.MappingSubscriber(upstream, mapper)
-
-    def limiting[T](downstreamSubscriber: BodySubscriber[T], capacity: Long): BodySubscriber[T] = {
-      require(capacity >= 0, s"capacity must not be negative: $capacity")
-      new ResponseSubscribers.LimitingSubscriber(downstreamSubscriber, capacity)
-    }
+      BodySubscribersImpl.MappingSubscriber(upstream, mapper)
   }
 
 }

@@ -29,13 +29,15 @@ final class HttpHeaders(private val headers: JMap[String, JList[String]]) {
   }
 
   final override def hashCode(): Int =
-    var hash = 0
-    headers.entrySet().stream().forEach { entry =>
-      val keyHash = entry.getKey.toLowerCase(Locale.ROOT).hashCode
-      val valueHash = entry.getValue.hashCode
-      hash += keyHash ^ valueHash
-    }
-    hash
+    headers
+      .entrySet()
+      .stream()
+      .mapToInt { entry =>
+        val keyHash = entry.getKey.toLowerCase(Locale.ROOT).hashCode
+        val valueHash = entry.getValue.hashCode
+        keyHash ^ valueHash
+      }
+      .sum()
 
   override def toString: String = s"${super.toString()} { ${map()} }"
 }
