@@ -143,4 +143,13 @@ class UtilsTest extends munit.FunSuite {
   //   }
   // }
 
+  ///
+  /// Tests for `filenameFrom` method
+  ///
+
+  // TODO: test malformed
+  //
+  // - "hello \"world\""
+  // - "line1\nline2"
+
 }

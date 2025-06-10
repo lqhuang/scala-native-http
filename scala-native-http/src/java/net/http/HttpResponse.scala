@@ -17,12 +17,7 @@ import java.util.stream.Stream
 // import javax.net.ssl.SSLSession
 
 import snhttp.internal.Utils.charsetFrom
-import snhttp.jdk.BodySubscribersImpl
-import snhttp.jdk.BodyHandlersImpl.{
-  PathBodyHandler,
-  FileDownloadBodyHandler,
-  PushPromisesHandlerWithMap,
-}
+import snhttp.jdk.{BodyHandlersImpl, BodySubscribersImpl}
 
 /// @since 11
 trait HttpResponse[T] {
@@ -65,73 +60,85 @@ object HttpResponse {
 
   /// @since 11
   object BodyHandlers {
-    def fromSubscriber(subscriber: Subscriber[? >: JList[ByteBuffer]]): BodyHandler[Void] = {
+
+    def fromSubscriber(subscriber: Subscriber[? >: JList[ByteBuffer]]): BodyHandler[Void] =
       requireNonNull(subscriber)
-      return responseInfo => BodySubscribers.fromSubscriber(subscriber, (_: Any) => null)
-    }
+      responseInfo => BodySubscribers.fromSubscriber(subscriber, _ => null)
 
     def fromSubscriber[S <: Subscriber[? >: JList[ByteBuffer]], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
-    ): BodyHandler[T] = {
+    ): BodyHandler[T] =
       requireNonNull(subscriber)
       requireNonNull(finisher)
-      return responseInfo => BodySubscribers.fromSubscriber(subscriber, finisher)
-    }
+      _ => BodySubscribers.fromSubscriber(subscriber, finisher)
 
-    def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] = {
+    def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] =
       requireNonNull(subscriber)
-      return responseInfo =>
+      ri =>
         BodySubscribers.fromLineSubscriber(
           subscriber,
-          (_: Any) => null,
-          charsetFrom(responseInfo.headers()),
+          _ => null,
+          charsetFrom(ri.headers()),
           null,
         )
-    }
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
         lineSeparator: String,
-    ): BodyHandler[T] = {
+    ): BodyHandler[T] =
       requireNonNull(subscriber)
       requireNonNull(finisher)
-      require(lineSeparator == null || lineSeparator.nonEmpty, "empty line separator")
-      return responseInfo =>
+      require(
+        lineSeparator != null && !lineSeparator.nonEmpty,
+        "line separator cannot be null or empty",
+      )
+      return ri =>
         BodySubscribers.fromLineSubscriber(
           subscriber,
           finisher,
-          charsetFrom(responseInfo.headers()),
+          charsetFrom(ri.headers()),
           lineSeparator,
         )
-    }
 
-    def discarding(): BodyHandler[Void] = _ => BodySubscribers.discarding()
+    def discarding(): BodyHandler[Void] =
+      _ => BodySubscribers.discarding()
 
-    def replacing[U](value: U): BodyHandler[U] = _ => BodySubscribers.replacing(value)
+    def replacing[U](value: U): BodyHandler[U] =
+      requireNonNull(value)
+      _ => BodySubscribers.replacing(value)
 
-    def ofString(charset: Charset): BodyHandler[String] = {
+    def ofString(charset: Charset): BodyHandler[String] =
       requireNonNull(charset)
-      return _ => BodySubscribers.ofString(charset)
-    }
+      _ => BodySubscribers.ofString(charset)
 
-    def ofFile(file: Path, openOptions: OpenOption*): BodyHandler[Path] = {
+    def ofFile(file: Path, openOptions: OpenOption*): BodyHandler[Path] =
       requireNonNull(file)
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
         s"invalid openOptions: $openOptions",
       )
-      return PathBodyHandler.create(file, openOptions)
-    }
+      BodyHandlersImpl.ofFile(file, openOptions)
 
-    def ofFile(file: Path): BodyHandler[Path] = ofFile(file, CREATE, WRITE)
+    def ofFile(file: Path): BodyHandler[Path] =
+      ofFile(file, CREATE, WRITE)
 
     def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] = {
       requireNonNull(directory)
+      try
+        directory.toFile.getPath()
+      catch {
+        case uoe: UnsupportedOperationException =>
+          throw new IllegalArgumentException(s"invalid path: $directory", uoe)
+      }
+      require(!Files.notExists(directory), s"non-existent directory: $directory")
+      require(Files.isDirectory(directory), s"not a directory: $directory")
+      require(Files.isWritable(directory), s"non-writable directory: $directory")
+
       require(!openOptions.contains(DELETE_ON_CLOSE), s"invalid openOptions: ${openOptions}")
-      val opts = JList.of(openOptions*)
-      return FileDownloadBodyHandler.create(directory, opts)
+
+      return BodyHandlersImpl.ofFileDownload(directory, openOptions*)
     }
 
     def ofInputStream(): BodyHandler[InputStream] =
@@ -150,10 +157,10 @@ object HttpResponse {
     def ofPublisher(): BodyHandler[Publisher[JList[ByteBuffer]]] = _ =>
       BodySubscribers.ofPublisher()
 
-    def buffering[T](downstreamHandler: BodyHandler[T], bufferSize: Int): BodyHandler[T] = {
+    def buffering[T](downstreamHandler: BodyHandler[T], bufferSize: Int): BodyHandler[T] =
       require(bufferSize > 0, "must be greater than 0")
       ri => BodySubscribers.buffering(downstreamHandler(ri), bufferSize)
-    }
+
   }
 
   trait PushPromiseHandler[T] {
@@ -168,7 +175,7 @@ object HttpResponse {
         pushPromiseHandler: Function[HttpRequest, BodyHandler[T]],
         pushPromisesMap: ConcurrentMap[HttpRequest, CompletableFuture[HttpResponse[T]]],
     ): PushPromiseHandler[T] =
-      return new PushPromisesHandlerWithMap(pushPromiseHandler, pushPromisesMap)
+      BodyHandlersImpl.PushPromisesHandlerWithMap(pushPromiseHandler, pushPromisesMap)
   }
 
   /// @since 11

@@ -358,8 +358,6 @@ object BodySubscribersImpl {
     )
   }
 
-  def ofLines(): BodySubscriber[Stream[String]] = ofLines(StandardCharsets.UTF_8)
-
   class PublishingBodySubscriber extends BodySubscriber[Publisher[JList[ByteBuffer]]] {
     private val cf = new CompletableFuture[Publisher[JList[ByteBuffer]]]()
     private val subscribed = new AtomicBoolean()
