@@ -1,8 +1,7 @@
 package snhttp.jdk
 
 import java.util.concurrent.Flow
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import scala.util.control.NonFatal
 import scala.concurrent.Promise

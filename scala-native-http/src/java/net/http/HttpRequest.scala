@@ -12,7 +12,7 @@ import java.util.concurrent.Flow
 import java.util.function.{BiConsumer, BiPredicate, Consumer, Supplier}
 import java.util.stream.Stream
 
-import snhttp.jdk.HttpRequestBodyPublishers
+import snhttp.jdk.BodyPublishersImpl
 import snhttp.jdk.HttpRequestBuilderImpl
 
 trait HttpRequest extends Closeable {
@@ -115,7 +115,7 @@ object HttpRequest {
   }
 
   object BodyPublishers {
-    def noBody(): BodyPublisher = HttpRequestBodyPublishers.noBody()
+    def noBody(): BodyPublisher = BodyPublishersImpl.noBody()
 
     // def concat(publishers: BodyPublisher*): BodyPublisher
 

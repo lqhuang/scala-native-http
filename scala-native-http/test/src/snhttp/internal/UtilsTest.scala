@@ -18,7 +18,7 @@ class UtilsTest extends munit.FunSuite {
   test("charsetFrom returns UTF-8 for missing Content-Type header") {
 
     Seq(
-      JMap[String, JList[String]].of(),
+      JMap.of[String, JList[String]](),
       Collections.emptyMap[String, JList[String]](),
     ).foreach { headerMap =>
       val headers = HttpHeaders.of(headerMap, acceptAllFilter)
