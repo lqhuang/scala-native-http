@@ -1,12 +1,8 @@
-package snhttp.jdk
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 
-import java.util.concurrent.Flow
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-
-import scala.collection.mutable.ListBuffer
+import snhttp.jdk.PullPublisher
+import snhttp.testkits.TestSubscriber
 
 class PullPublisherTest extends munit.FunSuite {
 

@@ -1,8 +1,8 @@
 import java.net.http.HttpRequest.BodyPublishers
 import java.util.List as JList
 import java.util.Map as JMap
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{CountDownLatch, Flow, TimeUnit}
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Flow
 
 import scala.collection.mutable.ListBuffer
 

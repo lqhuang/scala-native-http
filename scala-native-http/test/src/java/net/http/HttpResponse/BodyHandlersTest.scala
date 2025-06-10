@@ -1,8 +1,7 @@
 import java.net.http.{HttpClient, HttpHeaders}
 import java.net.http.HttpResponse.{ResponseInfo, BodyHandlers, BodySubscribers, PushPromiseHandler}
 import java.nio.ByteBuffer
-import java.nio.file.{Files, Path, StandardOpenOption}
-import java.nio.file.StandardOpenOption.{CREATE, WRITE}
+import java.nio.file.{Files, Path}
 import java.util.concurrent.Flow.Subscription
 import java.util.List as JList
 import java.util.Map as JMap

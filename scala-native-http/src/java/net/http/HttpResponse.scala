@@ -39,7 +39,6 @@ trait HttpResponse[T] {
   def uri(): URI
 
   def version(): HttpClient.Version
-
 }
 
 object HttpResponse {

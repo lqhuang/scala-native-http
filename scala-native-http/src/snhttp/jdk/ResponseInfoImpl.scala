@@ -1,9 +1,9 @@
 package snhttp.jdk
 
-import java.net.http.HttpResponse
 import java.net.http.HttpResponse.ResponseInfo
-import java.net.http.HttpHeaders
 import java.net.http.HttpClient
+import java.net.http.HttpHeaders
+import java.net.http.HttpResponse
 
 case class ResponseInfoImpl(
     private val _statusCode: Int,

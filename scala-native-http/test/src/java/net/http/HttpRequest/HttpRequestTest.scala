@@ -1,11 +1,10 @@
 import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
+import java.net.http.{HttpClient, HttpHeaders, HttpRequest}
 import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.HttpHeaders
 import java.time.Duration
 import java.util.Optional
-import java.util.{List as JList, Map as JMap}
+import java.util.List as JList
+import java.util.Map as JMap
 import java.util.function.BiPredicate
 
 class HttpRequestTest extends munit.FunSuite {

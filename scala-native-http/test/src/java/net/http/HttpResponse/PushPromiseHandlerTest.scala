@@ -1,6 +1,6 @@
+import java.net.URI
 import java.net.http.{HttpRequest, HttpResponse}
-import java.net.http.HttpResponse.PushPromiseHandler
-import java.util.concurrent.Flow.{Subscriber, Subscription}
+import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.{CompletableFuture, ConcurrentHashMap}
 import java.util.function.Function
 
@@ -14,19 +14,19 @@ class PushPromiseHandlerTest extends munit.FunSuite {
     val pushPromiseHandler: Function[
       HttpRequest,
       HttpResponse.BodyHandler[String],
-    ] = _ => HttpResponse.BodyHandlers.ofString()
+    ] = _ => BodyHandlers.ofString()
 
-    val handler = PushPromiseHandler.of(pushPromiseHandler, pushPromisesMap)
+    val handler = HttpResponse.PushPromiseHandler.of(pushPromiseHandler, pushPromisesMap)
 
     // Create mock requests
     val initiatingRequest = HttpRequest
       .newBuilder()
-      .uri(java.net.URI.create("http://example.com"))
+      .uri(URI.create("http://example.com"))
       .build()
 
     val pushPromiseRequest = HttpRequest
       .newBuilder()
-      .uri(java.net.URI.create("http://example.com/resource"))
+      .uri(URI.create("http://example.com/resource"))
       .build()
 
     val acceptor: Function[

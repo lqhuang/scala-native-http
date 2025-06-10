@@ -1,18 +1,22 @@
 import java.net.http.HttpResponse.BodySubscribers
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
+import java.util.{ArrayList, Arrays, Optional}
 import java.util.List as JList
-import java.util.{ArrayList, Optional}
 import java.util.concurrent.Flow.Subscription
-import java.util.function.Consumer
-import java.util.function.Function
+import java.util.function.{Consumer, Function}
 
 import scala.util.Using
 
 import snhttp.testkits.TestSubscriber
+import scala.util.Using.Releasable
 
 class BodySubscribersTest extends munit.FunSuite {
+
+  val deleteTempPath: Releasable[Path] = new Releasable[Path] {
+    override def release(path: Path): Unit = Files.deleteIfExists(path)
+  }
 
   // ===================================== //
   // Test BodySubscribers.fromSubscriber() //
@@ -33,7 +37,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(buffer))
     subscriber.onComplete()
 
@@ -62,7 +65,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -81,7 +83,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onComplete()
 
     val result = subscriber.getBody().toCompletableFuture.get()
@@ -96,7 +97,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onError(testError)
 
     intercept[Exception] {
@@ -130,7 +130,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(buffer))
     subscriber.onComplete()
 
@@ -151,14 +150,13 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(data1)))
     subscriber.onNext(JList.of(ByteBuffer.wrap(data2)))
     subscriber.onComplete()
 
     val result = subscriber.getBody().toCompletableFuture.get()
     val expected = data1 ++ data2
-    assert(java.util.Arrays.equals(result, expected))
+    assert(Arrays.equals(result, expected))
   }
 
   test("BodySubscribers.ofByteArray should be joined multiple buffers correctly") {
@@ -171,7 +169,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(
       JList.of(
         ByteBuffer.wrap(data1),
@@ -238,8 +235,7 @@ class BodySubscribersTest extends munit.FunSuite {
   // ============================= //
 
   test("BodySubscribers.ofFile should write to file") {
-    val tempFile = Files.createTempFile("test", ".txt")
-    try {
+    Using.resource(Files.createTempFile("test", ".txt")) { tempFile =>
       val subscriber = BodySubscribers.ofFile(tempFile)
       val testData = "File content test"
       val bytes = testData.getBytes(StandardCharsets.UTF_8)
@@ -257,12 +253,11 @@ class BodySubscribersTest extends munit.FunSuite {
 
       val fileContent = Files.readString(tempFile, StandardCharsets.UTF_8)
       assertEquals(fileContent, testData)
-    } finally Files.deleteIfExists(tempFile)
+    }(using deleteTempPath)
   }
 
   test("BodySubscribers.ofFile should handle concurrent writes") {
-    val tempFile = Files.createTempFile("concurrent-test", ".txt")
-    try {
+    Using.resource(Files.createTempFile("concurrent-test", ".txt")) { tempFile =>
       val subscriber = BodySubscribers.ofFile(tempFile)
       val data1 = "Part1".getBytes(StandardCharsets.UTF_8)
       val data2 = "Part2".getBytes(StandardCharsets.UTF_8)
@@ -280,7 +275,7 @@ class BodySubscribersTest extends munit.FunSuite {
       val resultPath = subscriber.getBody().toCompletableFuture.get()
       val fileContent = Files.readString(tempFile, StandardCharsets.UTF_8)
       assertEquals(fileContent, "Part1Part2")
-    } finally Files.deleteIfExists(tempFile)
+    }(using deleteTempPath)
   }
 
   // ========================================== //
@@ -321,7 +316,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -343,7 +337,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -363,7 +356,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -391,7 +383,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -409,7 +400,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -432,12 +422,10 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
     val publisher = subscriber.getBody().toCompletableFuture.get()
-    assertNotEquals(publisher, null)
   }
 
   // ================================ //
@@ -454,7 +442,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -475,7 +462,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -580,7 +566,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
     subscriber.onComplete()
 
@@ -597,7 +582,6 @@ class BodySubscribersTest extends munit.FunSuite {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
     subscriber.onComplete()
 
