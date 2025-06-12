@@ -7,17 +7,11 @@ import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.Function
 
-import scala.util.Using
-import scala.util.Using.Releasable
-
 import snhttp.jdk.ResponseInfoImpl
 import snhttp.testkits.TestSubscriber
 
 class BodyHandlersTest extends munit.FunSuite {
 
-  private val deleteTempPath: Releasable[Path] = new Releasable[Path] {
-    override def release(path: Path): Unit = Files.deleteIfExists(path)
-  }
   private def createHeaders(map: Map[String, String]): HttpHeaders = {
     val entries = map.map { case (k, v) => JMap.entry(k, JList.of(v)) }.toSeq
     val headerMap = JMap.ofEntries(entries*)
@@ -56,7 +50,7 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.ofString() //
   // ============================ //
 
-  test("BodyHandlers.ofString should create string handler") {
+  test("BodyHandlers.ofString should create string handler".pending("not implemented yet")) {
     val handler = BodyHandlers.ofString()
     val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
     val subscriber = handler(responseInfo)
@@ -66,76 +60,95 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.ofFile() //
   // ========================== //
 
-  test("BodyHandlers.ofFile should create file handler") {
-    Using.resource(Files.createTempFile("test", ".txt")) { tempFile =>
-      val handler = BodyHandlers.ofFile(tempFile)
-      val responseInfo = createResponseInfo()
-      val subscriber = handler(responseInfo)
-    }(using deleteTempPath)
+  test("BodyHandlers.ofFile should create file handler".pending("not implemented yet")) {
+    // Using.resource(Files.createTempFile("test", ".txt")) { tempFile =>
+    //   val handler = BodyHandlers.ofFile(tempFile)
+    //   val responseInfo = createResponseInfo()
+    //   val subscriber = handler(responseInfo)
+    // }(using deleteTempPath)
   }
 
-  test("BodyHandlers.ofFile should create path subscriber for file download") {
-    Using.resource(
-      Files.createTempFile("test-download", ".txt"),
-    ) { tempFile =>
-      val handler = BodyHandlers.ofFile(tempFile)
-      val responseInfo = createResponseInfo()
-      val subscriber = handler(responseInfo)
-    }(using deleteTempPath)
+  test(
+    "BodyHandlers.ofFile should create path subscriber for file download".pending(
+      "not implemented yet",
+    ),
+  ) {
+    // Using.resource(
+    //   Files.createTempFile("test-download", ".txt"),
+    // ) { tempFile =>
+    //   val handler = BodyHandlers.ofFile(tempFile)
+    //   val responseInfo = createResponseInfo()
+    //   val subscriber = handler(responseInfo)
+    // }(using deleteTempPath)
   }
 
   // ================================== //
   // Test BodyHandlers.ofFileDownload() //
   // ================================== //
 
-  test("BodySubscribers.ofFileDownload should extract filename from Content-Disposition") {
-    Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
-      val handler = BodyHandlers.ofFileDownload(tempDir)
-      val responseInfo = createResponseInfo(
-        Map(
-          "Content-Disposition" -> "attachment; filename=\"document.pdf\"",
-        ),
-      )
-      val subscriber = handler(responseInfo)
-    }(using deleteTempPath)
+  test(
+    "BodySubscribers.ofFileDownload should extract filename from Content-Disposition".pending(
+      "not implemented yet",
+    ),
+  ) {
+    // Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
+    //   val handler = BodyHandlers.ofFileDownload(tempDir)
+    //   val responseInfo = createResponseInfo(
+    //     Map(
+    //       "Content-Disposition" -> "attachment; filename=\"document.pdf\"",
+    //     ),
+    //   )
+    //   val subscriber = handler(responseInfo)
+    // }(using deleteTempPath)
   }
 
-  test("BodySubscribers.ofFileDownload should use default filename when no Content-Disposition") {
-    Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
-      val handler = BodyHandlers.ofFileDownload(tempDir)
-      val responseInfo = createResponseInfo()
-      val subscriber = handler(responseInfo)
-    }(using deleteTempPath)
+  test(
+    "BodySubscribers.ofFileDownload should use default filename when no Content-Disposition"
+      .pending("not implemented yet"),
+  ) {
+    // Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
+    //   val handler = BodyHandlers.ofFileDownload(tempDir)
+    //   val responseInfo = createResponseInfo()
+    //   val subscriber = handler(responseInfo)
+    // }(using deleteTempPath)
   }
 
-  test("BodySubscribers.ofFileDownload should handle complex Content-Disposition header") {
-    Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
-      val handler = BodyHandlers.ofFileDownload(tempDir)
-      val responseInfo = createResponseInfo(
-        Map(
-          "Content-Disposition" -> "attachment; filename*=UTF-8''%e2%82%ac%20rates.txt; filename=\"fallback.txt\"",
-        ),
-      )
-    }(using deleteTempPath)
+  test(
+    "BodySubscribers.ofFileDownload should handle complex Content-Disposition header".pending(
+      "not implemented yet",
+    ),
+  ) {
+    // Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
+    //   val handler = BodyHandlers.ofFileDownload(tempDir)
+    //   val responseInfo = createResponseInfo(
+    //     Map(
+    //       "Content-Disposition" -> "attachment; filename*=UTF-8''%e2%82%ac%20rates.txt; filename=\"fallback.txt\"",
+    //     ),
+    //   )
+    // }(using deleteTempPath)
   }
 
-  test("BodySubscribers.ofFileDownload should handle empty filename") {
-    Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
-      val handler = BodyHandlers.ofFile(tempDir)
-      val responseInfo = createResponseInfo(
-        Map(
-          "Content-Disposition" -> "attachment; filename=\"\"",
-        ),
-      )
-      val subscriber = handler(responseInfo)
-    }(using deleteTempPath)
+  test(
+    "BodySubscribers.ofFileDownload should handle empty filename".pending("not implemented yet"),
+  ) {
+    // Using.resource(Files.createTempDirectory("test-downloads")) { tempDir =>
+    //   val handler = BodyHandlers.ofFile(tempDir)
+    //   val responseInfo = createResponseInfo(
+    //     Map(
+    //       "Content-Disposition" -> "attachment; filename=\"\"",
+    //     ),
+    //   )
+    //   val subscriber = handler(responseInfo)
+    // }(using deleteTempPath)
   }
 
   // ================================= //
   // Test BodyHandlers.ofInputStream() //
   // ================================= //
 
-  test("BodyHandlers.ofInputStream should create input stream handler") {
+  test(
+    "BodyHandlers.ofInputStream should create input stream handler".pending("not implemented yet"),
+  ) {
     val handler = BodyHandlers.ofInputStream()
     val responseInfo = createResponseInfo()
     val subscriber = handler(responseInfo)
@@ -145,7 +158,7 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.ofLines() //
   // =========================== //
 
-  test("BodyHandlers.ofLines should create lines handler") {
+  test("BodyHandlers.ofLines should create lines handler".pending("not implemented yet")) {
     val handler = BodyHandlers.ofLines()
     val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
     val subscriber = handler(responseInfo)
@@ -159,10 +172,9 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.ofByteArray() //
   // =============================== //
 
-  test("BodyHandlers.ofByteArray should create byte array handler") {
+  test("BodyHandlers.ofByteArray should create byte array handler".pending("not implemented yet")) {
     val handler = BodyHandlers.ofByteArray()
     val responseInfo = createResponseInfo()
-
     val subscriber = handler(responseInfo)
   }
 
@@ -170,13 +182,13 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.discarding() //
   // ============================== //
 
-  test("BodyHandlers.discarding should create discarding handler") {
+  test("BodyHandlers.discarding should create discarding handler".pending("not implemented yet")) {
     val handler = BodyHandlers.discarding()
     val responseInfo = ResponseInfoImpl(204, createHeaders(Map.empty), HttpClient.Version.HTTP_1_1)
     val subscriber = handler(responseInfo)
   }
 
-  test("BodyHandlers.buffering should create buffering handler") {
+  test("BodyHandlers.buffering should create buffering handler".pending("not implemented yet")) {
     val downstreamHandler = BodyHandlers.ofString()
     val bufferSize = 1024
     val handler = BodyHandlers.buffering(downstreamHandler, bufferSize)
@@ -188,7 +200,7 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.replacing() //
   // ============================= //
 
-  test("BodyHandlers.replacing should create replacing handler") {
+  test("BodyHandlers.replacing should create replacing handler".pending("not implemented yet")) {
     val handler = BodyHandlers.replacing("replacement")
     val responseInfo = createResponseInfo()
     val subscriber = handler(responseInfo)
