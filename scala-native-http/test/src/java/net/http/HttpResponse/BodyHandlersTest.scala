@@ -1,5 +1,5 @@
 import java.net.http.{HttpClient, HttpHeaders}
-import java.net.http.HttpResponse.{ResponseInfo, BodyHandlers, BodySubscribers, PushPromiseHandler}
+import java.net.http.HttpResponse.{BodyHandlers, BodySubscribers, ResponseInfo}
 import java.nio.ByteBuffer
 import java.nio.file.{Files, Path}
 import java.util.concurrent.Flow.Subscription
@@ -40,12 +40,10 @@ class BodyHandlersTest extends munit.FunSuite {
       _ => throw new RuntimeException("Finisher error")
 
     val subscriber = BodySubscribers.fromSubscriber(testSubscriber, faultyFinisher)
-
     subscriber.onSubscribe(new Subscription {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
     })
-
     subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
     subscriber.onComplete()
 

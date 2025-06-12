@@ -58,6 +58,7 @@ object HttpResponse {
   }
 
   /// @since 11
+  abstract class BodyHandlers {}
   object BodyHandlers {
 
     def fromSubscriber(subscriber: Subscriber[? >: JList[ByteBuffer]]): BodyHandler[Void] =
@@ -182,6 +183,7 @@ object HttpResponse {
     def getBody(): CompletionStage[T]
   }
 
+  abstract class BodySubscribers {}
   object BodySubscribers {
     def fromSubscriber(
         subscriber: Subscriber[? >: JList[ByteBuffer]],
