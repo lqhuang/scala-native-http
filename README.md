@@ -1,6 +1,6 @@
 # Scala Native HTTP
 
-`java.net.http` Scala Native implementation based on cURL.
+Scala Native implementation for `java.net.http`.
 
 This project is forked from [lolgab/scala-native-http-client-async](https://github.com/lolgab/scala-native-http-client-async) and restarted due to [com-lihaoyi/requests-scala#156](https://github.com/com-lihaoyi/requests-scala/issues/156) and [scala-native/scala-native#4104](https://github.com/scala-native/scala-native/issues/4104)
 
@@ -8,10 +8,10 @@ Still working in progress, any kind of help is welcome and appreciated.
 
 `java.net.http` provides Provides high-level client interfaces to HTTP (versions 1.1 and 2) and low-level client interfaces to WebSocket. There are four main types defined:
 
-- `HttpClient`
-- `HttpRequest`
-- `HttpResponse`
-- `WebSocket`
+- [x] `HttpClient`
+- [x] `HttpRequest`
+- [x] `HttpResponse`
+- [ ] `WebSocket`
 
 The development of first three types is the milestone in current stage.
 
@@ -61,3 +61,14 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 - [ ] `jdk.httpclient.websocket.writeBufferSize`
 - [ ] `jdk.httpclient.windowsize`
 - [ ] `jdk.internal.httpclient.disableHostnameVerification`
+
+## Future
+
+I'm thinking `curl` is probably not the minimal component for HTTP Client, so I may play to create serveral other bindings for Scala Native HTTP libraries, such as:
+
+- [ ] `scala-native-brotli` for [google/brotli](https://github.com/google/brotli)
+- [nghttp2/nghttp2](https://github.com/nghttp2/nghttp2)
+- [ngtcp2/nghttp3](https://github.com/ngtcp2/nghttp3)
+- [ada-url/ada](https://github.com/ada-url/ada)
+
+That's should provide a more flexible , extensible HTTP Client for Scala Native with composability.

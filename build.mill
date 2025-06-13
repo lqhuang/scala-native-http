@@ -4,6 +4,7 @@ import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 import $ivy.`com.goyeau::mill-scalafix::0.4.0`
 import $ivy.`com.github.lolgab::mill-mima::0.0.24`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:`
+// import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.21`
 
 import mill.{scalalib, scalanativelib}
 import mill.Agg
@@ -18,6 +19,7 @@ import scalanativelib.api.ReleaseMode
 
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import com.goyeau.mill.scalafix.ScalafixModule
+// import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
 val scalaNextVersion = sys.props.get("scalaNextVersion")
 val scalaVersions = Seq("3.3.4") ++ scalaNextVersion
