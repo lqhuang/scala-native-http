@@ -7,7 +7,9 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Path
 import java.time.Duration
-import java.util.{List, Optional}
+import java.util.List as JList
+import java.util.Optional
+import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow
 import java.util.function.{BiConsumer, BiPredicate, Consumer, Supplier}
 import java.util.stream.Stream
@@ -51,28 +53,25 @@ object HttpRequest {
 
   def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(Some(uri))
 
+  /// since 16
   def newBuilder(request: HttpRequest, filter: BiPredicate[String, String]): Builder = {
-    require(request != null, "request must be non-null")
-    require(filter != null, "filter must be non-null")
+    requireNonNull(request, "request can not be null")
+    requireNonNull(filter, "filter can not be null")
 
-    val builder =
-      newBuilder(request.uri()).expectContinue(request.expectContinue())
+    val builder = newBuilder(request.uri()).expectContinue(request.expectContinue())
 
-    if request.version().isPresent() then builder.version(request.version().get())
-    if request.timeout().isPresent() then builder.timeout(request.timeout().get())
+    if (request.version().isPresent()) builder.version(request.version().get())
+    if (request.timeout().isPresent()) builder.timeout(request.timeout().get())
 
-    if request.bodyPublisher().isPresent() then
-      builder.method(request.method(), request.bodyPublisher().get())
+    if request.bodyPublisher().isPresent()
+    then builder.method(request.method(), request.bodyPublisher().get())
     else builder.method(request.method(), BodyPublishers.noBody())
 
-    HttpHeaders
-      .of(request.headers().map(), filter)
+    val newHeaders = HttpHeaders.of(request.headers().map(), filter)
+    newHeaders
       .map()
-      .forEach(
-        new BiConsumer[String, List[String]] {
-          override def accept(name: String, values: List[String]) =
-            values.forEach(v => builder.header(name, v))
-        },
+      .forEach((name: String, values: JList[String]) =>
+        values.forEach((value: String) => builder.header(name, value)),
       )
 
     builder
@@ -114,26 +113,41 @@ object HttpRequest {
     def contentLength(): Long
   }
 
+  abstract class BodyPublishers {}
   object BodyPublishers {
-    def noBody(): BodyPublisher = BodyPublishersImpl.noBody()
+    def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher =
+      BodyPublishersImpl.fromPublisher(publisher)
 
-    // def concat(publishers: BodyPublisher*): BodyPublisher
+    def fromPublisher(
+        publisher: Flow.Publisher[? <: ByteBuffer],
+        contentLength: Long,
+    ): BodyPublisher =
+      BodyPublishersImpl.fromPublisher(publisher, contentLength)
 
-    // def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher
+    def ofString(body: String, charset: Charset): BodyPublisher =
+      BodyPublishersImpl.ofString(body, charset)
 
-    // def fromPublisher(
-    //     publisher: Flow.Publisher[? <: ByteBuffer],
-    //     contentLength: Long,
-    // ): BodyPublisher
+    def ofString(body: String): BodyPublisher = ofString(body, UTF_8)
 
-    // def ofInputStream(streamSupplier: Supplier[? <: InputStream]): BodyPublisher
+    def ofInputStream(streamSupplier: Supplier[? <: InputStream]): BodyPublisher =
+      BodyPublishersImpl.ofInputStream(streamSupplier)
 
-    // def ofByteArray(buf: Array[Byte]): BodyPublisher
+    def ofByteArray(buf: Array[Byte], offset: Int, length: Int): BodyPublisher =
+      BodyPublishersImpl.ofByteArray(buf, offset, length)
 
-    // def ofByteArray(buf: Array[Byte], offset: Int, length: Int): BodyPublisher
+    def ofByteArray(buf: Array[Byte]): BodyPublisher =
+      ofByteArray(buf)
 
-    // def ofFile(path: Path): BodyPublisher
+    def ofFile(path: Path): BodyPublisher =
+      BodyPublishersImpl.ofFile(path)
 
-    // def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher
+    def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher =
+      BodyPublishersImpl.ofByteArrays(iter)
+
+    def noBody(): BodyPublisher =
+      BodyPublishersImpl.noBody()
+
+    def concat(publishers: BodyPublisher*): BodyPublisher =
+      BodyPublishersImpl.concat(publishers*)
   }
 }

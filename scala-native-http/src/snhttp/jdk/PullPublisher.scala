@@ -3,9 +3,8 @@ package snhttp.jdk
 import java.util.concurrent.Flow
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
+import scala.concurrent.Promise
 import scala.util.control.NonFatal
-import scala.concurrent.Promise
-import scala.concurrent.Promise
 
 class PullPublisher[T] private (
     private val iterable: Iterable[T],

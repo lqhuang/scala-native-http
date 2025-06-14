@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.ListBuffer
 
-class TestSubscriber[T] extends Flow.Subscriber[T] {
+class MockedSubscriber[T] extends Flow.Subscriber[T] {
   val received = ListBuffer[T]()
   val completed = new AtomicBoolean(false)
   val hasError = new AtomicBoolean(false)
