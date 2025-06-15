@@ -15,7 +15,7 @@ import scalalib.{CrossScalaModule, TestModule, PublishModule}
 import scalalib.publish.{Developer, License, PomSettings, VersionControl}
 import scalalib.scalafmt.ScalafmtModule
 import scalanativelib.ScalaNativeModule
-import scalanativelib.api.ReleaseMode
+import scalanativelib.api.{LTO, ReleaseMode}
 
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import com.goyeau.mill.scalafix.ScalafixModule
@@ -64,7 +64,10 @@ trait ScalaNtiveHttpModule
   )
 
   /// Define Scala Native Module
-  def releaseMode = ReleaseMode.ReleaseFast
+  // def releaseMode = ReleaseMode.ReleaseFast
+  def releaseMode = ReleaseMode.Debug
+
+  def nativeLTO = LTO.Thin
 
   def nativeIncrementalCompilation = true
 
