@@ -4,8 +4,10 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.annotation.tailrec
 
-final class Demand():
+final class Demand() {
   private[jdk] val ref = AtomicLong(0L)
+
+  override def toString(): String = ref.get().toString
 
   def fulfilled: Boolean = ref.get() == 0L
 
@@ -29,7 +31,7 @@ final class Demand():
       val willDec = curr.min(n)
       val after = safeSubtract(curr, willDec)
 
-      if !ref.compareAndSet(curr, after)
+      if ref.compareAndSet(curr, after)
       then willDec
       else loop()
 
@@ -60,7 +62,7 @@ final class Demand():
     if ((a ^ b) & (a ^ r)) < 0
     then Long.MinValue
     else r
-
+}
 object Demand {
   def apply(): Demand = new Demand()
 }

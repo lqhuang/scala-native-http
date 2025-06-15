@@ -16,7 +16,6 @@ class UtilsTest extends munit.FunSuite {
   }
 
   test("charsetFrom returns UTF-8 for missing Content-Type header") {
-
     Seq(
       JMap.of[String, JList[String]](),
       Collections.emptyMap[String, JList[String]](),
@@ -25,7 +24,6 @@ class UtilsTest extends munit.FunSuite {
       val charset = Utils.charsetFrom(headers)
       assertEquals(charset, StandardCharsets.UTF_8)
     }
-
   }
 
   test("charsetFrom should default to UTF-8 when no charset specified") {
