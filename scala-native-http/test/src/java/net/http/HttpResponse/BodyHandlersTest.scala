@@ -8,7 +8,7 @@ import java.util.Map as JMap
 import java.util.function.Function
 
 import snhttp.jdk.ResponseInfoImpl
-import snhttp.testkits.TestSubscriber
+import snhttp.testkits.MockSubscriber
 
 class BodyHandlersTest extends munit.FunSuite {
 
@@ -29,11 +29,11 @@ class BodyHandlersTest extends munit.FunSuite {
   // ================================== //
 
   test("BodyHandlers.fromSubscriber should handle custom finisher exceptions") {
-    val testSubscriber = new TestSubscriber[JList[ByteBuffer]]()
-    val faultyFinisher: Function[TestSubscriber[JList[ByteBuffer]], String] =
+    val mockSubscriber = new MockSubscriber[JList[ByteBuffer]]()
+    val faultyFinisher: Function[MockSubscriber[JList[ByteBuffer]], String] =
       _ => throw new RuntimeException("Finisher error")
 
-    val subscriber = BodySubscribers.fromSubscriber(testSubscriber, faultyFinisher)
+    val subscriber = BodySubscribers.fromSubscriber(mockSubscriber, faultyFinisher)
     subscriber.onSubscribe(new Subscription {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()

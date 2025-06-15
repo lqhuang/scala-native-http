@@ -7,7 +7,7 @@ import java.util.List as JList
 import java.util.concurrent.Flow.Subscription
 import java.util.function.{Consumer, Function}
 
-import snhttp.testkits.TestSubscriber
+import snhttp.testkits.MockSubscriber
 
 class BodySubscribersTest extends munit.FunSuite {
 
@@ -16,10 +16,10 @@ class BodySubscribersTest extends munit.FunSuite {
   // ===================================== //
 
   test("BodySubscribers.fromSubscriber should work with custom subscriber") {
-    val ts = new TestSubscriber[JList[ByteBuffer]]()
+    val ts = new MockSubscriber[JList[ByteBuffer]]()
     val subscriber = BodySubscribers.fromSubscriber(
       ts,
-      (_: TestSubscriber[JList[ByteBuffer]]) => "custom result",
+      (_: MockSubscriber[JList[ByteBuffer]]) => "custom result",
     )
 
     val testData = "Test data"
@@ -43,10 +43,10 @@ class BodySubscribersTest extends munit.FunSuite {
   // ========================================= //
 
   test("BodySubscribers.fromLineSubscriber should handle line processing") {
-    val lineSubscriber = new TestSubscriber[String]()
+    val lineSubscriber = new MockSubscriber[String]()
     val subscriber = BodySubscribers.fromLineSubscriber(
       lineSubscriber,
-      (_: TestSubscriber[String]) => "line processing complete",
+      (_: MockSubscriber[String]) => "line processing complete",
       StandardCharsets.UTF_8,
       "\n",
     )

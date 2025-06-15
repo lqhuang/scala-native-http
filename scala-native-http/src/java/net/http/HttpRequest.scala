@@ -136,7 +136,7 @@ object HttpRequest {
       BodyPublishersImpl.ofByteArray(buf, offset, length)
 
     def ofByteArray(buf: Array[Byte]): BodyPublisher =
-      ofByteArray(buf)
+      ofByteArray(buf, 0, buf.length)
 
     def ofFile(path: Path): BodyPublisher =
       BodyPublishersImpl.ofFile(path)

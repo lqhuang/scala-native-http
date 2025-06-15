@@ -1,7 +1,6 @@
-import munit.FunSuite
 import snhttp.jdk.Demand
 
-class DemandTest extends FunSuite:
+class DemandTest extends munit.FunSuite:
   test("increase should throw on non-positive input") {
     val d = Demand()
     intercept[IllegalArgumentException] {
@@ -14,9 +13,9 @@ class DemandTest extends FunSuite:
 
   test("increase returns true if demand was fulfilled, false otherwise") {
     val d = Demand()
-    assert(d.isFulfilled)
+    assert(d.fulfilled)
     assert(d.increase(5))
-    assert(!d.isFulfilled)
+    assert(!d.fulfilled)
     assert(!d.increase(3))
   }
 
@@ -32,9 +31,9 @@ class DemandTest extends FunSuite:
     val d = Demand()
     d.increase(5)
     assertEquals(d.decreaseAndGet(2), 2L)
-    assertEquals(d.get, 3L)
+    assertEquals(d.get(), 3L)
     assertEquals(d.decreaseAndGet(10), 3L)
-    assertEquals(d.get, 0L)
+    assertEquals(d.get(), 0L)
     intercept[IllegalArgumentException] {
       d.decreaseAndGet(0)
     }
@@ -43,25 +42,25 @@ class DemandTest extends FunSuite:
   test("tryDecrement returns true if decremented, false otherwise") {
     val d = Demand()
     d.increase(2)
-    assert(d.tryDecrement())
-    assert(d.tryDecrement())
-    assert(!d.tryDecrement())
+    assert(d.decrease())
+    assert(d.decrease())
+    assert(!d.decrease())
   }
 
-  test("isFulfilled and reset work as expected") {
+  test("fulfilled and reset work as expected") {
     val d = Demand()
-    assert(d.isFulfilled)
+    assert(d.fulfilled)
     d.increase(1)
-    assert(!d.isFulfilled)
+    assert(!d.fulfilled)
     d.reset()
-    assert(d.isFulfilled)
+    assert(d.fulfilled)
   }
 
   test("get and toString return current value") {
     val d = Demand()
-    assertEquals(d.get, 0L)
+    assertEquals(d.get(), 0L)
     assertEquals(d.toString, "0")
     d.increase(7)
-    assertEquals(d.get, 7L)
+    assertEquals(d.get(), 7L)
     assertEquals(d.toString, "7")
   }

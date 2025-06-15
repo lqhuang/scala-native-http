@@ -6,85 +6,108 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import scala.concurrent.Promise
 import scala.util.control.NonFatal
 
-class PullPublisher[T] private (
-    private val iterable: Iterable[T],
-    private val throwable: Throwable,
+import snhttp.jdk.Demand
+import scala.util.{Try, Success, Failure}
+
+private class PullSubscription[T](
+    private val subscriber: Flow.Subscriber[? >: T],
+    private val mayIter: Try[Iterator[T]],
+) extends Flow.Subscription {
+
+  private val completed = new AtomicBoolean(false)
+  private val cancelled = new AtomicBoolean(false)
+  private val running = new AtomicBoolean(false)
+  private val demand = Demand()
+
+  private val future = Promise[Unit]()
+  // private val pullScheduler = new SimpleScheduler(() => pullTask())
+
+  override def request(n: Long): Unit = {
+    require(n >= 0, s"subscription request number ${n} can not be zero or negative")
+    if (cancelled.get()) return
+    demand.increase(n)
+    // pullScheduler.runOrSchedule()
+  }
+
+  override def cancel(): Unit =
+    cancelled.compareAndSet(false, true)
+
+  // private def pullTask(): Unit = {
+  //   if (completed.get() || cancelled.get()) return
+
+  //   val t = error
+  //   if t != null then
+  //     completed.set(true)
+  //     pullScheduler.stop()
+  //     subscriber.onError(t)
+  //     return
+
+  //   var continue = true
+  //   while continue && decDemand() && !cancelled.get() do
+  //     try
+  //       if iter == null || !iter.hasNext
+  //       then continue = false
+  //       else
+  //         val next = iter.next()
+  //         subscriber.onNext(next)
+  //     catch {
+  //       case NonFatal(t1) =>
+  //         completed.compareAndSet(false, true)
+  //         pullScheduler.stop()
+  //         subscriber.onError(t1)
+  //         return
+  //     }
+
+  //   if iter != null && !iter.hasNext && !cancelled.get() then
+  //     completed.compareAndSet(false, true)
+  //     pullScheduler.stop()
+  //     subscriber.onComplete()
+  // }
+
+  // private def decDemand(): Boolean =
+  //   demand.updateAndGet(current => if current > 0 then current - 1 else 0) > 0
+
+  private[jdk] def runOrSchedule(): Unit =
+    if (running.compareAndSet(false, true)) {
+      try
+        mayIter match {
+          case scala.util.Success(iter) =>
+            while (demand.get() > 0 && iter.hasNext && !cancelled.get())
+              subscriber.onNext(iter.next())
+              // demand.decrease()
+            if (!iter.hasNext && !cancelled.get()) {
+              completed.set(true)
+              subscriber.onComplete()
+            }
+          case scala.util.Failure(t) =>
+            completed.set(true)
+            subscriber.onError(t)
+        }
+      catch {
+        case NonFatal(t) =>
+          completed.set(true)
+          subscriber.onError(t)
+      } finally
+        running.set(false)
+    }
+
+}
+
+class PullPublisher[T] private[jdk] (
+    private val mayIterable: Try[Iterable[T]],
 ) extends Flow.Publisher[T] {
-  def this(iterable: Iterable[T]) = this(iterable, null)
 
   override def subscribe(subscriber: Flow.Subscriber[? >: T]): Unit = {
-    val sub =
-      if throwable != null
-      then new Subscription(subscriber, null, throwable)
-      else new Subscription(subscriber, iterable.iterator, null)
-
+    val sub = new PullSubscription(subscriber, mayIterable.map(_.iterator))
     subscriber.onSubscribe(sub)
-    if throwable != null then sub.pullScheduler.runOrSchedule()
+    mayIterable.map(_ => sub.runOrSchedule())
   }
-
-  private class Subscription(
-      private val subscriber: Flow.Subscriber[? >: T],
-      private val iter: Iterator[T],
-      @volatile private var error: Throwable,
-  ) extends Flow.Subscription {
-
-    @volatile private var completed: Boolean = false
-    @volatile private var cancelled: Boolean = false
-    private val demand = new AtomicLong(0)
-    private val running = new AtomicBoolean(false)
-
-    val future = Promise[Unit]()
-
-    val pullScheduler = new SimpleScheduler(() => pullTask())
-
-    private def pullTask(): Unit = {
-      if completed || cancelled then return
-
-      val t = error
-      if t != null then
-        completed = true
-        pullScheduler.stop()
-        subscriber.onError(t)
-        return
-
-      var continue = true
-      while continue && decDemand() && !cancelled do
-        try
-          if iter == null || !iter.hasNext
-          then continue = false
-          else
-            val next = iter.next()
-            subscriber.onNext(next)
-        catch {
-          case NonFatal(t1) =>
-            completed = true
-            pullScheduler.stop()
-            subscriber.onError(t1)
-            return
-        }
-
-      if iter != null && !iter.hasNext && !cancelled then
-        completed = true
-        pullScheduler.stop()
-        subscriber.onComplete()
-    }
-
-    private def decDemand(): Boolean =
-      demand.updateAndGet(current => if current > 0 then current - 1 else 0) > 0
-
-    override def request(n: Long): Unit = {
-      if cancelled then return
-
-      if n <= 0
-      then error = new IllegalArgumentException(s"non-positive subscription request: $n")
-      else demand.addAndGet(n)
-
-      pullScheduler.runOrSchedule()
-    }
-
-    override def cancel(): Unit =
-      cancelled = true
-  }
+}
+object PullPublisher {
+  def apply[T](iterable: Iterable[T]): PullPublisher[T] =
+    new PullPublisher(Success(iterable))
+  def apply[T](error: Throwable): PullPublisher[T] =
+    new PullPublisher(Failure(error))
 }
 
 private class SimpleScheduler(task: () => Unit) {

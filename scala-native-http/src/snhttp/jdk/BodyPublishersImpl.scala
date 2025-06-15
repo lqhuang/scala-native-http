@@ -16,7 +16,7 @@ import java.util.stream.Stream
 import scala.util.{Try, Success, Failure}
 
 class NoBodyPublisher() extends BodyPublisher {
-  val delegate: Publisher[ByteBuffer] = new PullPublisher(Iterable(ByteBuffer.allocate(0)))
+  val delegate: Publisher[ByteBuffer] = PullPublisher(Seq(ByteBuffer.allocate(0)))
 
   def contentLength() = 0
 
@@ -46,28 +46,57 @@ class StringPublisher(
       b.flip()
       bufs += b
     }
-    val delegate = new PullPublisher(bufs)
+    val delegate = PullPublisher(bufs)
     delegate.subscribe(subscriber)
   }
 }
 
+/**
+ * Helper: transform from InputStream to ByteBuffer
+ */
+class StreamIterator(is: InputStream, bufSize: Int = 8192) extends Iterator[ByteBuffer] {
+  private var eof = false
+  private var nextBuf: ByteBuffer = _
+  private var needRead = true
+  override def hasNext: Boolean = {
+    if (eof) return false
+    if (needRead) {
+      val buf = ByteBuffer.allocate(bufSize)
+      val n = is.read(buf.array())
+      if (n == -1) {
+        eof = true
+        is.close()
+        false
+      } else {
+        buf.limit(n)
+        buf.position(0)
+        nextBuf = buf
+        needRead = false
+        true
+      }
+    } else true
+  }
+  override def next(): ByteBuffer = {
+    if (!hasNext) throw new NoSuchElementException()
+    needRead = true
+    nextBuf
+  }
+}
 class InputStreamPublisher(private val streamSupplier: Supplier[? <: InputStream])
     extends BodyPublisher {
   override def contentLength(): Long = -1
-  // override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
-  //   val is = streamSupplier.get()
-  //   val publisher =
-  //     if (is == null)
-  //       new PullPublisher[ByteBuffer](
-  //         List.empty[ByteBuffer],
-  //         new IOException("streamSupplier returned null"),
-  //       )
-  //     else
-  //       new PullPublisher[ByteBuffer](new Iterable[ByteBuffer] {
-  //         def iterator: Iterator[ByteBuffer] = new StreamIterator(is)
-  //       })
-  //   publisher.subscribe(subscriber)
-  // }
+
+  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
+    val is = streamSupplier.get()
+    val publisher =
+      if (is == null)
+        PullPublisher[ByteBuffer](new IOException("streamSupplier returned null"))
+      else
+        PullPublisher[ByteBuffer](new Iterable[ByteBuffer] {
+          def iterator: Iterator[ByteBuffer] = new StreamIterator(is)
+        })
+    publisher.subscribe(subscriber)
+  }
 }
 
 class ByteArrayPublisher(buf: Array[Byte], offset: Int, length: Int) extends BodyPublisher {
@@ -86,7 +115,7 @@ class ByteArrayPublisher(buf: Array[Byte], offset: Int, length: Int) extends Bod
       b.flip()
       bufs += b
     }
-    val delegate = new PullPublisher(bufs)
+    val delegate = PullPublisher(bufs)
     delegate.subscribe(subscriber)
   }
 }
@@ -107,11 +136,11 @@ class FilePublisher(private val path: Path, private val bufSize: Int = 8192) ext
     val publisher =
       try {
         val is = Files.newInputStream(path)
-        new PullPublisher[ByteBuffer](new Iterable[ByteBuffer] {
+        PullPublisher(new Iterable[ByteBuffer] {
           def iterator: Iterator[ByteBuffer] = new StreamIterator(is, bufSize)
         })
       } catch {
-        case e: Throwable => new PullPublisher[ByteBuffer](List.empty[ByteBuffer], e)
+        case e: Throwable => PullPublisher(e)
       }
     publisher.subscribe(subscriber)
   }
@@ -123,7 +152,7 @@ class ByteArrayIterablePublisher(val iter: Iterable[Array[Byte]]) extends BodyPu
     val byteBufferIter = new Iterable[ByteBuffer] {
       def iterator: Iterator[ByteBuffer] = iter.iterator.map(ByteBuffer.wrap)
     }
-    val delegate = new PullPublisher(byteBufferIter)
+    val delegate = new PullPublisher(Success(byteBufferIter))
     delegate.subscribe(subscriber)
   }
 }
@@ -188,38 +217,6 @@ class AggregateSubscription(
   override def cancel(): Unit = {
     cancelled = true
     if (current != null) current.cancel()
-  }
-}
-
-/**
- * StreamIterator for InputStream -> ByteBuffer
- */
-class StreamIterator(is: InputStream, bufSize: Int = 8192) extends Iterator[ByteBuffer] {
-  private var eof = false
-  private var nextBuf: ByteBuffer = _
-  private var needRead = true
-  override def hasNext: Boolean = {
-    if (eof) return false
-    if (needRead) {
-      val buf = ByteBuffer.allocate(bufSize)
-      val n = is.read(buf.array())
-      if (n == -1) {
-        eof = true
-        is.close()
-        false
-      } else {
-        buf.limit(n)
-        buf.position(0)
-        nextBuf = buf
-        needRead = false
-        true
-      }
-    } else true
-  }
-  override def next(): ByteBuffer = {
-    if (!hasNext) throw new NoSuchElementException()
-    needRead = true
-    nextBuf
   }
 }
 

@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.ListBuffer
 
-class MockedSubscriber[T] extends Flow.Subscriber[T] {
-  val received = ListBuffer[T]()
+class MockSubscriber[T] extends Flow.Subscriber[T] {
+  val _received = ListBuffer[T]()
   val completed = new AtomicBoolean(false)
   val hasError = new AtomicBoolean(false)
   var error: Throwable = null
@@ -16,11 +16,13 @@ class MockedSubscriber[T] extends Flow.Subscriber[T] {
   private val completionLatch = new CountDownLatch(1)
   private val errorLatch = new CountDownLatch(1)
 
+  def received: List[T] = _received.toList
+
   override def onSubscribe(subscription: Flow.Subscription): Unit =
     this.subscription = subscription
 
   override def onNext(item: T): Unit = synchronized {
-    received += item
+    _received += item
   }
 
   override def onError(throwable: Throwable): Unit = {
