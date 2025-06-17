@@ -41,7 +41,7 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 
 - [x] `jdk.httpclient.allowRestrictedHeaders`
 - [ ] `jdk.httpclient.auth.retrylimit`
-- [ ] `jdk.httpclient.bufsize`
+- [x] `jdk.httpclient.bufsize`
 - [ ] `jdk.httpclient.connectionPoolSize`
 - [ ] `jdk.httpclient.connectionWindowSize`
 - [ ] `jdk.httpclient.disableRetryConnect`

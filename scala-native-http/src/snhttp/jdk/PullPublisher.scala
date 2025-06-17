@@ -1,25 +1,23 @@
 package snhttp.jdk
 
-import java.util.concurrent.Flow
+import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
-import scala.concurrent.Promise
 import scala.util.control.NonFatal
-
-import snhttp.jdk.Demand
 import scala.util.{Try, Success, Failure}
 
+import snhttp.jdk.Demand
+
 private class PullSubscription[T](
-    private val subscriber: Flow.Subscriber[? >: T],
-    private val mayIter: Try[Iterator[T]],
-) extends Flow.Subscription {
+    private val subscriber: Subscriber[? >: T],
+    private val iter: Try[Iterable[T]],
+) extends Subscription {
 
   private val completed = new AtomicBoolean(false)
   private val cancelled = new AtomicBoolean(false)
   private val running = new AtomicBoolean(false)
   private val demand = Demand()
 
-  private val future = Promise[Unit]()
   // private val pullScheduler = new SimpleScheduler(() => pullTask())
 
   override def request(n: Long): Unit = {
@@ -67,47 +65,51 @@ private class PullSubscription[T](
   // private def decDemand(): Boolean =
   //   demand.updateAndGet(current => if current > 0 then current - 1 else 0) > 0
 
-  private[jdk] def runOrSchedule(): Unit =
-    if (running.compareAndSet(false, true)) {
-      try
-        mayIter match {
-          case scala.util.Success(iter) =>
-            while (demand.get() > 0 && iter.hasNext && !cancelled.get())
-              subscriber.onNext(iter.next())
-              // demand.decrease()
-            if (!iter.hasNext && !cancelled.get()) {
-              completed.set(true)
-              subscriber.onComplete()
-            }
-          case scala.util.Failure(t) =>
-            completed.set(true)
-            subscriber.onError(t)
-        }
-      catch {
-        case NonFatal(t) =>
-          completed.set(true)
-          subscriber.onError(t)
-      } finally
-        running.set(false)
-    }
+  private[jdk] def runOrSchedule(): Unit = ???
+  //   if (completed.get() || cancelled.get()) return
+  //   if (throwable != null) {
+  //     completed.compareAndSet(false, true)
+  //     subscriber.onError(throwable)
+  //     return
+  //   }
+
+  //   if (running.compareAndSet(false, true)) {
+  //     try
+  //       while demand.get() > 0 && iterator.hasNext && !cancelled.get() do {
+  //         subscriber.onNext(iterator.next())
+  //         // demand.decrease()
+  //         if (!iterator.hasNext && !cancelled.get()) {
+  //           completed.set(true)
+  //           subscriber.onComplete()
+  //         }
+  //       }
+  //     catch {
+  //       case NonFatal(t) =>
+  //         completed.set(true)
+  //         subscriber.onError(t)
+  //     } finally
+  //       running.set(false)
+  //   }
 
 }
 
 class PullPublisher[T] private[jdk] (
-    private val mayIterable: Try[Iterable[T]],
-) extends Flow.Publisher[T] {
-
-  override def subscribe(subscriber: Flow.Subscriber[? >: T]): Unit = {
-    val sub = new PullSubscription(subscriber, mayIterable.map(_.iterator))
+    // private val iter: Iterable[T],
+    // private val error: Throwable,
+    private val iter: Try[Iterable[T]],
+) extends Publisher[T] {
+  override def subscribe(subscriber: Subscriber[? >: T]): Unit =
+    val sub = PullSubscription[T](subscriber, iter)
     subscriber.onSubscribe(sub)
-    mayIterable.map(_ => sub.runOrSchedule())
-  }
+    iter.map(_ => sub.runOrSchedule())
 }
 object PullPublisher {
   def apply[T](iterable: Iterable[T]): PullPublisher[T] =
     new PullPublisher(Success(iterable))
-  def apply[T](error: Throwable): PullPublisher[T] =
-    new PullPublisher(Failure(error))
+    // new PullPublisher(iterable, null)
+  def apply[T](t: Throwable): PullPublisher[T] =
+    // new PullPublisher(null, t)
+    new PullPublisher(Failure(t))
 }
 
 private class SimpleScheduler(task: () => Unit) {

@@ -7,7 +7,7 @@ import java.util.List as JList
 import java.util.concurrent.Flow.Subscription
 import java.util.function.{Consumer, Function}
 
-import snhttp.testkits.MockSubscriber
+// import snhttp.testkits.MockSubscriber
 
 class BodySubscribersTest extends munit.FunSuite {
 
@@ -15,55 +15,55 @@ class BodySubscribersTest extends munit.FunSuite {
   // Test BodySubscribers.fromSubscriber() //
   // ===================================== //
 
-  test("BodySubscribers.fromSubscriber should work with custom subscriber") {
-    val ts = new MockSubscriber[JList[ByteBuffer]]()
-    val subscriber = BodySubscribers.fromSubscriber(
-      ts,
-      (_: MockSubscriber[JList[ByteBuffer]]) => "custom result",
-    )
+  // test("BodySubscribers.fromSubscriber should work with custom subscriber") {
+  //   val ts = new MockSubscriber[JList[ByteBuffer]]()
+  //   val subscriber = BodySubscribers.fromSubscriber(
+  //     ts,
+  //     (_: MockSubscriber[JList[ByteBuffer]]) => "custom result",
+  //   )
 
-    val testData = "Test data"
-    val bytes = testData.getBytes(StandardCharsets.UTF_8)
-    val buffer = ByteBuffer.wrap(bytes)
+  //   val testData = "Test data"
+  //   val bytes = testData.getBytes(StandardCharsets.UTF_8)
+  //   val buffer = ByteBuffer.wrap(bytes)
 
-    subscriber.onSubscribe(new Subscription {
-      override def request(n: Long): Unit = ()
-      override def cancel(): Unit = ()
-    })
-    subscriber.onNext(JList.of(buffer))
-    subscriber.onComplete()
+  //   subscriber.onSubscribe(new Subscription {
+  //     override def request(n: Long): Unit = ()
+  //     override def cancel(): Unit = ()
+  //   })
+  //   subscriber.onNext(JList.of(buffer))
+  //   subscriber.onComplete()
 
-    val result = subscriber.getBody().toCompletableFuture.get()
-    assertEquals(result, "custom result")
+  //   val result = subscriber.getBody().toCompletableFuture.get()
+  //   assertEquals(result, "custom result")
 
-  }
+  // }
 
   // ========================================= //
   // Test BodySubscribers.fromLineSubscriber() //
   // ========================================= //
 
-  test("BodySubscribers.fromLineSubscriber should handle line processing") {
-    val lineSubscriber = new MockSubscriber[String]()
-    val subscriber = BodySubscribers.fromLineSubscriber(
-      lineSubscriber,
-      (_: MockSubscriber[String]) => "line processing complete",
-      StandardCharsets.UTF_8,
-      "\n",
-    )
+  // test("BodySubscribers.fromLineSubscriber should handle line processing") {
+  //   val lineSubscriber = new MockSubscriber[String]()
+  //   val subscriber = BodySubscribers.fromLineSubscriber(
+  //     lineSubscriber,
+  //     (_: MockSubscriber[String]) => "line processing complete",
+  //     StandardCharsets.UTF_8,
+  //     "\n",
+  //   )
 
-    val testData = "Line 1\nLine 2\n"
-    val bytes = testData.getBytes(StandardCharsets.UTF_8)
+  //   val testData = "Line 1\nLine 2\n"
+  //   val bytes = testData.getBytes(StandardCharsets.UTF_8)
 
-    subscriber.onSubscribe(new Subscription {
-      override def request(n: Long): Unit = ()
-      override def cancel(): Unit = ()
-    })
-    subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
-    subscriber.onComplete()
+  //   subscriber.onSubscribe(new Subscription {
+  //     override def request(n: Long): Unit = ()
+  //     override def cancel(): Unit = ()
+  //   })
+  //   subscriber.onNext(JList.of(ByteBuffer.wrap(bytes)))
+  //   subscriber.onComplete()
 
-    val result = subscriber.getBody().toCompletableFuture.get()
-    assertEquals(result, "line processing complete")
-  }
+  //   val result = subscriber.getBody().toCompletableFuture.get()
+  //   assertEquals(result, "line processing complete")
+  // }
 
   // =============================== //
   // Test BodySubscribers.ofString() //

@@ -1,27 +1,58 @@
 package snhttp.jdk
 
-import java.io.{Closeable, InputStream, IOException, UncheckedIOException}
-import java.net.URI
+import java.io.InputStream
+import java.io.FileNotFoundException
 import java.net.http.HttpRequest.BodyPublisher
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path}
-import java.util.Optional
-import java.util.concurrent.Flow
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
-import java.util.function.{BiPredicate, Supplier}
-import java.util.stream.Stream
+import java.util.function.Supplier
 
-import scala.util.{Try, Success, Failure}
+import scala.collection.immutable.LazyList
+import scala.util.{Try, Failure, Success}
+
+import snhttp.jdk.PropertyUtils
+
+type BufferSubscriber = Subscriber[? >: ByteBuffer]
 
 class NoBodyPublisher() extends BodyPublisher {
   val delegate: Publisher[ByteBuffer] = PullPublisher(Seq(ByteBuffer.allocate(0)))
 
   def contentLength() = 0
 
-  def subscribe(subscriber: Subscriber[? >: ByteBuffer]) =
+  def subscribe(subscriber: BufferSubscriber) = delegate.subscribe(subscriber)
+}
+
+class ByteArrayPublisher(
+    bytes: Array[Byte],
+    offset: Int,
+    length: Int,
+    bufSize: Int = PropertyUtils.DEFAULT_BUFSIZE,
+) extends BodyPublisher {
+
+  override def contentLength(): Long = length
+
+  override def subscribe(subscriber: BufferSubscriber): Unit = {
+    val bufs =
+      if length <= bufSize
+      then {
+        val bb = ByteBuffer.allocate(length)
+        bb.put(bytes)
+        Seq()
+      } else
+        for i <- 0 until length by bufSize
+        yield {
+          val end = math.min(i + bufSize, offset + length)
+          val size = end - (offset + i)
+          val bb = ByteBuffer.allocate(size)
+          bb.put(bytes, offset + i, size)
+          bb
+        }
+
+    val delegate = PullPublisher(bufs)
     delegate.subscribe(subscriber)
+  }
 }
 
 class StringPublisher(
@@ -29,138 +60,75 @@ class StringPublisher(
     private val charset: Charset,
 ) extends BodyPublisher {
   private val bytes = body.getBytes(charset)
-  private val bufSize = 8192
+  private val delegate: ByteArrayPublisher = new ByteArrayPublisher(bytes, 0, bytes.length)
 
-  override def contentLength(): Long = bytes.length
+  override def contentLength(): Long =
+    delegate.contentLength()
 
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
-    val bufs = scala.collection.mutable.ListBuffer.empty[ByteBuffer]
-    var off = 0
-    var remain = bytes.length
-    while (remain > 0) {
-      val b = ByteBuffer.allocate(Math.min(bufSize, remain))
-      val tocopy = Math.min(b.capacity(), remain)
-      b.put(bytes, off, tocopy)
-      off += tocopy
-      remain -= tocopy
-      b.flip()
-      bufs += b
-    }
-    val delegate = PullPublisher(bufs)
+  override def subscribe(subscriber: BufferSubscriber): Unit =
+    delegate.subscribe(subscriber)
+}
+
+class ByteArraysPublisher(private val iter: Iterable[Array[Byte]]) extends BodyPublisher {
+  override def contentLength(): Long = -1
+
+  override def subscribe(subscriber: BufferSubscriber): Unit = {
+    val delegate = PullPublisher(iter.map(ByteBuffer.wrap))
     delegate.subscribe(subscriber)
   }
 }
 
-/**
- * Helper: transform from InputStream to ByteBuffer
- */
-class StreamIterator(is: InputStream, bufSize: Int = 8192) extends Iterator[ByteBuffer] {
-  private var eof = false
-  private var nextBuf: ByteBuffer = _
-  private var needRead = true
-  override def hasNext: Boolean = {
-    if (eof) return false
-    if (needRead) {
-      val buf = ByteBuffer.allocate(bufSize)
-      val n = is.read(buf.array())
-      if (n == -1) {
-        eof = true
-        is.close()
-        false
-      } else {
-        buf.limit(n)
-        buf.position(0)
-        nextBuf = buf
-        needRead = false
-        true
-      }
-    } else true
-  }
-  override def next(): ByteBuffer = {
-    if (!hasNext) throw new NoSuchElementException()
-    needRead = true
-    nextBuf
-  }
-}
-class InputStreamPublisher(private val streamSupplier: Supplier[? <: InputStream])
-    extends BodyPublisher {
+class InputStreamPublisher(
+    private val supplier: Supplier[? <: InputStream],
+    private val bufSize: Int = PropertyUtils.DEFAULT_BUFSIZE,
+) extends BodyPublisher {
   override def contentLength(): Long = -1
 
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
-    val is = streamSupplier.get()
-    val publisher =
-      if (is == null)
-        PullPublisher[ByteBuffer](new IOException("streamSupplier returned null"))
-      else
-        PullPublisher[ByteBuffer](new Iterable[ByteBuffer] {
-          def iterator: Iterator[ByteBuffer] = new StreamIterator(is)
-        })
+  override def subscribe(subscriber: BufferSubscriber): Unit = {
+    val is = supplier.get()
+    val bufs = LazyList
+      .continually {
+        val remain = is.available()
+        if remain <= 0
+        then None
+        else {
+          val allocSize = remain.min(bufSize)
+          val buf = ByteBuffer.wrap(is.readNBytes(allocSize))
+          Some(buf)
+        }
+      }
+      .takeWhile(_.isDefined)
+      .map(_.get)
+    val publisher = PullPublisher(bufs)
     publisher.subscribe(subscriber)
   }
 }
 
-class ByteArrayPublisher(buf: Array[Byte], offset: Int, length: Int) extends BodyPublisher {
-  override def contentLength(): Long = length
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
-    val bufs = scala.collection.mutable.ListBuffer.empty[ByteBuffer]
-    var off = offset
-    var remain = length
-    val bufSize = 8192
-    while (remain > 0) {
-      val b = ByteBuffer.allocate(Math.min(bufSize, remain))
-      val tocopy = Math.min(b.capacity(), remain)
-      b.put(buf, off, tocopy)
-      off += tocopy
-      remain -= tocopy
-      b.flip()
-      bufs += b
-    }
-    val delegate = PullPublisher(bufs)
-    delegate.subscribe(subscriber)
-  }
-}
+class FilePublisher(
+    private val path: Path,
+    private val bufSize: Int = PropertyUtils.DEFAULT_BUFSIZE,
+) extends BodyPublisher {
 
-class FilePublisher(private val path: Path, private val bufSize: Int = 8192) extends BodyPublisher {
+  private val file = path.toFile()
 
-  private lazy val maybeLength: Option[Long] =
-    Try(Files.size(path)) match {
-      case Success(size)           => Some(size)
-      case Failure(_: IOException) => None
-      case Failure(e) =>
-        throw new UncheckedIOException(new IOException(s"Error reading file size for $path", e))
-    }
+  private lazy val maybeLength: Try[Long] =
+    Try(file.length())
 
   override def contentLength(): Long = maybeLength.getOrElse(-1)
 
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
+  override def subscribe(subscriber: BufferSubscriber): Unit = {
     val publisher =
-      try {
-        val is = Files.newInputStream(path)
-        PullPublisher(new Iterable[ByteBuffer] {
-          def iterator: Iterator[ByteBuffer] = new StreamIterator(is, bufSize)
-        })
-      } catch {
-        case e: Throwable => PullPublisher(e)
-      }
+      if file.isFile()
+      then new InputStreamPublisher(() => Files.newInputStream(path))
+      else PullPublisher[ByteBuffer](new FileNotFoundException(s"File not found: $path"))
     publisher.subscribe(subscriber)
   }
 }
 
-class ByteArrayIterablePublisher(val iter: Iterable[Array[Byte]]) extends BodyPublisher {
-  override def contentLength(): Long = -1
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit = {
-    val byteBufferIter = new Iterable[ByteBuffer] {
-      def iterator: Iterator[ByteBuffer] = iter.iterator.map(ByteBuffer.wrap)
-    }
-    val delegate = new PullPublisher(Success(byteBufferIter))
-    delegate.subscribe(subscriber)
-  }
-}
+class PublisherAdapter(publisher: Publisher[? <: ByteBuffer], length: Long) extends BodyPublisher {
+  override def contentLength(): Long = length
 
-class PublisherAdapter(publisher: Publisher[? <: ByteBuffer], len: Long) extends BodyPublisher {
-  override def contentLength(): Long = len
-
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit =
+  override def subscribe(subscriber: BufferSubscriber): Unit =
     publisher.subscribe(subscriber)
 }
 
@@ -169,67 +137,23 @@ class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher 
     val lengths = publishers.map(_.contentLength())
     if lengths.contains(-1) then -1
     else lengths.sum
+    // TODO: Handle overflow if sum exceeds Long.MaxValue
+    //       if lengths.exists(_ < 0) then -1 else lengths.sum
 
-  override def subscribe(subscriber: Subscriber[? >: ByteBuffer]): Unit =
-    new AggregateSubscription(publishers.toList, subscriber).start()
-}
+  override def subscribe(subscriber: BufferSubscriber): Unit =
+    for publisher <- publishers yield publisher.subscribe(subscriber)
 
-class AggregateSubscription(
-    bodies: List[BodyPublisher],
-    subscriber: Subscriber[? >: ByteBuffer],
-) extends Subscription {
-  private val it = bodies.iterator
-  private var current: Subscription = null
-  private var cancelled = false
-  private var requested = 0L
-  private var done = false
-
-  def start(): Unit =
-    subscribeNext()
-
-  private def subscribeNext(): Unit =
-    if (it.hasNext && !cancelled) {
-      val nextPublisher = it.next()
-      nextPublisher.subscribe(new Subscriber[ByteBuffer] {
-        override def onSubscribe(s: Subscription): Unit = {
-          current = s
-          if (requested > 0) s.request(requested)
-        }
-        override def onNext(item: ByteBuffer): Unit =
-          subscriber.onNext(item)
-        override def onError(t: Throwable): Unit =
-          subscriber.onError(t)
-        override def onComplete(): Unit =
-          subscribeNext()
-      })
-    } else if (!done) {
-      done = true
-      subscriber.onComplete()
-    }
-
-  override def request(n: Long): Unit =
-    if (n <= 0)
-      subscriber.onError(new IllegalArgumentException("non-positive subscription request: " + n))
-    else {
-      requested += n
-      if (current != null) current.request(n)
-    }
-  override def cancel(): Unit = {
-    cancelled = true
-    if (current != null) current.cancel()
-  }
 }
 
 object BodyPublishersImpl {
 
-  def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher =
+  def fromPublisher(publisher: Publisher[? <: ByteBuffer]): BodyPublisher =
     new PublisherAdapter(publisher, -1)
 
   def fromPublisher(
-      publisher: Flow.Publisher[? <: ByteBuffer],
+      publisher: Publisher[? <: ByteBuffer],
       contentLength: Long,
   ): BodyPublisher =
-    require(contentLength >= 0, "contentLength can not be zero or negative")
     new PublisherAdapter(publisher, contentLength)
 
   def ofString(body: String, charset: Charset): BodyPublisher =
@@ -244,7 +168,7 @@ object BodyPublishersImpl {
   def ofFile(path: Path): BodyPublisher = new FilePublisher(path)
 
   def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher =
-    new ByteArrayIterablePublisher(iter)
+    new ByteArraysPublisher(iter)
 
   def noBody(): BodyPublisher = new NoBodyPublisher()
 

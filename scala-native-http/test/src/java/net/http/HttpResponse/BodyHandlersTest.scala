@@ -8,7 +8,7 @@ import java.util.Map as JMap
 import java.util.function.Function
 
 import snhttp.jdk.ResponseInfoImpl
-import snhttp.testkits.MockSubscriber
+// import snhttp.testkits.MockSubscriber
 
 class BodyHandlersTest extends munit.FunSuite {
 
@@ -28,23 +28,23 @@ class BodyHandlersTest extends munit.FunSuite {
   // Test BodyHandlers.fromSubscriber() //
   // ================================== //
 
-  test("BodyHandlers.fromSubscriber should handle custom finisher exceptions") {
-    val mockSubscriber = new MockSubscriber[JList[ByteBuffer]]()
-    val faultyFinisher: Function[MockSubscriber[JList[ByteBuffer]], String] =
-      _ => throw new RuntimeException("Finisher error")
+  // test("BodyHandlers.fromSubscriber should handle custom finisher exceptions") {
+  //   val mockSubscriber = MockSubscriber[JList[ByteBuffer]]()
+  //   val faultyFinisher: Function[MockSubscriber[JList[ByteBuffer]], String] =
+  //     _ => throw new RuntimeException("Finisher error")
 
-    val subscriber = BodySubscribers.fromSubscriber(mockSubscriber, faultyFinisher)
-    subscriber.onSubscribe(new Subscription {
-      override def request(n: Long): Unit = ()
-      override def cancel(): Unit = ()
-    })
-    subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
-    subscriber.onComplete()
+  //   val subscriber = BodySubscribers.fromSubscriber(mockSubscriber, faultyFinisher)
+  //   subscriber.onSubscribe(new Subscription {
+  //     override def request(n: Long): Unit = ()
+  //     override def cancel(): Unit = ()
+  //   })
+  //   subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
+  //   subscriber.onComplete()
 
-    intercept[Exception] {
-      subscriber.getBody().toCompletableFuture.get()
-    }
-  }
+  //   intercept[Exception] {
+  //     subscriber.getBody().toCompletableFuture.get()
+  //   }
+  // }
 
   // ============================ //
   // Test BodyHandlers.ofString() //

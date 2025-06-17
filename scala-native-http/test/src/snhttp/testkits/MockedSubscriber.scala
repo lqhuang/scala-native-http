@@ -1,24 +1,24 @@
 package snhttp.testkits
 
-import java.util.concurrent.Flow
+import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
-class MockSubscriber[T] extends Flow.Subscriber[T] {
-  val _received = ListBuffer[T]()
-  val completed = new AtomicBoolean(false)
-  val hasError = new AtomicBoolean(false)
-  var error: Throwable = null
-  var subscription: Flow.Subscription = null
+class MockSubscriber[T] extends Subscriber[T] {
+  val _received = ArrayBuffer[T]()
+  @volatile var completed = false
+  @volatile var hasError = false
+  @volatile var error: Throwable = null
+  @volatile var subscription: Subscription = null
   private val completionLatch = new CountDownLatch(1)
   private val errorLatch = new CountDownLatch(1)
 
   def received: List[T] = _received.toList
 
-  override def onSubscribe(subscription: Flow.Subscription): Unit =
+  override def onSubscribe(subscription: Subscription): Unit =
     this.subscription = subscription
 
   override def onNext(item: T): Unit = synchronized {
@@ -27,12 +27,12 @@ class MockSubscriber[T] extends Flow.Subscriber[T] {
 
   override def onError(throwable: Throwable): Unit = {
     error = throwable
-    hasError.set(true)
+    hasError = true
     errorLatch.countDown()
   }
 
   override def onComplete(): Unit = {
-    completed.set(true)
+    completed = true
     completionLatch.countDown()
   }
 
@@ -41,4 +41,7 @@ class MockSubscriber[T] extends Flow.Subscriber[T] {
 
   def waitForError(timeoutMs: Long): Boolean =
     errorLatch.await(timeoutMs, TimeUnit.MILLISECONDS)
+}
+object MockSubscriber {
+  def apply[T](): MockSubscriber[T] = new MockSubscriber[T]()
 }
