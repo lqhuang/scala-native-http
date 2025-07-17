@@ -246,7 +246,6 @@ class BodySubscribersTest extends munit.FunSuite {
       val fileContent = Files.readString(tempFile, StandardCharsets.UTF_8)
       assertEquals(fileContent, testData)
     } finally Files.deleteIfExists(tempFile)
-
   }
 
   test("BodySubscribers.ofFile should handle concurrent writes") {
