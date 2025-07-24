@@ -1,31 +1,29 @@
+//| mill-version: 1.0.1
+/// mvnDeps:
+///   - com.goyeau::mill-scalafix::0.4.0
+///   - com.github.lolgab::mill-mima_mill1:0.2.0
+///   - com.indoorvivants.vcpkg::mill-vcpkg:0.0.21
+
 package build
 
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
-import $ivy.`com.goyeau::mill-scalafix::0.4.0`
-import $ivy.`com.github.lolgab::mill-mima::0.0.24`
-import $ivy.`com.lihaoyi::mill-contrib-bloop:`
-// import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.21`
-
 import mill.{scalalib, scalanativelib}
-import mill.Agg
-import mill.define.{Cross, Task}
-import mill.contrib.bloop.Bloop
-import scalalib.DepSyntax // for `ivy` string interpolator
+import mill.api.{Cross, Task}
+import mill.util.VcsVersion
+
+import scalalib.DepSyntax // for `mvn` string interpolator
 import scalalib.{CrossScalaModule, TestModule, PublishModule}
 import scalalib.publish.{Developer, License, PomSettings, VersionControl}
 import scalalib.scalafmt.ScalafmtModule
 import scalanativelib.ScalaNativeModule
 import scalanativelib.api.{LTO, ReleaseMode}
 
-import de.tobiasroeser.mill.vcs.version.VcsVersion
-import com.goyeau.mill.scalafix.ScalafixModule
+// import com.github.lolgab.mill.mima.*
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
 val scalaNextVersion = sys.props.get("scalaNextVersion")
 val scalaVersions = Seq("3.3.4") ++ scalaNextVersion
 
 def format = ScalafmtModule
-def bloop = Bloop
 
 trait HttpPublishModule extends PublishModule {
   def pomSettings = PomSettings(
@@ -44,11 +42,7 @@ trait HttpPublishModule extends PublishModule {
 }
 
 object `scala-native-http` extends Cross[ScalaNtiveHttpModule](scalaVersions)
-trait ScalaNtiveHttpModule
-    extends CrossScalaModule
-    with ScalaNativeModule
-    with HttpPublishModule
-    with ScalafixModule {
+trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with HttpPublishModule {
 
   def scalaNativeVersion = "0.5.7"
 
@@ -56,11 +50,11 @@ trait ScalaNtiveHttpModule
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
   )
 
-  def ivyDeps = Agg(
-    ivy"io.github.cquiroz::scala-java-locales::1.5.4",
-    ivy"io.github.cquiroz::scala-java-time::2.6.0",
-    ivy"com.github.lolgab::scala-native-crypto::0.2.0",
-    ivy"com.github.lolgab::native-loop-core::0.3.0",
+  def mvnDeps = Seq(
+    mvn"io.github.cquiroz::scala-java-locales::1.5.4",
+    mvn"io.github.cquiroz::scala-java-time::2.6.0",
+    mvn"com.github.lolgab::scala-native-crypto::0.2.0",
+    mvn"com.github.lolgab::native-loop-core::0.3.0",
   )
 
   /// Define Scala Native Module
@@ -83,11 +77,11 @@ trait ScalaNtiveHttpModule
 
   /// Define testing
   object test extends ScalaNativeTests with TestModule.Munit {
-    def ivyDeps = Agg(
-      ivy"org.scalameta::munit::1.0.4",
+    def mvnDeps = Seq(
+      mvn"org.scalameta::munit::1.0.4",
     )
-    // def toolsIvyDeps = Agg(
-    //   ivy"com.dimafeng::testcontainers-scala-munit:0.43.0",
+    // def toolsmvnDeps = Seq(
+    //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",
     // )
   }
 }
