@@ -1,5 +1,8 @@
 package snhttp
 
+type MethodLiteral =
+  "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE" | "PATCH"
+
 enum Method(val value: String) {
   case GET extends Method("GET")
   case HEAD extends Method("HEAD")

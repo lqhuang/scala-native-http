@@ -1,3 +1,11 @@
+# metals
+.metals/
+.bloop/
+.scala-build/
+metals.sbt
+
+# mill
+out/
 .mill/
 out/
 .scala-build
