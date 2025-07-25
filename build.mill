@@ -7,7 +7,6 @@
 package build
 
 import mill.{scalalib, scalanativelib}
-import mill.api.{Cross, Task}
 import mill.util.VcsVersion
 
 import scalalib.DepSyntax // for `mvn` string interpolator
@@ -21,39 +20,35 @@ import scalanativelib.api.{LTO, ReleaseMode}
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
 val scalaNextVersion = sys.props.get("scalaNextVersion")
-val scalaVersions = Seq("3.3.4") ++ scalaNextVersion
+val scalaVersions = Seq("3.3.6") ++ scalaNextVersion
+val scalaNativeVersion = "0.5.8"
 
-def format = ScalafmtModule
+// def format = ScalafmtModule
 
 trait HttpPublishModule extends PublishModule {
+  def publishVersion = VcsVersion.vcsState().format()
   def pomSettings = PomSettings(
     description = "Scala Native HTTP Client",
     organization = "io.lqhuang",
     url = "https://github.com/lqhuang/scala-native-http",
-    licenses = Seq(License.MIT),
+    licenses = Seq(License.`Apache-2.0`),
     versionControl = VersionControl.github("lqhuang", "scala-native-http"),
     developers = Seq(
-      Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab"),
       Developer("lqhuang", "Lanqing Huang", "https://github.com/lqhuang"),
+      Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab"),
     ),
   )
-
-  def publishVersion = VcsVersion.vcsState().format()
 }
 
-object `scala-native-http` extends Cross[ScalaNtiveHttpModule](scalaVersions)
-trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with HttpPublishModule {
+trait CommonHttpModule extends CrossScalaModule with ScalaNativeModule with HttpPublishModule {
 
-  def scalaNativeVersion = "0.5.7"
+  def scalaNativeVersion = build.scalaNativeVersion
 
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
   )
 
   def mvnDeps = Seq(
-    mvn"io.github.cquiroz::scala-java-locales::1.5.4",
-    mvn"io.github.cquiroz::scala-java-time::2.6.0",
-    mvn"com.github.lolgab::scala-native-crypto::0.2.0",
     mvn"com.github.lolgab::native-loop-core::0.3.0",
   )
 
@@ -79,8 +74,11 @@ trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with 
   object test extends ScalaNativeTests with TestModule.Munit {
     def munitVersion = "1.0.4"
 
+    def testParallelism = true
+
     // def toolsmvnDeps = Seq(
     //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",
     // )
   }
+
 }

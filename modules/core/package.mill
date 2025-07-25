@@ -1,0 +1,9 @@
+package build.modules.core
+
+import mill.api.Cross
+
+object `package` extends Cross[SNHttpCore](build.scalaVersions)
+trait SNHttpCore extends build.CommonHttpModule {
+
+  // def sources = Task { Seq(PathRef("core/src")) }
+}

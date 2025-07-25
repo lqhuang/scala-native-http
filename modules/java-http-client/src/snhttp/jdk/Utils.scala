@@ -1,4 +1,4 @@
-package snhttp.internal
+package snhttp.jdk
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.net.http.HttpHeaders

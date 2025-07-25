@@ -1,6 +1,11 @@
 MILL := ./mill
 TASK_TARGET := scala-native-http[]
 
+
+##############
+# Toolcahins #
+##############
+
 .PHONY: bloop
 bloop:
 	${MILL} bloop.install
@@ -16,6 +21,11 @@ fmt:
 install-mill-autocomp:
 	${MILL} mill.tabcomplete/install
 	source ~/.cache/mill/download/mill-completion.sh # MILL_SOURCE_COMPLETION_LINE
+
+#########
+# Build #
+#########
+
 
 fix-check:
 	${MILL} ${TASK_TARGET}.fix --check
@@ -79,6 +89,10 @@ debug-test-native:
 	${MILL} show ${TASK_TARGET}.test.nativeOptimizeInput
 	${MILL} show ${TASK_TARGET}.test.nativeTarget
 	${MILL} show ${TASK_TARGET}.test.nativeWorkdir
+
+#########
+# Utils #
+#########
 
 cloc:
 	cloc --vcs=git
