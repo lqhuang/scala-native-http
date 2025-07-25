@@ -77,9 +77,8 @@ trait ScalaNtiveHttpModule extends CrossScalaModule with ScalaNativeModule with 
 
   /// Define testing
   object test extends ScalaNativeTests with TestModule.Munit {
-    def mvnDeps = Seq(
-      mvn"org.scalameta::munit::1.0.4",
-    )
+    def munitVersion = "1.0.4"
+
     // def toolsmvnDeps = Seq(
     //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",
     // )

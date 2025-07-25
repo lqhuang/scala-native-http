@@ -135,14 +135,11 @@ class PublisherAdapter(publisher: Publisher[? <: ByteBuffer], length: Long) exte
 class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher {
   override def contentLength(): Long =
     val lengths = publishers.map(_.contentLength())
-    if lengths.contains(-1) then -1
-    else lengths.sum
-    // TODO: Handle overflow if sum exceeds Long.MaxValue
-    //       if lengths.exists(_ < 0) then -1 else lengths.sum
+    val sum = lengths.fold(0L)((x, y) => if x < 0 || y < 0 then -1 else x + y)
+    if sum < 0 then -1 else sum
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
     for publisher <- publishers yield publisher.subscribe(subscriber)
-
 }
 
 object BodyPublishersImpl {
