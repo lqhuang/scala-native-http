@@ -5,7 +5,7 @@ import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.BiPredicate
 
-import snhttp.internal.Utils
+import snhttp.jdk.Utils
 
 class UtilsTest extends munit.FunSuite {
 

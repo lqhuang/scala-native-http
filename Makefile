@@ -6,11 +6,7 @@ TASK_TARGET := scala-native-http[]
 # Toolcahins #
 ##############
 
-.PHONY: bloop
-bloop:
-	${MILL} bloop.install
-
-.PHONY: bloop
+.PHONY: bsp
 bsp:
 	${MILL} --bsp-install
 
@@ -41,6 +37,10 @@ test:
 .PHONY: clean
 clean:
 	${MILL} clean
+
+.PHONY: clean-all
+clean-all: clean
+	rm -rf .bsp/ .metals/ out/
 
 debug-native:
 	${MILL} show ${TASK_TARGET}.bridgeFullClassPath
