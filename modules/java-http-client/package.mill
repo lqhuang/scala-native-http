@@ -5,8 +5,8 @@ import mill.scalalib.DepSyntax
 
 object `package` extends Cross[JavaHttpClient](build.scalaVersions) {}
 trait JavaHttpClient extends build.CommonHttpModule {
-  // def sources = Task { Seq(os.Path("java")) }
-  def moduleDeps = Seq()
+  // TODO: ???
+  // def moduleDeps = Seq(build.modules.core)
 
   def mvnDeps = Seq(
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",

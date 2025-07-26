@@ -13,12 +13,12 @@ import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
 import snhttp.jdk.PropertyUtils
-import snhttp.Method
+import snhttp.core.Method
 
 class HttpRequestBuilderImpl(
     var uri: Option[URI] = None,
     var expectContinue: Boolean = false,
-    var method: String = Method.GET.value,
+    var method: Method = "GET",
     var version: Option[Version] = None,
     var timeout: Option[Duration] = None,
     var bodyPublisher: Option[BodyPublisher] = None,
@@ -94,11 +94,11 @@ class HttpRequestBuilderImpl(
     requireNonNull(method)
     requireNonNull(bodyPublisher)
 
-    Method(method.trim().toUpperCase()) match {
+    Method(method) match {
       case None =>
         throw new IllegalArgumentException(s"Invalid HTTP method: ${method}")
       case Some(m) =>
-        this.method = m.value
+        this.method = m
         this.bodyPublisher = Some(bodyPublisher)
     }
 
@@ -106,31 +106,31 @@ class HttpRequestBuilderImpl(
   }
 
   def GET(): Builder = {
-    this.method = Method.GET.value
+    this.method = "GET"
     this.bodyPublisher = None
     this
   }
 
   def POST(bodyPublisher: BodyPublisher): Builder = {
-    this.method = Method.POST.value
+    this.method = "POST"
     this.bodyPublisher = Some(bodyPublisher)
     this
   }
 
   def PUT(bodyPublisher: BodyPublisher): Builder = {
-    this.method = Method.PUT.value
+    this.method = "PUT"
     this.bodyPublisher = Some(bodyPublisher)
     this
   }
 
   def DELETE(): Builder = {
-    this.method = Method.DELETE.value
+    this.method = "DELETE"
     this.bodyPublisher = None
     this
   }
 
   def HEAD(): Builder = {
-    this.method = Method.HEAD.value
+    this.method = "HEAD"
     this.bodyPublisher = None
     this
   }
