@@ -86,9 +86,7 @@ object HttpClient {
   }
 
   /// @since 11
-  trait Builder {
-    final val NO_PROXY: ProxySelector = ProxySelector.of(null)
-
+  abstract class Builder {
     // def cookieHandler(cookieHandler: CookieHandler): Builder
 
     def connectTimeout(duration: Duration): Builder
@@ -112,6 +110,9 @@ object HttpClient {
     def localAddress(localAddr: InetAddress): Builder
 
     def build(): HttpClient
+  }
+  object Builder {
+    final val NO_PROXY: ProxySelector = ProxySelector.of(null)
   }
 
   def newHttpClient(): HttpClient = newBuilder().build()
