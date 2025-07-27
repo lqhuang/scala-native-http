@@ -60,10 +60,10 @@ abstract class HttpClient extends AutoCloseable {
   def shutdownNow(): Unit
 
   override def close(): Unit = {
-    var interrupted = false
+    @volatile var interrupted = false
     while !isTerminated() do {
       shutdown()
-      try awaitTermination(Duration.ofDays(1L))
+      try awaitTermination(Duration.ofSeconds(10L))
       catch {
         case e: InterruptedException =>
           if (!interrupted) {
