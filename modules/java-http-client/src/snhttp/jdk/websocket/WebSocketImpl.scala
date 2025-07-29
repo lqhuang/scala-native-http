@@ -1,4 +1,4 @@
-package snhttp.jdk
+package snhttp.jdk.websocket
 
 import java.net.URI
 import java.net.http.WebSocket
@@ -9,6 +9,8 @@ import java.util.List as JList
 import java.util.Objects.requireNonNull
 
 import scala.collection.mutable.HashMap
+
+import snhttp.jdk.HttpClientImpl
 
 class WebSocketBuilderImpl(client: HttpClientImpl) extends WebSocket.Builder:
   private var _timeout: Duration = Duration.ofSeconds(30)
