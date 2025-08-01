@@ -38,106 +38,93 @@ import snhttp.experimental.libcurl.core.{Curl, CurlCode, CurlSocket}
 object multi:
   @name("CURLM") opaque type CurlMulti = Byte
 
-  @name("CURLMcode") opaque type CurlMultiCode = Int
+  @name("CURLMcode")
+  type CurlMultiCode = Int
   object CurlMultiCode:
     given Tag[CurlMultiCode] = Tag.Int
+
     inline def define(inline a: Int): CurlMultiCode = a
 
-    /** please call curl_multi_perform() or curl_multi_socket*() soon */
-    val CURLM_CALL_MULTI_PERFORM = define(-1)
-    val CURLM_OK = define(0)
-
-    /** the passed-in handle is not a valid CURLM handle */
-    val CURLM_BAD_HANDLE = define(1)
-
-    /** an easy handle was not good/valid */
-    val CURLM_BAD_EASY_HANDLE = define(2)
-
-    /** if you ever get this, you're in deep sh*t */
-    val CURLM_OUT_OF_MEMORY = define(3)
-
-    /** this is a libcurl bug */
-    val CURLM_INTERNAL_ERROR = define(4)
-
-    /** the passed in socket argument did not match */
-    val CURLM_BAD_SOCKET = define(5)
-
-    /** curl_multi_setopt() with unsupported option */
-    val CURLM_UNKNOWN_OPTION = define(6)
-
-    /**
-     * an easy handle already added to a multi handle was attempted to get added - again
-     */
-    val CURLM_ADDED_ALREADY = define(7)
-
-    /**
-     * an api function was called from inside a callback
-     */
-    val CURLM_RECURSIVE_API_CALL = define(8)
-
-    /** wakeup is unavailable or failed */
-    val CURLM_WAKEUP_FAILURE = define(9)
-
-    /** function called with a bad parameter */
-    val CURLM_BAD_FUNCTION_ARGUMENT = define(10)
-    val CURLM_ABORTED_BY_CALLBACK = define(11)
-    val CURLM_UNRECOVERABLE_POLL = define(12)
-    val CURLM_LAST = define(13)
+    /* please call curl_multi_perform() or curl_multi_socket*() soon */
+    val CALL_MULTI_PERFORM = define(-1)
+    val OK = define(0)
+    /* the passed-in handle is not a valid CURLM handle */
+    val BAD_HANDLE = define(1)
+    /* an easy handle was not good/valid */
+    val BAD_EASY_HANDLE = define(2)
+    /* if you ever get this, you're in deep sh*t */
+    val OUT_OF_MEMORY = define(3)
+    /* this is a libcurl bug */
+    val INTERNAL_ERROR = define(4)
+    /* the passed in socket argument did not match */
+    val BAD_SOCKET = define(5)
+    /* curl_multi_setopt() with unsupported option */
+    val UNKNOWN_OPTION = define(6)
+    /* an easy handle already added to a multi handle was attempted to get added - again */
+    val ADDED_ALREADY = define(7)
+    /* an api function was called from inside a callback */
+    val RECURSIVE_API_CALL = define(8)
+    /* wakeup is unavailable or failed */
+    val WAKEUP_FAILURE = define(9)
+    /* function called with a bad parameter */
+    val BAD_FUNCTION_ARGUMENT = define(10)
+    val ABORTED_BY_CALLBACK = define(11)
+    val UNRECOVERABLE_POLL = define(12)
+    val LAST = define(13)
 
     inline def getName(inline value: CurlMultiCode): Option[String] =
       inline value match
-        case CURLM_CALL_MULTI_PERFORM    => Some("CURLM_CALL_MULTI_PERFORM")
-        case CURLM_OK                    => Some("CURLM_OK")
-        case CURLM_BAD_HANDLE            => Some("CURLM_BAD_HANDLE")
-        case CURLM_BAD_EASY_HANDLE       => Some("CURLM_BAD_EASY_HANDLE")
-        case CURLM_OUT_OF_MEMORY         => Some("CURLM_OUT_OF_MEMORY")
-        case CURLM_INTERNAL_ERROR        => Some("CURLM_INTERNAL_ERROR")
-        case CURLM_BAD_SOCKET            => Some("CURLM_BAD_SOCKET")
-        case CURLM_UNKNOWN_OPTION        => Some("CURLM_UNKNOWN_OPTION")
-        case CURLM_ADDED_ALREADY         => Some("CURLM_ADDED_ALREADY")
-        case CURLM_RECURSIVE_API_CALL    => Some("CURLM_RECURSIVE_API_CALL")
-        case CURLM_WAKEUP_FAILURE        => Some("CURLM_WAKEUP_FAILURE")
-        case CURLM_BAD_FUNCTION_ARGUMENT => Some("CURLM_BAD_FUNCTION_ARGUMENT")
-        case CURLM_ABORTED_BY_CALLBACK   => Some("CURLM_ABORTED_BY_CALLBACK")
-        case CURLM_UNRECOVERABLE_POLL    => Some("CURLM_UNRECOVERABLE_POLL")
-        case CURLM_LAST                  => Some("CURLM_LAST")
-        case _                           => None
+        case CALL_MULTI_PERFORM    => Some("CURLM_CALL_MULTI_PERFORM")
+        case OK                    => Some("CURLM_OK")
+        case BAD_HANDLE            => Some("CURLM_BAD_HANDLE")
+        case BAD_EASY_HANDLE       => Some("CURLM_BAD_EASY_HANDLE")
+        case OUT_OF_MEMORY         => Some("CURLM_OUT_OF_MEMORY")
+        case INTERNAL_ERROR        => Some("CURLM_INTERNAL_ERROR")
+        case BAD_SOCKET            => Some("CURLM_BAD_SOCKET")
+        case UNKNOWN_OPTION        => Some("CURLM_UNKNOWN_OPTION")
+        case ADDED_ALREADY         => Some("CURLM_ADDED_ALREADY")
+        case RECURSIVE_API_CALL    => Some("CURLM_RECURSIVE_API_CALL")
+        case WAKEUP_FAILURE        => Some("CURLM_WAKEUP_FAILURE")
+        case BAD_FUNCTION_ARGUMENT => Some("CURLM_BAD_FUNCTION_ARGUMENT")
+        case ABORTED_BY_CALLBACK   => Some("CURLM_ABORTED_BY_CALLBACK")
+        case UNRECOVERABLE_POLL    => Some("CURLM_UNRECOVERABLE_POLL")
+        case LAST                  => Some("CURLM_LAST")
+        case _                     => None
+
     extension (a: CurlMultiCode)
       inline def &(b: CurlMultiCode): CurlMultiCode = a & b
       inline def |(b: CurlMultiCode): CurlMultiCode = a | b
       inline def is(b: CurlMultiCode): Boolean = (a & b) == b
 
   /** enum CURLMSG */
-  @name("CURLMSG") opaque type CurlMsgCode = UInt
+  @name("CURLMSG")
+  opaque type CurlMsgCode = UInt
   object CurlMsgCode:
     given Tag[CurlMsgCode] = Tag.UInt
 
     inline def define(inline a: Long): CurlMsgCode = a.toUInt
 
-    /** first, not used */
-    val CURLMSG_NONE = define(0)
-
-    /**
-     * This easy handle has completed. 'result' contains the CurlCode of the transfer
-     */
-    val CURLMSG_DONE = define(1)
-
-    /** last, not used */
-    val CURLMSG_LAST = define(2)
+    /* first, not used */
+    val NONE = define(0)
+    /* This easy handle has completed. 'result' contains the CurlCode of the transfer */
+    val DONE = define(1)
+    /* last, not used */
+    val LAST = define(2)
 
     inline def getName(inline value: CurlMsgCode): Option[String] =
       inline value match
-        case CURLMSG_NONE => Some("CURLMSG_NONE")
-        case CURLMSG_DONE => Some("CURLMSG_DONE")
-        case CURLMSG_LAST => Some("CURLMSG_LAST")
-        case _            => None
+        case NONE => Some("CURLMSG_NONE")
+        case DONE => Some("CURLMSG_DONE")
+        case LAST => Some("CURLMSG_LAST")
+        case _    => None
 
     extension (a: CurlMsgCode)
       inline def &(b: CurlMsgCode): CurlMsgCode = a & b
       inline def |(b: CurlMsgCode): CurlMsgCode = a | b
       inline def is(b: CurlMsgCode): Boolean = (a & b) == b
 
-  @name("CURLMsg") opaque type CurlMsg = CStruct3[
+  @name("CURLMsg")
+  opaque type CurlMsg = CStruct3[
     /**
      * msg
      *
@@ -202,7 +189,9 @@ object multi:
   opaque type CurlWait = UInt
   object CurlWait:
     given Tag[CurlWait] = Tag.UInt
+
     inline def define(inline a: Int): CurlWait = a.toUInt
+
     val POLLIN = define(0x0001)
     val POLLPRI = define(0x0002)
     val POLLOUT = define(0x0004)
@@ -234,7 +223,7 @@ object multi:
    * Returns: a new CURLM handle to use in all 'curl_multi' functions.
    */
   @name("curl_multi_init")
-  def init(): CurlMulti = extern
+  def multiInit(): CurlMulti = extern
 
   /**
    * Name: curl_multi_add_handle()
@@ -244,7 +233,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_add_handle")
-  def addHandle(multiHandle: Ptr[CurlMulti], curl_handle: Ptr[Curl]): CurlMultiCode = extern
+  def multiAddHandle(multiHandle: Ptr[CurlMulti], curl_handle: Ptr[Curl]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_remove_handle()
@@ -254,9 +243,9 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_remove_handle")
-  def removeHandle(
+  def multiRemoveHandle(
       multiHandle: Ptr[CurlMulti],
-      curl_handle: Ptr[Curl],
+      curlHandle: Ptr[Curl],
   ): CurlMultiCode = extern
 
   /**
@@ -268,12 +257,12 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_fdset")
-  def fdset(
+  def multiFdSet(
       multiHandle: Ptr[CurlMulti],
-      read_fd_set: Ptr[fd_set],
-      write_fd_set: Ptr[fd_set],
-      exc_fd_set: Ptr[fd_set],
-      max_fd: Ptr[Int],
+      readFdSet: Ptr[fd_set],
+      writeFdSet: Ptr[fd_set],
+      excFdSet: Ptr[fd_set],
+      maxFd: Ptr[Int],
   ): CurlMultiCode = extern
 
   /**
@@ -284,11 +273,11 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_wait")
-  def wait(
+  def multiWait(
       multiHandle: Ptr[CurlMulti],
-      extra_fds: Ptr[CurlWaitFd],
-      extra_nfds: UInt,
-      timeout_ms: Int,
+      extraFds: Ptr[CurlWaitFd],
+      extraNfds: UInt,
+      timeoutMs: Int,
       ret: Ptr[Int],
   ): CurlMultiCode = extern
 
@@ -300,11 +289,11 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_poll")
-  def poll(
+  def multiPoll(
       multiHandle: Ptr[CurlMulti],
-      extra_fds: Ptr[CurlWaitFd],
-      extra_nfds: UInt,
-      timeout_ms: Int,
+      extraFds: Ptr[CurlWaitFd],
+      extraNfds: UInt,
+      timeoutMs: Int,
       ret: Ptr[Int],
   ): CurlMultiCode = extern
 
@@ -316,7 +305,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_wakeup")
-  def wakeup(multiHandle: Ptr[CurlMulti]): CurlMultiCode = extern
+  def multiWakeup(multiHandle: Ptr[CurlMulti]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_perform()
@@ -332,7 +321,7 @@ object multi:
    * transfers even when this returns OK.
    */
   @name("curl_multi_perform")
-  def perform(multiHandle: Ptr[CurlMulti], running_handles: Ptr[Int]): CurlMultiCode = extern
+  def multiPerform(multiHandle: Ptr[CurlMulti], runningHandles: Ptr[Int]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_cleanup()
@@ -344,7 +333,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_cleanup")
-  def cleanup(multiHandle: Ptr[CurlMulti]): CurlMultiCode = extern
+  def multiCleanup(multiHandle: Ptr[CurlMulti]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_info_read()
@@ -369,7 +358,7 @@ object multi:
    * argument points to.
    */
   @name("curl_multi_info_read")
-  def infoRead(multiHandle: Ptr[CurlMulti], msgs_in_queue: Ptr[Int]): Ptr[CurlMsg] = extern
+  def multiInfoRead(multiHandle: Ptr[CurlMulti], msgsInQueue: Ptr[Int]): Ptr[CurlMsg] = extern
 
   /**
    * Name: curl_multi_strerror()
@@ -380,7 +369,7 @@ object multi:
    * Returns: A pointer to a null-terminated error message.
    */
   @name("curl_multi_strerror")
-  def strerror(code: CurlMultiCode): CString = extern
+  def multiStrError(code: CurlMultiCode): CString = extern
 
   /**
    * Name: curl_multi_socket() and curl_multi_socket_all()
@@ -436,14 +425,6 @@ object multi:
         inline o: CFuncPtr5[Ptr[Curl], CurlSocket, Int, CVoidPtr, CVoidPtr, Int],
     ): CurlSocketCallback = o
 
-    // inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): CurlSocketCallback =
-    //   CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
-    //
-    // extension (v: CurlSocketCallback)
-    //   inline def value: CFuncPtr5[Ptr[Curl], CurlSocket, Int, Ptr[Byte], Ptr[Byte], Int] = v
-    //
-    //   inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
-
   /**
    * Name: curl_multi_timer_callback
    *
@@ -471,22 +452,14 @@ object multi:
         inline o: CFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int],
     ): CurlMultiTimerCallback = o
 
-    // inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): CurlMultiTimerCallback =
-    //   CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
-
-    // extension (v: CurlMultiTimerCallback)
-    //   inline def value: CFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int] = v
-
-    //   inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
-
   // func `curl_multi_socket` is DEPRECATED since curl 7.19.5
 
   @name("curl_multi_socket_action")
-  def socket_action(
+  def multiSocketAction(
       multiHandle: Ptr[CurlMulti],
       s: CurlSocket,
-      ev_bitmask: Int,
-      running_handles: Ptr[Int],
+      evBitmask: Int,
+      runningHandles: Ptr[Int],
   ): CurlMultiCode = extern
 
   // func `curl_multi_socket_all` is DEPRECATED since curl 7.19.5
@@ -509,82 +482,61 @@ object multi:
     given Tag[CurlMultiOption] = Tag.UInt
 
     inline def define(inline a: Long): CurlMultiOption = a.toUInt
-
-    /** This is the socket callback function pointer */
-    val CURLMOPT_SOCKETFUNCTION = define(20001)
-
-    /** This is the argument passed to the socket callback */
-    val CURLMOPT_SOCKETDATA = define(10002)
-
-    /** set to 1 to enable pipelining for this multi handle */
-    val CURLMOPT_PIPELINING = define(3)
-
-    /** This is the timer callback function pointer */
-    val CURLMOPT_TIMERFUNCTION = define(20004)
-
-    /** This is the argument passed to the timer callback */
-    val CURLMOPT_TIMERDATA = define(10005)
-
-    /** maximum number of entries in the connection cache */
-    val CURLMOPT_MAXCONNECTS = define(6)
-
-    /** maximum number of (pipelining) connections to one host */
-    val CURLMOPT_MAX_HOST_CONNECTIONS = define(7)
-
-    /** maximum number of requests in a pipeline */
-    val CURLMOPT_MAX_PIPELINE_LENGTH = define(8)
-
-    /**
-     * a connection with a content-length longer than this will not be considered for pipelining
-     */
-    val CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE = define(30009)
-
-    /**
-     * a connection with a chunk length longer than this will not be considered for pipelining
-     */
-    val CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE = define(30010)
-
-    /** a list of site names(+port) that are blocked from pipelining */
-    val CURLMOPT_PIPELINING_SITE_BL = define(10011)
-
-    /** a list of server types that are blocked from pipelining */
-    val CURLMOPT_PIPELINING_SERVER_BL = define(10012)
-
-    /** maximum number of open connections in total */
-    val CURLMOPT_MAX_TOTAL_CONNECTIONS = define(13)
-
-    /** This is the server push callback function pointer */
-    val CURLMOPT_PUSHFUNCTION = define(20014)
-
-    /** This is the argument passed to the server push callback */
-    val CURLMOPT_PUSHDATA = define(10015)
-
-    /** maximum number of concurrent streams to support on a connection */
-    val CURLMOPT_MAX_CONCURRENT_STREAMS = define(16)
-
-    /** the last unused */
-    val CURLMOPT_LASTENTRY = define(17)
+    /* This is the socket callback function pointer */
+    val SOCKETFUNCTION = define(20001)
+    /* This is the argument passed to the socket callback */
+    val SOCKETDATA = define(10002)
+    /* set to 1 to enable pipelining for this multi handle */
+    val PIPELINING = define(3)
+    /* This is the timer callback function pointer */
+    val TIMERFUNCTION = define(20004)
+    /* This is the argument passed to the timer callback */
+    val TIMERDATA = define(10005)
+    /* maximum number of entries in the connection cache */
+    val MAXCONNECTS = define(6)
+    /* maximum number of (pipelining) connections to one host */
+    val MAX_HOST_CONNECTIONS = define(7)
+    /* maximum number of requests in a pipeline */
+    val MAX_PIPELINE_LENGTH = define(8)
+    /* a connection with a content-length longer than this will not be considered for pipelining */
+    val CONTENT_LENGTH_PENALTY_SIZE = define(30009)
+    /* a connection with a chunk length longer than this will not be considered for pipelining */
+    val CHUNK_LENGTH_PENALTY_SIZE = define(30010)
+    /* a list of site names(+port) that are blocked from pipelining */
+    val PIPELINING_SITE_BL = define(10011)
+    /* a list of server types that are blocked from pipelining */
+    val PIPELINING_SERVER_BL = define(10012)
+    /* maximum number of open connections in total */
+    val MAX_TOTAL_CONNECTIONS = define(13)
+    /* This is the server push callback function pointer */
+    val PUSHFUNCTION = define(20014)
+    /* This is the argument passed to the server push callback */
+    val PUSHDATA = define(10015)
+    /* maximum number of concurrent streams to support on a connection */
+    val MAX_CONCURRENT_STREAMS = define(16)
+    /* the last unused */
+    val LASTENTRY = define(17)
 
     inline def getName(inline value: CurlMultiOption): Option[String] =
       inline value match
-        case CURLMOPT_SOCKETFUNCTION              => Some("CURLMOPT_SOCKETFUNCTION")
-        case CURLMOPT_SOCKETDATA                  => Some("CURLMOPT_SOCKETDATA")
-        case CURLMOPT_PIPELINING                  => Some("CURLMOPT_PIPELINING")
-        case CURLMOPT_TIMERFUNCTION               => Some("CURLMOPT_TIMERFUNCTION")
-        case CURLMOPT_TIMERDATA                   => Some("CURLMOPT_TIMERDATA")
-        case CURLMOPT_MAXCONNECTS                 => Some("CURLMOPT_MAXCONNECTS")
-        case CURLMOPT_MAX_HOST_CONNECTIONS        => Some("CURLMOPT_MAX_HOST_CONNECTIONS")
-        case CURLMOPT_MAX_PIPELINE_LENGTH         => Some("CURLMOPT_MAX_PIPELINE_LENGTH")
-        case CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE => Some("CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE")
-        case CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE   => Some("CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE")
-        case CURLMOPT_PIPELINING_SITE_BL          => Some("CURLMOPT_PIPELINING_SITE_BL")
-        case CURLMOPT_PIPELINING_SERVER_BL        => Some("CURLMOPT_PIPELINING_SERVER_BL")
-        case CURLMOPT_MAX_TOTAL_CONNECTIONS       => Some("CURLMOPT_MAX_TOTAL_CONNECTIONS")
-        case CURLMOPT_PUSHFUNCTION                => Some("CURLMOPT_PUSHFUNCTION")
-        case CURLMOPT_PUSHDATA                    => Some("CURLMOPT_PUSHDATA")
-        case CURLMOPT_MAX_CONCURRENT_STREAMS      => Some("CURLMOPT_MAX_CONCURRENT_STREAMS")
-        case CURLMOPT_LASTENTRY                   => Some("CURLMOPT_LASTENTRY")
-        case _                                    => None
+        case SOCKETFUNCTION              => Some("CURLMOPT_SOCKETFUNCTION")
+        case SOCKETDATA                  => Some("CURLMOPT_SOCKETDATA")
+        case PIPELINING                  => Some("CURLMOPT_PIPELINING")
+        case TIMERFUNCTION               => Some("CURLMOPT_TIMERFUNCTION")
+        case TIMERDATA                   => Some("CURLMOPT_TIMERDATA")
+        case MAXCONNECTS                 => Some("CURLMOPT_MAXCONNECTS")
+        case MAX_HOST_CONNECTIONS        => Some("CURLMOPT_MAX_HOST_CONNECTIONS")
+        case MAX_PIPELINE_LENGTH         => Some("CURLMOPT_MAX_PIPELINE_LENGTH")
+        case CONTENT_LENGTH_PENALTY_SIZE => Some("CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE")
+        case CHUNK_LENGTH_PENALTY_SIZE   => Some("CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE")
+        case PIPELINING_SITE_BL          => Some("CURLMOPT_PIPELINING_SITE_BL")
+        case PIPELINING_SERVER_BL        => Some("CURLMOPT_PIPELINING_SERVER_BL")
+        case MAX_TOTAL_CONNECTIONS       => Some("CURLMOPT_MAX_TOTAL_CONNECTIONS")
+        case PUSHFUNCTION                => Some("CURLMOPT_PUSHFUNCTION")
+        case PUSHDATA                    => Some("CURLMOPT_PUSHDATA")
+        case MAX_CONCURRENT_STREAMS      => Some("CURLMOPT_MAX_CONCURRENT_STREAMS")
+        case LASTENTRY                   => Some("CURLMOPT_LASTENTRY")
+        case _                           => None
 
     extension (a: CurlMultiOption)
       inline def &(b: CurlMultiOption): CurlMultiOption = a & b
@@ -601,7 +553,8 @@ object multi:
   @name("curl_multi_setopt")
   def setopt(
       multiHandle: Ptr[CurlMulti],
-      option: CurlMultiOption*,
+      option: CurlMultiOption,
+      restOptions: CurlMultiOption*,
   ): CurlMultiCode = extern
 
   /**
@@ -640,13 +593,12 @@ object multi:
    * Returns: CURL_PUSH_OK, CURL_PUSH_DENY or CURL_PUSH_ERROROUT
    */
 
-  opaque type CurlPush = Int
+  type CurlPush = CurlPush.OK.type | CurlPush.DENY.type | CurlPush.ERROROUT.type
   object CurlPush:
-    given Tag[CurlPush] = Tag.Int
-    inline def define(inline a: Int): CurlPush = a
-    val OK = define(0)
-    val DENY = define(1)
-    val ERROROUT = define(2)
+    given Tag[CurlPush] = Tag.Int.asInstanceOf[Tag[CurlPush]]
+    val OK: Int = 0
+    val DENY: Int = 1
+    val ERROROUT: Int = 2
 
   /** forward declaration only */
   @name("curl_pushheaders") opaque type CurlPushHeaders = CStruct0
@@ -671,12 +623,13 @@ object multi:
       Ptr[CurlPushHeaders],
       /** userp */
       CVoidPtr,
-      Int,
+      CurlPush,
     ]
   object CurlPushCallback:
     given Tag[CurlPushCallback] =
-      Tag.materializeCFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, Int]
+      Tag
+        .materializeCFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, CurlPush]
 
     inline def apply(
-        inline o: CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, Int],
+        inline o: CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, CurlPush],
     ): CurlPushCallback = o

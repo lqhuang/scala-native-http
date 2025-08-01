@@ -8,7 +8,7 @@ object curl:
   import snhttp.experimental.libcurl
 
   import libcurl.core.*
-//   import libcurl.options.*
-//   import libcurl.easy.*
+  import libcurl.options.*
+  import libcurl.easy.*
   import libcurl.multi.*
   import libcurl.websockets.*

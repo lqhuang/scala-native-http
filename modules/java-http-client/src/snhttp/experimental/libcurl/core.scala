@@ -1068,30 +1068,12 @@ object core:
   def curl_version(): CString = extern
 
   /**
-   * NAME curl_easy_escape()
-   *
-   * DESCRIPTION
-   *
-   * Escapes URL strings (converts all letters consider illegal in URLs to their %XX versions). This
-   * function returns a new allocated string or NULL if an error occurred.
+   * curl_easy_escape is relocated to [[easy]] easyEscape
    */
-  def curl_easy_escape(handle: Ptr[Curl], string: CString, length: Int): CString = extern
 
   /**
-   * NAME curl_easy_unescape()
-   *
-   * DESCRIPTION
-   *
-   * Unescapes URL encoding in strings (converts all %XX codes to their 8bit versions). This
-   * function returns a new allocated string or NULL if an error occurred. Conversion Note: On
-   * non-ASCII platforms the ASCII %XX codes are converted into the host encoding.
+   * curl_easy_unescape is relocated to [[easy]] easyUnescape
    */
-  def curl_easy_unescape(
-      handle: Ptr[Curl],
-      string: CString,
-      length: Int,
-      outlength: Ptr[Int],
-  ): CString = extern
 
   /**
    * NAME curl_global_init()
@@ -1565,56 +1547,18 @@ object core:
   // 4. add func `curl_version_info`
 
   /**
-   * NAME curl_easy_strerror()
-   *
-   * DESCRIPTION
-   *
-   * The curl_easy_strerror function may be used to turn a CURLcode value into the equivalent human
-   * readable error string. This is useful for printing meaningful error messages.
+   * curl_easy_strerror is relocated to [[easy]] easyStrError
    */
-  def curl_easy_strerror(code: CurlCode): CString = extern
 
   // TODO: add func `curl_share_strerror`
 
   /**
-   * NAME curl_easy_pause()
-   *
-   * DESCRIPTION
-   *
-   * The curl_easy_pause function pauses or unpauses transfers. Select the new state by setting the
-   * bitmask, use the convenience defines below.
+   * curl_easy_pause is relocated to [[easy]] easyPause
    */
-  def curl_easy_pause(handle: Ptr[Curl], bitmask: Int): CurlCode = extern
 
-  opaque type CurlPause = UInt
-  object CurlPause:
-    given Tag[CurlPause] = Tag.UInt
-
-    inline def define(inline a: Long): CurlPause = a.toUInt
-
-    val RECV = define(1 << 0)
-    val RECV_CONT = define(0)
-
-    val SEND = define(1 << 2)
-    val SEND_CONT = define(0)
-
-    val ALL = RECV | SEND
-    val CONT = RECV_CONT | SEND_CONT
-
-    inline def getName(inline value: CurlPause): Option[String] =
-      inline value match
-        case RECV      => Some("CURLPAUSE_RECV")
-        case RECV_CONT => Some("CURLPAUSE_RECV_CONT")
-        case SEND      => Some("CURLPAUSE_SEND")
-        case SEND_CONT => Some("CURLPAUSE_SEND_CONT")
-        case ALL       => Some("CURLPAUSE_ALL")
-        case CONT      => Some("CURLPAUSE_CONT")
-        case _         => None
-
-    extension (a: CurlPause)
-      inline def &(b: CurlPause): CurlPause = a & b
-      inline def |(b: CurlPause): CurlPause = a | b
-      inline def is(b: CurlPause): Boolean = (a & b) == b
+  /**
+   * define symbols `CURLPAUSE_*` is relocated to [[easy]] CurlPause
+   */
 
   //
   // Import data type definitions from `curl/system.h`

@@ -1,26 +1,14 @@
 package snhttp.experimental.libcurl
 
-import scala.scalanative.unsafe.{
-  Tag,
-  Ptr,
-  Zone,
-  CString,
-  CStruct2,
-  CStruct3,
-  CStruct4,
-  CFuncPtr3,
-  CFuncPtr4,
-  CFuncPtr5,
-}
+import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4}
 import scala.scalanative.unsigned.*
 import scala.scalanative.posix.sys.socket
-import scala.scalanative.unsafe.{alloc, link, name, extern}
+import scala.scalanative.unsafe.{alloc, name, extern}
 
-@link("curl/curl")
 @extern
 object options:
   //
-  // parts define in <curl/curl.h>
+  // parts defined in <curl/curl.h>
   //
 
   /** bitmask defines for `CURLOPT_HEADEROPT` */
@@ -740,55 +728,71 @@ object options:
      */
     val VERSION_LAST: UInt = 32.toUInt
 
-  // Parts only appear in <curl/options.h>
+  //
+  // include <curl/options.h>
+  //
 
   @name("curl_easytype")
   opaque type CurlEasyType = UInt
   object CurlEasyType:
-    given _tag: Tag[CurlEasyType] = Tag.UInt
+    given Tag[CurlEasyType] = Tag.UInt
+
     inline def define(inline a: Long): CurlEasyType = a.toUInt
-    val CURLOT_LONG = define(0)
-    val CURLOT_VALUES = define(1)
-    val CURLOT_OFF_T = define(2)
-    val CURLOT_OBJECT = define(3)
-    val CURLOT_STRING = define(4)
-    val CURLOT_SLIST = define(5)
-    val CURLOT_CBPTR = define(6)
-    val CURLOT_BLOB = define(7)
-    val CURLOT_FUNCTION = define(8)
+
+    /* long (a range of values) */
+    val LONG = define(0)
+    /* long (a defined set or bitmask) */
+    val VALUES = define(1)
+    /* curl_off_t (a range of values) */
+    val OFF_T = define(2)
+    /* pointer (void *) */
+    val OBJECT = define(3)
+    /* pointer (char * to null-terminated buffer) */
+    val STRING = define(4)
+    /* pointer (struct curl_slist *) */
+    val SLIST = define(5)
+    /* pointer (void * passed as-is to a callback) */
+    val CBPTR = define(6)
+    /* blob (struct curl_blob *) */
+    val BLOB = define(7)
+    /* function pointer */
+    val FUNCTION = define(8)
+
     inline def getName(inline value: CurlEasyType): Option[String] =
       inline value match
-        case CURLOT_LONG     => Some("CURLOT_LONG")
-        case CURLOT_VALUES   => Some("CURLOT_VALUES")
-        case CURLOT_OFF_T    => Some("CURLOT_OFF_T")
-        case CURLOT_OBJECT   => Some("CURLOT_OBJECT")
-        case CURLOT_STRING   => Some("CURLOT_STRING")
-        case CURLOT_SLIST    => Some("CURLOT_SLIST")
-        case CURLOT_CBPTR    => Some("CURLOT_CBPTR")
-        case CURLOT_BLOB     => Some("CURLOT_BLOB")
-        case CURLOT_FUNCTION => Some("CURLOT_FUNCTION")
-        case _               => _root_.scala.None
+        case LONG     => Some("CURLOT_LONG")
+        case VALUES   => Some("CURLOT_VALUES")
+        case OFF_T    => Some("CURLOT_OFF_T")
+        case OBJECT   => Some("CURLOT_OBJECT")
+        case STRING   => Some("CURLOT_STRING")
+        case SLIST    => Some("CURLOT_SLIST")
+        case CBPTR    => Some("CURLOT_CBPTR")
+        case BLOB     => Some("CURLOT_BLOB")
+        case FUNCTION => Some("CURLOT_FUNCTION")
+        case _        => None
+
     extension (a: CurlEasyType)
       inline def &(b: CurlEasyType): CurlEasyType = a & b
       inline def |(b: CurlEasyType): CurlEasyType = a | b
       inline def is(b: CurlEasyType): Boolean = (a & b) == b
 
-  opaque type curl_easyoption = CStruct4[CString, CurlOption, CurlEasyType, UInt]
-  object curl_easyoption:
-    given _tag: Tag[curl_easyoption] =
+  @name("curl_easyoption")
+  opaque type CurlEasyOption = CStruct4[CString, CurlOption, CurlEasyType, UInt]
+  object CurlEasyOption:
+    given Tag[CurlEasyOption] =
       Tag.materializeCStruct4Tag[CString, CurlOption, CurlEasyType, UInt]
-    def apply()(using Zone): Ptr[curl_easyoption] =
-      scala.scalanative.unsafe.alloc[curl_easyoption](1)
+
     def apply(name: CString, id: CurlOption, `type`: CurlEasyType, flags: UInt)(using
         Zone,
-    ): Ptr[curl_easyoption] =
-      val ____ptr = apply()
-      (!____ptr).name = name
-      (!____ptr).id = id
-      (!____ptr).`type` = `type`
-      (!____ptr).flags = flags
-      ____ptr
-    extension (struct: curl_easyoption)
+    ): Ptr[CurlEasyOption] =
+      val ptr = alloc[CurlEasyOption](1)
+      (!ptr).name = name
+      (!ptr).id = id
+      (!ptr).`type` = `type`
+      (!ptr).flags = flags
+      ptr
+
+    extension (struct: CurlEasyOption)
       def name: CString = struct._1
       def name_=(value: CString): Unit = !struct.at1 = value
       def id: CurlOption = struct._2
@@ -797,3 +801,12 @@ object options:
       def type_=(value: CurlEasyType): Unit = !struct.at3 = value
       def flags: UInt = struct._4
       def flags_=(value: UInt): Unit = !struct.at4 = value
+
+  @name("curl_easy_option_by_id")
+  def easyOptionById(id: CurlOption): Ptr[CurlEasyOption] = extern
+
+  @name("curl_easy_option_by_name")
+  def easyOptionByName(name: CString): Ptr[CurlEasyOption] = extern
+
+  @name("curl_easy_option_next")
+  def easyOptionNext(prev: Ptr[CurlEasyOption]): Ptr[CurlEasyOption] = extern
