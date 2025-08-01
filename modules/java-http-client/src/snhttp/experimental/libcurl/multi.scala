@@ -32,9 +32,8 @@ import scalanative.unsafe.{
 import scalanative.unsigned.*
 import scalanative.posix.sys.select.fd_set
 
-import snhttp.experimental.libcurl.curl.{Curl, CurlCode, CurlSocket}
+import snhttp.experimental.libcurl.core.{Curl, CurlCode, CurlSocket}
 
-@link("curl/multi")
 @extern
 object multi:
   @name("CURLM") opaque type CurlMulti = Byte
@@ -159,7 +158,7 @@ object multi:
     CurlMsg.Data,
   ]
   object CurlMsg:
-    type Data = Byte | CurlCode
+    type Data = CVoidPtr | CurlCode
     // object Data:
     //   given _tag: Tag[Data] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
@@ -200,10 +199,10 @@ object multi:
    * Based on poll(2) structure and values. We don't use pollfd and POLL* constants explicitly to
    * cover platforms without poll().
    */
-  opaque type CurlWait = Int
+  opaque type CurlWait = UInt
   object CurlWait:
-    given Tag[CurlWait] = Tag.Int
-    inline def define(inline a: Int): CurlWait = a
+    given Tag[CurlWait] = Tag.UInt
+    inline def define(inline a: Int): CurlWait = a.toUInt
     val POLLIN = define(0x0001)
     val POLLPRI = define(0x0002)
     val POLLOUT = define(0x0004)
@@ -384,6 +383,31 @@ object multi:
   def strerror(code: CurlMultiCode): CString = extern
 
   /**
+   * Name: curl_multi_socket() and curl_multi_socket_all()
+   *
+   * Desc: An alternative version of curl_multi_perform() that allows the application to pass in one
+   * of the file descriptors that have been detected to have "action" on them and let libcurl
+   * perform. See manpage for details.
+   */
+  opaque type CurlPoll = Int
+  object CurlPoll:
+    given Tag[CurlPoll] = Tag.Int
+    val NONE = 0
+    val IN = 1
+    val OUT = 2
+    val INOUT = 3
+    val REMOVE = 4
+
+  // CURL_SOCKET_TIMEOUT = CURL_SOCKET_BAD
+
+  opaque type CurlCSelect = UInt
+  object CurlCSelect:
+    given Tag[CurlCSelect] = Tag.UInt
+    val IN = 0x01.toUInt
+    val OUT = 0x02.toUInt
+    val ERR = 0x04.toUInt
+
+  /**
    * Name: curl_socket_callback
    *
    * Desc:
@@ -391,13 +415,25 @@ object multi:
    * Returns:
    */
   @name("curl_socket_callback") opaque type CurlSocketCallback =
-    CFuncPtr5[Ptr[Curl], CurlSocket, Int, Ptr[Byte], Ptr[Byte], Int]
+    CFuncPtr5[
+      /** easy: easy handle */
+      Ptr[Curl],
+      /** s: socket */
+      CurlSocket,
+      /** what:    see above ????? */
+      Int,
+      /** userp: private callback pointer */
+      CVoidPtr,
+      /** socketp private socket pointer */
+      CVoidPtr,
+      Int,
+    ]
   object CurlSocketCallback:
     given Tag[CurlSocketCallback] =
-      Tag.materializeCFuncPtr5[Ptr[Curl], CurlSocket, Int, Ptr[Byte], Ptr[Byte], Int]
+      Tag.materializeCFuncPtr5[Ptr[Curl], CurlSocket, Int, CVoidPtr, CVoidPtr, Int]
 
     inline def apply(
-        inline o: CFuncPtr5[Ptr[Curl], CurlSocket, Int, Ptr[Byte], Ptr[Byte], Int],
+        inline o: CFuncPtr5[Ptr[Curl], CurlSocket, Int, CVoidPtr, CVoidPtr, Int],
     ): CurlSocketCallback = o
 
     // inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): CurlSocketCallback =
@@ -418,21 +454,28 @@ object multi:
    * Returns: The callback should return zero.
    */
   @name("curl_multi_timer_callback") opaque type CurlMultiTimerCallback =
-    CFuncPtr3[Ptr[CurlMulti], CLongInt, Ptr[Byte], Int]
-
+    CFuncPtr3[
+      /** multi: multi handle */
+      Ptr[CurlMulti],
+      /** timeout_ms: see above */
+      Long,
+      /** userp: private callback pointer */
+      Ptr[Byte],
+      Int,
+    ]
   object CurlMultiTimerCallback:
     given Tag[CurlMultiTimerCallback] =
-      Tag.materializeCFuncPtr3[Ptr[CurlMulti], CLongInt, Ptr[Byte], Int]
+      Tag.materializeCFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int]
 
     inline def apply(
-        inline o: CFuncPtr3[Ptr[CurlMulti], CLongInt, Ptr[Byte], Int],
+        inline o: CFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int],
     ): CurlMultiTimerCallback = o
 
     // inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): CurlMultiTimerCallback =
     //   CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
 
     // extension (v: CurlMultiTimerCallback)
-    //   inline def value: CFuncPtr3[Ptr[CurlMulti], CLongInt, Ptr[Byte], Int] = v
+    //   inline def value: CFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int] = v
 
     //   inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
@@ -573,7 +616,7 @@ object multi:
   def assign(
       multiHandle: Ptr[CurlMulti],
       sockfd: CurlSocket,
-      sockp: Ptr[Byte],
+      sockp: CVoidPtr,
   ): CurlMultiCode = extern
 
   /**
@@ -617,16 +660,23 @@ object multi:
   def CurlPushHeaderByName(h: Ptr[CurlPushHeaders], name: CString): CString = extern
 
   @name("curl_push_callback") opaque type CurlPushCallback =
-    CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], Ptr[Byte], Int]
+    CFuncPtr5[
+      /** parent */
+      Ptr[Curl],
+      /** easy */
+      Ptr[Curl],
+      /** number_headers */
+      USize,
+      /** headers */
+      Ptr[CurlPushHeaders],
+      /** userp */
+      CVoidPtr,
+      Int,
+    ]
   object CurlPushCallback:
-    given _tag: Tag[CurlPushCallback] =
-      Tag.materializeCFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], Ptr[Byte], Int]
-    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): CurlPushCallback =
-      CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
+    given Tag[CurlPushCallback] =
+      Tag.materializeCFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, Int]
+
     inline def apply(
-        inline o: CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], Ptr[Byte], Int],
+        inline o: CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, Int],
     ): CurlPushCallback = o
-    extension (v: CurlPushCallback)
-      inline def value
-          : CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], Ptr[Byte], Int] = v
-      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)

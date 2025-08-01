@@ -13,12 +13,11 @@
 package snhttp.experimental.libcurl
 
 import scala.scalanative.unsafe.{link, extern, alloc, name}
-import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr}
+import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CVoidPtr}
 import scala.scalanative.unsigned.*
 
-import snhttp.experimental.libcurl.curl.{Curl, CurlOff, CurlCode}
+import snhttp.experimental.libcurl.core.{Curl, CurlOff, CurlCode}
 
-@link("curl/websockets")
 @extern
 object websockets:
 
@@ -112,7 +111,7 @@ object websockets:
   @name("curl_ws_recv")
   def recv(
       curl: Ptr[Curl],
-      buffer: Ptr[Byte],
+      buffer: CVoidPtr,
       buflen: USize,
       recv: Ptr[USize],
       metap: Ptr[Ptr[CurlWsFrame]],
@@ -129,7 +128,7 @@ object websockets:
   @name("curl_ws_send")
   def send(
       curl: Ptr[Curl],
-      buffer: Ptr[Byte],
+      buffer: CVoidPtr,
       buflen: USize,
       sent: Ptr[USize],
       fragsize: CurlOff,
