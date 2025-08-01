@@ -22,8 +22,8 @@ install-mill-autocomp:
 #########
 
 
-fix-check:
-	${MILL} ${TASK_TARGET}.fix --check
+# fix-check:
+# 	${MILL} ${TASK_TARGET}.fix --check
 
 .PHONY: compile
 compile:

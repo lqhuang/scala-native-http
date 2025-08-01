@@ -6,6 +6,8 @@
 
 package build
 
+import scala.util.Properties
+
 import mill.{scalalib, scalanativelib}
 import mill.util.VcsVersion
 
@@ -23,7 +25,7 @@ val scalaNextVersion = sys.props.get("scalaNextVersion")
 val scalaVersions = Seq("3.3.6") ++ scalaNextVersion
 val scalaNativeVersion = "0.5.8"
 
-// def format = ScalafmtModule
+def format = ScalafmtModule
 
 trait HttpPublishModule extends PublishModule {
   def publishVersion = VcsVersion.vcsState().format()
@@ -60,9 +62,25 @@ trait CommonHttpModule extends CrossScalaModule with ScalaNativeModule with Http
 
   def nativeIncrementalCompilation = true
 
+  val osName: "darwin" | "linux" | "windows" = {
+    val _osName = Properties.osName.toLowerCase()
+    if (_osName.contains("mac")) "darwin"
+    else if (_osName.contains("windows")) "windows"
+    else "linux"
+  }
+  val archName = Properties.propOrEmpty("os.arch").toLowerCase() match {
+    case "amd64" => "x86_64" // try to follow llvm triple
+    case "arm64" => "aarch64"
+    case s       => s
+  }
+  val includeLibCurl = (osName, archName) match
+    case ("linux", "x86_64")   => "-I/usr/include/x86_64-linux-gnu/curl"
+    case ("darwin", "x86_64")  => "-I/usr/local/homebrew/opt/curl/include"
+    case ("darwin", "aarch64") => "-I/opt/homebrew/opt/curl/include"
+    case (_, _)                => ""
+
   def nativeCompileOptions = super.nativeCompileOptions() ++ Seq(
-    "-I/usr/include/x86_64-linux-gnu/curl",
-    // "-I/opt/homebrew/opt/curl/include" on macOS
+    includeLibCurl,
   )
 
   // def nativeLinkingOptions = Seq("-L" + millSourcePath.toString + "/target")

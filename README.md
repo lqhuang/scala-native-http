@@ -23,7 +23,7 @@ There are also other auxiliary types are enforced by the Java Networking API and
    - [x] `java.util.Locale`
      - Provided by [cquiroz/scala-java-locales](https://github.com/cquiroz/scala-java-locales)
    - [ ] `javax.net.ssl.SSLContext`
-     - No implementation yet
+     - No existed implementation yet
      - May try to implement it in the future on upstream project [lolgab/scala-native-crypto](https://github.com/lolgab/scala-native-crypto)
 2. Will try to include in this package
    - [x] `java.net.Proxy`
@@ -31,9 +31,27 @@ There are also other auxiliary types are enforced by the Java Networking API and
    - [ ] `java.net.Authenticator`
    - [ ] `java.net.CookieHandler`
 
-## Development
+## Dev guides
 
 This project is developed in Scala 3 and Scala Native 0.5.7 with mill build tool.
+
+Please ensure you have `libcurl` installed.
+
+- For Linux user with Debian / Ubuntu, the package name would be `libcurl4-openssl-dev`.
+- For macOS user, install `curl` by Homebrew first.
+- I haven't tested on other OS, you may need tune the `includeLibCurl` config in `build.mill` file.
+
+In the current codebase, most implementations are layouted under `modules/java-http-client`, which will be published as `scala-native-java-http`. And the the binding for `curl` is included under `modules/java-http-client/src/snhttp/experimental/libcurl`. I will try to split to different sub modules in the future.
+
+Serveral convenient recipes have been provided by `Makefile`, for example
+
+- `make bsp`: Install `bsp` by `mill`
+- `make install-mill-autocomp`: Run `mill.tabcomplete/install` and source the generated completions.
+- `make fmt`: Run `scalafmt` over codebase
+- `make compile`: Compile major codes
+- `make test`: Run tests
+
+Check `Makefile` for more.
 
 ## Known Issues
 
@@ -64,11 +82,11 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 
 ## Future
 
-I'm thinking `curl` is probably not the minimal component for HTTP Client, so I may play to create serveral other bindings for Scala Native HTTP libraries, such as:
+I'm thinking `curl` is probably not the **minimal** component for HTTP Client, so I may play to create serveral other bindings for Scala Native HTTP libraries, such as:
 
-- [ ] `scala-native-brotli` for [google/brotli](https://github.com/google/brotli)
-- [nghttp2/nghttp2](https://github.com/nghttp2/nghttp2)
-- [ngtcp2/nghttp3](https://github.com/ngtcp2/nghttp3)
-- [ada-url/ada](https://github.com/ada-url/ada)
+- [ ] `scala-native-brotli` package for [google/brotli](https://github.com/google/brotli)
+- [ ] `scala-native-ada` package for [ada-url/ada](https://github.com/ada-url/ada)
+- [ ] [nghttp2/nghttp2](https://github.com/nghttp2/nghttp2)
+- [ ] [ngtcp2/nghttp3](https://github.com/ngtcp2/nghttp3)
 
 That's should provide a more flexible , extensible HTTP Client for Scala Native with composability.
