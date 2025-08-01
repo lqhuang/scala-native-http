@@ -1,25 +1,28 @@
+/**
+ * Note:
+ *
+ * This file is manually aligned with codebase
+ *
+ * https://github.com/curl/curl/blob/d21e75a6ae0cda978e68b26579e5665a0a92ca0d/include/curl/curl.h
+ *
+ * and all symbols are declared in the order they first appear.
+ *
+ * Please follow the same order when adding or updating symbols and revise the commit hash.
+ */
 package snhttp.experimental.libcurl
 
 import scala.scalanative.unsafe.{alloc, name, link, extern, define}
 import scala.scalanative.unsafe.{
   Tag,
-  link,
   Ptr,
-  CLongInt,
-  CLongLong,
   Zone,
   Size,
   CString,
   CStruct0,
   CStruct2,
-  CStruct3,
-  CStruct4,
   CStruct5,
-  CFuncPtr,
   CFuncPtr2,
   CFuncPtr3,
-  CFuncPtr4,
-  CFuncPtr5,
   CStruct14,
   CVoidPtr,
 }
@@ -27,20 +30,20 @@ import scala.scalanative.unsigned.*
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
-import snhttp.experimental.libcurl.internal.SockAddrFamily
+import internal.SockAddrFamily
 
 @extern
 object core:
 
   @name("CURL")
-  opaque type Curl = Byte // curl easy
+  opaque type Curl = CStruct0 // curl easy
   object Curl:
-    given Tag[Curl] = Tag.Byte
+    given Tag[Curl] = Tag.materializeCStruct0Tag
 
   @name("CURLSH")
-  opaque type CurlShare = Byte // curl share
+  opaque type CurlShare = CStruct0 // curl share
   object CurlShare:
-    given Tag[CurlShare] = Tag.Byte
+    given Tag[CurlShare] = Tag.materializeCStruct0Tag
 
   @name("curl_socket_t")
   opaque type CurlSocket = Int
@@ -100,7 +103,8 @@ object core:
       inline def |(b: CurlSslBackendId): CurlSslBackendId = a | b
       inline def is(b: CurlSslBackendId): Boolean = (a & b) == b
 
-  @name("curl_httppost") opaque type CurlHttpPost = CStruct14[
+  @name("curl_httppost")
+  opaque type CurlHttpPost = CStruct14[
     /**
      * * next
      *
@@ -354,7 +358,8 @@ object core:
   //    known as `CURL_TRAILERFUNC_*`
   // 2. add func `curl_read_callback`
 
-  @name("curlsocktype") opaque type CurlSockType = UInt
+  @name("curlsocktype")
+  opaque type CurlSockType = UInt
   object CurlSockType:
     given Tag[CurlSockType] = Tag.UInt
     inline def define(inline a: Long): CurlSockType = a.toUInt
@@ -1100,7 +1105,6 @@ object core:
    * routines will be invoked by this library instead of the system memory management routines like
    * malloc, free etc.
    */
-  // def curl_global_init_mem(flags : CLongInt, m : curl_malloc_callback, f : curl_free_callback, r : curl_realloc_callback, s : curl_strdup_callback, c : curl_calloc_callback): CURLcode = extern
 
   /**
    * NAME curl_global_cleanup()

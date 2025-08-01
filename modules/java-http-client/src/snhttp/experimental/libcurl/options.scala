@@ -1,9 +1,21 @@
+/**
+ * Note:
+ *
+ * This file is manually aligned with codebase
+ *
+ * https://github.com/curl/curl/blob/d21e75a6ae0cda978e68b26579e5665a0a92ca0d/include/curl/options.h
+ *
+ * and all symbols are declared in the order they first appear.
+ *
+ * Please follow the same order when adding or updating symbols and revise the commit hash.
+ */
+
 package snhttp.experimental.libcurl
 
-import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4}
-import scala.scalanative.unsigned.*
 import scala.scalanative.posix.sys.socket
-import scala.scalanative.unsafe.{alloc, name, extern}
+import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4}
+import scala.scalanative.unsafe.{alloc, extern, name}
+import scala.scalanative.unsigned.*
 
 @extern
 object options:

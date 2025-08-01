@@ -16,7 +16,7 @@ import scala.scalanative.unsafe.{link, extern, alloc, name}
 import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CVoidPtr}
 import scala.scalanative.unsigned.*
 
-import snhttp.experimental.libcurl.core.{Curl, CurlOff, CurlCode}
+import core.{Curl, CurlOff, CurlCode}
 
 @extern
 object websockets:

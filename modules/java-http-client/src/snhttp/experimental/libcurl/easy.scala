@@ -1,11 +1,22 @@
+/**
+ * Note:
+ *
+ * This file is manually aligned with codebase
+ *
+ * https://github.com/curl/curl/blob/d21e75a6ae0cda978e68b26579e5665a0a92ca0d/include/curl/easy.h
+ *
+ * and all symbols are declared in the order they first appear.
+ *
+ * Please follow the same order when adding or updating symbols and revise the commit hash.
+ */
 package snhttp.experimental.libcurl
 
 import scala.scalanative.unsafe.{extern, alloc, name}
 import scala.scalanative.unsafe.{Ptr, Tag, Zone, CString, CStruct6}
 import scala.scalanative.unsigned.*
 
-import snhttp.experimental.libcurl.core.{Curl, CurlCode, CurlInfo}
-import snhttp.experimental.libcurl.options.{CurlEasyOption, CurlOption}
+import core.{Curl, CurlCode, CurlInfo}
+import options.{CurlEasyOption, CurlOption}
 
 @extern
 object easy:

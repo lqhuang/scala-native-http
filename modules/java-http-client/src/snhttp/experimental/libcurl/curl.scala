@@ -5,10 +5,9 @@ import scala.scalanative.unsafe.{alloc, name, link, extern, define}
 @extern
 @define("CURL_NO_OLDIES") // deprecate all outdated
 object curl:
-  import snhttp.experimental.libcurl
 
-  import libcurl.core.*
-  import libcurl.options.*
-  import libcurl.easy.*
-  import libcurl.multi.*
-  import libcurl.websockets.*
+  import core.*
+  import options.*
+  import easy.*
+  import multi.*
+  import websockets.*

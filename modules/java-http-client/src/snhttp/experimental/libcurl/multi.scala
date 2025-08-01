@@ -32,17 +32,19 @@ import scalanative.unsafe.{
 import scalanative.unsigned.*
 import scalanative.posix.sys.select.fd_set
 
-import snhttp.experimental.libcurl.core.{Curl, CurlCode, CurlSocket}
+import core.{Curl, CurlCode, CurlSocket}
 
 @extern
 object multi:
-  @name("CURLM") opaque type CurlMulti = Byte
+  @name("CURLM")
+  opaque type CurlMulti = CStruct0
+  object CurlMulti:
+    given Tag[CurlMulti] = Tag.materializeCStruct0Tag
 
   @name("CURLMcode")
   type CurlMultiCode = Int
   object CurlMultiCode:
-    given Tag[CurlMultiCode] = Tag.Int
-
+    // given Tag[CurlMultiCode] = Tag.Int
     inline def define(inline a: Int): CurlMultiCode = a
 
     /* please call curl_multi_perform() or curl_multi_socket*() soon */
@@ -123,6 +125,20 @@ object multi:
       inline def |(b: CurlMsgCode): CurlMsgCode = a | b
       inline def is(b: CurlMsgCode): Boolean = (a & b) == b
 
+  type CurlMsgData = CVoidPtr | CurlCode
+  object CurlMsgData:
+    /**
+     * its size must be the max of the two sizes, its alignment the max of the two alignments
+     */
+    given tagCurMsgData: Tag[CurlMsgData] = {
+      val tagPtr = summon[Tag[CVoidPtr]]
+      val tagCode = summon[Tag[CurlCode]]
+
+      if tagPtr.size >= tagCode.size
+      then tagPtr.asInstanceOf[Tag[CurlMsgData]]
+      else tagCode.asInstanceOf[Tag[CurlMsgData]]
+    }
+
   @name("CURLMsg")
   opaque type CurlMsg = CStruct3[
     /**
@@ -140,47 +156,24 @@ object multi:
     /**
      * data
      *
-     * message-specific data
+     * message-specific data or return code for transfer
      */
-    CurlMsg.Data,
+    CurlMsgData,
   ]
   object CurlMsg:
-    type Data = CVoidPtr | CurlCode
-    // object Data:
-    //   given _tag: Tag[Data] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
+    import CurlMsgData.tagCurMsgData
 
-    //   def apply(whatever: Ptr[Byte])(using Zone): Ptr[Data] =
-    //     whatever.asInstanceOf[Ptr[Data]]
+    given tagCurMsg: Tag[CurlMsg] = Tag
+      .materializeCStruct3Tag[CurlMsgCode, Curl, CurlMsgData]
+      .asInstanceOf[Tag[CurlMsg]]
 
-    //   def apply(result: CurlCode)(using Zone): Ptr[Data] =
-    //     val ptr = alloc[Data](1)
-    //     !ptr = result
-    //     ptr
-
-    //   extension (struct: Data)
-    //     def whatever: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
-    //     def whatever_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
-    //     def result: CurlCode = !struct.at(0).asInstanceOf[Ptr[CurlCode]]
-    //     def result_=(value: CurlCode): Unit = !struct.at(0).asInstanceOf[Ptr[CurlCode]] = value
-
-    // given Tag[CurlMsg] = Tag.materializeCStruct3Tag[CurlMsgCode, Curl, Data]
-
-    // def apply(msg: CurlMsgCode, easy_handle: Ptr[Curl], data: CurlMsg.Data)(using
-    //     Zone,
-    // ): Ptr[CurlMsg] =
-    //   val ptr = alloc[CurlMsg](1)
-    //   (!ptr)._1 = msg
-    //   (!ptr)._2 = easy_handle
-    //   (!ptr)._3 = data
-    //   ptr
-
-    // extension (struct: CurlMsg)
-    //   def msg: CurlMsgCode = struct._1
-    //   def msg_=(value: CurlMsgCode): Unit = !struct.at1 = value
-    //   def easy_handle: Ptr[Curl] = struct._2
-    //   def easy_handle_=(value: Ptr[Curl]): Unit = !struct.at2 = value
-    //   def data: CurlMsg.Data = struct._3
-    //   def data_=(value: CurlMsg.Data): Unit = !struct.at3 = value
+    extension (struct: CurlMsg)
+      def msg: CurlMsgCode = struct._1
+      def msg_=(value: CurlMsgCode): Unit = !struct.at1 = value
+      def easyHandle: Ptr[Curl] = struct._2
+      def easyHandle_=(value: Ptr[Curl]): Unit = !struct.at2 = value
+      def data: CurlMsgData = struct._3
+      def data_=(value: CurlMsgData): Unit = !struct.at3 = value
 
   /**
    * Based on poll(2) structure and values. We don't use pollfd and POLL* constants explicitly to

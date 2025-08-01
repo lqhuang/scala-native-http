@@ -1,6 +1,5 @@
 MILL := ./mill
-TASK_TARGET := scala-native-http[]
-
+TASK_TARGET := modules.java-http-client[]
 
 ##############
 # Toolcahins #
