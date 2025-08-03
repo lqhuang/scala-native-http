@@ -12,8 +12,8 @@ import java.util.{ArrayList, Locale, Optional, TreeMap}
 import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
-import snhttp.jdk.PropertyUtils
 import snhttp.core.Method
+import snhttp.jdk.PropertyUtils
 
 class HttpRequestBuilderImpl(
     var uri: Option[URI] = None,

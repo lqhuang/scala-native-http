@@ -21,14 +21,15 @@ import scalanativelib.api.{LTO, ReleaseMode}
 // import com.github.lolgab.mill.mima.*
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
-val scalaNextVersion = sys.props.get("scalaNextVersion")
-val scalaVersions = Seq("3.3.6") ++ scalaNextVersion
+val scalaNextVersion = Properties.propOrNone("scalaNextVersion")
+val scalaVersion = if scalaNextVersion.isEmpty then "3.3.6" else scalaNextVersion.get
 val scalaNativeVersion = "0.5.8"
 
 def format = ScalafmtModule
 
 trait HttpPublishModule extends PublishModule {
   def publishVersion = VcsVersion.vcsState().format()
+
   def pomSettings = PomSettings(
     description = "Scala Native HTTP Client",
     organization = "io.lqhuang",
@@ -37,21 +38,18 @@ trait HttpPublishModule extends PublishModule {
     versionControl = VersionControl.github("lqhuang", "scala-native-http"),
     developers = Seq(
       Developer("lqhuang", "Lanqing Huang", "https://github.com/lqhuang"),
-      Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab"),
+      // Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab"),
     ),
   )
 }
 
-trait CommonHttpModule extends CrossScalaModule with ScalaNativeModule with HttpPublishModule {
+trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule {
+  def scalaVersion = build.scalaVersion
 
   def scalaNativeVersion = build.scalaNativeVersion
 
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
-  )
-
-  def mvnDeps = Seq(
-    mvn"com.github.lolgab::native-loop-core::0.3.0",
   )
 
   /// Define Scala Native Module
@@ -61,27 +59,6 @@ trait CommonHttpModule extends CrossScalaModule with ScalaNativeModule with Http
   def nativeLTO = LTO.Thin
 
   def nativeIncrementalCompilation = true
-
-  val osName: "darwin" | "linux" | "windows" = {
-    val _osName = Properties.osName.toLowerCase()
-    if (_osName.contains("mac")) "darwin"
-    else if (_osName.contains("windows")) "windows"
-    else "linux"
-  }
-  val archName = Properties.propOrEmpty("os.arch").toLowerCase() match {
-    case "amd64" => "x86_64" // try to follow llvm triple
-    case "arm64" => "aarch64"
-    case s       => s
-  }
-  val includeLibCurl = (osName, archName) match
-    case ("linux", "x86_64")   => "-I/usr/include/x86_64-linux-gnu/curl"
-    case ("darwin", "x86_64")  => "-I/usr/local/homebrew/opt/curl/include"
-    case ("darwin", "aarch64") => "-I/opt/homebrew/opt/curl/include"
-    case (_, _)                => ""
-
-  def nativeCompileOptions = super.nativeCompileOptions() ++ Seq(
-    includeLibCurl,
-  )
 
   // def nativeLinkingOptions = Seq("-L" + millSourcePath.toString + "/target")
 

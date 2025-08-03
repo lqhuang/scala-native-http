@@ -3,10 +3,11 @@ package build.modules.`java-http-client`
 import mill.api.Cross
 import mill.scalalib.DepSyntax
 
-object `package` extends Cross[JavaHttpClient](build.scalaVersions) {}
-trait JavaHttpClient extends build.CommonHttpModule {
-  // TODO: ???
-  // def moduleDeps = Seq(build.modules.core)
+object `package` extends build.CommonHttpModule {
+  def moduleDeps = Seq(
+    build.modules.core,
+    build.modules.curl,
+  )
 
   def mvnDeps = Seq(
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",

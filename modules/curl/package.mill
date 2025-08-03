@@ -1,0 +1,37 @@
+package build.modules.curl
+
+import scala.util.Properties
+
+import mill.scalalib.DepSyntax
+
+object `package` extends build.CommonHttpModule {
+
+  def artifactName = "scala-native-curl"
+
+  def moduleDeps = Seq(build.modules.core)
+
+  def mvnDeps = Seq(
+    mvn"com.github.lolgab::native-loop-core::0.3.0",
+  )
+
+  val osName: "darwin" | "linux" | "windows" = {
+    val _osName = Properties.osName.toLowerCase()
+    if (_osName.contains("mac")) "darwin"
+    else if (_osName.contains("windows")) "windows"
+    else "linux"
+  }
+  val archName = Properties.propOrEmpty("os.arch").toLowerCase() match {
+    case "amd64" => "x86_64" // try to follow llvm triple
+    case "arm64" => "aarch64"
+    case s       => s
+  }
+  val includeLibCurl = (osName, archName) match
+    case ("linux", "x86_64")   => "-I/usr/include/x86_64-linux-gnu/curl"
+    case ("darwin", "x86_64")  => "-I/usr/local/homebrew/opt/curl/include"
+    case ("darwin", "aarch64") => "-I/opt/homebrew/opt/curl/include"
+    case (_, _)                => ""
+
+  def nativeCompileOptions = super.nativeCompileOptions() ++ Seq(
+    includeLibCurl,
+  )
+}
