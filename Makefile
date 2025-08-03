@@ -1,5 +1,5 @@
 MILL := ./mill
-TASK_TARGET := modules.java-http-client[]
+TASK_TARGET := modules._
 
 ##############
 # Toolcahins #
