@@ -1,10 +1,12 @@
 package javax.net.ssl
 
+import java.nio.ByteBuffer
 import java.security.Principal
 import java.security.cert.Certificate
-import java.nio.ByteBuffer
 
-// ref: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/net/ssl/SSLSession.html
+/// ## Refs
+///
+/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSession.html
 trait SSLSession {
   def getId(): Array[Byte]
 
@@ -30,8 +32,11 @@ trait SSLSession {
 
   def getLocalCertificates(): Array[Certificate]
 
-  // @deprecated since JDK 9
-  // def getPeerCertificateChain(): Array[javax.security.cert.X509Certificate] =
+  @deprecated // since JDK 9
+  def getPeerCertificateChain(): Array[javax.security.cert.X509Certificate] =
+    throw new NotImplementedError(
+      "getPeerCertificateChain is deprecated since JDK 9 and not implemented",
+    )
 
   def getPeerPrincipal(): Principal
 

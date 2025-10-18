@@ -3,7 +3,9 @@ package javax.net.ssl
 import java.util.Arrays
 import java.util.Objects.requireNonNull
 
-// ref: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/net/ssl/SNIServerName.html
+/// ## Refs
+///
+/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SNIServerName.html
 abstract class SNIServerName(
     private val nameType: Int,
     private val encoded: Array[Byte],
@@ -13,7 +15,7 @@ abstract class SNIServerName(
   require(nameType <= 255, "Server name type cannot be greater than 255")
   requireNonNull(encoded)
 
-  private val encodedCopied: Array[Byte] = encoded.clone()
+  private lazy val encodedCopied: Array[Byte] = encoded.clone()
 
   final def getType(): Int = nameType
 
@@ -31,7 +33,7 @@ abstract class SNIServerName(
   }
 
   override def hashCode(): Int =
-    nameType.hashCode() + Arrays.hashCode(encodedCopied)
+    31 * nameType.hashCode() + Arrays.hashCode(encodedCopied)
 
   // format: "type=<name type>, value=<name value>"
   //

@@ -2,7 +2,9 @@ package javax.net.ssl
 
 import java.util.Enumeration
 
-//ref: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/net/ssl/SSLSessionContext.html
+/// ## Refs
+///
+/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSessionContext.html
 trait SSLSessionContext {
 
   def getSession(sessionId: Array[Byte]): SSLSession

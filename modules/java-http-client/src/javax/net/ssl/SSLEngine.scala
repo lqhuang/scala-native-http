@@ -4,16 +4,20 @@ import java.nio.ByteBuffer
 import java.util.List as JList
 import java.util.function.BiFunction
 
-// ref: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/net/ssl/SSLEngine.html
+/// ## Refs
+///
+/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLEngine.html
 abstract class SSLEngine(peerHost: String, peerPort: Int) {
 
-  def getPeerHost(): String = peerHost
+  final def getPeerHost(): String = peerHost
 
-  def getPeerPort(): Int = peerPort
+  final def getPeerPort(): Int = peerPort
 
-  def wrap(src: ByteBuffer, dst: ByteBuffer): SSLEngineResult
+  final def wrap(src: ByteBuffer, dst: ByteBuffer): SSLEngineResult =
+    wrap(Array(src), 0, 1, dst)
 
-  def wrap(srcs: Array[ByteBuffer], dst: ByteBuffer): SSLEngineResult
+  final def wrap(srcs: Array[ByteBuffer], dst: ByteBuffer): SSLEngineResult =
+    wrap(srcs, 0, srcs.length, dst)
 
   def wrap(
       srcs: Array[ByteBuffer],
@@ -22,9 +26,11 @@ abstract class SSLEngine(peerHost: String, peerPort: Int) {
       dst: ByteBuffer,
   ): SSLEngineResult
 
-  def unwrap(src: ByteBuffer, dst: ByteBuffer): SSLEngineResult
+  final def unwrap(src: ByteBuffer, dst: ByteBuffer): SSLEngineResult =
+    unwrap(src, Array(dst), 0, 1)
 
-  def unwrap(src: ByteBuffer, dsts: Array[ByteBuffer]): SSLEngineResult
+  final def unwrap(src: ByteBuffer, dsts: Array[ByteBuffer]): SSLEngineResult =
+    unwrap(src, dsts, 0, dsts.length)
 
   def unwrap(
       src: ByteBuffer,
@@ -92,5 +98,4 @@ abstract class SSLEngine(peerHost: String, peerPort: Int) {
   ): Unit
 
   def getHandshakeApplicationProtocolSelector(): BiFunction[SSLEngine, JList[String], String]
-
 }
