@@ -10,7 +10,6 @@ abstract class TrustManagerFactory(
     private val provider: Provider,
     private val algorithm: String,
 ) {
-
   final def getAlgorithm(): String = algorithm
 
   final def getProvider(): Provider = provider

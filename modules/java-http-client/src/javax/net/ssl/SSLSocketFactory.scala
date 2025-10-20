@@ -28,7 +28,7 @@ abstract class SSLSocketFactory extends SocketFactory {
 }
 
 object SSLSocketFactory {
-  @volatile private var defaultSocketFactory: SocketFactory = null
+  private val defaultSocketFactory: SocketFactory = ???
 
   def getDefault(): SocketFactory = defaultSocketFactory
 

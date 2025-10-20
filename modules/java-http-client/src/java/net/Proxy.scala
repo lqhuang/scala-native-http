@@ -7,10 +7,10 @@ class Proxy(private val proxyType: Proxy.Type, private val sa: SocketAddress) {
 
   def address(): SocketAddress = sa
 
-  override def toString: String =
+  override def toString(): String =
     if proxyType == Proxy.Type.DIRECT
     then "DIRECT"
-    else s"${proxyType} @ ${address()}"
+    else s"${proxyType} @ ${sa}"
 
   override def equals(obj: Any): Boolean = obj match {
     case other: Proxy =>
@@ -21,7 +21,7 @@ class Proxy(private val proxyType: Proxy.Type, private val sa: SocketAddress) {
   override def hashCode(): Int =
     if sa == null
     then proxyType.hashCode()
-    else proxyType.hashCode() + sa.hashCode()
+    else proxyType.hashCode() + 31 * sa.hashCode()
 }
 
 object Proxy {
