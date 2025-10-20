@@ -1,4 +1,4 @@
-package snhttp.jdk.websocket
+package snhttp.jdk.net.websocket
 
 /**
  * References:

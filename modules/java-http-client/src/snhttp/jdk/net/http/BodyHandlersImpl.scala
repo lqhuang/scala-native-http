@@ -1,4 +1,4 @@
-package snhttp.jdk
+package snhttp.jdk.net.http
 
 import java.io.{IOException, UncheckedIOException}
 import java.util.concurrent.{CompletableFuture, ConcurrentMap}

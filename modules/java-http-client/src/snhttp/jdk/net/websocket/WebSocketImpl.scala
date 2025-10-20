@@ -1,7 +1,7 @@
-package snhttp.jdk.websocket
+package snhttp.jdk.net.websocket
 
 import java.net.URI
-import java.net.http.WebSocket
+import java.net.http.{HttpClient, WebSocket}
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -10,9 +10,7 @@ import java.util.Objects.requireNonNull
 
 import scala.collection.mutable.HashMap
 
-import snhttp.jdk.HttpClientImpl
-
-class WebSocketBuilderImpl(client: HttpClientImpl) extends WebSocket.Builder:
+class WebSocketBuilderImpl(client: HttpClient) extends WebSocket.Builder:
   private var _timeout: Duration = Duration.ofSeconds(30)
   private var _headers: HashMap[String, String] = HashMap.empty
 

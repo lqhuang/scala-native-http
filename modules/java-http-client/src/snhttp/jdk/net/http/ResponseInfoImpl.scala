@@ -1,4 +1,4 @@
-package snhttp.jdk
+package snhttp.jdk.net.http
 
 import java.net.http.HttpResponse.ResponseInfo
 import java.net.http.HttpClient

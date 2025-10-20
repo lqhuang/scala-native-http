@@ -32,7 +32,7 @@ object Proxy {
   val NO_PROXY: Proxy = new Proxy(Type.DIRECT, null)
 
   def apply(proxyType: Type, sa: SocketAddress): Proxy = {
-    requireNonNull(proxyType, "proxy type can not be null")
+    requireNonNull(proxyType)
 
     if proxyType != Type.DIRECT && !sa.isInstanceOf[InetSocketAddress] then
       throw new IllegalArgumentException(s"type $proxyType is not compatible with address $sa")

@@ -14,8 +14,7 @@ import java.util.concurrent.Flow
 import java.util.function.{BiConsumer, BiPredicate, Consumer, Supplier}
 import java.util.stream.Stream
 
-import snhttp.jdk.BodyPublishersImpl
-import snhttp.jdk.HttpRequestBuilderImpl
+import snhttp.jdk.net.http.{BodyPublishersImpl, HttpRequestBuilderImpl}
 
 trait HttpRequest extends Closeable {
   import HttpRequest.BodyPublisher
@@ -55,8 +54,8 @@ object HttpRequest {
 
   /// since 16
   def newBuilder(request: HttpRequest, filter: BiPredicate[String, String]): Builder = {
-    requireNonNull(request, "request can not be null")
-    requireNonNull(filter, "filter can not be null")
+    requireNonNull(request)
+    requireNonNull(filter)
 
     val builder = newBuilder(request.uri()).expectContinue(request.expectContinue())
 

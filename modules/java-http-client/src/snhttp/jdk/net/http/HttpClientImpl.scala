@@ -1,4 +1,4 @@
-package snhttp.jdk
+package snhttp.jdk.net.http
 
 import java.io.{IOException, UncheckedIOException}
 import java.net.{InetAddress, InetSocketAddress, URI}
@@ -12,7 +12,7 @@ import java.util.{List, Optional}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, Executor}
 import java.util.concurrent.ExecutionException
-// import javax.net.ssl.{SSLContext, SSLParameters}
+import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.concurrent.ExecutionContext
 // import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,8 +25,8 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
   // private var authenticator: Option[Authenticator] = None
   private var _version: Version = Version.HTTP_1_1
   private var _executor: Option[Executor] = None
-  // private var sslContext: Option[SSLContext] = None
-  // private var sslParams: Option[SSLParameters] = None
+  private var _sslContext: Option[SSLContext] = None
+  private var _sslParams: Option[SSLParameters] = None
   private var _priority: Int = -1
   private var _localAddr: Option[InetAddress] = None
 
@@ -43,17 +43,17 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     this
   }
 
-  // def sslContext(sslContext: SSLContext): HttpClient.Builder = {
-  //   requireNonNull(sslContext)
-  //   this._sslContext = Some(sslContext)
-  //   this
-  // }
+  def sslContext(sslContext: SSLContext): HttpClient.Builder = {
+    requireNonNull(sslContext)
+    this._sslContext = Some(sslContext)
+    this
+  }
 
-  // def sslParameters(sslParams: SSLParameters): HttpClient.Builder = {
-  //   requireNonNull(sslParams)
-  //   this._sslParams = Some(sslParams)
-  //   this
-  // }
+  def sslParameters(sslParams: SSLParameters): HttpClient.Builder = {
+    requireNonNull(sslParams)
+    this._sslParams = Some(sslParams)
+    this
+  }
 
   def executor(executor: Executor): HttpClient.Builder = {
     requireNonNull(executor)
@@ -122,6 +122,7 @@ class HttpClientImpl(
 
   @volatile private var _terminated = false
   @volatile private var _shutdown = false
+  @volatile private var _sslContext: SSLContext = null
 
   // Use provided executor or create a default one
   private val defaultExecutor: Executor = _executor.getOrElse(
@@ -138,9 +139,9 @@ class HttpClientImpl(
   def proxy(): Optional[ProxySelector] =
     _proxy.map(Optional.of).getOrElse(Optional.empty())
 
-  // def sslContext(): SSLContext = SSLContext.getDefault()
+  def sslContext(): SSLContext = SSLContext.getDefault()
 
-  // def sslParameters(): SSLParameters = new SSLParameters()
+  def sslParameters(): SSLParameters = _sslContext.getDefaultSSLParameters()
 
   // def authenticator(): Optional[Authenticator] = Optional.empty()
 

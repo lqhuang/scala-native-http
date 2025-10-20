@@ -2,14 +2,14 @@ package java.net.http
 
 import java.io.{IOException, UncheckedIOException}
 import java.net.{InetAddress, InetSocketAddress}
-//import java.net.{CookieHandler, Authenticator} // not implement Scala Native yet
+// import java.net.{CookieHandler, Authenticator} // not implement yet
 import java.net.{Proxy, ProxySelector} // not implement in Scala Native yet
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.{CompletableFuture, Executor}
-// import javax.net.ssl.{SSLContext, SSLParameters}
+import javax.net.ssl.{SSLContext, SSLParameters}
 
-import snhttp.jdk.HttpClientBuilderImpl
+import snhttp.jdk.net.http.HttpClientBuilderImpl
 
 /// @since 11
 abstract class HttpClient extends AutoCloseable {
@@ -23,9 +23,9 @@ abstract class HttpClient extends AutoCloseable {
 
   def proxy(): Optional[ProxySelector]
 
-  // def sslContext(): SSLContext
+  def sslContext(): SSLContext
 
-  // def sslParameters(): SSLParameters
+  def sslParameters(): SSLParameters
 
   // def authenticator(): Optional[Authenticator]
 
@@ -63,7 +63,8 @@ abstract class HttpClient extends AutoCloseable {
     @volatile var interrupted = false
     while !isTerminated() do {
       shutdown()
-      try awaitTermination(Duration.ofSeconds(10L))
+      try
+        awaitTermination(Duration.ofSeconds(10L))
       catch {
         case e: InterruptedException =>
           if (!interrupted) {

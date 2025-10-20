@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.{InetSocketAddress, SocketAddress, URI}
 import java.net.Proxy
 import java.util.List
+import java.util.Objects.requireNonNull
 
 import scala.collection.mutable.HashMap
 
@@ -20,21 +21,18 @@ private class StaticProxySelector(address: InetSocketAddress) extends ProxySelec
   )
 
   def connectFailed(uri: URI, sa: SocketAddress, e: IOException): Unit =
-    require(uri != null, "uri can not be null.")
-    require(sa != null, "socket address can not be null.")
-    require(e != null, "exception can not be null.")
-    // val p = proxies(Some(sa))
+    requireNonNull(uri)
+    requireNonNull(sa)
+    requireNonNull(e)
 
-  def select(uri: URI): List[Proxy] = {
-    require(uri != null, "uri can not be null")
-
+  def select(uri: URI): List[Proxy] =
+    requireNonNull(uri)
     val scheme = uri.getScheme()
-    require(scheme != null, "protocol can not be null")
+    requireNonNull(scheme)
 
     if scheme.toLowerCase == "http" || scheme.toLowerCase == "https"
     then List.of(proxies.get(Some(address)).getOrElse(Proxy.NO_PROXY))
     else List.of(Proxy.NO_PROXY)
-  }
 }
 
 object ProxySelector {

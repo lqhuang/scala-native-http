@@ -50,8 +50,8 @@ object HttpHeaders {
       headerMap: JMap[String, JList[String]],
       filter: BiPredicate[String, String],
   ): HttpHeaders = {
-    requireNonNull(headerMap, "headerMap must not be null")
-    requireNonNull(filter, "filter must not be null")
+    requireNonNull(headerMap)
+    requireNonNull(filter)
 
     val newHeaderMap = new TreeMap[String, JList[String]](String.CASE_INSENSITIVE_ORDER)
 

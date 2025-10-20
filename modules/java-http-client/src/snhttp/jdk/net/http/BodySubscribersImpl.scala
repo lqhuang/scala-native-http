@@ -1,4 +1,4 @@
-package snhttp.jdk
+package snhttp.jdk.net.http
 
 import java.io.IOException
 import java.io.{BufferedReader, InputStream, InputStreamReader}

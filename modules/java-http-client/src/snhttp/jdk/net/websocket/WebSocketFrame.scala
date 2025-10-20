@@ -1,9 +1,30 @@
-package snhttp.jdk.websocket
+package snhttp.jdk.net.websocket
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import WebSocketOpcodes as Opcodes
-import WebSocketCloseCodes as CloseCodes
+object Opcodes {
+  val CONTINUATION: Int = 0
+  val TEXT: Int = 1
+  val BINARY: Int = 2
+  val CLOSE: Int = 8
+  val PING: Int = 9
+  val PONG: Int = 10
+}
+object CloseCodes {
+  val NORMAL_CLOSURE: Int = 1000
+  val GOING_AWAY: Int = 1001
+  val UNSUPPORTED_DATA: Int = 1003
+
+  val NO_STATUS_RCVD: Int = 1005
+  val ABNORMAL_CLOSURE: Int = 1006
+
+  val INVALID_PAYLOAD_DATA: Int = 1007
+  val POLICY_VIOLATION: Int = 1008
+  val MESSAGE_TOO_BIG: Int = 1009
+  val UNSUPPORTED_EXTENSION: Int = 1010
+  val INTERNAL_SERVER_ERROR: Int = 1011
+  val TLS_HANDSHAKE_FAILURE: Int = 1015
+}
 
 trait AbstractWebSocketFrame:
   /**

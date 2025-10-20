@@ -105,7 +105,7 @@ class SSLParameters(
   def getApplicationProtocols(): Array[String] = _applicationProtocols.clone()
 
   def setApplicationProtocols(protocols: Array[String]): Unit = {
-    require(protocols != null, "Protocols must not be null")
+    requireNonNull(protocols)
     require(
       protocols.forall(p => p != null && p.nonEmpty),
       "Any element of non-empty array must not be null or empty string",

@@ -1,12 +1,10 @@
-package snhttp.jdk
+package snhttp.jdk.net.http
 
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import scala.util.control.NonFatal
 import scala.util.{Try, Success, Failure}
-
-import snhttp.jdk.Demand
 
 private class PullSubscription[T](
     private val subscriber: Subscriber[? >: T],
