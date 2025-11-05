@@ -7,7 +7,7 @@ import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.Function
 
-import snhttp.jdk.ResponseInfoImpl
+import snhttp.jdk.net.http.ResponseInfoImpl
 // import snhttp.testkits.MockSubscriber
 
 class BodyHandlersTest extends munit.FunSuite {

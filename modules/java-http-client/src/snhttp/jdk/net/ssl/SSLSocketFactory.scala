@@ -5,9 +5,9 @@ import java.net.{InetAddress, Socket}
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 
-abstract class DefaultSSLSocketFactory extends SSLSocketFactory {
+class SSLSocketFactoryImpl extends SSLSocketFactory {
 
-  // override def createSocket(): Socket = ???
+  def createSocket(): Socket = ???
 
   def createSocket(host: String, port: Int): Socket = ???
 
@@ -29,11 +29,11 @@ abstract class DefaultSSLSocketFactory extends SSLSocketFactory {
       autoClose: Boolean,
   ): Socket = ???
 
-  // override def createSocket(
-  //     socket: Socket,
-  //     consumed: InputStream,
-  //     autoClose: Boolean,
-  // ): Socket = ???
+  def createSocket(
+      socket: Socket,
+      consumed: InputStream,
+      autoClose: Boolean,
+  ): Socket = ???
 
   def getDefaultCipherSuites(): Array[String] = Array.empty[String]
 

@@ -23,7 +23,7 @@ class SSLServerSocketFactoryImpl extends SSLServerSocketFactory {
       localPort: Int,
   ): Socket = ???
 
-  override def createServerSocket(): ServerSocket = ???
+  def createServerSocket(): ServerSocket = ???
 
   def createServerSocket(port: Int): ServerSocket = ???
 

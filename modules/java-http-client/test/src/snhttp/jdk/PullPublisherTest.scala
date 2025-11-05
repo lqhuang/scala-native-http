@@ -1,11 +1,10 @@
+import java.net.http.HttpResponse.BodySubscribers
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
-import snhttp.jdk.PullPublisher
+import snhttp.jdk.net.http.PullPublisher
 
-import java.net.http.HttpResponse.BodySubscribers
-
-import snhttp.testkits.MockSubscriber
+// import snhttp.jdk.testkits.MockSubscriber
 
 class PullPublisherTest extends munit.FunSuite {
 

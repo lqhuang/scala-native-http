@@ -1,4 +1,4 @@
-import snhttp.jdk.Demand
+import snhttp.jdk.net.http.Demand
 
 class DemandTest extends munit.FunSuite:
 
