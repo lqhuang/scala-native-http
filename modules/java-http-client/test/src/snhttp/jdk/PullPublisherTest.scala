@@ -5,15 +5,18 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 import snhttp.jdk.net.http.PullPublisher
 
 // import snhttp.jdk.testkits.MockSubscriber
+import utest.{Tests, TestSuite, test, assert}
 
-class PullPublisherTest extends munit.FunSuite {
+class PullPublisherTest extends TestSuite {
 
-  test("Construction with empty iterable should not throw") {
-    val publisher = PullPublisher(Iterable.empty[String])
-    // val subscriber = MockSubscriber[String]()
-    // publisher.subscribe(subscriber)
-    // subscriber.onNext("test")
-    // assert(subscriber.received.isEmpty)
+  val tests = Tests {
+    test("Construction with empty iterable should not throw") {
+      val publisher = PullPublisher(Iterable.empty[String])
+      // val subscriber = MockSubscriber[String]()
+      // publisher.subscribe(subscriber)
+      // subscriber.onNext("test")
+      // assert(subscriber.received.isEmpty)
+    }
   }
 
   // test("publish empty iterable should complete immediately") {

@@ -4,41 +4,46 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.{CompletableFuture, ConcurrentHashMap}
 import java.util.function.Function
 
-class PushPromiseHandlerTest extends munit.FunSuite {
+import utest.{Tests, test, assert}
 
-  test("PushPromiseHandler should handle push promises") {
-    val pushPromisesMap = new ConcurrentHashMap[
-      HttpRequest,
-      CompletableFuture[HttpResponse[String]],
-    ]()
-    val pushPromiseHandler: Function[
-      HttpRequest,
-      HttpResponse.BodyHandler[String],
-    ] = _ => BodyHandlers.ofString()
+class PushPromiseHandlerTest extends utest.TestSuite {
 
-    val handler = HttpResponse.PushPromiseHandler.of(pushPromiseHandler, pushPromisesMap)
+  val tests = Tests {
 
-    // Create mock requests
-    val initiatingRequest = HttpRequest
-      .newBuilder()
-      .uri(URI.create("http://example.com"))
-      .build()
+    test("PushPromiseHandler should handle push promises") {
+      val pushPromisesMap = new ConcurrentHashMap[
+        HttpRequest,
+        CompletableFuture[HttpResponse[String]],
+      ]()
+      val pushPromiseHandler: Function[
+        HttpRequest,
+        HttpResponse.BodyHandler[String],
+      ] = _ => BodyHandlers.ofString()
 
-    val pushPromiseRequest = HttpRequest
-      .newBuilder()
-      .uri(URI.create("http://example.com/resource"))
-      .build()
+      val handler = HttpResponse.PushPromiseHandler.of(pushPromiseHandler, pushPromisesMap)
 
-    val acceptor: Function[
-      HttpResponse.BodyHandler[String],
-      CompletableFuture[HttpResponse[String]],
-    ] = _ => CompletableFuture.completedFuture(null)
+      // Create mock requests
+      val initiatingRequest = HttpRequest
+        .newBuilder()
+        .uri(URI.create("http://example.com"))
+        .build()
 
-    // This should not throw
-    handler.applyPushPromise(initiatingRequest, pushPromiseRequest, acceptor)
+      val pushPromiseRequest = HttpRequest
+        .newBuilder()
+        .uri(URI.create("http://example.com/resource"))
+        .build()
 
-    // Verify the push promise was recorded
-    assert(pushPromisesMap.containsKey(pushPromiseRequest))
+      val acceptor: Function[
+        HttpResponse.BodyHandler[String],
+        CompletableFuture[HttpResponse[String]],
+      ] = _ => CompletableFuture.completedFuture(null)
+
+      // This should not throw
+      handler.applyPushPromise(initiatingRequest, pushPromiseRequest, acceptor)
+
+      // Verify the push promise was recorded
+      assert(pushPromisesMap.containsKey(pushPromiseRequest))
+    }
+
   }
-
 }

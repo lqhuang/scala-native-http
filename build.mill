@@ -66,8 +66,9 @@ trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule {
   // def nativeWorkdir = Task { Task.dest  }
 
   /// Define testing
-  object test extends ScalaNativeTests with TestModule.Munit {
-    def munitVersion = "1.0.4"
+  object test extends ScalaNativeTests with TestModule.Utest {
+
+    def utestVersion = "0.9.1"
 
     def testParallelism = true
 

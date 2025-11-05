@@ -1,31 +1,38 @@
 import java.net.http.HttpClient
 
-class WebSocketTest extends munit.FunSuite {
-  test("HttpClient should create WebSocket builder") {
-    val client = HttpClient.newHttpClient()
-    val wsBuilder = client.newWebSocketBuilder()
-    assertNotEquals(wsBuilder, null)
-  }
+import utest.{Tests, test, assert, assertThrows}
 
-  test("HttpClient should reject WebSocket builder creation after shutdown") {
-    val client = HttpClient.newHttpClient()
-    client.shutdown()
+class WebSocketTest extends utest.TestSuite {
 
-    intercept[IllegalStateException] {
-      client.newWebSocketBuilder()
+  val tests = Tests {
+
+    test("HttpClient should create WebSocket builder") {
+      val client = HttpClient.newHttpClient()
+      val wsBuilder = client.newWebSocketBuilder()
+      assert(wsBuilder == null)
     }
-  }
-  test("HttpClient should handle WebSocket builder creation") {
-    val client = HttpClient.newHttpClient()
 
-    // Should create builder successfully
-    val wsBuilder1 = client.newWebSocketBuilder()
-    val wsBuilder2 = client.newWebSocketBuilder()
+    test("HttpClient should reject WebSocket builder creation after shutdown") {
+      val client = HttpClient.newHttpClient()
+      client.shutdown()
 
-    assertNotEquals(wsBuilder1, null)
-    assertNotEquals(wsBuilder2, null)
+      assertThrows[IllegalStateException] {
+        client.newWebSocketBuilder()
+      }
+    }
+    test("HttpClient should handle WebSocket builder creation") {
+      val client = HttpClient.newHttpClient()
 
-    // Should be different instances
-    assert(wsBuilder1 ne wsBuilder2)
+      // Should create builder successfully
+      val wsBuilder1 = client.newWebSocketBuilder()
+      val wsBuilder2 = client.newWebSocketBuilder()
+
+      assert(wsBuilder1 == null)
+      assert(wsBuilder2 == null)
+
+      // Should be different instances
+      assert(wsBuilder1 ne wsBuilder2)
+    }
+
   }
 }
