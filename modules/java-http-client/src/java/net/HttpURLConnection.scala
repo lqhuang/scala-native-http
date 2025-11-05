@@ -8,7 +8,7 @@ import java.io.{IOException, InputStream}
 abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
   def setAuthenticator(auth: Authenticator): Unit
 
-  override def getHeaderFieldKey(x: Int): String
+  // override def getHeaderFieldKey(x: Int): String
 
   def setFixedLengthStreamingMode(contentLength: Int): Unit
 
@@ -16,11 +16,7 @@ abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
 
   def setChunkedStreamingMode(chunkLength: Int): Unit
 
-  override def getHeaderField(n: Int): String
-
-  def setFollowRedirects(auto: Boolean): Unit
-
-  def getFollowRedirects(): Boolean
+  // override def getHeaderField(n: Int): String
 
   def setInstanceFollowRedirects(followRedirects: Boolean): Unit
 
@@ -86,4 +82,10 @@ object HttpURLConnection {
   final val HTTP_UNAVAILABLE: Int = 503
   final val HTTP_GATEWAY_TIMEOUT: Int = 504
   final val HTTP_VERSION: Int = 505
+
+  @volatile private var followRedirects: Boolean = true
+
+  def setFollowRedirects(set: Boolean): Unit = followRedirects = set
+
+  def getFollowRedirects(): Boolean = followRedirects
 }

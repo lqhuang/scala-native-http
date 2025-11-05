@@ -83,11 +83,11 @@ abstract class URLConnection(private val url: URL) {
 
   def getDefaultUseCaches(): Boolean
 
+  def getDefaultUseCaches(protocol: String): Boolean
+
   def setDefaultUseCaches(defaultVal: Boolean): Unit
 
   def setDefaultUseCaches(protocol: String, defaultVal: Boolean): Unit
-
-  def getDefaultUseCaches(protocol: String): Boolean
 
   def setRequestProperty(key: String, value: String): Unit
 
