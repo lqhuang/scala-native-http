@@ -1,8 +1,8 @@
-//| mill-version: 1.0.1
-/// mvnDeps:
-///   - com.goyeau::mill-scalafix::0.4.0
-///   - com.github.lolgab::mill-mima_mill1:0.2.0
-///   - com.indoorvivants.vcpkg::mill-vcpkg:0.0.21
+//| mill-version: 1.0.6
+//| mvnDeps:
+//|   - com.goyeau::mill-scalafix::0.6.0
+//|   - com.github.lolgab::mill-mima_mill1:0.2.0
+//|   - com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION
 
 package build
 
@@ -18,6 +18,7 @@ import scalalib.scalafmt.ScalafmtModule
 import scalanativelib.ScalaNativeModule
 import scalanativelib.api.{LTO, ReleaseMode}
 
+import com.goyeau.mill.scalafix.ScalafixModule
 // import com.github.lolgab.mill.mima.*
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
@@ -43,7 +44,15 @@ trait HttpPublishModule extends PublishModule {
   )
 }
 
-trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule {
+trait UTestModule extends TestModule.Utest {
+  def utestVersion = "0.9.1"
+
+  def testParallelism = true
+
+  def test() = testForked()
+}
+
+trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule with ScalafixModule {
   def scalaVersion = build.scalaVersion
 
   def scalaNativeVersion = build.scalaNativeVersion
@@ -56,7 +65,7 @@ trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule {
   // def releaseMode = ReleaseMode.ReleaseFast
   def releaseMode = ReleaseMode.Debug
 
-  def nativeLTO = LTO.Thin
+  // def nativeLTO = LTO.Thin
 
   def nativeIncrementalCompilation = true
 
@@ -65,12 +74,10 @@ trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule {
   // // Set nativeWorkdir directory to `newDir`
   // def nativeWorkdir = Task { Task.dest  }
 
+  def scalafixIvyDeps = Seq(mvn"com.github.xuwei-k::scalafix-rules:0.6.17")
+
   /// Define testing
-  object test extends ScalaNativeTests with TestModule.Utest {
-
-    def utestVersion = "0.9.1"
-
-    def testParallelism = true
+  object test extends ScalaNativeTests with UTestModule {
 
     // def toolsmvnDeps = Seq(
     //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",

@@ -1,5 +1,4 @@
 package java.net
 
-trait ContentHandlerFactory {
+trait ContentHandlerFactory:
   def createContentHandler(mimeType: String): ContentHandler
-}

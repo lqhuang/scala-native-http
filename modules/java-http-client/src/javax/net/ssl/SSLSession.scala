@@ -3,6 +3,7 @@ package javax.net.ssl
 import java.nio.ByteBuffer
 import java.security.Principal
 import java.security.cert.Certificate
+import javax.security.cert.X509Certificate
 
 /// ## Refs
 ///
@@ -20,9 +21,9 @@ trait SSLSession {
 
   def isValid(): Boolean
 
-  def putValue(name: String, value: Object): Unit
+  def putValue(name: String, value: AnyRef): Unit
 
-  def getValue(name: String): Object
+  def getValue(name: String): AnyRef
 
   def removeValue(name: String): Unit
 
@@ -33,10 +34,8 @@ trait SSLSession {
   def getLocalCertificates(): Array[Certificate]
 
   @deprecated // since JDK 9
-  def getPeerCertificateChain(): Array[javax.security.cert.X509Certificate] =
-    throw new NotImplementedError(
-      "getPeerCertificateChain is deprecated since JDK 9 and not implemented",
-    )
+  def getPeerCertificateChain(): Array[X509Certificate] =
+    throw new UnsupportedOperationException("deprecated since JDK 9")
 
   def getPeerPrincipal(): Principal
 

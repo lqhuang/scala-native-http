@@ -109,11 +109,11 @@ object URLConnection {
 
   @deprecated()
   def setDefaultRequestProperty(key: String, value: String): Unit =
-    throw new UnsupportedOperationException()
+    throw new UnsupportedOperationException("deprecated")
 
   @deprecated()
   def getDefaultRequestProperty(key: String): String =
-    throw new UnsupportedOperationException()
+    throw new UnsupportedOperationException("deprecated")
 
   def setContentHandlerFactory(factory: ContentHandlerFactory): Unit = ???
 
