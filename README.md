@@ -31,6 +31,50 @@ There are also other auxiliary types are enforced by the Java Networking API and
    - [ ] `java.net.Authenticator`
    - [ ] `java.net.CookieHandler`
 
+## Classes list for Java Http Client shims
+
+Classes don't have checkbox mean they are implemented in Scala Native itself. Classes with checkbox and are checked mean they are implemented in this project.
+
+- java.net
+  - [ ] Authenticator
+  - [ ] CacheRequest
+  - [ ] CacheResponse
+  - [ ] ContentHandler
+  - [ ] ContentHandlerFactory
+  - [x] FileNameMap
+  - [ ] HttpCookie
+  - [x] HttpURLConnection
+  - [ ] JarURLConnection
+  - [ ] PasswordAuthentication
+  - [x] Proxy
+  - [x] ProxySelector
+  - [ ] ResponseCache
+  - [ ] SecureCacheResponse
+  - URI
+  - [x] URL
+  - URLDecoder
+  - URLEncoder
+  - [x] URLConnection
+  - [x] URLStreamHandler
+  - [x] URLStreamHandlerFactory
+  - Exceptions
+    - [x] HttpRetryException
+    - URISyntaxException
+    - MalformedURLException
+    - ProtocolException
+    - UnknownHostException
+    - UnknownServiceException
+- java.net.http
+  - [x] HttpClient
+  - [x] HttpHeaders
+  - [x] HttpRequest
+  - [x] HttpResponse
+  - [x] WebSocket
+  - Exceptions
+    - [x] HttpConnectTimeoutException
+    - [x] HttpTimeoutException
+    - [x] WebSocketHandshakeException
+
 ## Dev guides
 
 This project is developed in Scala 3 and Scala Native 0.5.7 with mill build tool.
