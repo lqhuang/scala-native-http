@@ -1,11 +1,17 @@
 package snhttp.jdk.net.http
 
 import java.io.{IOException, UncheckedIOException}
-import java.net.{InetAddress, InetSocketAddress, URI}
-// import java.net.{Authenticator, CookieHandler} // not implemented in Scala Native yet
-import java.net.{Proxy, ProxySelector}
+import java.net.{
+  Authenticator,
+  CookieHandler,
+  InetAddress,
+  InetSocketAddress,
+  Proxy,
+  ProxySelector,
+  URI,
+}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, HttpHeaders, WebSocket}
-import java.net.http.HttpClient.{Redirect, Version}
+import java.net.http.HttpClient.{Builder, Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
 import java.time.Duration
 import java.util.{List, Optional}
@@ -15,14 +21,14 @@ import java.util.concurrent.ExecutionException
 import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.concurrent.ExecutionContext
-// import scala.concurrent.ExecutionContext.Implicits.global
 
-class HttpClientBuilderImpl extends HttpClient.Builder {
-  // private var cookieHandler: Option[CookieHandler] = None
+class HttpClientBuilderImpl extends Builder {
+
+  private var _cookieHandler: Option[CookieHandler] = None
   private var _timeout: Option[Duration] = None
   private var _redirect: Redirect = Redirect.NORMAL
   private var _proxy: Option[ProxySelector] = None
-  // private var authenticator: Option[Authenticator] = None
+  private var _authenticator: Option[Authenticator] = None
   private var _version: Version = Version.HTTP_1_1
   private var _executor: Option[Executor] = None
   private var _sslContext: Option[SSLContext] = None
@@ -30,72 +36,61 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
   private var _priority: Int = -1
   private var _localAddr: Option[InetAddress] = None
 
-  // def cookieHandler(cookieHandler: CookieHandler): HttpClient.Builder = {
-  //   requireNonNull(cookieHandler)
-  //   this._cookieHandler = Some(cookieHandler)
-  //   this
-  // }
+  def cookieHandler(cookieHandler: CookieHandler): Builder =
+    requireNonNull(cookieHandler)
+    this._cookieHandler = Some(cookieHandler)
+    this
 
-  def connectTimeout(duration: Duration): HttpClient.Builder = {
+  def connectTimeout(duration: Duration): Builder =
     requireNonNull(duration)
     require(!duration.isNegative && !duration.isZero, "duration must be positive")
     this._timeout = Some(duration)
     this
-  }
 
-  def sslContext(sslContext: SSLContext): HttpClient.Builder = {
+  def sslContext(sslContext: SSLContext): Builder =
     requireNonNull(sslContext)
     this._sslContext = Some(sslContext)
     this
-  }
 
-  def sslParameters(sslParams: SSLParameters): HttpClient.Builder = {
+  def sslParameters(sslParams: SSLParameters): Builder =
     requireNonNull(sslParams)
     this._sslParams = Some(sslParams)
     this
-  }
 
-  def executor(executor: Executor): HttpClient.Builder = {
+  def executor(executor: Executor): Builder =
     requireNonNull(executor)
     this._executor = Some(executor)
     this
-  }
 
-  def followRedirects(redirect: Redirect): HttpClient.Builder = {
+  def followRedirects(redirect: Redirect): Builder =
     requireNonNull(redirect)
     this._redirect = redirect
     this
-  }
 
-  def version(version: Version): HttpClient.Builder = {
+  def version(version: Version): Builder =
     requireNonNull(version)
     this._version = version
     this
-  }
 
-  def priority(priority: Int): HttpClient.Builder = {
+  def priority(priority: Int): Builder =
     require(priority >= 1 && priority <= 256, "priority must be between 1 and 256 (inclusive)")
     this._priority = priority
     this
-  }
 
-  def proxy(proxy: ProxySelector): HttpClient.Builder = {
+  def proxy(proxy: ProxySelector): Builder =
     requireNonNull(proxy)
     this._proxy = Some(proxy)
     this
-  }
 
-  // def authenticator(authenticator: Authenticator): HttpClient.Builder = {
-  //   requireNonNull(authenticator)
-  //   this._authenticator = Some(authenticator)
-  //   this
-  // }
+  def authenticator(authenticator: Authenticator): Builder =
+    requireNonNull(authenticator)
+    this._authenticator = Some(authenticator)
+    this
 
-  def localAddress(localAddr: InetAddress): HttpClient.Builder = {
+  override def localAddress(localAddr: InetAddress): Builder =
     requireNonNull(localAddr)
     this._localAddr = Some(localAddr)
     this
-  }
 
   def build(): HttpClient =
     new HttpClientImpl(
@@ -106,46 +101,57 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
       _executor = _executor,
       _priority = _priority,
       _localAddr = _localAddr,
+      _sslContext = _sslContext,
+      _sslParams = _sslParams,
+      _authenticator = _authenticator,
+      _cookieHandler = _cookieHandler,
     )
 
 }
 
 class HttpClientImpl(
-    private val _timeout: Option[Duration] = None,
-    private val _redirect: Redirect = Redirect.NORMAL,
-    private val _proxy: Option[ProxySelector] = None,
-    private val _httpVersion: Version = Version.HTTP_1_1,
-    private val _executor: Option[Executor] = None,
-    private val _priority: Int = -1,
-    private val _localAddr: Option[InetAddress] = None,
+    _timeout: Option[Duration] = None,
+    _redirect: Redirect = Redirect.NORMAL,
+    _proxy: Option[ProxySelector] = None,
+    _httpVersion: Version = Version.HTTP_1_1,
+    _executor: Option[Executor] = None,
+    _priority: Int = -1,
+    _localAddr: Option[InetAddress] = None,
+    _sslContext: Option[SSLContext] = None,
+    _sslParams: Option[SSLParameters] = None,
+    _authenticator: Option[Authenticator] = None,
+    _cookieHandler: Option[CookieHandler] = None,
 ) extends HttpClient {
 
   @volatile private var _terminated = false
   @volatile private var _shutdown = false
-  @volatile private var _sslContext: SSLContext = null
 
-  // Use provided executor or create a default one
-  private val defaultExecutor: Executor = _executor.getOrElse(
-    ExecutionContext.global,
-  )
+  private val defaultExecutor: Executor =
+    _executor.getOrElse(ExecutionContext.global)
 
-  // def cookieHandler(): Optional[CookieHandler]
+  def cookieHandler(): Optional[CookieHandler] =
+    _cookieHandler.map(Optional.of).getOrElse(Optional.empty())
 
   def connectTimeout(): Optional[Duration] =
     _timeout.map(Optional.of).getOrElse(Optional.empty())
 
-  def followRedirects(): Redirect = _redirect
+  def followRedirects(): Redirect =
+    _redirect
 
   def proxy(): Optional[ProxySelector] =
     _proxy.map(Optional.of).getOrElse(Optional.empty())
 
-  def sslContext(): SSLContext = SSLContext.getDefault()
+  def sslContext(): SSLContext =
+    _sslContext.getOrElse(SSLContext.getDefault())
 
-  def sslParameters(): SSLParameters = _sslContext.getDefaultSSLParameters()
+  def sslParameters(): SSLParameters =
+    sslContext().getDefaultSSLParameters()
 
-  // def authenticator(): Optional[Authenticator] = Optional.empty()
+  def authenticator(): Optional[Authenticator] =
+    _authenticator.map(Optional.of).getOrElse(Optional.empty())
 
-  def version(): Version = _httpVersion
+  def version(): Version =
+    _httpVersion
 
   def executor(): Optional[Executor] =
     _executor.map(Optional.of).getOrElse(Optional.empty())
@@ -234,14 +240,14 @@ class HttpClientImpl(
     }
   }
 
-  def shutdown(): Unit =
+  override def shutdown(): Unit =
     _shutdown = true
     // In a real implementation, this would:
     // 1. Stop accepting new requests
     // 2. Allow existing requests to complete
     // 3. Close idle connections
 
-  def awaitTermination(duration: Duration): Boolean = {
+  override def awaitTermination(duration: Duration): Boolean = {
     requireNonNull(duration, "duration cannot be null")
 
     val start = System.nanoTime()
@@ -257,9 +263,10 @@ class HttpClientImpl(
     _terminated
   }
 
-  def isTerminated(): Boolean = _terminated
+  override def isTerminated(): Boolean =
+    _terminated
 
-  def shutdownNow(): Unit =
+  override def shutdownNow(): Unit =
     // In a real implementation, this would:
     // 1. Cancel all pending requests
     // 2. Close all connections immediately
@@ -267,7 +274,7 @@ class HttpClientImpl(
     _shutdown = true
     _terminated = true
 
-  def newWebSocketBuilder(): WebSocket.Builder = {
+  override def newWebSocketBuilder(): WebSocket.Builder = {
     if (_shutdown) {
       throw new IllegalStateException("HttpClient has been shut down")
     }

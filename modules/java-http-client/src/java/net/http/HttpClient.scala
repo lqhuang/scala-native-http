@@ -2,8 +2,8 @@ package java.net.http
 
 import java.io.{IOException, UncheckedIOException}
 import java.net.{InetAddress, InetSocketAddress}
-// import java.net.{CookieHandler, Authenticator} // not implement yet
-import java.net.{Proxy, ProxySelector} // not implement in Scala Native yet
+import java.net.{CookieHandler, Authenticator}
+import java.net.{Proxy, ProxySelector}
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.{CompletableFuture, Executor}
@@ -15,7 +15,7 @@ import snhttp.jdk.net.http.HttpClientBuilderImpl
 abstract class HttpClient extends AutoCloseable {
   import HttpClient.{Redirect, Version}
 
-  // def cookieHandler(): Optional[CookieHandler]
+  def cookieHandler(): Optional[CookieHandler]
 
   def connectTimeout(): Optional[Duration]
 
@@ -27,7 +27,7 @@ abstract class HttpClient extends AutoCloseable {
 
   def sslParameters(): SSLParameters
 
-  // def authenticator(): Optional[Authenticator]
+  def authenticator(): Optional[Authenticator]
 
   def version(): Version
 
@@ -92,9 +92,9 @@ object HttpClient {
 
     def connectTimeout(duration: Duration): Builder
 
-    // def sslContext(sslContext: SSLContext): Builder
+    def sslContext(sslContext: SSLContext): Builder
 
-    // def sslParameters(sslParameters: SSLParameters): Builder
+    def sslParameters(sslParameters: SSLParameters): Builder
 
     def executor(executor: Executor): Builder
 
