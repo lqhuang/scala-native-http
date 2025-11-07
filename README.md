@@ -41,6 +41,10 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
   - [ ] CacheResponse
   - [ ] ContentHandler
   - [ ] ContentHandlerFactory
+  - [ ] CookieHandler
+  - [ ] CookieManager
+  - [ ] CookiePolicy
+  - [ ] CookieStore
   - [x] FileNameMap
   - [ ] HttpCookie
   - [x] HttpURLConnection
@@ -69,7 +73,7 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
   - [x] HttpHeaders
   - [x] HttpRequest
   - [x] HttpResponse
-  - [x] WebSocket
+  - [ ] WebSocket
   - Exceptions
     - [x] HttpConnectTimeoutException
     - [x] HttpTimeoutException
