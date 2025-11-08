@@ -86,7 +86,7 @@ object HttpHeaders {
       // TODO: bug? even if test returns false, the headerValues will not be empty
       // println(s"headerValues = ${headerValues.size()}")
 
-      if (!headerValues.isEmpty) newHeaderMap.put(headerKey, headerValues)
+      if (!headerValues.isEmpty) newHeaderMap.put(headerKey, headerValues): Unit
     }
 
     if newHeaderMap.isEmpty

@@ -45,13 +45,13 @@ object BodySubscribersImpl {
 
     override def onError(throwable: Throwable): Unit =
       try subscriber.onError(throwable)
-      finally cf.completeExceptionally(throwable)
+      finally cf.completeExceptionally(throwable): Unit
 
     override def onComplete(): Unit =
       try subscriber.onComplete()
       finally
-        try cf.completeAsync(() => finisher(subscriber))
-        catch { case t: Throwable => cf.completeExceptionally(t) }
+        try cf.completeAsync(() => finisher(subscriber)): Unit
+        catch { case t: Throwable => cf.completeExceptionally(t): Unit }
 
     override def getBody(): CompletionStage[R] = cf
   }
@@ -108,14 +108,14 @@ object BodySubscribersImpl {
         if (buffer.nonEmpty) subscriber.onNext(buffer.toString)
         subscriber.onComplete()
       } finally
-        try cf.complete(finisher(subscriber))
-        catch { case t: Throwable => cf.completeExceptionally(t) }
+        try cf.complete(finisher(subscriber)): Unit
+        catch { case t: Throwable => cf.completeExceptionally(t): Unit }
 
     override def onError(throwable: Throwable): Unit =
       try {
         subscription.cancel()
         subscriber.onError(throwable)
-      } finally cf.completeExceptionally(throwable)
+      } finally cf.completeExceptionally(throwable): Unit
 
     override def getBody(): CompletionStage[R] = cf
   }
@@ -147,7 +147,9 @@ object BodySubscribersImpl {
 
     override def onNext(item: JList[ByteBuffer]): Unit = {
       requireNonNull(item)
-      item.stream().forEach(item => item.hasRemaining() && received.add(item))
+      item.stream().forEach { item =>
+        (item.hasRemaining() && received.add(item)): Unit
+      }
     }
 
     private def join(bufs: JList[ByteBuffer]): Array[Byte] = {
@@ -166,16 +168,16 @@ object BodySubscribersImpl {
 
     override def onComplete(): Unit =
       try
-        cf.complete(finisher(join(received)))
+        cf.complete(finisher(join(received))): Unit
       catch {
-        case t: Throwable => cf.completeExceptionally(t)
+        case t: Throwable => cf.completeExceptionally(t): Unit
       } finally
         received.clear()
 
     override def onError(throwable: Throwable): Unit = {
       received.clear()
       subscription.cancel()
-      cf.completeExceptionally(throwable)
+      cf.completeExceptionally(throwable): Unit
     }
 
     override def getBody(): CompletionStage[T] = cf
@@ -211,7 +213,7 @@ object BodySubscribersImpl {
     override def onNext(item: JList[ByteBuffer]): Unit = {
       try {
         val buffers = item.toArray(new Array[ByteBuffer](item.size))
-        while buffers.exists(_.hasRemaining) do fh.write(buffers)
+        while buffers.exists(_.hasRemaining) do fh.write(buffers): Unit
       } catch {
         case exc: IOException =>
           closeFileChannel()
@@ -226,12 +228,12 @@ object BodySubscribersImpl {
     override def onError(e: Throwable): Unit = {
       subscription.cancel()
       closeFileChannel()
-      cf.completeExceptionally(e)
+      cf.completeExceptionally(e): Unit
     }
 
     override def onComplete(): Unit = {
       closeFileChannel()
-      cf.complete(file)
+      cf.complete(file): Unit
     }
 
     override def getBody(): CompletionStage[Path] = cf
@@ -275,12 +277,12 @@ object BodySubscribersImpl {
 
     override def onError(throwable: Throwable): Unit = {
       requireNonNull(throwable)
-      cf.completeExceptionally(throwable)
+      cf.completeExceptionally(throwable): Unit
     }
 
     override def onComplete(): Unit = {
       consumer.accept(Optional.empty())
-      cf.complete(null)
+      cf.complete(null): Unit
     }
   }
 
@@ -316,7 +318,7 @@ object BodySubscribersImpl {
 
     override def onError(throwable: Throwable): Unit =
       closed = true
-      cf.completeExceptionally(throwable)
+      cf.completeExceptionally(throwable): Unit
 
     override def read(): Int = {
       if (closed) return -1
@@ -377,7 +379,7 @@ object BodySubscribersImpl {
             s.onSubscribe(subscription)
           }
         }
-        cf.complete(publisher)
+        cf.complete(publisher): Unit
       }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
@@ -389,7 +391,7 @@ object BodySubscribersImpl {
     override def onError(throwable: Throwable): Unit = {
       if (subscriber != null) subscriber.onError(throwable)
 
-      cf.completeExceptionally(throwable)
+      cf.completeExceptionally(throwable): Unit
     }
 
     override def getBody(): CompletionStage[Publisher[JList[ByteBuffer]]] = cf
@@ -408,12 +410,13 @@ object BodySubscribersImpl {
 
     override def onNext(item: JList[ByteBuffer]): Unit = ()
 
-    override def onError(throwable: Throwable): Unit = cf.completeExceptionally(throwable)
+    override def onError(throwable: Throwable): Unit =
+      cf.completeExceptionally(throwable): Unit
 
     override def onComplete(): Unit =
       if other.isPresent()
-      then cf.complete(other.get())
-      else cf.complete(null.asInstanceOf[T])
+      then cf.complete(other.get()): Unit
+      else cf.complete(null.asInstanceOf[T]): Unit
 
     override def getBody(): CompletionStage[T] = cf
   }

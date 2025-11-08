@@ -22,7 +22,7 @@ class MockSubscriber[T] extends Subscriber[T] {
     this.subscription = subscription
 
   override def onNext(item: T): Unit = synchronized {
-    _received += item
+    (_received += item): Unit
   }
 
   override def onError(throwable: Throwable): Unit = {

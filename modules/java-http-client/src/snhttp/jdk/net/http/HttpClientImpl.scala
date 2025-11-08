@@ -213,10 +213,10 @@ class HttpClientImpl(
         // For now, create a mock response to satisfy the interface
         // val mockResponse = createMockResponse(request, responseBodyHandler)
         // responseFuture.complete(mockResponse)
-        responseFuture.complete(???)
+        responseFuture.complete(???): Unit
       catch {
         case e: Exception =>
-          responseFuture.completeExceptionally(e)
+          responseFuture.completeExceptionally(e): Unit
       },
     )
 

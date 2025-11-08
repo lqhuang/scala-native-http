@@ -59,18 +59,19 @@ object HttpRequest {
 
     val builder = newBuilder(request.uri()).expectContinue(request.expectContinue())
 
-    if (request.version().isPresent()) builder.version(request.version().get())
-    if (request.timeout().isPresent()) builder.timeout(request.timeout().get())
+    if (request.version().isPresent()) builder.version(request.version().get()): Unit
+    if (request.timeout().isPresent()) builder.timeout(request.timeout().get()): Unit
 
-    if request.bodyPublisher().isPresent()
-    then builder.method(request.method(), request.bodyPublisher().get())
-    else builder.method(request.method(), BodyPublishers.noBody())
+    val publisher =
+      if request.bodyPublisher().isPresent() then request.bodyPublisher().get()
+      else BodyPublishers.noBody()
+    builder.method(request.method(), publisher): Unit
 
     val newHeaders = HttpHeaders.of(request.headers().map(), filter)
     newHeaders
       .map()
       .forEach((name: String, values: JList[String]) =>
-        values.forEach((value: String) => builder.header(name, value)),
+        values.forEach((value: String) => builder.header(name, value): Unit),
       )
 
     builder

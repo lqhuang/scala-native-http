@@ -23,10 +23,10 @@ class DemandTest extends utest.TestSuite:
     test("increase should throw on non-positive input") {
       val d = Demand()
       assertThrows[IllegalArgumentException] {
-        d.increase(0)
+        d.increase(0): Unit
       }
       assertThrows[IllegalArgumentException] {
-        d.increase(-1)
+        d.increase(-1): Unit
       }
     }
 
@@ -60,10 +60,10 @@ class DemandTest extends utest.TestSuite:
       val d = Demand()
       d.increase(5)
       assertThrows[IllegalArgumentException] {
-        d.decreaseAndGet(0)
+        d.decreaseAndGet(0): Unit
       }
       assertThrows[IllegalArgumentException] {
-        d.decreaseAndGet(-10)
+        d.decreaseAndGet(-10): Unit
       }
     }
 

@@ -96,7 +96,7 @@ class BodySubscribersTest extends utest.TestSuite {
       subscriber.onError(testError)
 
       assertThrows[Exception] {
-        subscriber.getBody().toCompletableFuture.get()
+        subscriber.getBody().toCompletableFuture.get(): Unit
       }
     }
 
@@ -248,7 +248,7 @@ class BodySubscribersTest extends utest.TestSuite {
 
         val fileContent = Files.readString(tempFile, StandardCharsets.UTF_8)
         assert(fileContent == testData)
-      } finally Files.deleteIfExists(tempFile)
+      } finally Files.deleteIfExists(tempFile): Unit
     }
 
     test("BodySubscribers.ofFile should handle concurrent writes") {
@@ -271,7 +271,7 @@ class BodySubscribersTest extends utest.TestSuite {
         val resultPath = subscriber.getBody().toCompletableFuture.get()
         val fileContent = Files.readString(tempFile, StandardCharsets.UTF_8)
         assert(fileContent == "Part1Part2")
-      } finally Files.deleteIfExists(tempFile)
+      } finally Files.deleteIfExists(tempFile): Unit
     }
 
     // ========================================== //
@@ -299,7 +299,8 @@ class BodySubscribersTest extends utest.TestSuite {
     test("BodySubscribers.ofByteArrayConsumer should call consumer") {
       val consumedData = new ArrayList[Array[Byte]]()
       val consumer: Consumer[Optional[Array[Byte]]] = { opt =>
-        if (opt.isPresent) consumedData.add(opt.get())
+        if (opt.isPresent)
+          consumedData.add(opt.get()): Unit
       }
 
       val subscriber = BodySubscribers.ofByteArrayConsumer(consumer)
@@ -588,7 +589,7 @@ class BodySubscribersTest extends utest.TestSuite {
       subscriber.onComplete()
 
       assertThrows[Exception] {
-        subscriber.getBody().toCompletableFuture.get()
+        subscriber.getBody().toCompletableFuture.get(): Unit
       }
     }
 

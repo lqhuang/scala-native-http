@@ -87,15 +87,15 @@ class HttpClientSuite extends utest.TestSuite {
       val builder = HttpClient.newBuilder()
 
       assertThrows[IllegalArgumentException] {
-        builder.connectTimeout(Duration.ofSeconds(0))
+        builder.connectTimeout(Duration.ofSeconds(0)): Unit
       }
 
       assertThrows[IllegalArgumentException] {
-        builder.connectTimeout(Duration.ofSeconds(-1))
+        builder.connectTimeout(Duration.ofSeconds(-1)): Unit
       }
 
       assertThrows[NullPointerException] {
-        builder.connectTimeout(null)
+        builder.connectTimeout(null): Unit
       }
     }
 
@@ -122,7 +122,7 @@ class HttpClientSuite extends utest.TestSuite {
     test("HttpClient builder should reject null redirect policy") {
       val builder = HttpClient.newBuilder()
       assertThrows[NullPointerException] {
-        builder.followRedirects(null)
+        builder.followRedirects(null): Unit
       }
     }
 
@@ -143,7 +143,7 @@ class HttpClientSuite extends utest.TestSuite {
     test("HttpClient builder should reject null HTTP version") {
       val builder = HttpClient.newBuilder()
       assertThrows[NullPointerException] {
-        builder.version(null)
+        builder.version(null): Unit
       }
     }
 
@@ -163,7 +163,7 @@ class HttpClientSuite extends utest.TestSuite {
     test("HttpClient builder should reject null executor") {
       val builder = HttpClient.newBuilder()
       assertThrows[NullPointerException] {
-        builder.executor(null)
+        builder.executor(null): Unit
       }
     }
 
@@ -177,15 +177,15 @@ class HttpClientSuite extends utest.TestSuite {
 
       // Invalid priorities
       assertThrows[IllegalArgumentException] {
-        builder.priority(0)
+        builder.priority(0): Unit
       }
 
       assertThrows[IllegalArgumentException] {
-        builder.priority(257)
+        builder.priority(257): Unit
       }
 
       assertThrows[IllegalArgumentException] {
-        builder.priority(-1)
+        builder.priority(-1): Unit
       }
     }
 
@@ -203,7 +203,7 @@ class HttpClientSuite extends utest.TestSuite {
     test("HttpClient builder should reject null local address") {
       val builder = HttpClient.newBuilder()
       assertThrows[NullPointerException] {
-        builder.localAddress(null)
+        builder.localAddress(null): Unit
       }
     }
 
@@ -213,11 +213,11 @@ class HttpClientSuite extends utest.TestSuite {
       val bodyHandler = HttpResponse.BodyHandlers.ofString()
 
       assertThrows[NullPointerException] {
-        client.send(null, bodyHandler)
+        client.send(null, bodyHandler): Unit
       }
 
       assertThrows[NullPointerException] {
-        client.send(request, null)
+        client.send(request, null): Unit
       }
     }
 
@@ -227,11 +227,11 @@ class HttpClientSuite extends utest.TestSuite {
       val bodyHandler = HttpResponse.BodyHandlers.ofString()
 
       assertThrows[NullPointerException] {
-        client.sendAsync(null, bodyHandler)
+        client.sendAsync(null, bodyHandler): Unit
       }
 
       assertThrows[NullPointerException] {
-        client.sendAsync(request, null)
+        client.sendAsync(request, null): Unit
       }
     }
 
@@ -245,15 +245,15 @@ class HttpClientSuite extends utest.TestSuite {
       )
 
       assertThrows[NullPointerException] {
-        client.sendAsync(null, bodyHandler, pushPromiseHandler)
+        client.sendAsync(null, bodyHandler, pushPromiseHandler): Unit
       }
 
       assertThrows[NullPointerException] {
-        client.sendAsync(request, null, pushPromiseHandler)
+        client.sendAsync(request, null, pushPromiseHandler): Unit
       }
 
       assertThrows[NullPointerException] {
-        client.sendAsync(request, bodyHandler, null)
+        client.sendAsync(request, bodyHandler, null): Unit
       }
     }
 
@@ -296,7 +296,7 @@ class HttpClientSuite extends utest.TestSuite {
       val bodyHandler = HttpResponse.BodyHandlers.ofString()
 
       assertThrows[IllegalStateException] {
-        client.send(request, bodyHandler)
+        client.send(request, bodyHandler): Unit
       }
 
       val future = client.sendAsync(request, bodyHandler)
@@ -319,7 +319,7 @@ class HttpClientSuite extends utest.TestSuite {
     test("HttpClient awaitTermination should reject null duration") {
       val client = HttpClient.newHttpClient()
       assertThrows[NullPointerException] {
-        client.awaitTermination(null)
+        client.awaitTermination(null): Unit
       }
     }
 
@@ -467,7 +467,7 @@ class HttpClientSuite extends utest.TestSuite {
 
       // New requests should fail
       assertThrows[IllegalStateException] {
-        client.send(request, bodyHandler)
+        client.send(request, bodyHandler): Unit
       }
     }
 
@@ -493,7 +493,7 @@ class HttpClientSuite extends utest.TestSuite {
 
       // Zero timeout should be rejected
       assertThrows[IllegalArgumentException] {
-        HttpClient.newBuilder().connectTimeout(Duration.ZERO)
+        HttpClient.newBuilder().connectTimeout(Duration.ZERO): Unit
       }
     }
 
@@ -510,11 +510,11 @@ class HttpClientSuite extends utest.TestSuite {
 
       // Boundary violations
       assertThrows[IllegalArgumentException] {
-        builder.priority(0)
+        builder.priority(0): Unit
       }
 
       assertThrows[IllegalArgumentException] {
-        builder.priority(257)
+        builder.priority(257): Unit
       }
     }
 
@@ -641,7 +641,7 @@ class HttpClientSuite extends utest.TestSuite {
       val completedCount = new AtomicInteger(0)
       futures.take(requestCount / 2).foreach { future =>
         future.whenComplete { (_, _) =>
-          completedCount.incrementAndGet()
+          completedCount.incrementAndGet(): Unit
         }
       }
 
@@ -877,7 +877,7 @@ class HttpClientSuite extends utest.TestSuite {
                 assert(client != null)
                 clientCount.incrementAndGet()
               }
-            catch case _: Exception => errors.incrementAndGet()
+            catch case _: Exception => errors.incrementAndGet(): Unit
             finally latch.countDown()
         }
       }
@@ -906,7 +906,7 @@ class HttpClientSuite extends utest.TestSuite {
           .build()
 
         val future = client.sendAsync(request, bodyHandler)
-        future.whenComplete((_, _) => counter.incrementAndGet())
+        future.whenComplete((_, _) => counter.incrementAndGet(): Unit)
         future
       }
 
@@ -1063,11 +1063,9 @@ class HttpClientSuite extends utest.TestSuite {
           .build()
 
         client.sendAsync(request, bodyHandler).whenComplete { (response, throwable) =>
-          if (throwable == null) {
-            successCount.incrementAndGet()
-          } else {
-            errorCount.incrementAndGet()
-          }
+          if throwable == null
+          then successCount.incrementAndGet(): Unit
+          else errorCount.incrementAndGet(): Unit
         }
       }
 

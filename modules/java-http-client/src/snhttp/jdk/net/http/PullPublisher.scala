@@ -20,13 +20,14 @@ private class PullSubscription[T](
 
   override def request(n: Long): Unit = {
     require(n >= 0, s"subscription request number ${n} can not be zero or negative")
-    if (cancelled.get()) return
-    demand.increase(n)
+
+    if (cancelled.getOpaque()) return
+    demand.increase(n): Unit
     // pullScheduler.runOrSchedule()
   }
 
   override def cancel(): Unit =
-    cancelled.compareAndSet(false, true)
+    cancelled.compareAndSet(false, true): Unit
 
   // private def pullTask(): Unit = {
   //   if (completed.get() || cancelled.get()) return
@@ -99,7 +100,7 @@ class PullPublisher[T] private[jdk] (
   override def subscribe(subscriber: Subscriber[? >: T]): Unit =
     val sub = PullSubscription[T](subscriber, iter)
     subscriber.onSubscribe(sub)
-    iter.map(_ => sub.runOrSchedule())
+    iter.map(_ => sub.runOrSchedule()): Unit
 }
 object PullPublisher {
   def apply[T](iterable: Iterable[T]): PullPublisher[T] =

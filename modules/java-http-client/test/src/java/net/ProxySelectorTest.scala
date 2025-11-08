@@ -95,7 +95,7 @@ class ProxySelectorTest extends utest.TestSuite {
       val selector = ProxySelector.of(null)
 
       assertThrows[IllegalArgumentException] {
-        selector.select(null)
+        selector.select(null): Unit
       }
     }
 
@@ -104,7 +104,7 @@ class ProxySelectorTest extends utest.TestSuite {
       val uri = new URI("//example.com")
 
       assertThrows[IllegalArgumentException] {
-        selector.select(uri)
+        selector.select(uri): Unit
       }
     }
 

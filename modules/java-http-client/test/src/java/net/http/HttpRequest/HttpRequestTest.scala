@@ -61,7 +61,7 @@ class HttpRequestTest extends utest.TestSuite {
           HttpRequest
             .newBuilder(new URI(endpoint))
             .timeout(Duration.ofSeconds(timeout))
-            .build()
+            .build(): Unit
         }
       }
     }

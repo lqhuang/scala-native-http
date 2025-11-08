@@ -139,7 +139,7 @@ class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher 
     if sum < 0 then -1 else sum
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
-    for publisher <- publishers yield publisher.subscribe(subscriber)
+    publishers.foreach(p => p.subscribe(subscriber))
 }
 
 object BodyPublishersImpl {

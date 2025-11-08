@@ -17,7 +17,7 @@ class WebSocketTest extends utest.TestSuite {
       client.shutdown()
 
       assertThrows[IllegalStateException] {
-        client.newWebSocketBuilder()
+        client.newWebSocketBuilder(): Unit
       }
     }
     test("HttpClient should handle WebSocket builder creation") {

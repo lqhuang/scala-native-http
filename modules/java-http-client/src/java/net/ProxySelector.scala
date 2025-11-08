@@ -24,6 +24,7 @@ private class StaticProxySelector(address: InetSocketAddress) extends ProxySelec
     requireNonNull(uri)
     requireNonNull(sa)
     requireNonNull(e)
+    ???
 
   def select(uri: URI): List[Proxy] =
     requireNonNull(uri)

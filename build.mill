@@ -58,6 +58,9 @@ trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule with Sca
   def scalaNativeVersion = build.scalaNativeVersion
 
   def scalacOptions = super.scalacOptions() ++ Seq(
+    "-Wvalue-discard",
+    "-Wnonunit-statement",
+    "-Wconf:msg=(discarded.*value|pure.*statement):error",
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
   )
 

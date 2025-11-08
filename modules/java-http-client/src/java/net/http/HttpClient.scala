@@ -8,6 +8,7 @@ import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.{CompletableFuture, Executor}
 import javax.net.ssl.{SSLContext, SSLParameters}
+import java.util.concurrent.atomic.AtomicBoolean
 
 import snhttp.jdk.net.http.HttpClientBuilderImpl
 
@@ -59,21 +60,18 @@ abstract class HttpClient extends AutoCloseable {
 
   def shutdownNow(): Unit
 
-  override def close(): Unit = {
-    @volatile var interrupted = false
+  def close(): Unit = {
+    val interrupted = new AtomicBoolean(false)
     while !isTerminated() do {
       shutdown()
       try
-        awaitTermination(Duration.ofSeconds(10L))
+        awaitTermination(Duration.ofSeconds(10L)): Unit
       catch {
         case e: InterruptedException =>
-          if (!interrupted) {
-            interrupted = true
-            shutdownNow()
-          }
+          if (interrupted.compareAndSet(false, true)) shutdownNow()
       }
     }
-    if (interrupted) Thread.currentThread().interrupt()
+    if (interrupted.getOpaque()) Thread.currentThread().interrupt()
   }
 }
 

@@ -31,14 +31,14 @@ class HttpHeadersTest extends utest.TestSuite {
 
     test("HttpHeaders.of throws exception for null headerMap") {
       assertThrows[NullPointerException] {
-        HttpHeaders.of(null, accpetAllFilter)
+        HttpHeaders.of(null, accpetAllFilter): Unit
       }
     }
 
     test("HttpHeaders.of throws exception for null filter") {
       val headerMap = JMap.of("Host", JList.of("example.com"))
       assertThrows[NullPointerException] {
-        HttpHeaders.of(headerMap, null)
+        HttpHeaders.of(headerMap, null): Unit
       }
     }
 
@@ -46,21 +46,21 @@ class HttpHeadersTest extends utest.TestSuite {
       val headerMap = new TreeMap[String, JList[String]]()
       headerMap.put("Host", null)
       assertThrows[NullPointerException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
     test("HttpHeaders.of throws exception for empty header key") {
       val headerMap = JMap.of("", JList.of("value"))
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
     test("HttpHeaders.of throws exception for whitespace-only header key") {
       val headerMap = JMap.of("    ", JList.of("value"))
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
@@ -70,7 +70,7 @@ class HttpHeadersTest extends utest.TestSuite {
       headerMap.put("HOST", JList.of("different.com"))
 
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
@@ -82,28 +82,28 @@ class HttpHeadersTest extends utest.TestSuite {
       headerMap.put("HOST", JList.of("different.com"))
 
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
     test("HttpHeaders.of throws exception for empty header values list") {
       val headerMap = JMap.of("Host", JList.of[String]())
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
     test("HttpHeaders.of throws exception for header values list with empty value") {
       val headerMap = JMap.of("Host", JList.of[String]("   "))
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
     test("HttpHeaders.of throws exception for header values list with any empty value") {
       val headerMap = JMap.of("Host", JList.of[String]("localhost", "   "))
       assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter)
+        HttpHeaders.of(headerMap, accpetAllFilter): Unit
       }
     }
 
@@ -209,7 +209,7 @@ class HttpHeadersTest extends utest.TestSuite {
       val headerMap = JMap.of("Content-Type", JList.of("text/plain"))
       val headers = HttpHeaders.of(headerMap, accpetAllFilter)
       assertThrows[NumberFormatException] {
-        headers.firstValueAsLong("Content-Type")
+        headers.firstValueAsLong("Content-Type"): Unit
       }
     }
 

@@ -41,9 +41,9 @@ object BodyHandlersImpl {
 
   /// Implements the `PushPromiseHandler` interface from `HttpResponse`
   case class PushPromisesHandlerWithMap[T](
-      private val pushPromiseHandler: Function[HttpRequest, BodyHandler[T]],
-      private val pushPromisesMap: ConcurrentMap[HttpRequest, CompletableFuture[HttpResponse[T]]],
-  ) extends HttpResponse.PushPromiseHandler[T] {
+      pushPromiseHandler: Function[HttpRequest, BodyHandler[T]],
+      pushPromisesMap: ConcurrentMap[HttpRequest, CompletableFuture[HttpResponse[T]]],
+  ) extends HttpResponse.PushPromiseHandler[T]:
     def applyPushPromise(
         initiatingRequest: HttpRequest,
         pushPromiseRequest: HttpRequest,
@@ -51,8 +51,7 @@ object BodyHandlersImpl {
     ): Unit = {
       val bodyHandler = pushPromiseHandler.apply(pushPromiseRequest)
       val responseFuture = acceptor.apply(bodyHandler)
-      pushPromisesMap.put(pushPromiseRequest, responseFuture)
+      pushPromisesMap.put(pushPromiseRequest, responseFuture): Unit
     }
-  }
 
 }
