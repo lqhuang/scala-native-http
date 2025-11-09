@@ -2,9 +2,8 @@ package java.net
 
 import java.io.IOException
 import java.io.{InputStream, ObjectInputStream, ObjectOutputStream, Serializable}
+import java.net.InetAddress
 import java.util.Objects.requireNonNull
-
-import scala.collection.immutable.HashSet
 
 import snhttp.jdk.net.URLStreamHandlerFactoryImpl
 
@@ -52,17 +51,23 @@ final class URL private (
   )
   def this(context: URL, spec: String) = this(URI.create(spec), None)
 
-  // From docs:
-  //
-  // Creates a URL by parsing the given spec with the specified handler within
-  // a specified context. If the handler is null, the parsing occurs as with the
-  // two argument constructor.
   @deprecated(
     "Use URL.of() to construct an instance of URL with URLStreamHandler.",
     since = "20",
   )
   def this(context: URL, spec: String, handler: URLStreamHandler) =
     this(URI.create(spec), if handler != null then Some(handler) else None)
+
+  lazy val _handler: URLStreamHandler = handler match {
+    case Some(h) => h
+    case None =>
+      val protocol = getProtocol()
+      val handlerInstance = URL.handlerFactory.createURLStreamHandler(protocol)
+
+      if handlerInstance != null
+      then handlerInstance
+      else throw new IOException(s"No handler found for protocol: $protocol")
+  }
 
   def getQuery(): String = uri.getQuery()
 
@@ -74,19 +79,33 @@ final class URL private (
 
   def getPort(): Int = uri.getPort()
 
-  def getDefaultPort(): Int = ???
+  /// Gets the default port number of the protocol associated with this URL.
+  /// If the URL scheme or the URLStreamHandler for the URL do not define
+  /// a default port number, then -1 is returned.
+  def getDefaultPort(): Int =
+    if getPort() != -1
+    then getPort()
+    else _handler.getDefaultPort()
 
   def getProtocol(): String = uri.getScheme()
 
   def getHost(): String = uri.getHost()
 
-  def getFile(): String = ???
+  def getFile(): String = uri.getQuery() match
+    case null => uri.getPath()
+    case q    => s"${uri.getPath()}?${q}"
 
-  def getRef(): String = ???
+  def getRef(): String = uri.getFragment()
 
-  def sameFile(other: URL): Boolean = ???
+  def sameFile(other: URL): Boolean =
+    this.getProtocol() == other.getProtocol()
+      && this.getUserInfo() == other.getUserInfo()
+      && this.getHost() == other.getHost()
+      && this.getPort() == other.getPort()
+      && this.getFile() == other.getFile()
+      && this.getQuery() == other.getQuery()
 
-  def toExternalForm(): String = ???
+  def toExternalForm(): String = _handler.toExternalForm(this)
 
   def toURI(): URI = uri
 
@@ -112,17 +131,68 @@ final class URL private (
       else throw new IOException(s"No handler found for protocol: $protocol")
   }
 
-  def openStream(): InputStream = ???
+  def openStream(): InputStream = openConnection().getInputStream()
 
-  def getContent(): AnyRef = ???
+  def getContent(): Any = openConnection().getContent()
 
-  def getContent(classes: Array[Class[_]]): AnyRef = ???
+  def getContent(classes: Array[Class[_]]): Any =
+    throw new UnsupportedOperationException()
 
-  override def equals(obj: Any): Boolean = ???
+  /// Based on docs
+  ///
+  /// Two URL objects are equal if they have
+  ///
+  /// 1. the same protocol,
+  /// 2. reference equivalent hosts,
+  /// 3. have the same port number on the host,
+  /// 4. and the same file
+  /// 5. and fragment of the file.
+  ///
+  /// Two hosts are considered equivalent if both host names can be resolved into
+  /// the same IP addresses; else if either host name can't be resolved, the host
+  /// names must be equal without regard to case; or both host names equal to null.
+  ///
+  /// Since hosts comparison requires name resolution, this operation is a blocking operation.
+  ///
+  /// Note: The defined behavior for equals is known to be inconsistent with virtual hosting
+  /// in HTTP.
+  override def equals(obj: Any): Boolean =
+    if !obj.isInstanceOf[URL]
+    then false
+    else {
+      val that = obj.asInstanceOf[URL]
 
-  override def hashCode(): Int = ???
+      val ip = InetAddress.getByName(this.getHost())
+      val ip_ = InetAddress.getByName(that.getHost())
 
-  override def toString(): String = ???
+      this.getProtocol() == that.getProtocol()
+      && ip == ip_
+      && this.getPort() == that.getPort()
+      && this.getFile() == that.getFile()
+      && this.getRef() == that.getRef()
+    }
+
+  override def hashCode(): Int = {
+    val ip = InetAddress.getByName(this.getHost())
+
+    Seq(
+      this.getProtocol(),
+      ip,
+      this.getPort(),
+      this.getFile(),
+      this.getRef(),
+    )
+      .foldLeft[Int](0) { (acc, item) =>
+        if item == null
+        then acc
+        else (acc << 5 | acc >>> 27) + item.hashCode()
+      }
+  }
+
+  /// Constructs a string representation of this URL.
+  /// The string is created by calling the toExternalForm method of
+  /// the stream protocol handler for this object.
+  override def toString(): String = toExternalForm()
 }
 
 object URL {

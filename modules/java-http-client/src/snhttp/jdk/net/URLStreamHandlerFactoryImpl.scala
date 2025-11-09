@@ -3,13 +3,11 @@ package snhttp.jdk.net
 import java.net.{URLStreamHandler, URLStreamHandlerFactory}
 import java.util.Objects.requireNonNull
 
-import scala.collection.immutable.HashMap
-
 object URLStreamHandlerFactoryImpl extends URLStreamHandlerFactory:
 
   // Protocol handlers for the following protocols are guaranteed to exist on the search path
-  private val ProtocolHandlerMap: HashMap[String, URLStreamHandler] =
-    HashMap(
+  private val ProtocolHandlerMap: Map[String, URLStreamHandler] =
+    Map(
       "http" -> {
         lazy val handler = HttpURLStreamHandler()
         handler

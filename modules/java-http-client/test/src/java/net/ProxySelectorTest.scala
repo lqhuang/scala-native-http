@@ -7,10 +7,9 @@ import utest.{Tests, test, assert, assertThrows}
 
 class ProxySelectorTest extends utest.TestSuite {
 
-  private class TestProxySelector extends ProxySelector {
+  private class TestProxySelector extends ProxySelector:
     override def select(uri: URI): JList[Proxy] = JList.of(Proxy.NO_PROXY)
-    override def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = {}
-  }
+    override def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
 
   val tests = Tests {
     test("getDefault should return null when no system property is set") {
