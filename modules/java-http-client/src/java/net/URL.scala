@@ -109,27 +109,31 @@ final class URL private (
 
   def toURI(): URI = uri
 
-  def openConnection(): URLConnection = handler match {
-    case Some(h) => h.openConnection(this)
-    case None =>
-      val protocol = getProtocol()
-      val handlerInstance = URL.handlerFactory.createURLStreamHandler(protocol)
+  def openConnection(): URLConnection =
+    throw new NotImplementedError()
+    // handler match {
+    //   case Some(h) => h.openConnection(this)
+    //   case None =>
+    //     val protocol = getProtocol()
+    //     val handlerInstance = URL.handlerFactory.createURLStreamHandler(protocol)
 
-      if handlerInstance != null
-      then handlerInstance.openConnection(this)
-      else throw new IOException(s"No handler found for protocol: $protocol")
-  }
+    //     if handlerInstance != null
+    //     then handlerInstance.openConnection(this)
+    //     else throw new IOException(s"No handler found for protocol: $protocol")
+    // }
 
-  def openConnection(proxy: Proxy): URLConnection = handler match {
-    case Some(h) => h.openConnection(this, proxy)
-    case None =>
-      val protocol = getProtocol()
-      val handlerInstance = URL.handlerFactory.createURLStreamHandler(protocol)
+  def openConnection(proxy: Proxy): URLConnection =
+    throw new NotImplementedError()
+    // handler match {
+    //   case Some(h) => h.openConnection(this, proxy)
+    //   case None =>
+    //     val protocol = getProtocol()
+    //     val handlerInstance = URL.handlerFactory.createURLStreamHandler(protocol)
 
-      if handlerInstance != null
-      then handlerInstance.openConnection(this, proxy)
-      else throw new IOException(s"No handler found for protocol: $protocol")
-  }
+    //     if handlerInstance != null
+    //     then handlerInstance.openConnection(this, proxy)
+    //     else throw new IOException(s"No handler found for protocol: $protocol")
+    // }
 
   def openStream(): InputStream = openConnection().getInputStream()
 
@@ -210,7 +214,7 @@ object URL {
     }
   }
 
-  val handlerFactory: URLStreamHandlerFactory = URLStreamHandlerFactoryImpl
+  val handlerFactory: URLStreamHandlerFactory = ???
 
   def setURLStreamHandlerFactory(factory: URLStreamHandlerFactory): Unit =
     throw new Error("factory already defined")

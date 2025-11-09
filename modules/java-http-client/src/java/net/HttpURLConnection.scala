@@ -6,6 +6,7 @@ import java.io.{IOException, InputStream}
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/HttpURLConnection.html
 abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
+
   def setAuthenticator(auth: Authenticator): Unit
 
   // override def getHeaderFieldKey(x: Int): String
@@ -33,9 +34,6 @@ abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
   def disconnect(): Unit
 
   def usingProxy(): Boolean
-
-  // @deprecated // Since JDK 25
-  // def getPermission(): Permission
 
   def getErrorStream(): InputStream
 }
@@ -83,9 +81,10 @@ object HttpURLConnection {
   final val HTTP_GATEWAY_TIMEOUT: Int = 504
   final val HTTP_VERSION: Int = 505
 
-  @volatile private var followRedirects: Boolean = true
+  @volatile var followRedirects: Boolean = true
 
-  def setFollowRedirects(set: Boolean): Unit = followRedirects = set
+  def setFollowRedirects(set: Boolean): Unit =
+    followRedirects = set
 
   def getFollowRedirects(): Boolean = followRedirects
 }

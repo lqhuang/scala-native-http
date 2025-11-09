@@ -4,10 +4,12 @@ import java.io.{IOException, InputStream, OutputStream}
 import java.security.Permission
 import java.util.{List as JList, Map as JMap}
 
+import scala.collection.mutable.Map
+
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URLConnection.html
-abstract class URLConnection(private val url: URL) {
+abstract class URLConnection(url: URL) {
 
   def connect(): Unit
 
@@ -29,31 +31,32 @@ abstract class URLConnection(private val url: URL) {
 
   def getContentEncoding(): String
 
-  def getExpiration(): Long
+  def getExpiration(): Long = ???
 
-  def getDate(): Long
+  def getDate(): Long = ???
 
-  def getLastModified(): Long
+  def getLastModified(): Long = ???
 
-  def getHeaderField(name: String): String
+  def getHeaderField(name: String): String = ???
 
-  def getHeaderFields(): JMap[String, JList[String]]
+  def getHeaderFields(): JMap[String, JList[String]] = ???
 
-  def getHeaderFieldInt(name: String, default: Int): Int
+  def getHeaderFieldInt(name: String, default: Int): Int = ???
 
-  def getHeaderFieldLong(name: String, default: Long): Long
+  def getHeaderFieldLong(name: String, default: Long): Long = ???
 
-  def getHeaderFieldDate(name: String, default: Long): Long
+  def getHeaderFieldDate(name: String, default: Long): Long = ???
 
-  def getHeaderFieldKey(n: Int): String
+  def getHeaderFieldKey(n: Int): String = ???
 
-  def getHeaderField(n: Int): String
+  def getHeaderField(n: Int): String = ???
 
-  def getContent(): AnyRef
+  def getContent(): Any
 
-  def getContent(classes: Array[Class[_]]): AnyRef
+  def getContent(classes: Array[Class[_]]): Any
 
-  // def getPermission(): Permission
+  @deprecated(since = "JDK 25")
+  def getPermission(): Permission = throw new NotImplementedError("deprecated")
 
   def getInputStream(): InputStream
 
@@ -77,17 +80,13 @@ abstract class URLConnection(private val url: URL) {
 
   def getUseCaches(): Boolean
 
-  def setIfModifiedSince(ifModifiedSince: Long): Unit
+  def setIfModifiedSince(ifModifiedSince: Long): Unit = ???
 
-  def getIfModifiedSince(): Long
+  def getIfModifiedSince(): Long = ???
 
   def getDefaultUseCaches(): Boolean
 
-  def getDefaultUseCaches(protocol: String): Boolean
-
   def setDefaultUseCaches(defaultVal: Boolean): Unit
-
-  def setDefaultUseCaches(protocol: String, defaultVal: Boolean): Unit
 
   def setRequestProperty(key: String, value: String): Unit
 
@@ -99,25 +98,41 @@ abstract class URLConnection(private val url: URL) {
 }
 
 object URLConnection {
+
+  @volatile private var allowUserInteraction: Boolean = true
+  private val defaultUseCachesMap: Map[String, Boolean] = Map()
+
   def getFileNameMap(): FileNameMap = ???
 
   def setFileNameMap(map: FileNameMap): Unit = ???
 
-  def setDefaultAllowUserInteraction(defaultAllowUserInteraction: Boolean): Unit = ???
+  def setDefaultAllowUserInteraction(defaultAllowUserInteraction: Boolean): Unit =
+    allowUserInteraction = defaultAllowUserInteraction
 
-  def getDefaultAllowUserInteraction(): Boolean = ???
+  /// This default is "sticky", being a part of the static state of all URLConnections.
+  /// This flag applies to the next, and all following `URLConnections` that are created.
+  def getDefaultAllowUserInteraction(): Boolean =
+    allowUserInteraction
 
-  @deprecated()
-  def setDefaultRequestProperty(key: String, value: String): Unit =
-    throw new UnsupportedOperationException("deprecated")
+  def getDefaultUseCaches(protocol: String): Boolean =
+    defaultUseCachesMap.getOrElse(protocol, false)
 
-  @deprecated()
-  def getDefaultRequestProperty(key: String): String =
-    throw new UnsupportedOperationException("deprecated")
+  // The protocol name is case insensitive
+  def setDefaultUseCaches(protocol: String, defaultVal: Boolean): Unit =
+    defaultUseCachesMap(protocol) = defaultVal
 
-  def setContentHandlerFactory(factory: ContentHandlerFactory): Unit = ???
+  def setContentHandlerFactory(factory: ContentHandlerFactory): Unit =
+    throw new UnsupportedOperationException()
 
   def guessContentTypeFromName(fname: String): String = ???
 
   def guessContentTypeFromStream(is: InputStream): String = ???
+
+  @deprecated()
+  def setDefaultRequestProperty(key: String, value: String): Unit =
+    throw new NotImplementedError("deprecated")
+
+  @deprecated()
+  def getDefaultRequestProperty(key: String): String =
+    throw new NotImplementedError("deprecated")
 }

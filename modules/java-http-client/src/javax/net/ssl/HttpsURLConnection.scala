@@ -29,7 +29,6 @@ abstract class HttpsURLConnection(url: URL) extends HttpURLConnection(url) {
 }
 
 object HttpsURLConnection {
-
   private var defaultHostnameVerifier: HostnameVerifier = ???
   private var defaultSSLSocketFactory: SSLSocketFactory = ???
 
