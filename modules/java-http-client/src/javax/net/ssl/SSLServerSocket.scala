@@ -7,7 +7,8 @@ abstract class SSLServerSocket protected (
     port: Int,
     backlog: Int,
     address: InetAddress,
-) extends Closeable {
+) extends Closeable:
+
   def this(port: Int) = this(port, 0, InetAddress.getByName(null))
 
   def this(port: Int, backlog: Int) = this(port, backlog, InetAddress.getByName(null))
@@ -43,4 +44,3 @@ abstract class SSLServerSocket protected (
   def getSSLParameters(): SSLParameters
 
   def setSSLParameters(params: SSLParameters): Unit
-}

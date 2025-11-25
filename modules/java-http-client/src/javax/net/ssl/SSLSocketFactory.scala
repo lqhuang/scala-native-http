@@ -8,7 +8,8 @@ import javax.net.SocketFactory
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSocketFactory.html
-abstract class SSLSocketFactory extends SocketFactory {
+abstract class SSLSocketFactory extends SocketFactory:
+
   def getDefaultCipherSuites(): Array[String]
 
   def getSupportedCipherSuites(): Array[String]
@@ -25,12 +26,13 @@ abstract class SSLSocketFactory extends SocketFactory {
       consumed: InputStream,
       autoClose: Boolean,
   ): Socket
-}
 
-object SSLSocketFactory {
+object SSLSocketFactory:
+
   private val defaultSocketFactory: SocketFactory = ???
 
   def getDefault(): SocketFactory = defaultSocketFactory
 
   def getSecurityProperty(name: String): String = ???
-}
+
+end SSLSocketFactory

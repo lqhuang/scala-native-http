@@ -8,7 +8,8 @@ import javax.security.cert.X509Certificate
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSession.html
-trait SSLSession {
+trait SSLSession:
+
   def getId(): Array[Byte]
 
   def getSessionContext(): SSLSessionContext
@@ -52,4 +53,3 @@ trait SSLSession {
   def getPacketBufferSize(): Int
 
   def getApplicationBufferSize(): Int
-}

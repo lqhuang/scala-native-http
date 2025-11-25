@@ -5,7 +5,7 @@ import java.net.{InetAddress, Socket}
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 
-class SSLSocketFactoryImpl extends SSLSocketFactory {
+class SSLSocketFactoryImpl() extends SSLSocketFactory():
 
   def createSocket(): Socket = ???
 
@@ -35,7 +35,6 @@ class SSLSocketFactoryImpl extends SSLSocketFactory {
       autoClose: Boolean,
   ): Socket = ???
 
-  def getDefaultCipherSuites(): Array[String] = Array.empty[String]
+  def getDefaultCipherSuites(): Array[String] = ???
 
-  def getSupportedCipherSuites(): Array[String] = Array.empty[String]
-}
+  def getSupportedCipherSuites(): Array[String] = ???

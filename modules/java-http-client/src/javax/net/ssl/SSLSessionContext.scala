@@ -5,7 +5,7 @@ import java.util.Enumeration
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSessionContext.html
-trait SSLSessionContext {
+trait SSLSessionContext:
   def getSession(sessionId: Array[Byte]): SSLSession
 
   def getIds(): Enumeration[Array[Byte]]
@@ -17,4 +17,3 @@ trait SSLSessionContext {
   def setSessionCacheSize(size: Int): Unit
 
   def getSessionCacheSize(): Int
-}

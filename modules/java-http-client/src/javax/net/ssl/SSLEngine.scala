@@ -7,11 +7,11 @@ import java.util.function.BiFunction
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLEngine.html
-abstract class SSLEngine(peerHost: String, peerPort: Int) {
+abstract class SSLEngine(host: String, port: Int):
 
-  final def getPeerHost(): String = peerHost
+  final def getPeerHost(): String = host
 
-  final def getPeerPort(): Int = peerPort
+  final def getPeerPort(): Int = port
 
   final def wrap(src: ByteBuffer, dst: ByteBuffer): SSLEngineResult =
     wrap(Array(src), 0, 1, dst)
@@ -98,4 +98,3 @@ abstract class SSLEngine(peerHost: String, peerPort: Int) {
   ): Unit
 
   def getHandshakeApplicationProtocolSelector(): BiFunction[SSLEngine, JList[String], String]
-}

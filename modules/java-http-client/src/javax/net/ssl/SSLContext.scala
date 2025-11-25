@@ -4,42 +4,53 @@ import java.security.{SecureRandom, Provider}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.atomic.AtomicBoolean
 
-trait SSLContextSpi
-
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
-abstract class SSLContext(
+class SSLContext(
     private val spi: SSLContextSpi,
     private val provider: Provider,
     private val protocol: String,
 ):
 
+  requireNonNull(spi)
+  requireNonNull(provider)
+  requireNonNull(protocol)
+  require(protocol.nonEmpty)
+
   final def getProtocol(): String = protocol
 
   final def getProvider(): Provider = provider
 
-  def init(
+  final def init(
       km: Array[KeyManager],
       tm: Array[TrustManager],
       random: SecureRandom,
-  ): Unit
+  ): Unit = spi.engineInit(km, tm, random)
 
-  def getSocketFactory(): SSLSocketFactory
+  final def getSocketFactory(): SSLSocketFactory =
+    spi.engineGetSocketFactory()
 
-  def getServerSocketFactory(): SSLServerSocketFactory
+  final def getServerSocketFactory(): SSLServerSocketFactory =
+    spi.engineGetServerSocketFactory()
 
-  def createSSLEngine(): SSLEngine
+  final def createSSLEngine(): SSLEngine =
+    spi.engineCreateSSLEngine()
 
-  def createSSLEngine(peerHost: String, peerPort: Int): SSLEngine
+  final def createSSLEngine(host: String, port: Int): SSLEngine =
+    spi.engineCreateSSLEngine(host, port)
 
-  def getServerSessionContext(): SSLSessionContext
+  final def getServerSessionContext(): SSLSessionContext =
+    spi.engineGetServerSessionContext()
 
-  def getClientSessionContext(): SSLSessionContext
+  final def getClientSessionContext(): SSLSessionContext =
+    spi.engineGetClientSessionContext()
 
-  def getDefaultSSLParameters(): SSLParameters
+  final def getDefaultSSLParameters(): SSLParameters =
+    spi.engineGetDefaultSSLParameters()
 
-  def getSupportedSSLParameters(): SSLParameters
+  final def getSupportedSSLParameters(): SSLParameters =
+    spi.engineGetSupportedSSLParameters()
 
 object SSLContext:
 

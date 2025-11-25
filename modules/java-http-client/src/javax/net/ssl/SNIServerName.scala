@@ -9,7 +9,7 @@ import java.util.Objects.requireNonNull
 abstract class SNIServerName(
     private val nameType: Int,
     private val encoded: Array[Byte],
-) {
+):
 
   require(nameType >= 0, "Server name type cannot be less than zero")
   require(nameType <= 255, "Server name type cannot be greater than 255")
@@ -51,9 +51,17 @@ abstract class SNIServerName(
   private def hex(bytes: Array[Byte]): String =
     if (bytes.length == 0) "(empty)"
     else bytes.map(x => "%02X".format(x)).mkString(":")
-}
 
-case class SNIServerNameImpl(
-    private val nameType: Int,
-    private val encoded: Array[Byte],
-) extends SNIServerName(nameType, encoded)
+object SNIServerName:
+
+  case class SNIServerNameImpl(
+      nameType: Int,
+      encoded: Array[Byte],
+  ) extends SNIServerName(nameType, encoded)
+
+  def apply(
+      nameType: Int,
+      encoded: Array[Byte],
+  ): SNIServerName = SNIServerNameImpl(nameType, encoded)
+
+end SNIServerName

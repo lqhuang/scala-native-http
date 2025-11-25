@@ -11,7 +11,7 @@ import java.util.Objects.requireNonNull
 class SSLParameters(
     private var _cipherSuites: Array[String],
     private var _protocols: Array[String],
-) {
+):
 
   private var _wantClientAuth: Boolean = false
   private var _needClientAuth: Boolean = false
@@ -120,4 +120,3 @@ class SSLParameters(
   def getNamedGroups(): Array[String] = ???
 
   def setNamedGroups(namedGroups: Array[String]): Unit = ???
-}

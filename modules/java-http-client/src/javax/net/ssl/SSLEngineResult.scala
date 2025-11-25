@@ -9,7 +9,7 @@ class SSLEngineResult(
     private val _bytesConsumed: Int,
     private val _bytesProduced: Int,
     private val _sequenceNumber: Long,
-) {
+):
   require(status != null && handshakeStatus != null)
   require(_bytesConsumed >= 0 && _bytesProduced >= 0)
 
@@ -40,9 +40,7 @@ class SSLEngineResult(
     s"Status = ${status} HandshakeStatus = ${handshakeStatus} bytesConsumed = ${_bytesConsumed} bytesProduced = ${_bytesProduced}" + padding
   }
 
-}
-
-object SSLEngineResult {
+object SSLEngineResult:
 
   sealed abstract class Status
   object Status {
@@ -62,4 +60,4 @@ object SSLEngineResult {
     case object NEED_UNWRAP_AGAIN extends HandshakeStatus
   }
 
-}
+end SSLEngineResult
