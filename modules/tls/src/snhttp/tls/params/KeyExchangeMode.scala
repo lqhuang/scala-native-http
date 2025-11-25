@@ -1,0 +1,5 @@
+package snhttp.tls.params
+
+enum KeyExchangeMode(val code: Int, val name: String):
+  case PSK_KE extends KeyExchangeMode(0, "psk_ke")
+  case PSK_DHE_KE extends KeyExchangeMode(1, "psk_dhe_ke")

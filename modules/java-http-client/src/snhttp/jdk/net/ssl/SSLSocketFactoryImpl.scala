@@ -5,36 +5,48 @@ import java.net.{InetAddress, Socket}
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 
-class SSLSocketFactoryImpl() extends SSLSocketFactory():
+import snhttp.jdk.internal.CipherSuites
 
-  def createSocket(): Socket = ???
+object SSLSocketFactoryImpl extends SSLSocketFactory:
 
-  def createSocket(host: String, port: Int): Socket = ???
+  override def createSocket(): Socket = SSLSocketImpl()
 
-  def createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): Socket = ???
+  def createSocket(host: String, port: Int): Socket = SSLSocketImpl(host, port)
 
-  def createSocket(host: InetAddress, port: Int): Socket = ???
+  def createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): Socket =
+    SSLSocketImpl(host, port, localHost, localPort)
+
+  def createSocket(host: InetAddress, port: Int): Socket =
+    SSLSocketImpl(host, port)
 
   def createSocket(
       address: InetAddress,
       port: Int,
       localAddress: InetAddress,
       localPort: Int,
-  ): Socket = ???
+  ): Socket =
+    SSLSocketImpl(address, port, localAddress, localPort)
 
   def createSocket(
       socket: Socket,
       host: String,
       port: Int,
       autoClose: Boolean,
-  ): Socket = ???
+  ): Socket =
+    SSLSocketImpl(socket, host, port, autoClose)
 
-  def createSocket(
+  /// As docs:
+  /// Creates a server mode Socket layered over an existing Socket
+  ///
+  /// Server side TLS is not supported yet
+  override def createSocket(
       socket: Socket,
       consumed: InputStream,
       autoClose: Boolean,
   ): Socket = ???
 
-  def getDefaultCipherSuites(): Array[String] = ???
+  def getDefaultCipherSuites(): Array[String] =
+    CipherSuites.defaultCipherSuites.toArray()
 
-  def getSupportedCipherSuites(): Array[String] = ???
+  def getSupportedCipherSuites(): Array[String] =
+    CipherSuites.supportedCipherSuites.toArray()
