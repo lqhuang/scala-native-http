@@ -1,5 +1,7 @@
 # Scala Native HTTP
 
+![Scala 3 badge](https://img.shields.io/badge/Scala_3-DE3423?logo=scala)
+
 Scala Native implementation for `java.net.http`.
 
 This project is forked from [lolgab/scala-native-http-client-async](https://github.com/lolgab/scala-native-http-client-async) and restarted due to [com-lihaoyi/requests-scala#156](https://github.com/com-lihaoyi/requests-scala/issues/156) and [scala-native/scala-native#4104](https://github.com/scala-native/scala-native/issues/4104)
