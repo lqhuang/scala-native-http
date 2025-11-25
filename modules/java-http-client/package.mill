@@ -7,6 +7,7 @@ object `package` extends build.CommonHttpModule {
   def moduleDeps = Seq(
     build.modules.core,
     build.modules.curl,
+    build.modules.tls,
   )
 
   def mvnDeps = Seq(
