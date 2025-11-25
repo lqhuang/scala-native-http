@@ -5,7 +5,7 @@ import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.BiPredicate
 
-import snhttp.jdk.Utils
+import snhttp.jdk.internal.Utils
 
 import utest.{Tests, test, assert}
 

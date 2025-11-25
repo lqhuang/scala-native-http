@@ -13,7 +13,7 @@ import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
 import snhttp.core.Method
-import snhttp.jdk.PropertyUtils
+import snhttp.jdk.internal.PropertyUtils
 
 class HttpRequestBuilderImpl(
     var uri: Option[URI] = None,
@@ -129,7 +129,7 @@ class HttpRequestBuilderImpl(
     this
   }
 
-  def HEAD(): Builder = {
+  override def HEAD(): Builder = {
     this.method = "HEAD"
     this.bodyPublisher = None
     this

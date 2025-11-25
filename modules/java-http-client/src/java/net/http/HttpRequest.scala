@@ -16,7 +16,8 @@ import java.util.stream.Stream
 
 import snhttp.jdk.net.http.{BodyPublishersImpl, HttpRequestBuilderImpl}
 
-trait HttpRequest extends Closeable {
+trait HttpRequest extends Closeable:
+
   import HttpRequest.BodyPublisher
 
   def bodyPublisher(): Optional[BodyPublisher]
@@ -45,9 +46,8 @@ trait HttpRequest extends Closeable {
   /// The hash code is based upon the HTTP request's URI, method, and header components
   final override def hashCode(): Int =
     uri().hashCode + method().hashCode + headers().hashCode
-}
 
-object HttpRequest {
+object HttpRequest:
   def newBuilder(): Builder = new HttpRequestBuilderImpl()
 
   def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(Some(uri))
@@ -114,7 +114,8 @@ object HttpRequest {
   }
 
   abstract class BodyPublishers {}
-  object BodyPublishers {
+  object BodyPublishers:
+
     def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher =
       BodyPublishersImpl.fromPublisher(publisher)
 
@@ -149,5 +150,5 @@ object HttpRequest {
 
     def concat(publishers: BodyPublisher*): BodyPublisher =
       BodyPublishersImpl.concat(publishers*)
-  }
-}
+
+end HttpRequest

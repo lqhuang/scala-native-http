@@ -12,7 +12,7 @@ import java.util.function.Supplier
 import scala.collection.immutable.LazyList
 import scala.util.{Try, Failure, Success}
 
-import snhttp.jdk.PropertyUtils
+import snhttp.jdk.internal.PropertyUtils
 
 type BufferSubscriber = Subscriber[? >: ByteBuffer]
 
@@ -28,7 +28,7 @@ class ByteArrayPublisher(
     bytes: Array[Byte],
     offset: Int,
     length: Int,
-    bufSize: Int = PropertyUtils.DEFAULT_BUFSIZE,
+    bufSize: Int = PropertyUtils.DEFAULT_BUFFER_SIZE,
 ) extends BodyPublisher {
 
   override def contentLength(): Long = length
@@ -80,7 +80,7 @@ class ByteArraysPublisher(private val iter: Iterable[Array[Byte]]) extends BodyP
 
 class InputStreamPublisher(
     private val supplier: Supplier[? <: InputStream],
-    private val bufSize: Int = PropertyUtils.DEFAULT_BUFSIZE,
+    private val bufSize: Int = PropertyUtils.DEFAULT_BUFFER_SIZE,
 ) extends BodyPublisher {
   override def contentLength(): Long = -1
 
@@ -106,7 +106,7 @@ class InputStreamPublisher(
 
 class FilePublisher(
     private val path: Path,
-    private val bufSize: Int = PropertyUtils.DEFAULT_BUFSIZE,
+    private val bufSize: Int = PropertyUtils.DEFAULT_BUFFER_SIZE,
 ) extends BodyPublisher {
 
   private val file = path.toFile()

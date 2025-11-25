@@ -1,4 +1,4 @@
-package snhttp.jdk.net.websocket
+package snhttp.jdk.net.http.websocket
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -10,6 +10,7 @@ object Opcodes {
   val PING: Int = 9
   val PONG: Int = 10
 }
+
 object CloseCodes {
   val NORMAL_CLOSURE: Int = 1000
   val GOING_AWAY: Int = 1001
@@ -67,6 +68,7 @@ final case class Close(
       new String(data.drop(2).toArray, UTF_8)
     else ""
 }
+
 object Close {
   def apply(code: Int) = ???
 

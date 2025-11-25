@@ -22,7 +22,7 @@ import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.concurrent.ExecutionContext
 
-class HttpClientBuilderImpl extends Builder {
+class HttpClientBuilderImpl() extends Builder {
 
   private var _cookieHandler: Option[CookieHandler] = None
   private var _timeout: Option[Duration] = None
@@ -162,10 +162,7 @@ class HttpClientImpl(
   ): HttpResponse[T] = {
     requireNonNull(request, "request cannot be null")
     requireNonNull(responseBodyHandler, "responseBodyHandler cannot be null")
-
-    if (_shutdown) {
-      throw new IllegalStateException("HttpClient has been shut down")
-    }
+    requireNonShutdown()
 
     try
       sendAsync(request, responseBodyHandler).get()
@@ -275,11 +272,12 @@ class HttpClientImpl(
     _terminated = true
 
   override def newWebSocketBuilder(): WebSocket.Builder = {
-    if (_shutdown) {
-      throw new IllegalStateException("HttpClient has been shut down")
-    }
+    requireNonShutdown()
 
     ???
   }
+
+  protected def requireNonShutdown(): Unit =
+    if (_shutdown) throw new IllegalStateException("HttpClient has been shut down")
 
 }

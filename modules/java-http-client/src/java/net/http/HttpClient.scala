@@ -13,7 +13,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import snhttp.jdk.net.http.HttpClientBuilderImpl
 
 /// @since 11
-abstract class HttpClient extends AutoCloseable {
+abstract class HttpClient extends AutoCloseable:
+
   import HttpClient.{Redirect, Version}
 
   def cookieHandler(): Optional[CookieHandler]
@@ -60,7 +61,7 @@ abstract class HttpClient extends AutoCloseable {
 
   def shutdownNow(): Unit
 
-  def close(): Unit = {
+  def close(): Unit =
     val interrupted = new AtomicBoolean(false)
     while !isTerminated() do {
       shutdown()
@@ -71,18 +72,15 @@ abstract class HttpClient extends AutoCloseable {
           if (interrupted.compareAndSet(false, true)) shutdownNow()
       }
     }
-    if (interrupted.getOpaque()) Thread.currentThread().interrupt()
-  }
-}
+    if (interrupted.get()) Thread.currentThread().interrupt()
 
-object HttpClient {
-  enum Version extends Enum[Version] {
+object HttpClient:
+
+  enum Version extends Enum[Version]:
     case HTTP_1_1, HTTP_2
-  }
 
-  enum Redirect extends Enum[Redirect] {
+  enum Redirect extends Enum[Redirect]:
     case NEVER, ALWAYS, NORMAL
-  }
 
   /// @since 11
   abstract class Builder {
@@ -117,4 +115,5 @@ object HttpClient {
   def newHttpClient(): HttpClient = newBuilder().build()
 
   def newBuilder(): Builder = new HttpClientBuilderImpl()
-}
+
+end HttpClient

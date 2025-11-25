@@ -16,7 +16,7 @@ import java.util.function.{Function, Consumer}
 import java.util.stream.Stream
 import javax.net.ssl.SSLSession
 
-import snhttp.jdk.Utils.charsetFrom
+import snhttp.jdk.internal.Utils.charsetFrom
 import snhttp.jdk.net.http.{BodyHandlersImpl, BodySubscribersImpl}
 
 /// @since 11
