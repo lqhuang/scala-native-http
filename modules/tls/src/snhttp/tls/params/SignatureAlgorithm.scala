@@ -1,6 +1,6 @@
 package snhttp.tls.params
 
-enum SignatureAlgorithm(val code: Int, val name: String):
+enum SignatureAlgorithm(val code: Short, val name: String):
   case Anonymous extends SignatureAlgorithm(0, "anonymous")
   case RSA extends SignatureAlgorithm(1, "rsa")
   case DSA extends SignatureAlgorithm(2, "dsa")

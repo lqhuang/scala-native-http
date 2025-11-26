@@ -1,7 +1,7 @@
 package snhttp.tls.params
 
 /// TLS Alerts
-enum Alert(val code: Int, val name: String):
+enum Alert(val code: Short, val name: String):
   case CloseNotify extends Alert(0, "close_notify")
   // 1-9 Unassigned
   case UnexpectedMessage extends Alert(10, "unexpected_message")

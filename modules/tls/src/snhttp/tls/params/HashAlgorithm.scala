@@ -5,7 +5,7 @@ package snhttp.tls.params
 /// References:
 ///
 /// - https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-18
-enum HashAlgorithm(val code: Int, val name: String):
+enum HashAlgorithm(val code: Short, val name: String):
   case None extends HashAlgorithm(0, "none")
   case MD5 extends HashAlgorithm(1, "md5")
   case SHA1 extends HashAlgorithm(2, "sha1")

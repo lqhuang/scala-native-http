@@ -1,7 +1,7 @@
 package snhttp.tls.params
 
 /// TLS HandshakeType
-enum HandshakeType(val code: Int, val name: String):
+enum HandshakeType(val code: Short, val name: String):
   case HelloRequest extends HandshakeType(0, "hello_request_RESERVED")
   case ClientHello extends HandshakeType(1, "client_hello")
   case ServerHello extends HandshakeType(2, "server_hello")

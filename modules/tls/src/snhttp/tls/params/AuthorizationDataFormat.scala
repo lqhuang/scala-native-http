@@ -1,7 +1,7 @@
 package snhttp.tls.params
 
 /// TLS Authorization Data Formats
-enum AuthorizationDataFormat(val code: Int, val name: String):
+enum AuthorizationDataFormat(val code: Short, val name: String):
   case X509AttrCert extends AuthorizationDataFormat(0, "x509_attr_cert")
   case SAMLAssertion extends AuthorizationDataFormat(1, "saml_assertion")
   case X509AttrCertURL extends AuthorizationDataFormat(2, "x509_attr_cert_url")

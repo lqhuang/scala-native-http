@@ -1,7 +1,7 @@
 package snhttp.tls.params
 
 /// TLS ContentType
-enum ContentType(val code: Int, val name: String):
+enum ContentType(val code: Short, val name: String):
   // 0-19 Unassigned (Requires coordination; see [RFC9443])
   case ChangeCipherSpec extends ContentType(20, "change_cipher_spec")
   case Alert extends ContentType(21, "alert")

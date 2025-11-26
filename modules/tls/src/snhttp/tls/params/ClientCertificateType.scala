@@ -1,7 +1,7 @@
 package snhttp.tls.params
 
 /// TLS ClientCertificateType Identifiers
-enum ClientCertificateType(val code: Int, val name: String):
+enum ClientCertificateType(val code: Short, val name: String):
   // 0 Unassigned
   case RSA_Sign extends ClientCertificateType(1, "rsa_sign")
   case DSS_Sign extends ClientCertificateType(2, "dss_sign")
