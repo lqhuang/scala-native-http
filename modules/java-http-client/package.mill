@@ -1,19 +1,21 @@
 package build.modules.`java-http-client`
 
-import mill.api.Cross
-import mill.scalalib.DepSyntax
+import mill.scalalib.{DepSyntax, TestModule}
+import mill.scalanativelib._
 
-object `package` extends build.CommonModule:
+object `package` extends build.CommonHttpModule {
+  object test extends ScalaNativeTests with TestModule.Munit {
+    override def munitVersion = "1.0.4"
+  }
+
   def moduleDeps = Seq(
     build.modules.core,
     build.modules.curl,
-    build.modules.tls,
-    build.modules.openssl,
   )
 
-  def mvnDeps = Seq(
+  override def mvnDeps = super.mvnDeps() ++ Seq(
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",
-    mvn"io.github.cquiroz::scala-java-time:2.4.0", // 2.5.0 and 2.6.0 are ill
     mvn"io.github.cquiroz::scala-java-time::2.6.0",
     mvn"com.github.lolgab::scala-native-crypto::0.2.0",
   )
+}

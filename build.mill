@@ -19,7 +19,6 @@ import scalanativelib.ScalaNativeModule
 import scalanativelib.api.{LTO, ReleaseMode}
 
 import com.goyeau.mill.scalafix.ScalafixModule
-
 // import com.github.lolgab.mill.mima.*
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
@@ -29,7 +28,7 @@ val scalaNativeVersion = "0.5.8"
 
 def format = ScalafmtModule
 
-trait CommonPublishModule extends PublishModule {
+trait HttpPublishModule extends PublishModule {
   def publishVersion = VcsVersion.vcsState().format()
 
   def pomSettings = PomSettings(
@@ -38,7 +37,10 @@ trait CommonPublishModule extends PublishModule {
     url = "https://github.com/lqhuang/scala-native-http",
     licenses = Seq(License.`Apache-2.0`),
     versionControl = VersionControl.github("lqhuang", "scala-native-http"),
-    developers = Seq(Developer("lqhuang", "Lanqing Huang", "https://github.com/lqhuang")),
+    developers = Seq(
+      Developer("lqhuang", "Lanqing Huang", "https://github.com/lqhuang"),
+      // Developer("lolgab", "Lorenzo Gabriele", "https://github.com/lolgab"),
+    ),
   )
 }
 
@@ -50,7 +52,7 @@ trait UTestModule extends TestModule.Utest {
   def test() = testForked()
 }
 
-trait CommonModule extends ScalaNativeModule with CommonPublishModule with ScalafixModule {
+trait CommonHttpModule extends ScalaNativeModule with HttpPublishModule with ScalafixModule {
   def scalaVersion = build.scalaVersion
 
   def scalaNativeVersion = build.scalaNativeVersion
@@ -60,7 +62,6 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
     "-Wnonunit-statement",
     "-Wconf:msg=(discarded.*value|pure.*statement):error",
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
-    // "-explain",
   )
 
   /// Define Scala Native Module
@@ -76,17 +77,17 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
   // // Set nativeWorkdir directory to `newDir`
   // def nativeWorkdir = Task { Task.dest  }
 
-  def scalafixIvyDeps = Seq(
-    mvn"com.github.xuwei-k::scalafix-rules:0.6.17",
-  )
+  def scalafixIvyDeps = Seq(mvn"com.github.xuwei-k::scalafix-rules:0.6.17")
 
   /// Define testing
   object test extends ScalaNativeTests with UTestModule {
+    override def testFrameworks = super.testFrameworks() ++ Seq(
+      "munit.Framework",
+    )
 
-    // def toolsmvnDeps = Seq(
-    //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",
-    // )
-
+    override def ivyDeps = super.ivyDeps() ++ Seq(
+      mvn"org.scalameta::munit::1.0.4",
+    )
   }
 
 }
