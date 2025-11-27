@@ -26,6 +26,8 @@ abstract class SocketFactory:
 
 object SocketFactory:
 
-  def getDefault(): SocketFactory = ???
+  import snhttp.jdk.net.SocketFactoryImpl
+
+  def getDefault(): SocketFactory = SocketFactoryImpl
 
 end SocketFactory

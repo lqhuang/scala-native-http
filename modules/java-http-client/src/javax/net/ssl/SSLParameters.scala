@@ -2,121 +2,76 @@ package javax.net.ssl
 
 import java.security.AlgorithmConstraints
 import java.util.List as JList
-import java.util.{Collection, Collections}
+import java.util.Collection
 import java.util.Objects.requireNonNull
 
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLParameters.html
-class SSLParameters(
+abstract class SSLParameters(
     private var _cipherSuites: Array[String],
     private var _protocols: Array[String],
 ):
 
-  private var _wantClientAuth: Boolean = false
-  private var _needClientAuth: Boolean = false
-  private var _identificationAlgorithm: String = null
-  private var _algorithmConstraints: AlgorithmConstraints = null
-  private var _sniNames: JList[SNIServerName] = null
-  private var _sniMatchers: Collection[SNIMatcher] = null
-  private var _preferLocalCipherSuites: Boolean = false
-  private var _enableRetransmissions: Boolean = true
-  private var _maximumPacketSize: Int = 0
-  private var _applicationProtocols: Array[String] = Array.empty[String]
-  private var _signatureSchemes: Array[String] = null
-  private var _namedGroups: Array[String] = null
+  final def getCipherSuites(): Array[String] =
+    _cipherSuites
 
-  def getCipherSuites(): Array[String] = _cipherSuites
-
-  def setCipherSuites(cipherSuites: Array[String]): Unit =
+  final def setCipherSuites(cipherSuites: Array[String]): Unit =
     _cipherSuites = cipherSuites
 
-  def getProtocols(): Array[String] = _protocols
+  final def getProtocols(): Array[String] =
+    _protocols
 
-  def setProtocols(protocols: Array[String]): Unit = _protocols = protocols
+  final def setProtocols(protocols: Array[String]): Unit =
+    _protocols = protocols
 
-  def getWantClientAuth(): Boolean = _wantClientAuth
+  def getWantClientAuth(): Boolean
 
-  def setWantClientAuth(wantClientAuth: Boolean): Unit = {
-    _wantClientAuth = wantClientAuth
-    _needClientAuth = false
-  }
+  def setWantClientAuth(wantClientAuth: Boolean): Unit
 
-  def getNeedClientAuth(): Boolean = _needClientAuth
+  def getNeedClientAuth(): Boolean
 
-  def setNeedClientAuth(needClientAuth: Boolean): Unit = {
-    _wantClientAuth = false
-    _needClientAuth = needClientAuth
-  }
+  def setNeedClientAuth(needClientAuth: Boolean): Unit
 
-  def getAlgorithmConstraints(): AlgorithmConstraints = _algorithmConstraints
+  def getAlgorithmConstraints(): AlgorithmConstraints
 
-  def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit =
-    _algorithmConstraints = constraints
+  def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit
 
-  def getEndpointIdentificationAlgorithm(): String = _identificationAlgorithm
+  def getEndpointIdentificationAlgorithm(): String
 
-  def setEndpointIdentificationAlgorithm(algorithm: String): Unit =
-    _identificationAlgorithm = algorithm
+  def setEndpointIdentificationAlgorithm(algorithm: String): Unit
 
-  def setServerNames(serverNames: JList[SNIServerName]): Unit = {
-    serverNames.forEach { sn =>
-      require(
-        sn != null && sn.getType() >= 0,
-        "Any element of non-empty list must not be null and have a valid type",
-      )
-    }
+  def setServerNames(serverNames: JList[SNIServerName]): Unit
 
-    if (serverNames == null)
-      _sniNames = null
-    else if (serverNames.isEmpty) _sniNames = Collections.emptyList()
-    else ???
-  }
+  def getServerNames(): JList[SNIServerName]
 
-  def getServerNames(): JList[SNIServerName] = _sniNames
+  def setSNIMatchers(matchers: Collection[SNIMatcher]): Unit
 
-  def setSNIMatchers(matchers: Collection[SNIMatcher]): Unit = {
-    requireNonNull(matchers)
+  // final
+  def getSNIMatchers(): Collection[SNIMatcher]
 
-    if _sniMatchers == null && matchers != null
-    then _sniMatchers = matchers
+  // final
+  def setUseCipherSuitesOrder(honorOrder: Boolean): Unit
 
-    ???
-  }
+  // final
+  def getUseCipherSuitesOrder(): Boolean
 
-  final def getSNIMatchers(): Collection[SNIMatcher] = _sniMatchers
+  def setEnableRetransmissions(enableRetransmissions: Boolean): Unit
 
-  final def setUseCipherSuitesOrder(honorOrder: Boolean): Unit =
-    _preferLocalCipherSuites = honorOrder
+  def getEnableRetransmissions(): Boolean
 
-  final def getUseCipherSuitesOrder(): Boolean = _preferLocalCipherSuites
+  def setMaximumPacketSize(maximumPacketSize: Int): Unit
 
-  def setEnableRetransmissions(enableRetransmissions: Boolean): Unit =
-    _enableRetransmissions = enableRetransmissions
+  def getMaximumPacketSize(): Int
 
-  def getEnableRetransmissions(): Boolean = _enableRetransmissions
+  def getApplicationProtocols(): Array[String]
 
-  def setMaximumPacketSize(maximumPacketSize: Int): Unit =
-    require(maximumPacketSize >= 0, "Maximum packet size must be non-negative")
-    _maximumPacketSize = maximumPacketSize
+  def setApplicationProtocols(protocols: Array[String]): Unit
 
-  def getMaximumPacketSize(): Int = _maximumPacketSize
+  def getSignatureSchemes(): Array[String]
 
-  def getApplicationProtocols(): Array[String] = _applicationProtocols.clone()
+  def setSignatureSchemes(signatureSchemes: Array[String]): Unit
 
-  def setApplicationProtocols(protocols: Array[String]): Unit = {
-    requireNonNull(protocols)
-    require(
-      protocols.forall(p => p != null && p.nonEmpty),
-      "Any element of non-empty array must not be null or empty string",
-    )
-    ???
-  }
+  def getNamedGroups(): Array[String]
 
-  def getSignatureSchemes(): Array[String] = _signatureSchemes.clone()
-
-  def setSignatureSchemes(signatureSchemes: Array[String]): Unit = ???
-
-  def getNamedGroups(): Array[String] = ???
-
-  def setNamedGroups(namedGroups: Array[String]): Unit = ???
+  def setNamedGroups(namedGroups: Array[String]): Unit

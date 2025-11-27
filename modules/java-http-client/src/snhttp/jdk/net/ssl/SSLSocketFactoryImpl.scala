@@ -5,7 +5,7 @@ import java.net.{InetAddress, Socket}
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 
-import snhttp.jdk.internal.CipherSuites
+import snhttp.jdk.internal.tls.ParamsData
 
 object SSLSocketFactoryImpl extends SSLSocketFactory:
 
@@ -46,7 +46,7 @@ object SSLSocketFactoryImpl extends SSLSocketFactory:
   ): Socket = ???
 
   def getDefaultCipherSuites(): Array[String] =
-    CipherSuites.defaultCipherSuites.toArray()
+    ParamsData.DefaultCipherSuites
 
   def getSupportedCipherSuites(): Array[String] =
-    CipherSuites.supportedCipherSuites.toArray()
+    ParamsData.SupportedCipherSuites

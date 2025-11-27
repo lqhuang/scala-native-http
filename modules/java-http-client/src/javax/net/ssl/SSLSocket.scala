@@ -9,22 +9,25 @@ import javax.net.ssl.HandshakeCompletedListener
 ///
 /// https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSocket.html
 abstract class SSLSocket(
-    address: InetAddress,
-    port: Int,
-    clientAddress: InetAddress,
-    clientPort: Int,
-) extends Socket(address, port, clientAddress, clientPort) {
+    // address: InetAddress,
+    // port: Int,
+    // clientAddress: InetAddress,
+    // clientPort: Int,
+    // autoClose: Boolean = true,
+) extends Socket
+    with AutoCloseable:
 
-  // def this(host: String, port: Int)
+  // def this() =
+  //   this(null.asInstanceOf[InetAddress], -1, null, 0)
 
-  // def this(address: InetAddress, port: Int)
+  // def this(host: String, port: Int) =
+  //   this(InetAddress.getByName(host), port, null, 0)
 
-  // def this(
-  //     host: String,
-  //     port: Int,
-  //     clientAddress: InetAddress,
-  //     clientPort: Int,
-  // )
+  // def this(address: InetAddress, port: Int) =
+  //   this(address, port, null, 0)
+
+  // def this(host: String, port: Int, localHost: InetAddress, localPort: Int) =
+  //   this(InetAddress.getByName(host), port, localHost, localPort)
 
   def getSupportedCipherSuites(): Array[String]
 
@@ -79,5 +82,3 @@ abstract class SSLSocket(
   ): Unit
 
   def getHandshakeApplicationProtocolSelector(): BiFunction[SSLSocket, JList[String], String]
-
-}

@@ -16,8 +16,6 @@ import com.github.lolgab.scalanativecrypto.crypto
 
 class SSLContextSpiImpl() extends SSLContextSpi():
 
-  def engineGetServerSocketFactory(): SSLServerSocketFactory = ???
-
   def engineInit(
       km: Array[KeyManager],
       tm: Array[TrustManager],
@@ -28,12 +26,14 @@ class SSLContextSpiImpl() extends SSLContextSpi():
 
   def engineCreateSSLEngine(host: String, port: Int): SSLEngine = ???
 
+  def engineGetServerSocketFactory(): SSLServerSocketFactory = ???
+
   def engineGetServerSessionContext(): SSLSessionContext = ???
 
   def engineGetSocketFactory(): SSLSocketFactory = ???
 
   def engineGetClientSessionContext(): SSLSessionContext = ???
 
-  def engineGetDefaultSSLParameters(): SSLParameters = ???
+  override def engineGetDefaultSSLParameters(): SSLParameters = ???
 
-  def engineGetSupportedSSLParameters(): SSLParameters = ???
+  override def engineGetSupportedSSLParameters(): SSLParameters = ???
