@@ -6,10 +6,8 @@ import java.util.function.BiFunction
 import java.util.Objects.requireNonNull
 import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedListener}
 
-import snhttp.jdk.internal.tls.ContextData
-
-protected class SSLSocketImpl(
-    context: ContextData,
+class SSLSocketImpl protected (
+    sslParams: SSLParametersImpl,
     host: InetAddress,
     port: Int,
     socket: Socket,
@@ -19,24 +17,24 @@ protected class SSLSocketImpl(
   import socket.*
 
   def getSupportedCipherSuites(): Array[String] =
-    context.getSupportedCipherSuites()
+    SSLParametersImpl.getSupportedCipherSuites()
 
   def getEnabledCipherSuites(): Array[String] =
-    context.getEnabledCipherSuites()
+    sslParams.getEnabledCipherSuites()
 
   def setEnabledCipherSuites(suites: Array[String]): Unit =
     validateArrayOfStrings(suites)
-    context.setEnabledCipherSuites(suites)
+    sslParams.setEnabledCipherSuites(suites)
 
   def getSupportedProtocols(): Array[String] =
-    context.getSupportedProtocols()
+    SSLParametersImpl.getSupportedProtocols()
 
   def getEnabledProtocols(): Array[String] =
-    context.getEnabledProtocols()
+    sslParams.getEnabledProtocols()
 
   def setEnabledProtocols(protocols: Array[String]): Unit =
     validateArrayOfStrings(protocols)
-    context.setEnabledProtocols(protocols)
+    sslParams.setEnabledProtocols(protocols)
 
   /// This method will initiate the initial handshake if necessary and then
   /// block until the handshake has been established.
@@ -57,10 +55,10 @@ protected class SSLSocketImpl(
   def startHandshake(): Unit = ???
 
   def setUseClientMode(mode: Boolean): Unit =
-    context.setUseClientMode(mode)
+    sslParams.setUseClientMode(mode)
 
   def getUseClientMode(): Boolean =
-    context.getUseClientMode()
+    sslParams.getUseClientMode()
 
   /// server side feature is not supported yet
   def setNeedClientAuth(need: Boolean): Unit = ???
@@ -75,22 +73,22 @@ protected class SSLSocketImpl(
   def getWantClientAuth(): Boolean = ???
 
   def setEnableSessionCreation(flag: Boolean): Unit =
-    context.setEnableSessionCreation(flag)
+    sslParams.setEnableSessionCreation(flag)
 
   def getEnableSessionCreation(): Boolean =
-    context.getEnableSessionCreation()
+    sslParams.getEnableSessionCreation()
 
   override def getSSLParameters(): SSLParameters =
-    context.sslParameters
+    sslParams.getSSLParameters()
 
   override def setSSLParameters(params: SSLParameters): Unit =
-    context.setSSLParameters(params)
+    sslParams.setSSLParameters(params)
 
   override def getApplicationProtocol(): String =
-    context.getApplicationProtocol()
+    sslParams.getApplicationProtocol()
 
   override def getHandshakeApplicationProtocol(): String =
-    context.getHandshakeApplicationProtocol()
+    sslParams.getHandshakeApplicationProtocol()
 
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLSocket, JList[String], String],
@@ -107,24 +105,24 @@ protected class SSLSocketImpl(
 
 object SSLSocketImpl:
 
-  def apply(spi: ContextData): SSLSocketImpl =
+  def apply(sslParams: SSLParametersImpl): SSLSocketImpl =
     throw new NotImplementedError("Not implemented yet")
 
-  def apply(spi: ContextData, host: String, port: Int): SSLSocketImpl =
+  def apply(sslParams: SSLParametersImpl, host: String, port: Int): SSLSocketImpl =
     requireNonNull(host)
     requireNonNull(port)
     require(port > -1 && port <= 65535)
     val socket = new Socket(host, port)
-    new SSLSocketImpl(spi, socket.getInetAddress(), socket.getPort(), socket)
+    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
-  def apply(spi: ContextData, address: InetAddress, port: Int): SSLSocketImpl =
+  def apply(sslParams: SSLParametersImpl, address: InetAddress, port: Int): SSLSocketImpl =
     requireNonNull(port)
     require(port > -1 && port <= 65535)
     val socket = new Socket(address, port)
-    new SSLSocketImpl(spi, socket.getInetAddress(), socket.getPort(), socket)
+    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
   def apply(
-      spi: ContextData,
+      sslParams: SSLParametersImpl,
       host: String,
       port: Int,
       localHost: InetAddress,
@@ -134,10 +132,10 @@ object SSLSocketImpl:
     requireNonNull(port)
     require(port > -1 && port <= 65535)
     val socket = new Socket(host, port, localHost, localPort)
-    new SSLSocketImpl(spi, socket.getInetAddress(), socket.getPort(), socket)
+    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
   def apply(
-      spi: ContextData,
+      sslParams: SSLParametersImpl,
       address: InetAddress,
       port: Int,
       localAddress: InetAddress,
@@ -148,10 +146,10 @@ object SSLSocketImpl:
     require(port > -1 && port <= 65535)
     require(localPort >= 0 && localPort <= 65535)
     val socket = new Socket(address, port, localAddress, localPort)
-    new SSLSocketImpl(spi, socket.getInetAddress(), socket.getPort(), socket)
+    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
   def apply(
-      spi: ContextData,
+      sslParams: SSLParametersImpl,
       socket: Socket,
       host: String,
       port: Int,
@@ -164,9 +162,9 @@ object SSLSocketImpl:
     if socket.isClosed()
     then {
       val _socket = new Socket(host, port, socket.getLocalAddress(), socket.getLocalPort())
-      new SSLSocketImpl(spi, socket.getInetAddress(), socket.getPort(), socket, autoClose)
+      new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket, autoClose)
     } else {
-      new SSLSocketImpl(spi, InetAddress.getByName(host), port, socket, autoClose)
+      new SSLSocketImpl(sslParams, InetAddress.getByName(host), port, socket, autoClose)
     }
 
 end SSLSocketImpl

@@ -22,7 +22,7 @@ object DefaultParams:
   lazy val SupportedCipherSuites: Set[String] =
     CipherSuite.ALL_SUPPORTED_CIPHER_SUITES.map(_.name)
 
-  lazy val DefaultApplicationProtocols: Set[String] =
+  lazy val DefaultApplicationProtocols: List[String] =
     ALPNProtocol.DefaultProtocols.map(_.name)
 
   lazy val SupportedApplicationProtocols: Set[String] =

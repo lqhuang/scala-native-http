@@ -13,7 +13,7 @@ import javax.net.ssl.{
 }
 
 import com.github.lolgab.scalanativecrypto.crypto
-import snhttp.jdk.internal.tls.{ContextData, DefaultParams}
+import snhttp.jdk.internal.tls.DefaultParams
 
 class SSLContextSpiImpl() extends SSLContextSpi():
 
@@ -24,10 +24,10 @@ class SSLContextSpiImpl() extends SSLContextSpi():
   ): Unit = ???
 
   def engineCreateSSLEngine(): SSLEngine =
-    SSLEngineImpl(ContextData(), null, 0)
+    SSLEngineImpl(new SSLParametersImpl(???, ???), null, 0)
 
   def engineCreateSSLEngine(host: String, port: Int): SSLEngine =
-    SSLEngineImpl(ContextData(), host, port)
+    SSLEngineImpl(new SSLParametersImpl(???, ???), host, port)
 
   /// server side feature is not supported yet
   def engineGetServerSocketFactory(): SSLServerSocketFactory = ???
@@ -43,18 +43,8 @@ class SSLContextSpiImpl() extends SSLContextSpi():
 
   /// Since JDK 1.6
   override def engineGetDefaultSSLParameters(): SSLParameters =
-    val params = new SSLParametersImpl(
-      DefaultParams.getDefaultCipherSuites(),
-      DefaultParams.getDefaultProtocols(),
-    )
-    // FIXME: cannot pass type inference here
-    params.asInstanceOf[SSLParameters]
+    SSLParametersImpl.getDefault()
 
   /// Since JDK 1.6
   override def engineGetSupportedSSLParameters(): SSLParameters =
-    val params = new SSLParameters(
-      DefaultParams.getSupportedCipherSuites(),
-      DefaultParams.getSupportedProtocols(),
-    )
-    // FIXME: cannot pass type inference here
-    params.asInstanceOf[SSLParameters]
+    SSLParametersImpl.getSupported()

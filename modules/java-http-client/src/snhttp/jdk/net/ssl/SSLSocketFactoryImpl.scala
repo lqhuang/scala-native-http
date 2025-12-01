@@ -5,19 +5,19 @@ import java.net.{InetAddress, Socket}
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 
-import snhttp.jdk.internal.tls.{ContextData, DefaultParams}
-
 protected object SSLSocketFactoryImpl extends SSLSocketFactory:
 
-  override def createSocket(): Socket = SSLSocketImpl(ContextData())
+  override def createSocket(): Socket =
+    SSLSocketImpl(SSLParametersImpl.getDefault())
 
-  def createSocket(host: String, port: Int): Socket = SSLSocketImpl(ContextData(), host, port)
+  def createSocket(host: String, port: Int): Socket =
+    SSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
 
   def createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): Socket =
-    SSLSocketImpl(ContextData(), host, port, localHost, localPort)
+    SSLSocketImpl(SSLParametersImpl.getDefault(), host, port, localHost, localPort)
 
   def createSocket(host: InetAddress, port: Int): Socket =
-    SSLSocketImpl(ContextData(), host, port)
+    SSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
 
   def createSocket(
       address: InetAddress,
@@ -25,7 +25,7 @@ protected object SSLSocketFactoryImpl extends SSLSocketFactory:
       localAddress: InetAddress,
       localPort: Int,
   ): Socket =
-    SSLSocketImpl(ContextData(), address, port, localAddress, localPort)
+    SSLSocketImpl(SSLParametersImpl.getDefault(), address, port, localAddress, localPort)
 
   def createSocket(
       socket: Socket,
@@ -33,7 +33,7 @@ protected object SSLSocketFactoryImpl extends SSLSocketFactory:
       port: Int,
       autoClose: Boolean,
   ): Socket =
-    SSLSocketImpl(ContextData(), socket, host, port, autoClose)
+    SSLSocketImpl(SSLParametersImpl.getDefault(), socket, host, port, autoClose)
 
   /// As docs:
   /// Creates a server mode Socket layered over an existing Socket
@@ -46,7 +46,7 @@ protected object SSLSocketFactoryImpl extends SSLSocketFactory:
   ): Socket = ???
 
   def getDefaultCipherSuites(): Array[String] =
-    DefaultParams.getDefaultCipherSuites()
+    SSLParametersImpl.getDefaultCipherSuites()
 
   def getSupportedCipherSuites(): Array[String] =
-    DefaultParams.getSupportedCipherSuites()
+    SSLParametersImpl.getSupportedCipherSuites()
