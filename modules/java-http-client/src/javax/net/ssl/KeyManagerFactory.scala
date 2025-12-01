@@ -6,6 +6,7 @@ import java.util.Objects.requireNonNull
 import javax.net.ssl.ManagerFactoryParameters
 
 abstract class KeyManagerFactory(
+    private val spi: KeyManagerFactorySpi,
     private val provider: Provider,
     private val algorithm: String,
 ) {
