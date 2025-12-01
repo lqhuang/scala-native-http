@@ -2,7 +2,7 @@ package javax.net.ssl
 
 import java.security.cert.X509Certificate
 
-trait X509TrustManager extends TrustManager {
+trait X509TrustManager extends TrustManager:
   def checkClientTrusted(
       chain: Array[X509Certificate],
       authType: String,
@@ -14,4 +14,3 @@ trait X509TrustManager extends TrustManager {
   ): Unit
 
   def getAcceptedIssuers(): Array[X509Certificate]
-}

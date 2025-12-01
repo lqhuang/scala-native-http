@@ -4,7 +4,7 @@ import java.net.Socket
 import java.security.cert.X509Certificate
 import java.security.{Principal, PrivateKey}
 
-trait X509KeyManager extends KeyManager {
+trait X509KeyManager extends KeyManager:
   def getClientAliases(keyType: String, issuers: Array[Principal]): Array[String]
 
   def chooseClientAlias(
@@ -24,4 +24,3 @@ trait X509KeyManager extends KeyManager {
   def getCertificateChain(alias: String): Array[X509Certificate]
 
   def getPrivateKey(alias: String): PrivateKey
-}

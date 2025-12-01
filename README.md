@@ -129,6 +129,9 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 - [ ] `jdk.httpclient.websocket.writeBufferSize`
 - [ ] `jdk.httpclient.windowsize`
 - [ ] `jdk.internal.httpclient.disableHostnameVerification`
+- [ ] `jdk.tls.client.SignatureSchemes`
+- [ ] `jdk.tls.server.SignatureSchemes`
+- [ ] `jdk.tls.namedGroups`
 
 ## Future
 

@@ -1,35 +1,44 @@
-package javax.scalanativecrypto.internal
+/** SPDX-License-Identifier: Apache-2.0 */
+package snhttp.jdk.net.ssl
 
 import java.util.Enumeration
 import java.util.Objects.requireNonNull
-
 import javax.net.ssl.{SSLSessionContext, SSLSession}
+import java.util.{Collections, Collection}
+
+import scala.collection.mutable.{LinkedHashMap, Map as MutableMap}
+import scala.collection.JavaConverters.asJavaCollection
 
 import snhttp.jdk.internal.PropertyUtils
 
-class SSLSessionContextImpl(
-    private val sessionId: Array[Byte],
-) extends SSLSessionContext:
+case class SSLSessionContextImpl() extends SSLSessionContext:
 
-  private var _cacheSize: Int = PropertyUtils.SESSION_CACHE_SIZE
-  private var _timeout: Int = 86400 // 24 hours by default
+  private var sessionCacheSize: Int = PropertyUtils.SESSION_CACHE_SIZE
+  private var timeout: Int = 86400 // 24 hours by default
+  private val sessions: MutableMap[Array[Byte], SSLSession] =
+    LinkedHashMap.empty[Array[Byte], SSLSession]
 
   def getSession(sessionId: Array[Byte]): SSLSession =
     requireNonNull(sessionId)
-    ???
+    sessions.get(sessionId) match
+      case Some(session) => session
+      case None          => null
 
-  def getIds(): Enumeration[Array[Byte]] = ???
+  def getIds(): Enumeration[Array[Byte]] =
+    Collections.enumeration(asJavaCollection(sessions.keys))
 
   def setSessionTimeout(seconds: Int): Unit =
+    requireNonNull(seconds)
     require(seconds >= 0, "Session timeout should be non-negative")
-    _timeout = seconds
+    timeout = seconds
 
   def getSessionTimeout(): Int =
-    _timeout
+    timeout
 
   def setSessionCacheSize(size: Int): Unit =
+    requireNonNull(size)
     require(size >= 0, "Cache size should be non-negative")
-    _cacheSize = size
+    sessionCacheSize = size
 
   def getSessionCacheSize(): Int =
-    _cacheSize
+    sessionCacheSize

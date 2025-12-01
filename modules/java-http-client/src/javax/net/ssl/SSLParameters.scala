@@ -13,16 +13,19 @@ abstract class SSLParameters(
     private var _protocols: Array[String],
 ):
 
-  final def getCipherSuites(): Array[String] =
+  private var _serverNames: JList[SNIServerName] = null
+  private var _honorOrder: Boolean = false
+
+  def getCipherSuites(): Array[String] =
     _cipherSuites
 
-  final def setCipherSuites(cipherSuites: Array[String]): Unit =
+  def setCipherSuites(cipherSuites: Array[String]): Unit =
     _cipherSuites = cipherSuites
 
-  final def getProtocols(): Array[String] =
+  def getProtocols(): Array[String] =
     _protocols
 
-  final def setProtocols(protocols: Array[String]): Unit =
+  def setProtocols(protocols: Array[String]): Unit =
     _protocols = protocols
 
   def getWantClientAuth(): Boolean
@@ -41,20 +44,46 @@ abstract class SSLParameters(
 
   def setEndpointIdentificationAlgorithm(algorithm: String): Unit
 
-  def setServerNames(serverNames: JList[SNIServerName]): Unit
+  final def setServerNames(serverNames: JList[SNIServerName]): Unit =
+    if serverNames == null
+    then _serverNames = null
+    else
+      // `serverNames` can be null but if not null, validate its elements
+      if (serverNames.stream().allMatch(sn => sn != null && sn.getType() >= 0))
+        throw new NullPointerException(
+          "'serverNames' contains null element",
+        )
+      val uniqueCountOfNames = serverNames.stream().map(_.getType()).distinct().count()
+      if (uniqueCountOfNames != serverNames.size())
+        throw new IllegalArgumentException(
+          "'serverNames' contains element with invalid type",
+        )
+      _serverNames = serverNames.stream().map(sn => sn.clone()).toList()
 
-  def getServerNames(): JList[SNIServerName]
+  final def getServerNames(): JList[SNIServerName] =
+    _serverNames
 
-  def setSNIMatchers(matchers: Collection[SNIMatcher]): Unit
+  /// Since JDK doc says:
+  /// This method is only useful to SSLSockets or SSLEngines operating in server mode.
+  ///
+  /// We currently focus on client mode, so we leave its implementation blank for now.
+  /// Welcome to contribute.
+  final def setSNIMatchers(matchers: Collection[SNIMatcher]): Unit =
+    ???
 
-  // final
-  def getSNIMatchers(): Collection[SNIMatcher]
+  /// Since JDK doc says:
+  /// This method is only useful to SSLSockets or SSLEngines operating in server mode.
+  ///
+  /// We currently focus on client mode, so we leave its implementation blank for now.
+  /// Welcome to contribute.
+  final def getSNIMatchers(): Collection[SNIMatcher] =
+    ???
 
-  // final
-  def setUseCipherSuitesOrder(honorOrder: Boolean): Unit
+  final def setUseCipherSuitesOrder(honorOrder: Boolean): Unit =
+    _honorOrder = honorOrder
 
-  // final
-  def getUseCipherSuitesOrder(): Boolean
+  final def getUseCipherSuitesOrder(): Boolean =
+    _honorOrder
 
   def setEnableRetransmissions(enableRetransmissions: Boolean): Unit
 

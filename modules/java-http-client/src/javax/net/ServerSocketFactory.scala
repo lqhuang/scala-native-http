@@ -7,7 +7,8 @@ import java.net.{SocketException, UnknownHostException}
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ServerSocketFactory.html
-abstract class ServerSocketFactory {
+abstract class ServerSocketFactory:
+
   def createSocket(): Socket
 
   def createSocket(host: String, port: Int): Socket
@@ -22,8 +23,9 @@ abstract class ServerSocketFactory {
       localAddress: InetAddress,
       localPort: Int,
   ): Socket
-}
 
-object ServerSocketFactory {
+object ServerSocketFactory:
+
   def getDefault(): ServerSocketFactory = ???
-}
+
+end ServerSocketFactory
