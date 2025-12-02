@@ -3,42 +3,42 @@ package javax.net.ssl
 import java.security.{KeyStore, Provider}
 import java.util.Objects.requireNonNull
 
-import javax.net.ssl.ManagerFactoryParameters
-
-abstract class KeyManagerFactory(
+class KeyManagerFactory protected (
     private val spi: KeyManagerFactorySpi,
     private val provider: Provider,
     private val algorithm: String,
-) {
+):
+
   final def getAlgorithm(): String = algorithm
 
   final def getProvider(): Provider = provider
 
-  def init(ks: KeyStore, password: Array[Char]): Unit
+  final def init(ks: KeyStore, password: Array[Char]): Unit =
+    spi.engineInit(ks, password)
 
-  def init(spec: ManagerFactoryParameters): Unit
+  final def init(spec: ManagerFactoryParameters): Unit =
+    spi.engineInit(spec)
 
-  def getKeyManagers(): Array[KeyManager]
-}
+  final def getKeyManagers(): Array[KeyManager] =
+    spi.engineGetKeyManagers()
 
-object KeyManagerFactory {
+object KeyManagerFactory:
 
-  def getDefaultAlgorithm(): String = ???
+  final def getDefaultAlgorithm(): String = ???
 
-  def getInstance(algorithm: String): KeyManagerFactory = {
+  final def getInstance(algorithm: String): KeyManagerFactory = {
     requireNonNull(algorithm)
     require(algorithm.nonEmpty)
     ???
   }
 
-  def getInstance(algorithm: String, provider: String): KeyManagerFactory =
+  final def getInstance(algorithm: String, provider: String): KeyManagerFactory =
     throw new UnsupportedOperationException("Not supported in Scala Native yet")
 
-  def getInstance(algorithm: String, provider: Provider): KeyManagerFactory = {
+  final def getInstance(algorithm: String, provider: Provider): KeyManagerFactory =
     requireNonNull(algorithm)
     requireNonNull(provider)
     require(algorithm.nonEmpty)
     ???
-  }
 
-}
+end KeyManagerFactory

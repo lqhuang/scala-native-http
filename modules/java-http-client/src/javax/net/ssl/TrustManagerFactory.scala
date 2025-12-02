@@ -6,34 +6,39 @@ import java.util.Objects.requireNonNull
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactory.html
-abstract class TrustManagerFactory(
+class TrustManagerFactory protected (
+    private val spi: TrustManagerFactorySpi,
     private val provider: Provider,
     private val algorithm: String,
-) {
+):
+
   final def getAlgorithm(): String = algorithm
 
   final def getProvider(): Provider = provider
 
-  def init(ks: KeyStore): Unit
+  final def init(ks: KeyStore): Unit =
+    spi.engineInit(ks)
 
-  def init(spec: ManagerFactoryParameters): Unit
+  final def init(spec: ManagerFactoryParameters): Unit =
+    spi.engineInit(spec)
 
-  def getTrustManagers(): Array[TrustManager]
-}
+  final def getTrustManagers(): Array[TrustManager] =
+    spi.engineGetTrustManagers()
 
-object TrustManagerFactory {
-  def getDefaultAlgorithm(): String = "PKIX"
+object TrustManagerFactory:
 
-  def getInstance(algorithm: String): TrustManagerFactory = {
+  final def getDefaultAlgorithm(): String = "PKIX"
+
+  final def getInstance(algorithm: String): TrustManagerFactory = {
     requireNonNull(algorithm)
     require(algorithm.nonEmpty)
     ???
   }
 
-  def getInstance(algorithm: String, provider: String): TrustManagerFactory =
+  final def getInstance(algorithm: String, provider: String): TrustManagerFactory =
     throw new UnsupportedOperationException("Not supported by Scala Native")
 
-  def getInstance(
+  final def getInstance(
       algorithm: String,
       provider: Provider,
   ): TrustManagerFactory = {
@@ -42,4 +47,5 @@ object TrustManagerFactory {
     require(algorithm.nonEmpty)
     ???
   }
-}
+
+end TrustManagerFactory
