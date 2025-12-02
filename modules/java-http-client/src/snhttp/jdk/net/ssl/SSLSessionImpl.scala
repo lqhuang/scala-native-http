@@ -1,0 +1,119 @@
+package snhttp.jdk.net.ssl
+
+import java.nio.ByteBuffer
+import java.security.Principal
+import java.security.cert.Certificate
+import javax.security.cert.X509Certificate
+import javax.net.ssl.{SSLSessionContext, SSLSession}
+import javax.net.ssl.SSLPeerUnverifiedException
+
+/// ## Refs
+///
+/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSession.html
+abstract class SSLSessionImpl extends SSLSession:
+
+  def getId(): Array[Byte]
+
+  def getSessionContext(): SSLSessionContext
+
+  def getCreationTime(): Long
+
+  def getLastAccessedTime(): Long
+
+  def invalidate(): Unit
+
+  def isValid(): Boolean
+
+  def putValue(name: String, value: AnyRef): Unit
+
+  def getValue(name: String): AnyRef
+
+  def removeValue(name: String): Unit
+
+  def getValueNames(): Array[String]
+
+  def getPeerCertificates(): Array[Certificate]
+
+  def getLocalCertificates(): Array[Certificate]
+
+  def getPeerPrincipal(): Principal
+
+  def getLocalPrincipal(): Principal
+
+  def getCipherSuite(): String
+
+  def getProtocol(): String
+
+  def getPeerHost(): String
+
+  def getPeerPort(): Int
+
+  def getPacketBufferSize(): Int
+
+  def getApplicationBufferSize(): Int
+
+final protected class SSLNullSessionImpl extends SSLSession:
+  private val INVALID_CIPHER_SUITE = "SSL_NULL_WITH_NULL_NULL"
+  private val INVALID_PROTOCOL = "NONE"
+  private val creationTime = System.currentTimeMillis()
+  private val lastAccessedTime = creationTime
+
+  def getId(): Array[Byte] =
+    Array.emptyByteArray
+
+  def getSessionContext(): SSLSessionContext =
+    null
+
+  def getCreationTime(): Long =
+    creationTime
+
+  def getLastAccessedTime(): Long =
+    lastAccessedTime
+
+  def invalidate(): Unit =
+    ()
+
+  def isValid(): Boolean =
+    false
+
+  def putValue(name: String, value: AnyRef): Unit =
+    ()
+
+  def getValue(name: String): AnyRef =
+    throw new UnsupportedOperationException()
+
+  def removeValue(name: String): Unit =
+    throw new UnsupportedOperationException()
+
+  def getValueNames(): Array[String] =
+    throw new UnsupportedOperationException()
+
+  def getPeerCertificates(): Array[Certificate] =
+    throw new SSLPeerUnverifiedException("No peer certificate")
+
+  def getLocalCertificates(): Array[Certificate] =
+    throw new SSLPeerUnverifiedException("No peer certificate")
+
+  def getPeerPrincipal(): Principal =
+    throw new SSLPeerUnverifiedException("No peer certificate")
+
+  def getLocalPrincipal(): Principal =
+    throw new SSLPeerUnverifiedException("No peer certificate")
+
+  def getCipherSuite(): String =
+    INVALID_CIPHER_SUITE
+
+  def getProtocol(): String =
+    INVALID_PROTOCOL
+
+  def getPeerHost(): String =
+    null
+
+  def getPeerPort(): Int =
+    -1
+
+  def getPacketBufferSize(): Int =
+    0
+
+  def getApplicationBufferSize(): Int =
+    0

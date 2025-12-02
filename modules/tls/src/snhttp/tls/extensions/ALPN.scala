@@ -12,10 +12,10 @@ enum ALPNProtocol(val name: String):
 
 object ALPNProtocol:
 
-  val DefaultProtocols: Set[ALPNProtocol] =
-    Set(HTTP_1_1, HTTP_2)
+  val DefaultProtocols: List[ALPNProtocol] =
+    List(HTTP_2, HTTP_1_1)
 
   val SupportedProtocols: Set[ALPNProtocol] =
-    Set(HTTP_1_1, HTTP_2)
+    Set(HTTP_1_1, HTTP_2, HTTP_3)
 
 end ALPNProtocol
