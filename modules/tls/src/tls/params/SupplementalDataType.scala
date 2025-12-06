@@ -1,4 +1,4 @@
-package snhttp.tls.params
+package snhttp.experimental.tls.params
 
 /// TLS Supplemental Data Formats (SupplementalDataType)
 enum SupplementalDataType(val code: Int, val name: String):

@@ -1,4 +1,4 @@
-package snhttp.tls.params
+package snhttp.experimental.tls.params
 
 /// TLS HandshakeType
 enum HandshakeType(val code: Short, val name: String):

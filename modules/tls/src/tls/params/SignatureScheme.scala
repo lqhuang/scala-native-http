@@ -1,4 +1,4 @@
-package snhttp.tls.params
+package snhttp.experimental.tls.params
 
 trait SignatureSchemeCode(val code: Int)
 trait SignatureSchemeName(val name: String)

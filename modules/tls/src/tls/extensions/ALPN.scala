@@ -1,4 +1,4 @@
-package snhttp.tls.extensions
+package snhttp.experimental.tls.extensions
 
 trait ALPNByteCodes(val bytes: IArray[Byte])
 

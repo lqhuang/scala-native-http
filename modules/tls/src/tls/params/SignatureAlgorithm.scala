@@ -1,4 +1,4 @@
-package snhttp.tls.params
+package snhttp.experimental.tls.params
 
 enum SignatureAlgorithm(val code: Short, val name: String):
   case Anonymous extends SignatureAlgorithm(0, "anonymous")

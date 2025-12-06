@@ -1,4 +1,4 @@
-package snhttp.tls.params
+package snhttp.experimental.tls.params
 
 enum HeartbeatMsgType(val code: Short, val name: String):
   case Request extends HeartbeatMsgType(1, "heartbeat_request")

@@ -1,4 +1,4 @@
-package snhttp.tls.extensions
+package snhttp.experimental.tls.extensions
 
 /// https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
 

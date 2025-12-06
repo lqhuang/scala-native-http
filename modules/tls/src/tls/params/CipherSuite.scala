@@ -1,4 +1,4 @@
-package snhttp.tls.params
+package snhttp.experimental.tls.params
 
 /// Cipher Suite Code
 trait CipherSuiteCode(val code: Int)
