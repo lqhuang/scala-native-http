@@ -263,7 +263,8 @@ class SSLParametersImpl protected[ssl] (
 
 object SSLParametersImpl:
 
-  protected[ssl] def getDefault(): SSLParametersImpl =
+  // protected[ssl]
+  def getDefault(): SSLParametersImpl =
     new SSLParametersImpl(
       DefaultParams.getDefaultCipherSuites(),
       DefaultParams.getDefaultProtocols(),

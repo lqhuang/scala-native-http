@@ -1,7 +1,8 @@
 package snhttp.jdk.internal.tls
 
-import snhttp.tls.extensions.ALPNProtocol
-import snhttp.tls.params.{CipherSuite, ProtocolVersion, SignatureScheme}
+import snhttp.experimental.tls.extensions.ALPNProtocol
+import snhttp.experimental.tls.params.{CipherSuite, ProtocolVersion, SignatureScheme}
+import snhttp.experimental.tls.extensions.ALPNProtocol
 
 object DefaultParams:
 

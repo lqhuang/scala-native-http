@@ -3,54 +3,81 @@ package snhttp.jdk.net.ssl
 import java.nio.ByteBuffer
 import java.security.Principal
 import java.security.cert.Certificate
-import javax.security.cert.X509Certificate
 import javax.net.ssl.{SSLSessionContext, SSLSession}
 import javax.net.ssl.SSLPeerUnverifiedException
 
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSession.html
-abstract class SSLSessionImpl extends SSLSession:
+class SSLSessionImpl(
+    _sessContext: SSLSessionContext,
+    _id: Array[Byte],
+    _host: String,
+    _port: Int,
+    _cipherSuite: String,
+    _protocol: String,
+    _creationTime: Long,
+    _peerCerts: Array[Certificate],
+) extends SSLSession:
 
-  def getId(): Array[Byte]
+  def getId(): Array[Byte] =
+    _id
 
-  def getSessionContext(): SSLSessionContext
+  def getSessionContext(): SSLSessionContext =
+    _sessContext
 
-  def getCreationTime(): Long
+  def getCreationTime(): Long =
+    ???
 
-  def getLastAccessedTime(): Long
+  def getLastAccessedTime(): Long = ???
 
-  def invalidate(): Unit
+  def invalidate(): Unit =
+    ???
 
-  def isValid(): Boolean
+  def isValid(): Boolean =
+    ???
 
-  def putValue(name: String, value: AnyRef): Unit
+  def putValue(name: String, value: AnyRef): Unit =
+    ???
 
-  def getValue(name: String): AnyRef
+  def getValue(name: String): AnyRef =
+    ???
 
-  def removeValue(name: String): Unit
+  def removeValue(name: String): Unit =
+    ???
 
-  def getValueNames(): Array[String]
+  def getValueNames(): Array[String] =
+    ???
 
-  def getPeerCertificates(): Array[Certificate]
+  def getPeerCertificates(): Array[Certificate] =
+    _peerCerts
 
-  def getLocalCertificates(): Array[Certificate]
+  def getLocalCertificates(): Array[Certificate] =
+    ???
 
-  def getPeerPrincipal(): Principal
+  def getPeerPrincipal(): Principal =
+    ???
 
-  def getLocalPrincipal(): Principal
+  def getLocalPrincipal(): Principal =
+    ???
 
-  def getCipherSuite(): String
+  def getCipherSuite(): String =
+    _cipherSuite
 
-  def getProtocol(): String
+  def getProtocol(): String =
+    _protocol
 
-  def getPeerHost(): String
+  def getPeerHost(): String =
+    _host
 
-  def getPeerPort(): Int
+  def getPeerPort(): Int =
+    _port
 
-  def getPacketBufferSize(): Int
+  def getPacketBufferSize(): Int =
+    ???
 
-  def getApplicationBufferSize(): Int
+  def getApplicationBufferSize(): Int =
+    ???
 
 final protected class SSLNullSessionImpl extends SSLSession:
   private val INVALID_CIPHER_SUITE = "SSL_NULL_WITH_NULL_NULL"
@@ -92,13 +119,13 @@ final protected class SSLNullSessionImpl extends SSLSession:
     throw new SSLPeerUnverifiedException("No peer certificate")
 
   def getLocalCertificates(): Array[Certificate] =
-    throw new SSLPeerUnverifiedException("No peer certificate")
+    throw new SSLPeerUnverifiedException("No local certificate")
 
   def getPeerPrincipal(): Principal =
-    throw new SSLPeerUnverifiedException("No peer certificate")
+    throw new SSLPeerUnverifiedException("No peer principal")
 
   def getLocalPrincipal(): Principal =
-    throw new SSLPeerUnverifiedException("No peer certificate")
+    throw new SSLPeerUnverifiedException("No local principal")
 
   def getCipherSuite(): String =
     INVALID_CIPHER_SUITE

@@ -12,16 +12,18 @@ import javax.net.ssl.{
   SSLServerSocketFactory,
 }
 
-import com.github.lolgab.scalanativecrypto.crypto
-import snhttp.jdk.internal.tls.DefaultParams
-
 class SSLContextSpiImpl() extends SSLContextSpi():
 
   def engineInit(
       km: Array[KeyManager],
       tm: Array[TrustManager],
       sr: SecureRandom,
-  ): Unit = ???
+  ): Unit =
+    new SSLParametersImpl(
+      ???,
+      ???,
+    )
+    ???
 
   def engineCreateSSLEngine(): SSLEngine =
     SSLEngineImpl(new SSLParametersImpl(???, ???), null, 0)
@@ -39,7 +41,7 @@ class SSLContextSpiImpl() extends SSLContextSpi():
     SSLSocketFactoryImpl
 
   def engineGetClientSessionContext(): SSLSessionContext =
-    SSLSessionContextImpl()
+    ClientSessionContextImpl()
 
   /// Since JDK 1.6
   override def engineGetDefaultSSLParameters(): SSLParameters =

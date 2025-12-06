@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
-class SSLContext private (
+class SSLContext protected (
     private val spi: SSLContextSpi,
     private val provider: Provider,
     private val protocol: String,
