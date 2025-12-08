@@ -1,8 +1,9 @@
 package build.modules.core
 
-object `package` extends build.CommonHttpModule {
+object `package` extends build.CommonHttpModule:
+  def moduleDeps = Seq(
+    build.modules.core,
+    build.modules.`javalib-shims`,
+  )
 
   def artifactName = "scala-native-http-core"
-
-  // def sources = Task { Seq(PathRef("core/src")) }
-}

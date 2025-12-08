@@ -8,6 +8,7 @@ object `package` extends build.CommonHttpModule {
     build.modules.core,
     build.modules.curl,
     build.modules.tls,
+    build.modules.openssl,
   )
 
   def mvnDeps = Seq(
