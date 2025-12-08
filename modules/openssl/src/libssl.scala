@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.ssl
+package snhttp.experimental.openssl
 
 import scalanative.unsafe.{extern, link, name, alloc, define}
 import scalanative.unsafe.{
@@ -19,7 +19,6 @@ import scalanative.unsafe.{
   Nat,
 }
 import scalanative.unsigned.*
-import scalanative.posix.sys.select.fd_set
 
 /// Header bindings for OpenSSL <openssl/ssl.h>
 ///
@@ -28,11 +27,11 @@ import scalanative.posix.sys.select.fd_set
 /// 1. https://github.com/openssl/openssl/blob/master/include/openssl/ssl.h.in
 object libssl:
 
-  import _root_.snhttp.experimental.openssl.libssl.internal.*
+  import _root_.snhttp.experimental.openssl.libssl_internal.*
 
-  import aliases.*
-  import constants.*
-  import enumerations.*
-  import functions.*
-  import structs.*
-  import unions.*
+  export aliases.*
+  export constants.*
+  export enumerations.*
+  export functions.*
+  export structs.*
+  export unions.*

@@ -60,7 +60,7 @@ object SSLContext:
 
   import snhttp.jdk.internal.tls.DefaultParams
 
-  private var defaultContext: SSLContext = SSLContext.getInstance("TLSv1.2")
+  private var defaultContext: SSLContext = SSLContext.getInstance("TLS")
 
   def getDefault(): SSLContext =
     defaultContext
@@ -72,7 +72,7 @@ object SSLContext:
   def getInstance(protocol: String): SSLContext =
     requireNonNull(protocol)
     if (!DefaultParams.SupportedProtocols.map(_.toLowerCase()).contains(protocol.toLowerCase()))
-      throw new NoSuchAlgorithmException(s"Protocol $protocol not supported")
+      throw new NoSuchAlgorithmException(s"Protocol ${protocol} not supported")
     SSLContext.getInstance(protocol)
 
   def getInstance(protocol: String, provider: String): SSLContext =

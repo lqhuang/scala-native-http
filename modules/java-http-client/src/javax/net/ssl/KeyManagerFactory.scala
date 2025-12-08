@@ -3,6 +3,9 @@ package javax.net.ssl
 import java.security.{KeyStore, Provider}
 import java.util.Objects.requireNonNull
 
+/// Refs:
+///
+/// https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactorySpi.html
 class KeyManagerFactory protected (
     private val spi: KeyManagerFactorySpi,
     private val provider: Provider,

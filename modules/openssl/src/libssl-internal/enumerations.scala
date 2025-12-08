@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.libssl.internal
+package snhttp.experimental.openssl.libssl_internal
 
 import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*
@@ -12,6 +12,13 @@ object enumerations:
       inline def value: CUnsignedInt = eq.apply(t)
       inline def int: CInt = eq.apply(t).toInt
       inline def uint: CUnsignedInt = eq.apply(t)
+
+  private[enumerations] trait _BindgenEnumCInt[T](using eq: T =:= CInt):
+    given Tag[T] = Tag.Int.asInstanceOf[Tag[T]]
+    extension (inline t: T)
+      inline def value: CInt = eq.apply(t)
+      inline def int: CInt = eq.apply(t).toInt
+      inline def uint: CUnsignedInt = eq.apply(t).toUInt
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -135,3 +142,31 @@ object enumerations:
       inline def &(b: OSSL_HANDSHAKE_STATE): OSSL_HANDSHAKE_STATE = a & b
       inline def |(b: OSSL_HANDSHAKE_STATE): OSSL_HANDSHAKE_STATE = a | b
       inline def is(b: OSSL_HANDSHAKE_STATE): Boolean = (a & b) == b
+
+  /**
+   * Missing from sn-bindgen output
+   */
+  opaque type SSL_VERIFY = CInt
+  object SSL_VERIFY extends _BindgenEnumCInt[SSL_VERIFY]:
+    given _tag: Tag[SSL_VERIFY] = Tag.Int
+    inline def define(inline a: Int): SSL_VERIFY = a.toInt
+
+    val NONE = define(0x00)
+    val PEER = define(0x01)
+    val FAIL_IF_NO_PEER_CERT = define(0x02)
+    val CLIENT_ONCE = define(0x04)
+    val POST_HANDSHAKE = define(0x08)
+
+    def getName(value: SSL_VERIFY): Option[String] =
+      value match
+        case NONE                 => Some("NONE")
+        case PEER                 => Some("PEER")
+        case FAIL_IF_NO_PEER_CERT => Some("FAIL_IF_NO_PEER_CERT")
+        case CLIENT_ONCE          => Some("CLIENT_ONCE")
+        case POST_HANDSHAKE       => Some("POST_HANDSHAKE")
+        case _                    => _root_.scala.None
+
+    extension (a: SSL_VERIFY)
+      inline def &(b: SSL_VERIFY): SSL_VERIFY = a & b
+      inline def |(b: SSL_VERIFY): SSL_VERIFY = a | b
+      inline def is(b: SSL_VERIFY): Boolean = (a & b) == b

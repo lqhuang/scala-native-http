@@ -5,8 +5,8 @@ import javax.net.ssl.ManagerFactoryParameters
 
 abstract class KeyManagerFactorySpi():
 
-  protected def engineInit(ks: KeyStore, password: Array[Char]): Unit
+  protected[ssl] def engineInit(ks: KeyStore, password: Array[Char]): Unit
 
-  protected def engineInit(spec: ManagerFactoryParameters): Unit
+  protected[ssl] def engineInit(spec: ManagerFactoryParameters): Unit
 
-  protected def engineGetKeyManagers(): Array[KeyManager]
+  protected[ssl] def engineGetKeyManagers(): Array[KeyManager]

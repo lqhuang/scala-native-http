@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.libssl.internal
+package snhttp.experimental.openssl.libssl_internal
 
 import _root_.scala.annotation.targetName
 import _root_.scala.scalanative.unsafe.*

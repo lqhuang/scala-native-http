@@ -6,10 +6,10 @@ import java.util.Objects.requireNonNull
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactorySpi.html
-abstract class TrustManagerFactorySpi():
+abstract class TrustManagerFactorySpi:
 
-  def engineInit(ks: KeyStore): Unit
+  protected[ssl] def engineInit(ks: KeyStore): Unit
 
-  def engineInit(spec: ManagerFactoryParameters): Unit
+  protected[ssl] def engineInit(spec: ManagerFactoryParameters): Unit
 
-  def engineGetTrustManagers(): Array[TrustManager]
+  protected[ssl] def engineGetTrustManagers(): Array[TrustManager]
