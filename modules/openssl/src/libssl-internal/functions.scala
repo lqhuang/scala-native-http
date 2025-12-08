@@ -394,7 +394,7 @@ object functions:
    */
   def SSL_CTX_ctrl(
       ctx: Ptr[SSL_CTX],
-      cmd: CInt,
+      cmd: SSL_CTRL,
       larg: CLongInt,
       parg: Ptr[Byte],
   ): CLongInt =
@@ -1853,7 +1853,7 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_ctrl(ssl: Ptr[SSL], cmd: CInt, larg: CLongInt, parg: Ptr[Byte]): CLongInt = extern
+  def SSL_ctrl(ssl: Ptr[SSL], cmd: SSL_CTRL, larg: CLongInt, parg: Ptr[Byte]): CLongInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
