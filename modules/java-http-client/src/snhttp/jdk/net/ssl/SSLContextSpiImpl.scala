@@ -14,22 +14,24 @@ import javax.net.ssl.{
 
 class SSLContextSpiImpl() extends SSLContextSpi():
 
+  // Client session context bind to current SSLContext
+  // only has one ClientSessionContext instance per SSLContext instance
+  protected[ssl] val clientSessionContext = ClientSessionContextImpl(this)
+  protected[ssl] val sslSocketFactory = SSLSocketFactoryImpl(this)
+
   def engineInit(
       km: Array[KeyManager],
       tm: Array[TrustManager],
       sr: SecureRandom,
   ): Unit =
-    new SSLParametersImpl(
-      ???,
-      ???,
-    )
+    // ...
     ???
 
   def engineCreateSSLEngine(): SSLEngine =
-    SSLEngineImpl(new SSLParametersImpl(???, ???), null, 0)
+    SSLEngineImpl(this, null, 0)
 
   def engineCreateSSLEngine(host: String, port: Int): SSLEngine =
-    SSLEngineImpl(new SSLParametersImpl(???, ???), host, port)
+    SSLEngineImpl(this, host, port)
 
   /// server side feature is not supported yet
   def engineGetServerSocketFactory(): SSLServerSocketFactory = ???
@@ -38,10 +40,10 @@ class SSLContextSpiImpl() extends SSLContextSpi():
   def engineGetServerSessionContext(): SSLSessionContext = ???
 
   def engineGetSocketFactory(): SSLSocketFactory =
-    SSLSocketFactoryImpl
+    sslSocketFactory
 
   def engineGetClientSessionContext(): SSLSessionContext =
-    ClientSessionContextImpl()
+    clientSessionContext
 
   /// Since JDK 1.6
   override def engineGetDefaultSSLParameters(): SSLParameters =

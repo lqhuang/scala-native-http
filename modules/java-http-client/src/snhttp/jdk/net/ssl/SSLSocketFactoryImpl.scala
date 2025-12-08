@@ -5,7 +5,7 @@ import java.net.{InetAddress, Socket}
 import java.net.SocketException
 import javax.net.ssl.SSLSocketFactory
 
-protected object SSLSocketFactoryImpl extends SSLSocketFactory:
+protected[ssl] class SSLSocketFactoryImpl(ctxSpi: SSLContextSpiImpl) extends SSLSocketFactory:
 
   override def createSocket(): Socket =
     SSLSocketImpl(SSLParametersImpl.getDefault())

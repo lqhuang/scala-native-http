@@ -1,6 +1,7 @@
 /** SPDX-License-Identifier: Apache-2.0 */
 package snhttp.jdk.net.ssl
 
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.List as JList
 import java.util.Objects.requireNonNull
@@ -8,24 +9,28 @@ import java.util.function.BiFunction
 import java.util.concurrent.atomic.AtomicInteger
 import javax.net.ssl.{SSLParameters, SSLContextSpi, SSLSession, SSLEngineResult, SSLEngine}
 
+import snhttp.experimental.openssl.libssl
 import snhttp.jdk.internal.tls.OpenSSLCtx
-import java.io.IOException
 
-/// An SSLEngine is created by calling `SSLsslParams.createSSLEngine()`.
+/// An SSLEngine is created by calling `SSLParams.createSSLEngine()`.
 ///
 /// Any configuration parameters should be set before making the first call to
 /// `wrap()`, `unwrap()`, or `beginHandshake()`
 ///
-/// Inspired from https://github.com/google/conscrypt/blob/master/common/src/main/java/org/conscrypt/ConscryptEngine.java
-class SSLEngineImpl protected[ssl] (sslParams: SSLParametersImpl, host: String, port: Int)
+/// Implementation Notes:
+///
+/// SSLEngine will map to `SSL` struct related APIs in OpenSSL library.
+class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, port: Int)
     extends SSLEngine(host, port):
+
+  val sslCtx: OpenSSLCtx = ???
+  val sslContextSession = ctxSpi.clientSessionContext
+  val sslSocketFactory = ctxSpi.sslSocketFactory
 
   @volatile var state: EngineState = EngineState.STATE_NEW
 
   // Active session
-  @volatile var session: SSLSession = ???
-
-  @volatile var sslCtx: OpenSSLCtx = ???
+  @volatile var session: SSLSession = null
 
   private def handshakeStarted =
     state.value < EngineState.STATE_HANDSHAKE_STARTED.value
@@ -112,24 +117,28 @@ class SSLEngineImpl protected[ssl] (sslParams: SSLParametersImpl, host: String, 
     SSLParametersImpl.getSupportedCipherSuites()
 
   def getEnabledCipherSuites(): Array[String] =
-    sslParams.getEnabledCipherSuites()
+    ???
+    // sslParams.getEnabledCipherSuites()
 
   def setEnabledCipherSuites(suites: Array[String]): Unit =
     throwIfHandshakeStarted()
     requireNonNull(suites)
     if (suites.filter(each => each == null || each.isEmpty()).length > 0)
       throw IllegalArgumentException()
-    sslParams.setEnabledCipherSuites(suites)
+    ???
+    // sslParams.setEnabledCipherSuites(suites)
 
   def getSupportedProtocols(): Array[String] =
     SSLParametersImpl.getSupportedProtocols()
 
   def getEnabledProtocols(): Array[String] =
-    sslParams.getEnabledProtocols()
+    ???
+    // sslParams.getEnabledProtocols()
 
   def setEnabledProtocols(protocols: Array[String]): Unit =
     throwIfHandshakeStarted()
-    sslParams.setEnabledProtocols(protocols)
+    ???
+    // sslParams.setEnabledProtocols(protocols)
 
   // Implementation Notes:
   //
@@ -172,10 +181,11 @@ class SSLEngineImpl protected[ssl] (sslParams: SSLParametersImpl, host: String, 
     transitionTo(EngineState.STATE_HANDSHAKE_STARTED)
     var releaseResources = true
     try {
-      // Prepare and init OpenSSL CTX
-      sslCtx.initialize(
-        getPeerHost(),
-        ???,
+      // Prepare and init SSL Session
+      session = sslCtx.createSSLSession(
+        sslContextSession,
+        sslSocketFactory,
+        this,
       )
 
       // For clients, offer to resume a previously cached session to avoid the
@@ -201,42 +211,53 @@ class SSLEngineImpl protected[ssl] (sslParams: SSLParametersImpl, host: String, 
 
   def setUseClientMode(mode: Boolean): Unit =
     throwIfHandshakeStarted()
-    sslParams.setUseClientMode(mode)
+    // FIXME: Don't forget to set Client mode
+    // sslParams.setUseClientMode(mode)
     transitionTo(EngineState.STATE_MODE_SET)
 
   def getUseClientMode(): Boolean =
-    sslParams.getUseClientMode()
+    ???
+    // sslParams.getUseClientMode()
 
   def setNeedClientAuth(need: Boolean): Unit =
-    sslParams.setNeedClientAuth(need)
+    ???
+    // sslParams.setNeedClientAuth(need)
 
   def getNeedClientAuth(): Boolean =
-    sslParams.getNeedClientAuth()
+    ???
+    // sslParams.getNeedClientAuth()
 
   def setWantClientAuth(want: Boolean): Unit =
-    sslParams.setWantClientAuth(want)
+    ???
+    // sslParams.setWantClientAuth(want)
 
   def getWantClientAuth(): Boolean =
-    sslParams.getWantClientAuth()
+    ???
+    // sslParams.getWantClientAuth()
 
   def setEnableSessionCreation(flag: Boolean): Unit =
     throwIfHandshakeStarted()
 
   def getEnableSessionCreation(): Boolean =
-    sslParams.getEnableSessionCreation()
+    ???
+    // sslParams.getEnableSessionCreation()
 
   override def getSSLParameters(): SSLParameters =
-    sslParams.getSSLParameters()
+    ???
+    // sslParams.getSSLParameters()
 
   override def setSSLParameters(params: SSLParameters): Unit =
     throwIfHandshakeStarted()
-    sslParams.setSSLParameters(params)
+    ???
+    // sslParams.setSSLParameters(params)
 
   override def getApplicationProtocol(): String =
-    sslParams.getApplicationProtocol()
+    ???
+    // sslParams.getApplicationProtocol()
 
   override def getHandshakeApplicationProtocol(): String =
-    sslParams.getHandshakeApplicationProtocol()
+    ???
+    // sslParams.getHandshakeApplicationProtocol()
 
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, JList[String], String],
@@ -281,15 +302,15 @@ class SSLEngineImpl protected[ssl] (sslParams: SSLParametersImpl, host: String, 
 
 object SSLEngineImpl:
 
-  def apply(sslParams: SSLParametersImpl): SSLEngineImpl =
+  def apply(ctxSpi: SSLContextSpiImpl): SSLEngineImpl =
     throw new NotImplementedError("Not supported and no plan to support currently")
 
   def apply(
-      sslParams: SSLParametersImpl,
+      ctxSpi: SSLContextSpiImpl,
       host: String,
       port: Int,
   ): SSLEngineImpl =
-    new SSLEngineImpl(sslParams, host, port)
+    new SSLEngineImpl(ctxSpi, host, port)
 
 end SSLEngineImpl
 

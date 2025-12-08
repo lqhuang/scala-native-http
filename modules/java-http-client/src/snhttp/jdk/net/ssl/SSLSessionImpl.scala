@@ -6,22 +6,29 @@ import java.security.cert.Certificate
 import javax.net.ssl.{SSLSessionContext, SSLSession}
 import javax.net.ssl.SSLPeerUnverifiedException
 
-/// ## Refs
+import snhttp.experimental.openssl.libssl
+
+import snhttp.core.utils.PtrFinalizer
+
+/// Implementation Notes:
 ///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLSession.html
+/// map to OpenSSL `SSL_SESSION` features
 class SSLSessionImpl(
     _sessContext: SSLSessionContext,
-    _id: Array[Byte],
-    _host: String,
-    _port: Int,
-    _cipherSuite: String,
-    _protocol: String,
-    _creationTime: Long,
-    _peerCerts: Array[Certificate],
+    // _id: Array[Byte],
+    // _host: String,
+    // _port: Int,
+    // _cipherSuite: String,
+    // _protocol: String,
+    // _creationTime: Long,
+    // _peerCerts: Array[Certificate],
 ) extends SSLSession:
 
+  private val ptr = libssl.SSL_SESSION_new()
+  PtrFinalizer(this, ptr, x => libssl.SSL_SESSION_free(x))
+
   def getId(): Array[Byte] =
-    _id
+    ???
 
   def getSessionContext(): SSLSessionContext =
     _sessContext
