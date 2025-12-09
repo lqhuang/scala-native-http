@@ -1,4 +1,4 @@
-// scalafmt: { align.preset = most }
+// scalafmt: { maxColumn = 200, align.preset = most }
 package snhttp.experimental.openssl.libssl_internal
 
 import _root_.scala.scalanative.unsafe.*
@@ -339,7 +339,6 @@ object enumerations:
     val GET_TLSEXT_STATUS_REQ_OCSP_RESP_EX = define(142)
     val SET_TLSEXT_STATUS_REQ_OCSP_RESP_EX = define(143)
 
-    // scalafmt: { maxColumn = 200, align.preset = most }
     def getName(value: SSL_CTRL): Option[String] =
       value match
         // case SET_TMP_DH                   => Some("SSL_CTRL_SET_TMP_DH")
@@ -452,4 +451,30 @@ object enumerations:
         case GET_TLSEXT_STATUS_REQ_OCSP_RESP_EX => Some("SSL_CTRL_GET_TLSEXT_STATUS_REQ_OCSP_RESP_EX")
         case SET_TLSEXT_STATUS_REQ_OCSP_RESP_EX => Some("SSL_CTRL_SET_TLSEXT_STATUS_REQ_OCSP_RESP_EX")
         case _                                  => _root_.scala.None
-    // scalafmt: { maxColumn = 100 }
+
+  opaque type TLS_VERSION = CInt
+  object TLS_VERSION extends _BindgenEnumCInt[TLS_VERSION]:
+    given _tag: Tag[TLS_VERSION] = Tag.Int
+
+    inline def define(inline a: Int): TLS_VERSION = a.toInt
+
+    val SSL3          = define(0x0300)
+    val TLS1          = define(0x0301)
+    val TLS1_1        = define(0x0302)
+    val TLS1_2        = define(0x0303)
+    val TLS1_3        = define(0x0304)
+    val DTLS1         = define(0xfeff)
+    val DTLS1_2       = define(0xfefd)
+    val DTLS1_BAD_VER = define(0x0100)
+
+    def getName(value: TLS_VERSION): Option[String] =
+      value match
+        case SSL3          => Some("SSL3_VERSION")
+        case TLS1          => Some("TLS1_VERSION")
+        case TLS1_1        => Some("TLS1_1_VERSION")
+        case TLS1_2        => Some("TLS1_2_VERSION")
+        case TLS1_3        => Some("TLS1_3_VERSION")
+        case DTLS1         => Some("DTLS1_VERSION")
+        case DTLS1_2       => Some("DTLS1_2_VERSION")
+        case DTLS1_BAD_VER => Some("DTLS1_BAD_VER")
+        case _             => _root_.scala.None

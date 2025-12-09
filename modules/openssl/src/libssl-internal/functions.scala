@@ -1253,7 +1253,7 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_set_verify(ctx: Ptr[SSL_CTX], mode: CInt, callback: SSL_verify_cb): Unit =
+  def SSL_CTX_set_verify(ctx: Ptr[SSL_CTX], mode: SSL_VERIFY, callback: SSL_verify_cb): Unit =
     extern
 
   /**
