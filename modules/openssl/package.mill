@@ -1,6 +1,6 @@
 package build.modules.openssl
 
-object `package` extends build.CommonHttpModule {
+object `package` extends build.CommonModule {
 
   def artifactName = "scala-native-openssl"
 

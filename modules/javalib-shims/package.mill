@@ -1,5 +1,5 @@
 package build.modules.`javalib-shims`
 
-object `package` extends build.CommonHttpModule:
+object `package` extends build.CommonModule:
 
   def artifactName = "javalib-shims"

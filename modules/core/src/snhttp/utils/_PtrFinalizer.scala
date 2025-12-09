@@ -1,7 +1,6 @@
-package snhttp.core.utils
+package java.snhttp.utils
 
-import java.lang.ref.WeakReference
-import java.lang.ref.WeakReferenceRegistry
+import java.lang.ref.{WeakReference, WeakReferenceRegistry}
 
 import scala.scalanative.meta.LinktimeInfo
 import scala.scalanative.unsafe.Ptr
@@ -13,7 +12,6 @@ final class PtrFinalizer[T](
     private var ptr: Ptr[T],
     finalizationFunction: Ptr[T] => Unit,
 ):
-
   WeakReferenceRegistry.addHandler(weakRef, handler)
 
   def handler(): Unit =

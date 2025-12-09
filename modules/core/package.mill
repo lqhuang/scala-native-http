@@ -1,8 +1,8 @@
 package build.modules.core
 
-object `package` extends build.CommonHttpModule:
-  def moduleDeps = Seq(
-    build.modules.core,
+object `package` extends build.CommonModule:
+
+  def compileModuleDeps = Seq(
     build.modules.`javalib-shims`,
   )
 
