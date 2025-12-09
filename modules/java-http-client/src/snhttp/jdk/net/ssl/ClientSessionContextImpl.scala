@@ -17,7 +17,7 @@ import snhttp.experimental.openssl.libssl_internal.enumerations.{
   SSL_SESS_CACHE,
   SSL_VERIFY,
 }
-import snhttp.core.utils.PtrFinalizer
+import snhttp.utils.PtrFinalizer
 
 // Inspired from
 //
@@ -82,11 +82,7 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
       "Failed to create SSL_CTX for ClientSessionContext",
     )
 
-  PtrFinalizer(
-    this,
-    ptr,
-    _ptr => libssl.SSL_CTX_free(_ptr),
-  )
+  PtrFinalizer(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
 
   /**
    * Debug mode now
@@ -94,16 +90,31 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
   libssl.SSL_CTX_set_verify(
     ptr,
     SSL_VERIFY.NONE,
-    null,
+    null.asInstanceOf[libssl.SSL_verify_cb],
   )
 
-  libssl.SSL_CTX_ctrl(ptr, SSL_CTRL.SET_SESS_CACHE_MODE, SSL_SESS_CACHE.CLIENT, null)
-  libssl.SSL_CTX_ctrl(ptr, SSL_CTRL.SET_SESS_CACHE_SIZE, getSessionCacheSize(), null)
+  val currCacheMode =
+    libssl.SSL_CTX_ctrl(ptr, SSL_CTRL.SET_SESS_CACHE_MODE, SSL_SESS_CACHE.CLIENT.value, null)
+  val currCacheSize =
+    libssl.SSL_CTX_ctrl(ptr, SSL_CTRL.SET_SESS_CACHE_SIZE, getSessionCacheSize(), null)
 
   def newSession() =
     SSLSessionImpl(this)
 
   def putSession(session: SSLSession): Unit =
     ???
+
+  def getSession(sessionId: Array[Byte]): SSLSession = ???
+
+  def getIds(): Enumeration[Array[Byte]] = ???
+
+  def getSession(host: String, port: Int): SSLSession = ???
+
+  def getSessionSize(): Int = ???
+
+  def getCachedSession(host: String, port: Int, sslParams: SSLParametersImpl): SSLSession =
+    ???
+
+  def putCachedSession(session: SSLSession): Unit = ???
 
 end ClientSessionContextImpl

@@ -182,11 +182,7 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
     var releaseResources = true
     try {
       // Prepare and init SSL Session
-      session = sslCtx.createSSLSession(
-        sslContextSession,
-        sslSocketFactory,
-        this,
-      )
+      session = SSLSessionImpl(sslContextSession)
 
       // For clients, offer to resume a previously cached session to avoid the
       // full TLS handshake.
