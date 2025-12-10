@@ -6,7 +6,7 @@ import java.util.function.BiFunction
 import java.util.Objects.requireNonNull
 import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedListener}
 
-import snhttp.experimental.openssl.libssl
+import snhttp.experimental.openssl.ssl
 
 /**
  * SSL Socket Implementation
@@ -23,7 +23,7 @@ class ClientSSLSocketImpl protected (
 
   import socket.*
 
-  // protected[ssl] val ptr = libssl.BIO_new_socket(socket.getFileno(), autoClose)
+  // protected[ssl] val ptr = ssl.BIO_new(socket.getFileno(), autoClose)
 
   def getSupportedCipherSuites(): Array[String] =
     SSLParametersImpl.getSupportedCipherSuites()

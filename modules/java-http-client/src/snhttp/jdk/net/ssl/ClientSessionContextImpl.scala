@@ -11,12 +11,8 @@ import scala.collection.JavaConverters.asJavaCollection
 import scala.scalanative.unsafe.Ptr
 
 import snhttp.jdk.internal.PropertyUtils
-import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl.libssl_internal.enumerations.{
-  SSL_CTRL,
-  SSL_SESS_CACHE,
-  SSL_VERIFY,
-}
+import snhttp.experimental.openssl.ssl
+import snhttp.experimental.openssl.ssl_internal.enumerations.{SSL_CTRL, SSL_SESS_CACHE, SSL_VERIFY}
 import snhttp.utils.PointerFinalizer
 
 /**
@@ -76,35 +72,35 @@ end ClientSessionContext
 /// Default Context for Client Session Context (auto select between TLSv1.2 and TLSv1.3)
 class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionContext:
 
-  protected[ssl] val tlsVersionPtr = libssl.TLS_client_method()
-  protected[ssl] val ptr: Ptr[libssl.SSL_CTX] = libssl.SSL_CTX_new(tlsVersionPtr)
+  protected[ssl] val tlsVersionPtr = ssl.TLS_client_method()
+  protected[ssl] val ptr: Ptr[ssl.SSL_CTX] = ssl.SSL_CTX_new(tlsVersionPtr)
 
   if (ptr == null)
     throw new RuntimeException(
       "Failed to create SSL_CTX for ClientSessionContext",
     )
 
-  PointerFinalizer(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
+  PointerFinalizer(this, ptr, _ptr => ssl.SSL_CTX_free(_ptr)): Unit
 
   // ---- Debug mode now ---- //
-  libssl.SSL_CTX_set_verify(
+  ssl.SSL_CTX_set_verify(
     ptr,
     SSL_VERIFY.NONE,
-    null.asInstanceOf[libssl.SSL_verify_cb],
+    null.asInstanceOf[ssl.SSL_verify_cb],
   )
   // must remove in the future release //
 
-  val setMinProtoVersionRet = libssl.SSL_CTX_set_min_proto_version(
+  val setMinProtoVersionRet = ssl.SSL_CTX_set_min_proto_version(
     ptr,
-    libssl.TLS_VERSION.TLS1_2,
+    ssl.TLS_VERSION.TLS1_2,
   )
   if (setMinProtoVersionRet != 1)
     throw new RuntimeException(
       "Failed to set minimum protocol version to TLS1.2 for ClientSessionContext",
     )
 
-  val currCacheMode = libssl.SSL_CTX_set_session_cache_mode(ptr, SSL_SESS_CACHE.CLIENT)
-  val currCacheSize = libssl.SSL_CTX_sess_set_cache_size(ptr, getSessionCacheSize())
+  val currCacheMode = ssl.SSL_CTX_set_session_cache_mode(ptr, SSL_SESS_CACHE.CLIENT)
+  val currCacheSize = ssl.SSL_CTX_sess_set_cache_size(ptr, getSessionCacheSize())
 
   def newSession(host: String, port: Int) =
     ???

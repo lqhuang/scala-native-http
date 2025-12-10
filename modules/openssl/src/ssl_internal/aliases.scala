@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.libssl_internal
+package snhttp.experimental.openssl.ssl_internal
 
 import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*
@@ -7,7 +7,7 @@ import _root_.scala.scalanative.*
 
 object aliases:
 
-  import _root_.snhttp.experimental.openssl.libssl_internal.structs.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.structs.*
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

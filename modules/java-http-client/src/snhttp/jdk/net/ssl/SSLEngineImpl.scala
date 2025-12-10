@@ -10,7 +10,7 @@ import javax.net.ssl.{SSLParameters, SSLContextSpi, SSLSession, SSLEngineResult,
 
 import scala.scalanative.unsafe.{Ptr, Zone, toCString}
 
-import snhttp.experimental.openssl.libssl
+import snhttp.experimental.openssl.ssl
 
 /// An **Client** SSLEngine is created by calling `SSLContext.createSSLEngine(host, port)`.
 ///
@@ -33,7 +33,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
   val sslSocketFactory = ctxSpi.sslSocketFactory
 
   // SSL Object
-  @volatile protected[ssl] var maybeSSLPtr: Option[Ptr[libssl.SSL]] = None
+  @volatile protected[ssl] var maybeSSLPtr: Option[Ptr[ssl.SSL]] = None
   // Active session
   @volatile protected[ssl] var maybeSession: SSLSession = null
   // Engine state
@@ -95,7 +95,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       && this.pendingReadableBytes == 0
 
   /**
-   * Calling `libssl.SSL_shutdown` to close outbound with notices:
+   * Calling `ssl.SSL_shutdown` to close outbound with notices:
    *
    *   1. A close_notify shutdown alert message is sent/received
    *   2. Closes the write direction of the connection; the read direction is closed by the peer
@@ -302,7 +302,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
         "SSL object has already been initialized, cannot initialize again",
       )
 
-    val ptr = libssl.SSL_new(sslContextSession.ptr)
+    val ptr = ssl.SSL_new(sslContextSession.ptr)
     if (ptr == null)
       throw new RuntimeException("SSL_new returned null pointer, failed to create the SSL object")
     maybeSSLPtr = Some(ptr)
@@ -312,12 +312,12 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
     then
       Zone {
         val hostPtr = toCString(host)
-        val setHostRet = libssl.SSL_set1_host(ptr, hostPtr)
+        val setHostRet = ssl.SSL_set1_host(ptr, hostPtr)
         if (setHostRet != 1)
           throw new RuntimeException(
             s"Failed to set hostname to ${host}, SSL_set1_host returned ${setHostRet}",
           )
-        val setSNIRet = libssl.SSL_set_tlsext_host_name(ptr, hostPtr)
+        val setSNIRet = ssl.SSL_set_tlsext_host_name(ptr, hostPtr)
         if (setSNIRet != 1)
           throw new RuntimeException(
             s"Failed to set SNI hostname to ${host}, SSL_set_tlsext_host_name returned ${setSNIRet}",
@@ -325,7 +325,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       }
 
     // Set the SSL to Client mode
-    if (getUseClientMode()) libssl.SSL_set_connect_state(ptr)
+    if (getUseClientMode()) ssl.SSL_set_connect_state(ptr)
   }
 
   private def handshakeStarted =
@@ -356,7 +356,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
     if maybeSSLPtr.isDefined
     then
       val ptr = maybeSSLPtr.get
-      libssl.SSL_free(ptr)
+      ssl.SSL_free(ptr)
       maybeSSLPtr = None
     else
       throw new IllegalStateException(
@@ -371,7 +371,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
     // }
 
   private def doHandshake(): Unit =
-    val ptrConnRet = libssl.SSL_connect(maybeSSLPtr.get)
+    val ptrConnRet = ssl.SSL_connect(maybeSSLPtr.get)
 
   private def pendingReadableBytes: Int =
     ???
@@ -381,11 +381,11 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
 
   private def shutdownSent: Boolean =
     throwIfHandshakeNotStarted()
-    libssl.SSL_get_shutdown(maybeSSLPtr.get) == libssl.SSL_SHUTDOWN.SENT.value
+    ssl.SSL_get_shutdown(maybeSSLPtr.get) == ssl.SSL_SHUTDOWN.SENT.value
 
   private def shutdownReceived: Boolean =
     throwIfHandshakeNotStarted()
-    libssl.SSL_get_shutdown(maybeSSLPtr.get) == libssl.SSL_SHUTDOWN.RECEIVED.value
+    ssl.SSL_get_shutdown(maybeSSLPtr.get) == ssl.SSL_SHUTDOWN.RECEIVED.value
 
 object ClientSSLEngineImpl:
 

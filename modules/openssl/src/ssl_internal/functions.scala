@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.libssl_internal
+package snhttp.experimental.openssl.ssl_internal
 
 import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*
@@ -9,10 +9,10 @@ import _root_.scala.scalanative.*
 @extern
 object functions:
 
-  import _root_.snhttp.experimental.openssl.libssl_internal.aliases.*
-  import _root_.snhttp.experimental.openssl.libssl_internal.structs.*
-  import _root_.snhttp.experimental.openssl.libssl_internal.enumerations.*
-  import _root_.snhttp.experimental.openssl.libssl_internal.unions.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.aliases.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.structs.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.enumerations.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.unions.*
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -3483,7 +3483,7 @@ object functions:
    */
   def TLSv1_server_method(): Ptr[SSL_METHOD] = extern
 
-  private[libssl_internal] def __sn_wrap_snhttp_experimental_openssl_ssl_SSL_as_poll_descriptor(
+  private[ssl_internal] def __sn_wrap_snhttp_experimental_openssl_ssl_SSL_as_poll_descriptor(
       s: Ptr[SSL],
       __return: Ptr[BIO_POLL_DESCRIPTOR],
   ): Unit = extern

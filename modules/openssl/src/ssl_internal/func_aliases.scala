@@ -1,5 +1,5 @@
 // scalafmt: { maxColumn = 200, align.preset = most }
-package snhttp.experimental.openssl.libssl_internal
+package snhttp.experimental.openssl.ssl_internal
 
 import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*
@@ -8,9 +8,9 @@ import _root_.scala.scalanative.*
 
 object func_aliases:
 
-  import _root_.snhttp.experimental.openssl.libssl_internal.functions.*
-  import _root_.snhttp.experimental.openssl.libssl_internal.enumerations.*
-  import _root_.snhttp.experimental.openssl.libssl_internal.structs.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.functions.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.enumerations.*
+  import _root_.snhttp.experimental.openssl.ssl_internal.structs.*
 
   def SSL_CTX_set_min_proto_version(
       ctx: Ptr[SSL_CTX],

@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.libssl_internal
+package snhttp.experimental.openssl.ssl_internal
 
 import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*
