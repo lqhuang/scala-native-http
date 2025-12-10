@@ -6,7 +6,14 @@ import java.util.function.BiFunction
 import java.util.Objects.requireNonNull
 import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedListener}
 
-class SSLSocketImpl protected (
+import snhttp.experimental.openssl.libssl
+
+/**
+ * SSL Socket Implementation
+ *
+ * map to OpenSSL `BIO` with blocking/non-blocking mode
+ */
+class ClientSSLSocketImpl protected (
     sslParams: SSLParametersImpl,
     host: InetAddress,
     port: Int,
@@ -15,6 +22,8 @@ class SSLSocketImpl protected (
 ) extends SSLSocket:
 
   import socket.*
+
+  // protected[ssl] val ptr = libssl.BIO_new_socket(socket.getFileno(), autoClose)
 
   def getSupportedCipherSuites(): Array[String] =
     SSLParametersImpl.getSupportedCipherSuites()
@@ -103,23 +112,23 @@ class SSLSocketImpl protected (
     if (arr.filter(each => each == null || each.isEmpty()).length > 0)
       throw new IllegalArgumentException()
 
-object SSLSocketImpl:
+object ClientSSLSocketImpl:
 
-  def apply(sslParams: SSLParametersImpl): SSLSocketImpl =
+  def apply(sslParams: SSLParametersImpl): ClientSSLSocketImpl =
     throw new NotImplementedError("Not implemented yet")
 
-  def apply(sslParams: SSLParametersImpl, host: String, port: Int): SSLSocketImpl =
+  def apply(sslParams: SSLParametersImpl, host: String, port: Int): ClientSSLSocketImpl =
     requireNonNull(host)
     requireNonNull(port)
     require(port > -1 && port <= 65535)
     val socket = new Socket(host, port)
-    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
+    new ClientSSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
-  def apply(sslParams: SSLParametersImpl, address: InetAddress, port: Int): SSLSocketImpl =
+  def apply(sslParams: SSLParametersImpl, address: InetAddress, port: Int): ClientSSLSocketImpl =
     requireNonNull(port)
     require(port > -1 && port <= 65535)
     val socket = new Socket(address, port)
-    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
+    new ClientSSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
   def apply(
       sslParams: SSLParametersImpl,
@@ -127,12 +136,12 @@ object SSLSocketImpl:
       port: Int,
       localHost: InetAddress,
       localPort: Int,
-  ): SSLSocketImpl =
+  ): ClientSSLSocketImpl =
     requireNonNull(host)
     requireNonNull(port)
     require(port > -1 && port <= 65535)
     val socket = new Socket(host, port, localHost, localPort)
-    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
+    new ClientSSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
   def apply(
       sslParams: SSLParametersImpl,
@@ -140,13 +149,13 @@ object SSLSocketImpl:
       port: Int,
       localAddress: InetAddress,
       localPort: Int,
-  ): SSLSocketImpl =
+  ): ClientSSLSocketImpl =
     requireNonNull(port)
     requireNonNull(localPort)
     require(port > -1 && port <= 65535)
     require(localPort >= 0 && localPort <= 65535)
     val socket = new Socket(address, port, localAddress, localPort)
-    new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
+    new ClientSSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket)
 
   def apply(
       sslParams: SSLParametersImpl,
@@ -154,7 +163,7 @@ object SSLSocketImpl:
       host: String,
       port: Int,
       autoClose: Boolean,
-  ): SSLSocketImpl =
+  ): ClientSSLSocketImpl =
     requireNonNull(socket)
     requireNonNull(host)
     requireNonNull(port)
@@ -162,9 +171,15 @@ object SSLSocketImpl:
     if socket.isClosed()
     then {
       val _socket = new Socket(host, port, socket.getLocalAddress(), socket.getLocalPort())
-      new SSLSocketImpl(sslParams, socket.getInetAddress(), socket.getPort(), socket, autoClose)
+      new ClientSSLSocketImpl(
+        sslParams,
+        socket.getInetAddress(),
+        socket.getPort(),
+        socket,
+        autoClose,
+      )
     } else {
-      new SSLSocketImpl(sslParams, InetAddress.getByName(host), port, socket, autoClose)
+      new ClientSSLSocketImpl(sslParams, InetAddress.getByName(host), port, socket, autoClose)
     }
 
-end SSLSocketImpl
+end ClientSSLSocketImpl

@@ -478,3 +478,20 @@ object enumerations:
         case DTLS1_2       => Some("DTLS1_2_VERSION")
         case DTLS1_BAD_VER => Some("DTLS1_BAD_VER")
         case _             => _root_.scala.None
+
+  opaque type SSL_SHUTDOWN = CInt
+  object SSL_SHUTDOWN extends _BindgenEnumCInt[SSL_SHUTDOWN]:
+    given _tag: Tag[SSL_SHUTDOWN] = Tag.Int
+
+    inline def define(inline a: Int): SSL_SHUTDOWN = a.toInt
+
+    val NO_SETTING = define(0x00)
+    val SENT       = define(0x01)
+    val RECEIVED   = define(0x02)
+
+    def getName(value: SSL_SHUTDOWN): Option[String] =
+      value match
+        case NO_SETTING => Some("This is not a standard value, represents no shutdown setting has been set")
+        case SENT       => Some("SSL_SHUTDOWN_SENT")
+        case RECEIVED   => Some("SSL_SHUTDOWN_RECEIVED")
+        case _          => _root_.scala.None

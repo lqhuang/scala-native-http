@@ -27,17 +27,20 @@ class SSLContextSpiImpl() extends SSLContextSpi():
     // ...
     ???
 
+  /// server side feature is not supported yet
   def engineCreateSSLEngine(): SSLEngine =
-    SSLEngineImpl(this, null, 0)
+    ???
 
   def engineCreateSSLEngine(host: String, port: Int): SSLEngine =
-    SSLEngineImpl(this, host, port)
+    ClientSSLEngineImpl(this, host, port)
 
   /// server side feature is not supported yet
-  def engineGetServerSocketFactory(): SSLServerSocketFactory = ???
+  def engineGetServerSocketFactory(): SSLServerSocketFactory =
+    ???
 
   /// server side feature is not supported yet
-  def engineGetServerSessionContext(): SSLSessionContext = ???
+  def engineGetServerSessionContext(): SSLSessionContext =
+    ???
 
   def engineGetSocketFactory(): SSLSocketFactory =
     sslSocketFactory

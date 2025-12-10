@@ -19,11 +19,13 @@ import snhttp.experimental.openssl.libssl_internal.enumerations.{
 }
 import snhttp.utils.PointerFinalizer
 
-// Inspired from
-//
-// 1. <https://github.com/google/conscrypt/blob/master/common/src/main/java/org/conscrypt/ClientSessionContext.java>
-// 2. <https://github.com/bcgit/bc-java/blob/main/tls/src/main/java/org/bouncycastle/tls/TlsContext.java>
-// 3. <https://docs.openssl.org/master/man7/ossl-guide-tls-introduction/>
+/**
+ * Inspired from
+ *
+ *   1. <https://github.com/google/conscrypt/blob/master/common/src/main/java/org/conscrypt/ClientSessionContext.java>
+ *   2. <https://github.com/bcgit/bc-java/blob/main/tls/src/main/java/org/bouncycastle/tls/TlsContext.java>
+ *   3. <https://docs.openssl.org/master/man7/ossl-guide-tls-introduction/>
+ */
 abstract class ClientSessionContext extends SSLSessionContext:
 
   private var sessionCacheSize: Int = PropertyUtils.SESSION_CACHE_SIZE
@@ -84,22 +86,29 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
 
   PointerFinalizer(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
 
-  /**
-   * Debug mode now
-   */
+  // ---- Debug mode now ---- //
   libssl.SSL_CTX_set_verify(
     ptr,
     SSL_VERIFY.NONE,
     null.asInstanceOf[libssl.SSL_verify_cb],
   )
+  // must remove in the future release //
 
-  val currCacheMode =
-    libssl.SSL_CTX_ctrl(ptr, SSL_CTRL.SET_SESS_CACHE_MODE, SSL_SESS_CACHE.CLIENT.value, null)
-  val currCacheSize =
-    libssl.SSL_CTX_ctrl(ptr, SSL_CTRL.SET_SESS_CACHE_SIZE, getSessionCacheSize(), null)
+  val setMinProtoVersionRet = libssl.SSL_CTX_set_min_proto_version(
+    ptr,
+    libssl.TLS_VERSION.TLS1_2,
+  )
+  if (setMinProtoVersionRet != 1)
+    throw new RuntimeException(
+      "Failed to set minimum protocol version to TLS1.2 for ClientSessionContext",
+    )
 
-  def newSession() =
-    SSLSessionImpl(this)
+  val currCacheMode = libssl.SSL_CTX_set_session_cache_mode(ptr, SSL_SESS_CACHE.CLIENT)
+  val currCacheSize = libssl.SSL_CTX_sess_set_cache_size(ptr, getSessionCacheSize())
+
+  def newSession(host: String, port: Int) =
+    ???
+    // SSLSessionImpl(this)
 
   def putSession(session: SSLSession): Unit =
     ???

@@ -20,9 +20,8 @@ import scala.scalanative.unsafe.Zone
 /// map to OpenSSL `SSL_SESSION` features
 class SSLSessionImpl(
     _sessContext: SSLSessionContext,
-    // _id: Array[Byte],
-    // _host: String,
-    // _port: Int,
+    _host: String,
+    _port: Int,
     // _cipherSuite: String,
     // _protocol: String,
     // _creationTime: Long,
@@ -105,13 +104,14 @@ class SSLSessionImpl(
       )
 
   def getPeerHost(): String =
-    val sni = libssl.SSL_SESSION_get0_hostname(ptr)
-    if sni == null
-    then null
-    else sni.toString()
+    // val sni = libssl.SSL_SESSION_get0_hostname(ptr)
+    // if sni == null
+    // then null
+    // else sni.toString()
+    _host
 
   def getPeerPort(): Int =
-    ???
+    _port
 
   def getPacketBufferSize(): Int =
     ???

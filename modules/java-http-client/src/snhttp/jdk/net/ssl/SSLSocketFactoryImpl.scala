@@ -8,16 +8,17 @@ import javax.net.ssl.SSLSocketFactory
 protected[ssl] class SSLSocketFactoryImpl(ctxSpi: SSLContextSpiImpl) extends SSLSocketFactory:
 
   override def createSocket(): Socket =
-    SSLSocketImpl(SSLParametersImpl.getDefault())
+    // SSLSocketImpl(SSLParametersImpl.getDefault())
+    ???
 
   def createSocket(host: String, port: Int): Socket =
-    SSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
+    ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
 
   def createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): Socket =
-    SSLSocketImpl(SSLParametersImpl.getDefault(), host, port, localHost, localPort)
+    ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port, localHost, localPort)
 
   def createSocket(host: InetAddress, port: Int): Socket =
-    SSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
+    ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
 
   def createSocket(
       address: InetAddress,
@@ -25,7 +26,7 @@ protected[ssl] class SSLSocketFactoryImpl(ctxSpi: SSLContextSpiImpl) extends SSL
       localAddress: InetAddress,
       localPort: Int,
   ): Socket =
-    SSLSocketImpl(SSLParametersImpl.getDefault(), address, port, localAddress, localPort)
+    ClientSSLSocketImpl(SSLParametersImpl.getDefault(), address, port, localAddress, localPort)
 
   def createSocket(
       socket: Socket,
@@ -33,7 +34,8 @@ protected[ssl] class SSLSocketFactoryImpl(ctxSpi: SSLContextSpiImpl) extends SSL
       port: Int,
       autoClose: Boolean,
   ): Socket =
-    SSLSocketImpl(SSLParametersImpl.getDefault(), socket, host, port, autoClose)
+    // SSLSocketImpl(SSLParametersImpl.getDefault(), socket, host, port, autoClose)
+    ???
 
   /// As docs:
   /// Creates a server mode Socket layered over an existing Socket

@@ -6,37 +6,40 @@ import java.nio.ByteBuffer
 import java.util.List as JList
 import java.util.Objects.requireNonNull
 import java.util.function.BiFunction
-import java.util.concurrent.atomic.AtomicInteger
 import javax.net.ssl.{SSLParameters, SSLContextSpi, SSLSession, SSLEngineResult, SSLEngine}
 
-import snhttp.experimental.openssl.libssl
-import snhttp.jdk.internal.tls.OpenSSLCtx
+import scala.scalanative.unsafe.{Ptr, Zone, toCString}
 
-/// An SSLEngine is created by calling `SSLParams.createSSLEngine()`.
+import snhttp.experimental.openssl.libssl
+
+/// An **Client** SSLEngine is created by calling `SSLContext.createSSLEngine(host, port)`.
 ///
 /// Any configuration parameters should be set before making the first call to
 /// `wrap()`, `unwrap()`, or `beginHandshake()`
 ///
 /// Implementation Notes:
 ///
-/// SSLEngine will map to `SSL` struct related APIs in OpenSSL library.
-class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, port: Int)
+/// 1. SSLEngine will map to `SSL` struct related APIs in OpenSSL library.
+/// 2. Inspired from Conscrypt's SSLEngine implementation
+///    <https://github.com/google/conscrypt/blob/master/common/src/main/java/org/conscrypt/ConscryptEngine.java>
+///
+/// TODO:
+///
+/// Remove EngineState and leverage SSL_state() to get current state of SSL object.
+class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, port: Int)
     extends SSLEngine(host, port):
 
-  val sslCtx: OpenSSLCtx = ???
   val sslContextSession = ctxSpi.clientSessionContext
   val sslSocketFactory = ctxSpi.sslSocketFactory
 
-  @volatile var state: EngineState = EngineState.STATE_NEW
-
+  // SSL Object
+  @volatile protected[ssl] var maybeSSLPtr: Option[Ptr[libssl.SSL]] = None
   // Active session
-  @volatile var session: SSLSession = null
+  @volatile protected[ssl] var maybeSession: SSLSession = null
+  // Engine state
+  @volatile protected[ssl] var state: EngineState = EngineState.STATE_NEW
 
-  private def handshakeStarted =
-    state.value < EngineState.STATE_HANDSHAKE_STARTED.value
-
-  private def transitionTo(newState: EngineState): Unit =
-    state = newState
+  // Socket BIOs
 
   /**
    * Major methods
@@ -87,10 +90,18 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
     (
       state == EngineState.STATE_CLOSED
         || state == EngineState.STATE_CLOSED_INBOUND
-        || sslCtx.shutdownReceived
+        || this.shutdownReceived
     )
-      && sslCtx.pendingReadableBytes == 0
+      && this.pendingReadableBytes == 0
 
+  /**
+   * Calling `libssl.SSL_shutdown` to close outbound with notices:
+   *
+   *   1. A close_notify shutdown alert message is sent/received
+   *   2. Closes the write direction of the connection; the read direction is closed by the peer
+   *   3. `SSL_shutdown()` does not affect an underlying network connection such as a TCP
+   *      connection, which remains open.
+   */
   def closeOutbound(): Unit =
     if (state == EngineState.STATE_CLOSED || state == EngineState.STATE_CLOSED_OUTBOUND)
       return
@@ -109,9 +120,79 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
     (
       state == EngineState.STATE_CLOSED
         || state == EngineState.STATE_CLOSED_OUTBOUND
-        || sslCtx.shutdownSent
+        || this.shutdownSent
     )
-      && sslCtx.pendingWrittenBytes == 0
+      && this.pendingWrittenBytes == 0
+
+  // Implementation Notes:
+  //
+  //  Unlike SSLSocket.getSession()
+  //
+
+  def getSession(): SSLSession =
+    state match
+      case _ if state.value < EngineState.STATE_HANDSHAKE_COMPLETED.value => SSLNullSessionImpl()
+      case EngineState.STATE_CLOSED                                       => SSLNullSessionImpl()
+      case _                                                              => maybeSession
+
+  override def getHandshakeSession(): SSLSession =
+    state match
+      case EngineState.STATE_HANDSHAKE_STARTED => maybeSession
+      case _                                   => null
+
+  def beginHandshake(): Unit = {
+    state match
+      case EngineState.STATE_NEW =>
+        throw new IllegalStateException(
+          "SSLEngine: Client/Server mode not set before handshake",
+        )
+      case (
+            EngineState.STATE_CLOSED_INBOUND | EngineState.STATE_CLOSED_OUTBOUND |
+            EngineState.STATE_CLOSED
+          ) =>
+        throw new IllegalStateException(
+          "SSLEngine: Engine has already been closed",
+        )
+      // handshake has been already started, just return
+      case (
+            EngineState.STATE_HANDSHAKE_STARTED | EngineState.STATE_HANDSHAKE_COMPLETED |
+            EngineState.STATE_READY_HANDSHAKE_CUT_THROUGH | EngineState.STATE_READY
+          ) =>
+        return
+      // Go to next step
+      case EngineState.STATE_MODE_SET => ()
+
+    transitionTo(EngineState.STATE_HANDSHAKE_STARTED)
+    var releaseResources = true
+
+    // Prepare and init SSL Object
+    initSSL()
+
+    // TODO:
+    // For clients, offer to resume a previously cached session to avoid the
+    // full TLS handshake.
+    // if (getUseClientMode()) {
+    //   val cachedClientSession = ???
+    //   if (cachedClientSession != null) ctx.resumeFrom(cachedClientSession)
+    // }
+
+    try {
+      doHandshake()
+      // If we reach here, the handshake was successful, do not release resources
+      releaseResources = false
+    } catch {
+      case e: IOException =>
+        closeAllAndFreeResources()
+        throw e
+    } finally // release resources if handshake failed
+      if (releaseResources) closeAllAndFreeResources()
+  }
+
+  /**
+   * Getter and Setter methods for various SSL parameters
+   *
+   * Setter methods should only be called before the handshake tarted.
+   */
 
   def getSupportedCipherSuites(): Array[String] =
     SSLParametersImpl.getSupportedCipherSuites()
@@ -140,73 +221,12 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
     ???
     // sslParams.setEnabledProtocols(protocols)
 
-  // Implementation Notes:
-  //
-  //  Unlike SSLSocket.getSession()
-  //
-
-  def getSession(): SSLSession =
-    state match
-      case _ if state.value < EngineState.STATE_HANDSHAKE_COMPLETED.value => SSLNullSessionImpl()
-      case EngineState.STATE_CLOSED                                       => SSLNullSessionImpl()
-      case _                                                              => session
-
-  override def getHandshakeSession(): SSLSession =
-    state match
-      case EngineState.STATE_HANDSHAKE_STARTED => session
-      case _                                   => null
-
-  def beginHandshake(): Unit = {
-    state match
-      case EngineState.STATE_NEW =>
-        throw new IllegalStateException(
-          "SSLEngine: Client/Server mode not set before handshake",
-        )
-      case (
-            EngineState.STATE_CLOSED_INBOUND | EngineState.STATE_CLOSED_OUTBOUND |
-            EngineState.STATE_CLOSED
-          ) =>
-        throw new IllegalStateException(
-          "SSLEngine: Engine has already been closed",
-        )
-      // handshake has been already started, just return
-      case (
-            EngineState.STATE_HANDSHAKE_STARTED | EngineState.STATE_HANDSHAKE_COMPLETED |
-            EngineState.STATE_READY_HANDSHAKE_CUT_THROUGH | EngineState.STATE_READY
-          ) =>
-        return
-      // Go to next step
-      case EngineState.STATE_MODE_SET => ()
-
-    transitionTo(EngineState.STATE_HANDSHAKE_STARTED)
-    var releaseResources = true
-    try {
-      // Prepare and init SSL Session
-      session = SSLSessionImpl(sslContextSession)
-
-      // For clients, offer to resume a previously cached session to avoid the
-      // full TLS handshake.
-      if (getUseClientMode()) {
-        val cachedClientSession = ???
-        if (cachedClientSession != null) sslCtx.resumeFrom(cachedClientSession)
-      }
-
-      doHandshake()
-      // If we reach here, the handshake was successful, do not release resources
-      releaseResources = false
-    } catch {
-      case e: IOException =>
-        closeAllAndFreeResources()
-        throw e
-    } finally // release resources if handshake failed
-      if (releaseResources) closeAllAndFreeResources()
-  }
-
   def getHandshakeStatus(): SSLEngineResult.HandshakeStatus =
     ???
 
   def setUseClientMode(mode: Boolean): Unit =
     throwIfHandshakeStarted()
+
     // FIXME: Don't forget to set Client mode
     // sslParams.setUseClientMode(mode)
     transitionTo(EngineState.STATE_MODE_SET)
@@ -272,10 +292,58 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
   /**
    * Private helper methods
    */
+
+  /**
+   * Initialize SSL object for current SSLEngine and set necessary parameters.
+   */
+  private def initSSL(): Unit = {
+    if (maybeSSLPtr.isDefined)
+      throw new IllegalStateException(
+        "SSL object has already been initialized, cannot initialize again",
+      )
+
+    val ptr = libssl.SSL_new(sslContextSession.ptr)
+    if (ptr == null)
+      throw new RuntimeException("SSL_new returned null pointer, failed to create the SSL object")
+    maybeSSLPtr = Some(ptr)
+
+    // Set SNI Hostname
+    if host != null && host.nonEmpty
+    then
+      Zone {
+        val hostPtr = toCString(host)
+        val setHostRet = libssl.SSL_set1_host(ptr, hostPtr)
+        if (setHostRet != 1)
+          throw new RuntimeException(
+            s"Failed to set hostname to ${host}, SSL_set1_host returned ${setHostRet}",
+          )
+        val setSNIRet = libssl.SSL_set_tlsext_host_name(ptr, hostPtr)
+        if (setSNIRet != 1)
+          throw new RuntimeException(
+            s"Failed to set SNI hostname to ${host}, SSL_set_tlsext_host_name returned ${setSNIRet}",
+          )
+      }
+
+    // Set the SSL to Client mode
+    if (getUseClientMode()) libssl.SSL_set_connect_state(ptr)
+  }
+
+  private def handshakeStarted =
+    state.value < EngineState.STATE_HANDSHAKE_STARTED.value
+
+  private def transitionTo(newState: EngineState): Unit =
+    state = newState
+
   private def throwIfHandshakeStarted(): Unit =
     if (handshakeStarted)
       throw new IllegalStateException(
         "Cannot change SSLEngine parameters after handshake has started",
+      )
+
+  private def throwIfHandshakeNotStarted(): Unit =
+    if (maybeSSLPtr.isEmpty)
+      throw new IllegalStateException(
+        "Cannot get SSL object before handshake starts",
       )
 
   private def freeIfDone(): Unit =
@@ -284,6 +352,17 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
 
   private def closeAllAndFreeResources(): Unit =
     transitionTo(EngineState.STATE_CLOSED)
+
+    if maybeSSLPtr.isDefined
+    then
+      val ptr = maybeSSLPtr.get
+      libssl.SSL_free(ptr)
+      maybeSSLPtr = None
+    else
+      throw new IllegalStateException(
+        "SSL object is already freed or was never initialized",
+      )
+
     // if (ssl != null) {
     //     ssl.close();
     // }
@@ -292,23 +371,32 @@ class SSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, por
     // }
 
   private def doHandshake(): Unit =
+    val ptrConnRet = libssl.SSL_connect(maybeSSLPtr.get)
+
+  private def pendingReadableBytes: Int =
     ???
 
-  // private def getClientSessionContext(): SSLSessionContext =
+  private def pendingWrittenBytes: Int =
+    ???
 
-object SSLEngineImpl:
+  private def shutdownSent: Boolean =
+    throwIfHandshakeNotStarted()
+    libssl.SSL_get_shutdown(maybeSSLPtr.get) == libssl.SSL_SHUTDOWN.SENT.value
 
-  def apply(ctxSpi: SSLContextSpiImpl): SSLEngineImpl =
-    throw new NotImplementedError("Not supported and no plan to support currently")
+  private def shutdownReceived: Boolean =
+    throwIfHandshakeNotStarted()
+    libssl.SSL_get_shutdown(maybeSSLPtr.get) == libssl.SSL_SHUTDOWN.RECEIVED.value
+
+object ClientSSLEngineImpl:
 
   def apply(
       ctxSpi: SSLContextSpiImpl,
       host: String,
       port: Int,
-  ): SSLEngineImpl =
-    new SSLEngineImpl(ctxSpi, host, port)
+  ): ClientSSLEngineImpl =
+    new ClientSSLEngineImpl(ctxSpi, host, port)
 
-end SSLEngineImpl
+end ClientSSLEngineImpl
 
 /**
  * States for SSL engines.

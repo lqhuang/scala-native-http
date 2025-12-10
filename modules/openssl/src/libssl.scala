@@ -33,5 +33,6 @@ object libssl:
   export constants.*
   export enumerations.*
   export functions.*
+  export func_aliases.*
   export structs.*
   export unions.*
