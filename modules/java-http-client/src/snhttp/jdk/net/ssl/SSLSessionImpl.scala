@@ -10,7 +10,7 @@ import scala.scalanative.posix
 import scala.scalanative.unsafe.{CChar, Ptr, alloc, fromCString}
 import scala.scalanative.unsigned.UInt
 
-import snhttp.utils.PtrFinalizer
+import snhttp.utils.PointerFinalizer
 import snhttp.experimental.openssl.libssl
 import snhttp.experimental.openssl.libssl_internal.enumerations.TLS_VERSION
 import scala.scalanative.unsafe.Zone
@@ -30,7 +30,7 @@ class SSLSessionImpl(
 ) extends SSLSession:
 
   private val ptr = libssl.SSL_SESSION_new()
-  PtrFinalizer(this, ptr, _ptr => libssl.SSL_SESSION_free(_ptr)): Unit
+  PointerFinalizer(this, ptr, _ptr => libssl.SSL_SESSION_free(_ptr)): Unit
 
   def getId(): Array[Byte] =
     Zone {

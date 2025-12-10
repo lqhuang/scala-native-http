@@ -17,7 +17,7 @@ import snhttp.experimental.openssl.libssl_internal.enumerations.{
   SSL_SESS_CACHE,
   SSL_VERIFY,
 }
-import snhttp.utils.PtrFinalizer
+import snhttp.utils.PointerFinalizer
 
 // Inspired from
 //
@@ -82,7 +82,7 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
       "Failed to create SSL_CTX for ClientSessionContext",
     )
 
-  PtrFinalizer(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
+  PointerFinalizer(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
 
   /**
    * Debug mode now

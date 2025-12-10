@@ -7,7 +7,7 @@ import scala.scalanative.unsafe.Ptr
 
 /// Inspired and modified from
 /// <https://github.com/lolgab/scala-native-crypto/blob/main/scala-native-crypto/src/java/com/github/lolgab/scalanativecrypto/internal/CtxFinalizer.scala>
-final class PtrFinalizer[T](
+final class PointerFinalizer[T](
     weakRef: WeakReference[?],
     private var ptr: Ptr[T],
     finalizationFunction: Ptr[T] => Unit,
@@ -19,20 +19,20 @@ final class PtrFinalizer[T](
       finalizationFunction(ptr)
       ptr = null.asInstanceOf[Ptr[T]]
 
-object PtrFinalizer:
+object PointerFinalizer:
 
   def fromWeakRef[T](
       weakRef: WeakReference[?],
       ptr: Ptr[T],
       finalizationFunction: Ptr[T] => Unit,
-  ): PtrFinalizer[T] =
-    new PtrFinalizer(weakRef, ptr, finalizationFunction)
+  ): PointerFinalizer[T] =
+    new PointerFinalizer(weakRef, ptr, finalizationFunction)
 
   def apply[T](
       owner: AnyRef,
       ptr: Ptr[T],
       finalizationFunction: Ptr[T] => Unit,
-  ): PtrFinalizer[T] =
+  ): PointerFinalizer[T] =
     if (owner == null)
       throw new NullPointerException("owner cannot be null")
 
@@ -42,6 +42,6 @@ object PtrFinalizer:
       )
 
     val wr = new WeakReference(owner)
-    new PtrFinalizer(wr, ptr, finalizationFunction)
+    new PointerFinalizer(wr, ptr, finalizationFunction)
 
-end PtrFinalizer
+end PointerFinalizer
