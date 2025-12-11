@@ -189,7 +189,8 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
-  @extern def BIO_ctrl(bp: Ptr[BIO], cmd: CInt, larg: CLongInt, parg: Ptr[Byte]): CLongInt = extern
+  @extern def BIO_ctrl(bp: Ptr[BIO], cmd: BIO_CTRL, larg: Size, parg: Ptr[Byte]): Size =
+    extern
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h

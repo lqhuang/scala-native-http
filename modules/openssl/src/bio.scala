@@ -12,5 +12,6 @@ object bio:
   export aliases.*
   export enumerations.*
   export functions.*
+  export func_aliases.*
   export structs.*
   export unions.*

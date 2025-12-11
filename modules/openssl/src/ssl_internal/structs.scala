@@ -8,6 +8,8 @@ import _root_.scala.scalanative.*
 
 object structs:
 
+  import _root_.snhttp.experimental.openssl.bio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
+
   /**
    * [bindgen] header: /usr/include/openssl/types.h
    */
@@ -17,95 +19,103 @@ object structs:
     given _tag: Tag[BIGNUM] = Tag.materializeCStruct0Tag
 
   /**
-   * [bindgen] header: /usr/include/openssl/types.h
+   * Notes:
+   *
+   * Remove these definitions for BIO related structs.
+   *
+   * Import them from bio package instead.
    */
-  opaque type BIO = CStruct0
 
-  object BIO:
-    given _tag: Tag[BIO] = Tag.materializeCStruct0Tag
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/types.h
+  //  */
+  // opaque type BIO = CStruct0
 
-  /**
-   * [bindgen] header: /usr/include/openssl/bio.h
-   */
-  opaque type BIO_METHOD = CStruct0
+  // object BIO:
+  //   given _tag: Tag[BIO] = Tag.materializeCStruct0Tag
 
-  object BIO_METHOD:
-    given _tag: Tag[BIO_METHOD] = Tag.materializeCStruct0Tag
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/bio.h
+  //  */
+  // opaque type BIO_METHOD = CStruct0
 
-  /**
-   * [bindgen] header: /usr/include/openssl/bio.h
-   */
-  opaque type BIO_POLL_DESCRIPTOR = CStruct2[UInt, BIO_POLL_DESCRIPTOR.Value]
+  // object BIO_METHOD:
+  //   given _tag: Tag[BIO_METHOD] = Tag.materializeCStruct0Tag
 
-  object BIO_POLL_DESCRIPTOR:
-    given _tag: Tag[BIO_POLL_DESCRIPTOR] =
-      Tag.materializeCStruct2Tag[UInt, BIO_POLL_DESCRIPTOR.Value]
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/bio.h
+  //  */
+  // opaque type BIO_POLL_DESCRIPTOR = CStruct2[UInt, BIO_POLL_DESCRIPTOR.Value]
 
-    // Allocates BIO_POLL_DESCRIPTOR on the heap – fields are not initalised or zeroed out
-    def apply()(using Zone): Ptr[BIO_POLL_DESCRIPTOR] =
-      scala.scalanative.unsafe.alloc[BIO_POLL_DESCRIPTOR](1)
-    def apply(`type`: UInt, value: BIO_POLL_DESCRIPTOR.Value)(using
-        Zone,
-    ): Ptr[BIO_POLL_DESCRIPTOR] =
-      val ____ptr = apply()
-      (!____ptr).`type` = `type`
-      (!____ptr).value = value
-      ____ptr
+  // object BIO_POLL_DESCRIPTOR:
+  //   given _tag: Tag[BIO_POLL_DESCRIPTOR] =
+  //     Tag.materializeCStruct2Tag[UInt, BIO_POLL_DESCRIPTOR.Value]
 
-    extension (struct: BIO_POLL_DESCRIPTOR)
-      def `type`: UInt = struct._1
-      def type_=(value: UInt): Unit = !struct.at1 = value
-      def value: BIO_POLL_DESCRIPTOR.Value = struct._2
-      def value_=(value: BIO_POLL_DESCRIPTOR.Value): Unit = !struct.at2 = value
+  //   // Allocates BIO_POLL_DESCRIPTOR on the heap – fields are not initalised or zeroed out
+  //   def apply()(using Zone): Ptr[BIO_POLL_DESCRIPTOR] =
+  //     scala.scalanative.unsafe.alloc[BIO_POLL_DESCRIPTOR](1)
+  //   def apply(`type`: UInt, value: BIO_POLL_DESCRIPTOR.Value)(using
+  //       Zone,
+  //   ): Ptr[BIO_POLL_DESCRIPTOR] =
+  //     val ____ptr = apply()
+  //     (!____ptr).`type` = `type`
+  //     (!____ptr).value = value
+  //     ____ptr
 
-    /**
-     * [bindgen] header: /usr/include/openssl/bio.h
-     */
-    opaque type Value = CArray[Byte, Nat._8]
-    object Value:
-      given _tag: Tag[Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
+  //   extension (struct: BIO_POLL_DESCRIPTOR)
+  //     def `type`: UInt = struct._1
+  //     def type_=(value: UInt): Unit = !struct.at1 = value
+  //     def value: BIO_POLL_DESCRIPTOR.Value = struct._2
+  //     def value_=(value: BIO_POLL_DESCRIPTOR.Value): Unit = !struct.at2 = value
 
-      def apply()(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-        ___ptr
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/bio.h
+  //  */
+  // opaque type Value = CArray[Byte, Nat._8]
+  // object Value:
+  //   given _tag: Tag[Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
-      @targetName("apply_fd")
-      def apply(fd: CInt)(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-        val un = !___ptr
-        un.at(0).asInstanceOf[Ptr[CInt]].update(0, fd)
-        ___ptr
+  //   def apply()(using Zone): Ptr[Value] =
+  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+  //     ___ptr
 
-      @targetName("apply_custom")
-      def apply(custom: Ptr[Byte])(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-        val un = !___ptr
-        un.at(0).asInstanceOf[Ptr[Ptr[Byte]]].update(0, custom)
-        ___ptr
+  //   @targetName("apply_fd")
+  //   def apply(fd: CInt)(using Zone): Ptr[Value] =
+  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+  //     val un = !___ptr
+  //     un.at(0).asInstanceOf[Ptr[CInt]].update(0, fd)
+  //     ___ptr
 
-      @targetName("apply_custom_ui")
-      def apply(custom_ui: USize)(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-        val un = !___ptr
-        un.at(0).asInstanceOf[Ptr[USize]].update(0, custom_ui)
-        ___ptr
+  //   @targetName("apply_custom")
+  //   def apply(custom: Ptr[Byte])(using Zone): Ptr[Value] =
+  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+  //     val un = !___ptr
+  //     un.at(0).asInstanceOf[Ptr[Ptr[Byte]]].update(0, custom)
+  //     ___ptr
 
-      @targetName("apply_ssl")
-      def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-        val un = !___ptr
-        un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
-        ___ptr
+  //   @targetName("apply_custom_ui")
+  //   def apply(custom_ui: USize)(using Zone): Ptr[Value] =
+  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+  //     val un = !___ptr
+  //     un.at(0).asInstanceOf[Ptr[USize]].update(0, custom_ui)
+  //     ___ptr
 
-      extension (struct: Value)
-        def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
-        def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
-        def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
-        def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
-        def custom_ui: USize = !struct.at(0).asInstanceOf[Ptr[USize]]
-        def custom_ui_=(value: USize): Unit = !struct.at(0).asInstanceOf[Ptr[USize]] = value
-        def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
-        def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
+  //   @targetName("apply_ssl")
+  //   def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
+  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+  //     val un = !___ptr
+  //     un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
+  //     ___ptr
+
+  //   extension (struct: Value)
+  //     def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
+  //     def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
+  //     def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
+  //     def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
+  //     def custom_ui: USize = !struct.at(0).asInstanceOf[Ptr[USize]]
+  //     def custom_ui_=(value: USize): Unit = !struct.at(0).asInstanceOf[Ptr[USize]] = value
+  //     def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
+  //     def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

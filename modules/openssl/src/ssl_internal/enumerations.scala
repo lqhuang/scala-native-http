@@ -23,8 +23,8 @@ object enumerations:
   private[enumerations] trait _BindgenEnumSize[T](using eq: T =:= Size):
     given Tag[T] = Tag.Size.asInstanceOf[Tag[T]]
     extension (inline t: T)
-      inline def value: Size  = eq.apply(t)
-      inline def clong: CLong = eq.apply(t).toCSSize
+      inline def value: Size = eq.apply(t)
+      inline def long: Long  = eq.apply(t).toLong
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

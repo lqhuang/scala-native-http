@@ -14,6 +14,8 @@ object functions:
   import _root_.snhttp.experimental.openssl.ssl_internal.enumerations.*
   import _root_.snhttp.experimental.openssl.ssl_internal.unions.*
 
+  import _root_.snhttp.experimental.openssl.bio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
+
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
