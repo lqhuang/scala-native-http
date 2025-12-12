@@ -2200,7 +2200,7 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_get_error(s: Ptr[SSL], ret_code: CInt): CInt = extern
+  def SSL_get_error(s: Ptr[SSL], ret_code: CInt): SSL_ERROR = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

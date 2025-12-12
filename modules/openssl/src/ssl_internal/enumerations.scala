@@ -155,6 +155,10 @@ object enumerations:
   /**
    * Missing from sn-bindgen output
    */
+
+  /**
+   * header: /usr/include/openssl/ssl.h
+   */
   opaque type SSL_VERIFY = CInt
   object SSL_VERIFY extends _BindgenEnumCInt[SSL_VERIFY]:
     given _tag: Tag[SSL_VERIFY] = Tag.Int
@@ -182,7 +186,7 @@ object enumerations:
         case _                    => _root_.scala.None
 
   /**
-   * [bindgen] header: /usr/include/openssl/ssl.h
+   * header: /usr/include/openssl/ssl.h
    */
   opaque type SSL_SESS_CACHE = CLongInt // larg: CLongInt
   object SSL_SESS_CACHE extends _BindgenEnumSize[SSL_SESS_CACHE]:
@@ -221,7 +225,7 @@ object enumerations:
         case _                  => _root_.scala.None
 
   /**
-   * [bindgen] header: /usr/include/openssl/ssl.h
+   * header: /usr/include/openssl/ssl.h
    */
   opaque type SSL_CTRL = CInt
   object SSL_CTRL extends _BindgenEnumCInt[SSL_CTRL]:
@@ -452,6 +456,9 @@ object enumerations:
         case SET_TLSEXT_STATUS_REQ_OCSP_RESP_EX => Some("SSL_CTRL_SET_TLSEXT_STATUS_REQ_OCSP_RESP_EX")
         case _                                  => _root_.scala.None
 
+  /**
+   * header: /usr/include/openssl/ssl.h
+   */
   opaque type TLS_VERSION = CInt
   object TLS_VERSION extends _BindgenEnumCInt[TLS_VERSION]:
     given _tag: Tag[TLS_VERSION] = Tag.Int
@@ -479,6 +486,9 @@ object enumerations:
         case DTLS1_BAD_VER => Some("DTLS1_BAD_VER")
         case _             => _root_.scala.None
 
+  /**
+   * header: /usr/include/openssl/ssl.h
+   */
   opaque type SSL_SHUTDOWN = CInt
   object SSL_SHUTDOWN extends _BindgenEnumCInt[SSL_SHUTDOWN]:
     given _tag: Tag[SSL_SHUTDOWN] = Tag.Int
@@ -495,3 +505,43 @@ object enumerations:
         case SENT       => Some("SSL_SHUTDOWN_SENT")
         case RECEIVED   => Some("SSL_SHUTDOWN_RECEIVED")
         case _          => _root_.scala.None
+
+  /**
+   * header: /usr/include/openssl/ssl.h
+   */
+  opaque type SSL_ERROR = CInt
+  object SSL_ERROR extends _BindgenEnumCInt[SSL_ERROR]:
+    given _tag: Tag[SSL_ERROR] = Tag.Int
+
+    inline def define(inline a: Int): SSL_ERROR = a.toInt
+
+    val NONE                 = define(0)
+    val SSL                  = define(1)
+    val WANT_READ            = define(2)
+    val WANT_WRITE           = define(3)
+    val WANT_X509_LOOKUP     = define(4)
+    val SYSCALL              = define(5) // look at error stack/return value/errno
+    val ZERO_RETURN          = define(6)
+    val WANT_CONNECT         = define(7)
+    val WANT_ACCEPT          = define(8)
+    val WANT_ASYNC           = define(9)
+    val WANT_ASYNC_JOB       = define(10)
+    val WANT_CLIENT_HELLO_CB = define(11)
+    val WANT_RETRY_VERIFY    = define(12)
+
+    extension (value: SSL_ERROR)
+      def name: String =
+        value match
+          case NONE                 => "SSL_ERROR_NONE"
+          case SSL                  => "SSL_ERROR_SSL"
+          case WANT_READ            => "SSL_ERROR_WANT_READ"
+          case WANT_WRITE           => "SSL_ERROR_WANT_WRITE"
+          case WANT_X509_LOOKUP     => "SSL_ERROR_WANT_X509_LOOKUP"
+          case SYSCALL              => "SSL_ERROR_SYSCALL"
+          case ZERO_RETURN          => "SSL_ERROR_ZERO_RETURN"
+          case WANT_CONNECT         => "SSL_ERROR_WANT_CONNECT"
+          case WANT_ACCEPT          => "SSL_ERROR_WANT_ACCEPT"
+          case WANT_ASYNC           => "SSL_ERROR_WANT_ASYNC"
+          case WANT_ASYNC_JOB       => "SSL_ERROR_WANT_ASYNC_JOB"
+          case WANT_CLIENT_HELLO_CB => "SSL_ERROR_WANT_CLIENT_HELLO_CB"
+          case WANT_RETRY_VERIFY    => "SSL_ERROR_WANT_RETRY_VERIFY"
