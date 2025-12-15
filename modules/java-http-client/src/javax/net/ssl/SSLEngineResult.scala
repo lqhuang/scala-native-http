@@ -75,18 +75,15 @@ object SSLEngineResult:
     final val OK               = new Status("OK", 2)
     final val CLOSED           = new Status("CLOSED", 3)
 
-    private val _values: Array[Status] = Array(BUFFER_UNDERFLOW, BUFFER_OVERFLOW, OK, CLOSED)
-
-    def values(): Array[Status] = _values.clone()
+    def values(): Array[Status] = Array(BUFFER_UNDERFLOW, BUFFER_OVERFLOW, OK, CLOSED)
 
     def valueOf(name: String): Status =
-      _values
-        .find(_.name() == name)
-        .getOrElse(
-          throw new IllegalArgumentException(
-            "No enum const Status." + name,
-          ),
-        )
+      name match
+        case "BUFFER_UNDERFLOW" => BUFFER_UNDERFLOW
+        case "BUFFER_OVERFLOW"  => BUFFER_OVERFLOW
+        case "OK"               => OK
+        case "CLOSED"           => CLOSED
+        case _                  => throw new IllegalArgumentException(s"No enum const Status.${name}")
   end Status
 
   sealed class HandshakeStatus private (name: String, ordinal: Int) extends _Enum[HandshakeStatus](name, ordinal)
@@ -98,7 +95,7 @@ object SSLEngineResult:
     final val NEED_UNWRAP       = new HandshakeStatus("NEED_UNWRAP", 4)
     final val NEED_UNWRAP_AGAIN = new HandshakeStatus("NEED_UNWRAP_AGAIN", 5)
 
-    private val _values: Array[HandshakeStatus] = Array(
+    def values(): Array[HandshakeStatus] = Array(
       NOT_HANDSHAKING,
       FINISHED,
       NEED_TASK,
@@ -107,16 +104,15 @@ object SSLEngineResult:
       NEED_UNWRAP_AGAIN,
     )
 
-    def values(): Array[HandshakeStatus] = _values.clone()
-
     def valueOf(name: String): HandshakeStatus =
-      _values
-        .find(_.name() == name)
-        .getOrElse(
-          throw new IllegalArgumentException(
-            "No enum const HandshakeStatus." + name,
-          ),
-        )
+      name match
+        case "NOT_HANDSHAKING"   => NOT_HANDSHAKING
+        case "FINISHED"          => FINISHED
+        case "NEED_TASK"         => NEED_TASK
+        case "NEED_WRAP"         => NEED_WRAP
+        case "NEED_UNWRAP"       => NEED_UNWRAP
+        case "NEED_UNWRAP_AGAIN" => NEED_UNWRAP_AGAIN
+        case _                   => throw new IllegalArgumentException(s"No enum const HandshakeStatus.${name}")
   end HandshakeStatus
   // scalafmt: { maxColumn = 100, align.preset = more }
 

@@ -1,5 +1,7 @@
 package java.net.http
 
+import java.lang._Enum
+
 import java.io.{IOException, UncheckedIOException}
 import java.net.{InetAddress, InetSocketAddress}
 import java.net.{CookieHandler, Authenticator}
@@ -7,8 +9,8 @@ import java.net.{Proxy, ProxySelector}
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.{CompletableFuture, Executor}
-import javax.net.ssl.{SSLContext, SSLParameters}
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.net.ssl.{SSLContext, SSLParameters}
 
 import snhttp.jdk.net.http.HttpClientBuilderImpl
 
@@ -76,15 +78,40 @@ abstract class HttpClient extends AutoCloseable:
 
 object HttpClient:
 
-  enum Version extends Enum[Version]:
-    case HTTP_1_1, HTTP_2
+  sealed class Version private (name: String, ordinal: Int) extends _Enum[Version](name, ordinal)
+  object Version:
+    final val HTTP_1_1 = new Version("HTTP_1_1", 0)
+    final val HTTP_2 = new Version("HTTP_2", 1)
 
-  enum Redirect extends Enum[Redirect]:
-    case NEVER, ALWAYS, NORMAL
+    def values(): Array[Version] = Array(HTTP_1_1, HTTP_2)
+
+    def valueOf(name: String): Version =
+      name match
+        case "HTTP_1_1" => HTTP_1_1
+        case "HTTP_2"   => HTTP_2
+        case _ => throw new IllegalArgumentException(s"No enum constant HttpClient.Version.$name")
+  end Version
+
+  sealed class Redirect private (name: String, ordinal: Int) extends _Enum[Redirect](name, ordinal)
+  object Redirect:
+    final val NEVER = new Redirect("NEVER", 0)
+    final val ALWAYS = new Redirect("ALWAYS", 1)
+    final val NORMAL = new Redirect("NORMAL", 2)
+
+    def values(): Array[Redirect] = Array(NEVER, ALWAYS, NORMAL)
+
+    def valueOf(name: String): Redirect =
+      name match
+        case "NEVER"  => NEVER
+        case "ALWAYS" => ALWAYS
+        case "NORMAL" => NORMAL
+        case _ => throw new IllegalArgumentException(s"No enum constant HttpClient.Redirect.$name")
+  end Redirect
 
   /// @since 11
-  abstract class Builder {
-    // def cookieHandler(cookieHandler: CookieHandler): Builder
+  abstract class Builder:
+
+    def cookieHandler(cookieHandler: CookieHandler): Builder
 
     def connectTimeout(duration: Duration): Builder
 
@@ -102,15 +129,17 @@ object HttpClient:
 
     def proxy(proxySelector: ProxySelector): Builder
 
-    // def authenticator(authenticator: Authenticator): Builder
+    def authenticator(authenticator: Authenticator): Builder
 
     def localAddress(localAddr: InetAddress): Builder
 
     def build(): HttpClient
-  }
-  object Builder {
+
+  object Builder:
+
     final val NO_PROXY: ProxySelector = ProxySelector.of(null)
-  }
+
+  end Builder
 
   def newHttpClient(): HttpClient = newBuilder().build()
 

@@ -47,14 +47,14 @@ object Authenticator:
     final val PROXY: RequestorType = new RequestorType("PROXY", 0)
     final val SERVER: RequestorType = new RequestorType("SERVER", 1)
 
-    private val _values: Array[RequestorType] = Array(PROXY, SERVER)
-
-    def values(): Array[RequestorType] = _values.clone()
+    def values(): Array[RequestorType] = Array(PROXY, SERVER)
 
     def valueOf(name: String): RequestorType =
-      _values
-        .find(_.name() == name)
-        .getOrElse(throw new IllegalArgumentException(s"no enum ${name}"))
+      name match
+        case "PROXY"  => PROXY
+        case "SERVER" => SERVER
+        case _ =>
+          throw new IllegalArgumentException(s"No enum constant RequestorType.${name}")
   end RequestorType
 
   // Since Java 9
