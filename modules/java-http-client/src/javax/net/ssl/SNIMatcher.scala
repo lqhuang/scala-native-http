@@ -2,7 +2,8 @@ package javax.net.ssl
 
 import java.util.Collection
 
-abstract class SNIMatcher(private val nameType: Int) {
+abstract class SNIMatcher(private val nameType: Int):
+
   if (nameType < 0) {
     throw new IllegalArgumentException(
       "Server name type cannot be less than zero",
@@ -16,4 +17,3 @@ abstract class SNIMatcher(private val nameType: Int) {
   final def getType(): Int = nameType
 
   def matches(serverName: SNIServerName): Boolean
-}
