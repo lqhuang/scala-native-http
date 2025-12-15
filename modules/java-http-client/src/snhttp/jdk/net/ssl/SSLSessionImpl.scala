@@ -7,13 +7,12 @@ import javax.net.ssl.{SSLSessionContext, SSLSession}
 import javax.net.ssl.SSLPeerUnverifiedException
 
 import scala.scalanative.posix
-import scala.scalanative.unsafe.{CChar, Ptr, alloc, fromCString}
+import scala.scalanative.unsafe.{CChar, Ptr, alloc, fromCString, stackalloc}
 import scala.scalanative.unsigned.UInt
 
 import snhttp.utils.PointerFinalizer
-import snhttp.experimental.openssl.ssl
+import snhttp.experimental.openssl.{ssl, bio}
 import snhttp.experimental.openssl.ssl_internal.enumerations.TLS_VERSION
-import scala.scalanative.unsafe.Zone
 
 /// Implementation Notes:
 ///
@@ -28,22 +27,21 @@ class SSLSessionImpl(
     // _peerCerts: Array[Certificate],
 ) extends SSLSession:
 
-  private val ptr = ssl.SSL_SESSION_new()
+  private[ssl] val ptr = ssl.SSL_SESSION_new()
   PointerFinalizer(this, ptr, _ptr => ssl.SSL_SESSION_free(_ptr)): Unit
 
-  def getId(): Array[Byte] =
-    Zone {
-      val lenPtr = alloc[UInt]()
-      val ubytePtr = ssl.SSL_SESSION_get_id(ptr, lenPtr)
-      val length = (!lenPtr).toInt
+  def getId(): Array[Byte] = {
+    val lenPtr = stackalloc[UInt]()
+    val ubytePtr = ssl.SSL_SESSION_get_id(ptr, lenPtr)
+    val length = (!lenPtr).toInt
 
-      val buffer = ByteBuffer.allocate(length)
-      for i <- 0 until length do
-        val byte = !(ubytePtr + i)
-        buffer.put(i, byte.toByte)
+    val buffer = ByteBuffer.allocate(length)
+    for i <- 0 until length do
+      val byte = !(ubytePtr + i)
+      buffer.put(i, byte.toByte)
 
-      buffer.array()
-    }
+    buffer.array()
+  }
 
   def getSessionContext(): SSLSessionContext =
     _sessContext
@@ -114,6 +112,8 @@ class SSLSessionImpl(
     _port
 
   def getPacketBufferSize(): Int =
+    // val bioPtr = _sessContext.getNetworkBIO()
+    // bio.BIO_ctrl_get_write_guarantee(???).toInt
     ???
 
   def getApplicationBufferSize(): Int =

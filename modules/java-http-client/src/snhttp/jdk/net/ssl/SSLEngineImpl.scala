@@ -9,12 +9,20 @@ import java.util.Objects.requireNonNull
 import java.util.function.BiFunction
 import javax.net.ssl.{SSLParameters, SSLContextSpi, SSLSession, SSLEngineResult, SSLEngine}
 import javax.net.ssl.SSLException
-import javax.net.ssl.SSLEngineResult.HandshakeStatus
+import javax.net.ssl.SSLEngineResult.{Status, HandshakeStatus}
 
-import scala.scalanative.unsafe.{Ptr, Zone, toCString}
+import scala.scalanative.runtime.Intrinsics
+import scala.scalanative.unsafe.{Ptr, Zone, toCString, alloc, stackalloc}
+import scala.scalanative.unsigned.USize
 
 import snhttp.experimental.openssl.{ssl, bio}
 import snhttp.experimental.openssl.ssl_internal.enumerations.OSSL_HANDSHAKE_STATE
+import snhttp.experimental.openssl.ssl_internal.constants.{
+  SSL3_RT_MAX_PACKET_SIZE,
+  SSL3_RT_MAX_PLAIN_LENGTH,
+}
+import scala.scalanative.runtime.fromRawPtr
+import scala.scalanative.memory.PointerBuffer
 
 /// An **Client** SSLEngine is created by calling `SSLContext.createSSLEngine(host, port)`.
 ///
@@ -97,29 +105,66 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
         throw new IllegalStateException("SSLEngine: Client/Server mode has not yet been set")
       case STATE_MODE_SET =>
         beginHandshake()
-      case STATE_CLOSED_OUTBOUND => // Outbound is closed, cannot write more data
-        return SSLEngineResult(SSLEngineResult.Status.BUFFER_OVERFLOW, getHandshakeStatus(), 0, 0)
-      case STATE_CLOSED =>
-        return SSLEngineResult(SSLEngineResult.Status.CLOSED, getHandshakeStatus(), 0, 0)
+      case STATE_CLOSED_OUTBOUND | STATE_CLOSED =>
+        return SSLEngineResult(Status.CLOSED, getHandshakeStatus(), 0, 0)
       case _ => // continue
         ()
 
     // check handshake status
     getHandshakeStatus() match
       case HandshakeStatus.NEED_UNWRAP =>
-        return SSLEngineResult(SSLEngineResult.Status.OK, HandshakeStatus.NEED_UNWRAP, 0, 0)
+        return SSLEngineResult(Status.OK, HandshakeStatus.NEED_UNWRAP, 0, 0)
       case _ => // continue to wrap
         ()
 
-    // Perform wrap operation
-    dst.remaining() match
-      case 0 =>
-        SSLEngineResult(SSLEngineResult.Status.BUFFER_OVERFLOW, getHandshakeStatus(), 0, 0)
-      case _ =>
-        ???
+    // Check output buffer size should be larger than SSL3_RT_MAX_PACKET_SIZE
+    val dstRemining = dst.remaining().toLong
+    if (dstRemining < SSL3_RT_MAX_PACKET_SIZE)
+      return SSLEngineResult(Status.BUFFER_OVERFLOW, getHandshakeStatus(), 0, 0)
 
+    // check src buffer szie should be smaller than SSL3_RT_MAX_PLAIN_LENGTH
+    val totalSrcRemaining = srcs.map(_.remaining()).sum
+    if (totalSrcRemaining == 0)
+      throw new SSLException("Source buffer has no data to wrap")
+    if (totalSrcRemaining > SSL3_RT_MAX_PLAIN_LENGTH)
+      throw new SSLException(
+        s"Source buffer size ${totalSrcRemaining} exceeds maximum allowed ${SSL3_RT_MAX_PLAIN_LENGTH}",
+      )
+
+    val totalSrcBuf = ByteBuffer.allocate(totalSrcRemaining)
+
+    // Perform wrap operation
+    val bufRawPtr = fromRawPtr[Byte](Intrinsics.castObjectToRawPtr(totalSrcBuf))
+    val _ret = ssl.SSL_write(_sslptr, bufRawPtr, totalSrcRemaining)
+
+    /**
+     * For SSL_write() the following return values can occur:
+     *
+     *   - `> 0`: The write operation was successful, the return value is the number of bytes
+     *     actually written to the TLS/SSL connection.
+     *   - `<= 0`: The write operation was not successful, because either the connection was closed,
+     *     an error occurred or action must be taken by the calling process. Call `SSL_get_error()`
+     *     with the return value ret to find out the reason.
+     */
+    if _ret > 0
+    then SSLEngineResult(Status.OK, getHandshakeStatus(), totalSrcRemaining, _ret)
+    else {
+      val _err = ssl.SSL_get_error(_sslptr, _ret)
+      _err match
+        case ssl.SSL_ERROR.WANT_READ =>
+          SSLEngineResult(Status.OK, HandshakeStatus.NEED_UNWRAP, 0, 0)
+        case ssl.SSL_ERROR.WANT_WRITE =>
+          SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, 0, 0)
+        case ssl.SSL_ERROR.ZERO_RETURN =>
+          SSLEngineResult(Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, 0)
+        case _ =>
+          throw new SSLException(
+            s"SSL_write_ex got fatal error with ret code: ${_ret} and error code: ${_err.name}(${_err.value})",
+          )
+    }
+
+    // TODO: undone
     ???
-    // TODO
   }
 
   /**
@@ -231,7 +276,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
         throw new IllegalStateException("SSLEngine: Client/Server mode not set before handshake")
       case STATE_CLOSED_INBOUND | STATE_CLOSED_OUTBOUND | STATE_CLOSED =>
         throw new IllegalStateException("SSLEngine: Engine has already been closed")
-      // handshake has been already started, just return
+      // handshake has been already started or finished, just return
       case STATE_HANDSHAKE_STARTED | STATE_HANDSHAKE_COMPLETED | STATE_READY_HANDSHAKE_CUT_THROUGH |
           STATE_READY =>
         return ()
@@ -284,6 +329,26 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       case Some(mode) => mode
       case None       => false // Default to false if not set yet
 
+  def getHandshakeStatus(): HandshakeStatus = {
+    // do quick state check
+    state match
+      case STATE_NEW | STATE_MODE_SET | STATE_READY_HANDSHAKE_CUT_THROUGH | STATE_READY |
+          STATE_CLOSED_INBOUND | STATE_CLOSED_OUTBOUND | STATE_CLOSED =>
+        return HandshakeStatus.NOT_HANDSHAKING
+      case _ => ()
+
+    // Query libssl SSL object state to determine current handshake status
+    val _ret = ssl.SSL_do_handshake(_sslptr)
+    val _err_code = ssl.SSL_get_error(_sslptr, _ret)
+
+    _err_code match
+      case ssl.SSL_ERROR.WANT_READ   => HandshakeStatus.NEED_UNWRAP
+      case ssl.SSL_ERROR.WANT_WRITE  => HandshakeStatus.NEED_WRAP
+      case ssl.SSL_ERROR.NONE        => HandshakeStatus.FINISHED
+      case ssl.SSL_ERROR.ZERO_RETURN => HandshakeStatus.NOT_HANDSHAKING // ??? not sure
+      case _                         => HandshakeStatus.NEED_TASK // ??? not sure
+  }
+
   def getSupportedCipherSuites(): Array[String] =
     SSLParametersImpl.getSupportedCipherSuites()
 
@@ -309,26 +374,6 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
   def setEnabledProtocols(protocols: Array[String]): Unit =
     throwIfHandshakeStarted()
     ???
-
-  def getHandshakeStatus(): HandshakeStatus = {
-    // do quick state check
-    state match
-      case STATE_NEW | STATE_MODE_SET | STATE_READY_HANDSHAKE_CUT_THROUGH | STATE_READY |
-          STATE_CLOSED_INBOUND | STATE_CLOSED_OUTBOUND | STATE_CLOSED =>
-        return HandshakeStatus.NOT_HANDSHAKING
-      case _ => ()
-
-    // Query libssl SSL object state to determine current handshake status
-    val _ret = ssl.SSL_do_handshake(_sslptr)
-    val _err_code = ssl.SSL_get_error(_sslptr, _ret)
-
-    _err_code match
-      case ssl.SSL_ERROR.WANT_READ   => HandshakeStatus.NEED_UNWRAP
-      case ssl.SSL_ERROR.WANT_WRITE  => HandshakeStatus.NEED_WRAP
-      case ssl.SSL_ERROR.NONE        => HandshakeStatus.FINISHED
-      case ssl.SSL_ERROR.ZERO_RETURN => HandshakeStatus.NOT_HANDSHAKING // ??? not sure
-      case _                         => HandshakeStatus.NEED_TASK // ??? not sure
-  }
 
   def setNeedClientAuth(need: Boolean): Unit =
     ???
@@ -365,16 +410,11 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, JList[String], String],
   ): Unit =
-    throwIfHandshakeStarted()
-    throw new NotImplementedError(
-      "Not enforcedly required since JDK 9, not implemented yet",
-    )
+    throw new NotImplementedError("Not enforcedly required, not implemented yet")
 
   override def getHandshakeApplicationProtocolSelector()
       : BiFunction[SSLEngine, JList[String], String] =
-    throw new NotImplementedError(
-      "Not enforcedly required since JDK 9, not implemented yet",
-    )
+    throw new NotImplementedError("Not enforcedly required, not implemented yet")
 
   ///
   /// Private helper methods
@@ -458,6 +498,9 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       throw new IOException(
         s"SSL_connect got fatal error with ret code: ${_ret} and error code: ${_err.name}(${_err.value})",
       )
+
+  private def reaminingBytes(bufs: Array[ByteBuffer]): Long =
+    bufs.map(buf => buf.remaining().toLong).sum
 
   /**
    * State check helpers
@@ -554,3 +597,16 @@ protected[ssl] enum EngineState(val code: Int):
 
 end EngineState
 // scalafmt: { maxColumn = 100, align.preset = more }
+
+private object PredefinedSSLResults:
+
+  final val NEED_WRAP_OK =
+    SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, 0, 0)
+
+  final val NEED_UNWRAP_OK =
+    SSLEngineResult(Status.OK, HandshakeStatus.NEED_UNWRAP, 0, 0)
+
+  final val CLOSED_NOT_HANDSHAKING =
+    SSLEngineResult(Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, 0)
+
+end PredefinedSSLResults

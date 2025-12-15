@@ -10,6 +10,7 @@ import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedLi
 import scala.scalanative.posix.sys.socket
 
 import snhttp.experimental.openssl.{ssl, bio}
+import snhttp.experimental.openssl.ssl_internal.constants
 
 /**
  * SSL Socket Implementation
@@ -91,10 +92,10 @@ class ClientSSLSocketImpl protected (
   protected[ssl] def pendingWrittenBytes: Long =
     bio.BIO_ctrl_wpending(ptr).toLong
 
-  protected[ssl] def netReadBufferSize: Long =
+  protected[ssl] def requestReadBufferSize: Long =
     bio.BIO_ctrl_get_read_request(ptr).toLong
 
-  protected[ssl] def maximalWriteBufferSize: Long =
+  protected[ssl] def guaranteeWriteBufferSize: Long =
     bio.BIO_ctrl_get_write_guarantee(ptr).toLong
 
   /**
