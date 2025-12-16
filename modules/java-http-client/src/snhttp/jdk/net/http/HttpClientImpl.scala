@@ -18,23 +18,27 @@ import java.util.{List, Optional}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, Executor}
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
 
+import scala.collection.mutable.{LinkedHashSet, HashMap}
 import scala.concurrent.ExecutionContext
 
-class HttpClientBuilderImpl() extends Builder {
+import snhttp.experimental.libcurl
 
-  private var _cookieHandler: Option[CookieHandler] = None
-  private var _timeout: Option[Duration] = None
-  private var _redirect: Redirect = Redirect.NORMAL
-  private var _proxy: Option[ProxySelector] = None
-  private var _authenticator: Option[Authenticator] = None
-  private var _version: Version = Version.HTTP_1_1
-  private var _executor: Option[Executor] = None
-  private var _sslContext: Option[SSLContext] = None
-  private var _sslParams: Option[SSLParameters] = None
-  private var _priority: Int = -1
-  private var _localAddr: Option[InetAddress] = None
+class HttpClientBuilderImpl() extends Builder:
+
+  protected[http] var _cookieHandler: Option[CookieHandler] = None
+  protected[http] var _timeout: Option[Duration] = None
+  protected[http] var _redirect: Redirect = Redirect.NORMAL
+  protected[http] var _proxy: Option[ProxySelector] = None
+  protected[http] var _authenticator: Option[Authenticator] = None
+  protected[http] var _version: Version = Version.HTTP_1_1
+  protected[http] var _executor: Option[Executor] = None
+  protected[http] var _sslContext: Option[SSLContext] = None
+  protected[http] var _sslParams: Option[SSLParameters] = None
+  protected[http] var _priority: Int = -1
+  protected[http] var _localAddr: Option[InetAddress] = None
 
   def cookieHandler(cookieHandler: CookieHandler): Builder =
     requireNonNull(cookieHandler)
@@ -93,68 +97,66 @@ class HttpClientBuilderImpl() extends Builder {
     this
 
   def build(): HttpClient =
-    new HttpClientImpl(
-      _timeout = _timeout,
-      _redirect = _redirect,
-      _proxy = _proxy,
-      _httpVersion = _version,
-      _executor = _executor,
-      _priority = _priority,
-      _localAddr = _localAddr,
-      _sslContext = _sslContext,
-      _sslParams = _sslParams,
-      _authenticator = _authenticator,
-      _cookieHandler = _cookieHandler,
-    )
+    new HttpClientImpl(this)
 
-}
+end HttpClientBuilderImpl
 
 class HttpClientImpl(
-    _timeout: Option[Duration] = None,
-    _redirect: Redirect = Redirect.NORMAL,
-    _proxy: Option[ProxySelector] = None,
-    _httpVersion: Version = Version.HTTP_1_1,
-    _executor: Option[Executor] = None,
-    _priority: Int = -1,
-    _localAddr: Option[InetAddress] = None,
-    _sslContext: Option[SSLContext] = None,
-    _sslParams: Option[SSLParameters] = None,
-    _authenticator: Option[Authenticator] = None,
-    _cookieHandler: Option[CookieHandler] = None,
-) extends HttpClient {
+    builder: HttpClientBuilderImpl,
+) extends HttpClient:
 
-  @volatile private var _terminated = false
-  @volatile private var _shutdown = false
+  private val _started = new AtomicBoolean(false)
+  private val _alive = new AtomicBoolean(false)
+  private val _terminated = new AtomicBoolean(false)
+  private val _shutdown = new AtomicBoolean(false)
 
-  private val defaultExecutor: Executor =
-    _executor.getOrElse(ExecutionContext.global)
+  private val requests = new LinkedHashSet[HttpRequest]()
+
+  private val _sslContext = builder._sslContext match
+    case Some(ctx) => ctx
+    case None      => SSLContext.getDefault()
+
+  private val _executor: Executor =
+    builder._executor.getOrElse(ExecutionContext.global)
+
+  private val connections = HashMap()
+
+  val ptr = libcurl.multi.multiInit()
 
   def cookieHandler(): Optional[CookieHandler] =
-    _cookieHandler.map(Optional.of).getOrElse(Optional.empty())
+    builder._cookieHandler match
+      case Some(cookieHandler) => Optional.of(cookieHandler)
+      case None                => Optional.empty()
 
   def connectTimeout(): Optional[Duration] =
-    _timeout.map(Optional.of).getOrElse(Optional.empty())
+    builder._timeout match
+      case Some(duration) => Optional.of(duration)
+      case None           => Optional.empty()
 
   def followRedirects(): Redirect =
-    _redirect
+    builder._redirect
 
   def proxy(): Optional[ProxySelector] =
-    _proxy.map(Optional.of).getOrElse(Optional.empty())
+    builder._proxy match
+      case Some(proxySelector) => Optional.of(proxySelector)
+      case None                => Optional.empty()
 
   def sslContext(): SSLContext =
-    _sslContext.getOrElse(SSLContext.getDefault())
+    _sslContext
 
   def sslParameters(): SSLParameters =
-    sslContext().getDefaultSSLParameters()
+    builder._sslParams.getOrElse(_sslContext.getDefaultSSLParameters())
 
   def authenticator(): Optional[Authenticator] =
-    _authenticator.map(Optional.of).getOrElse(Optional.empty())
+    builder._authenticator.map(Optional.of).getOrElse(Optional.empty())
 
   def version(): Version =
-    _httpVersion
+    builder._version
 
   def executor(): Optional[Executor] =
-    _executor.map(Optional.of).getOrElse(Optional.empty())
+    _executor match
+      case null => Optional.empty()
+      case exec => Optional.of(exec)
 
   def send[T](
       request: HttpRequest,
@@ -167,11 +169,10 @@ class HttpClientImpl(
     try
       sendAsync(request, responseBodyHandler).get()
     catch {
-      case e: ExecutionException =>
-        val cause = e.getCause
+      case exc: ExecutionException =>
+        val cause = exc.getCause()
         cause match {
-          case io: IOException           => throw io
-          case runtime: RuntimeException => throw runtime
+          case e: (IOException | RuntimeException) => throw e
           case _ => throw new IOException("Unexpected error during HTTP request", cause)
         }
       case e: InterruptedException =>
@@ -180,45 +181,16 @@ class HttpClientImpl(
     }
   }
 
+  /**
+   * Equivalent to: `sendAsync(request, responseBodyHandler, null)`.
+   */
   def sendAsync[T](
       request: HttpRequest,
       responseBodyHandler: BodyHandler[T],
-  ): CompletableFuture[HttpResponse[T]] = {
-    requireNonNull(request, "request cannot be null")
-    requireNonNull(responseBodyHandler, "responseBodyHandler cannot be null")
-
-    if (_shutdown) {
-      val future = new CompletableFuture[HttpResponse[T]]()
-      future.completeExceptionally(new IllegalStateException("HttpClient has been shut down"))
-      return future
-    }
-
-    // Create a CompletableFuture that will complete with the response
-    val responseFuture = new CompletableFuture[HttpResponse[T]]()
-
-    // Submit the request processing to the executor
-    defaultExecutor.execute(() =>
-      try
-        // This is a simplified implementation
-        // In a real implementation, this would:
-        // 1. Resolve the URI and establish connection
-        // 2. Send the HTTP request
-        // 3. Receive and parse the HTTP response
-        // 4. Handle redirects according to policy
-        // 5. Process the response body with the provided handler
-
-        // For now, create a mock response to satisfy the interface
-        // val mockResponse = createMockResponse(request, responseBodyHandler)
-        // responseFuture.complete(mockResponse)
-        responseFuture.complete(???): Unit
-      catch {
-        case e: Exception =>
-          responseFuture.completeExceptionally(e): Unit
-      },
-    )
-
-    responseFuture
-  }
+  ): CompletableFuture[HttpResponse[T]] =
+    requireNonNull(request, "`request: HttpRequest` cannot be null")
+    requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
+    sendAsync(request, responseBodyHandler, null)
 
   def sendAsync[T](
       request: HttpRequest,
@@ -228,7 +200,7 @@ class HttpClientImpl(
     requireNonNull(pushPromiseHandler, "pushPromiseHandler cannot be null")
 
     // For HTTP/1.1, push promises are not supported, so just delegate to the two-parameter version
-    if (_httpVersion == Version.HTTP_1_1) {
+    if (builder._version == Version.HTTP_1_1) {
       sendAsync(request, responseBodyHandler)
     } else {
       // For HTTP/2, in a real implementation this would handle server push
@@ -238,11 +210,12 @@ class HttpClientImpl(
   }
 
   override def shutdown(): Unit =
-    _shutdown = true
+    _shutdown.compareAndExchange(true, false)
     // In a real implementation, this would:
     // 1. Stop accepting new requests
     // 2. Allow existing requests to complete
     // 3. Close idle connections
+    ???
 
   override def awaitTermination(duration: Duration): Boolean = {
     requireNonNull(duration, "duration cannot be null")
@@ -250,26 +223,26 @@ class HttpClientImpl(
     val start = System.nanoTime()
     val timeout = duration.toNanos
 
-    while (!_terminated && (System.nanoTime() - start) < timeout)
+    while (!_terminated.get() && (System.nanoTime() - start) < timeout)
       try Thread.sleep(1) // Small sleep to avoid busy waiting
       catch
         case _: InterruptedException =>
           Thread.currentThread().interrupt()
           return false
 
-    _terminated
+    _terminated.get()
   }
 
   override def isTerminated(): Boolean =
-    _terminated
+    _terminated.get()
 
   override def shutdownNow(): Unit =
     // In a real implementation, this would:
     // 1. Cancel all pending requests
     // 2. Close all connections immediately
     // 3. Shutdown executor services
-    _shutdown = true
-    _terminated = true
+    shutdown()
+    while awaitTermination(Duration.ofSeconds(0L)) == false do ()
 
   override def newWebSocketBuilder(): WebSocket.Builder = {
     requireNonShutdown()
@@ -278,6 +251,6 @@ class HttpClientImpl(
   }
 
   protected def requireNonShutdown(): Unit =
-    if (_shutdown) throw new IllegalStateException("HttpClient has been shut down")
+    if (_shutdown.get()) throw new IllegalStateException("HttpClient has been shut down")
 
-}
+end HttpClientImpl

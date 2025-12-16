@@ -14,7 +14,15 @@ import javax.net.ssl.{SSLContext, SSLParameters}
 
 import snhttp.jdk.net.http.HttpClientBuilderImpl
 
-/// @since 11
+/**
+ * An HTTP Client.
+ *
+ * References:
+ *
+ *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpClient.html
+ *
+ * @since 11
+ */
 abstract class HttpClient extends AutoCloseable:
 
   import HttpClient.{Redirect, Version}

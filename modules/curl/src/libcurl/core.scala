@@ -36,14 +36,14 @@ import internal.SockAddrFamily
 object core:
 
   @name("CURL")
-  opaque type Curl = CStruct0 // curl easy
+  opaque type Curl = Unit // CVoidPtr // curl easy
   object Curl:
-    given Tag[Curl] = Tag.materializeCStruct0Tag
+    given Tag[Curl] = Tag.Unit
 
   @name("CURLSH")
-  opaque type CurlShare = CStruct0 // curl share
+  opaque type CurlShare = Unit // CVoidPtr // curl share
   object CurlShare:
-    given Tag[CurlShare] = Tag.materializeCStruct0Tag
+    given Tag[CurlShare] = Tag.Unit
 
   @name("curl_socket_t")
   opaque type CurlSocket = Int

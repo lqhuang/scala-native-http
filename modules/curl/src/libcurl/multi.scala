@@ -36,15 +36,17 @@ import core.{Curl, CurlCode, CurlSocket}
 
 @extern
 object multi:
+
   @name("CURLM")
-  opaque type CurlMulti = CStruct0
+  opaque type CurlMulti = Unit // CVoidPtr
   object CurlMulti:
-    given Tag[CurlMulti] = Tag.materializeCStruct0Tag
+    given Tag[CurlMulti] = Tag.Unit
 
   @name("CURLMcode")
   type CurlMultiCode = Int
   object CurlMultiCode:
-    // given Tag[CurlMultiCode] = Tag.Int
+    given Tag[CurlMultiCode] = Tag.Int
+
     inline def define(inline a: Int): CurlMultiCode = a
 
     /* please call curl_multi_perform() or curl_multi_socket*() soon */
@@ -74,24 +76,24 @@ object multi:
     val UNRECOVERABLE_POLL = define(12)
     val LAST = define(13)
 
-    inline def getName(inline value: CurlMultiCode): Option[String] =
-      inline value match
-        case CALL_MULTI_PERFORM    => Some("CURLM_CALL_MULTI_PERFORM")
-        case OK                    => Some("CURLM_OK")
-        case BAD_HANDLE            => Some("CURLM_BAD_HANDLE")
-        case BAD_EASY_HANDLE       => Some("CURLM_BAD_EASY_HANDLE")
-        case OUT_OF_MEMORY         => Some("CURLM_OUT_OF_MEMORY")
-        case INTERNAL_ERROR        => Some("CURLM_INTERNAL_ERROR")
-        case BAD_SOCKET            => Some("CURLM_BAD_SOCKET")
-        case UNKNOWN_OPTION        => Some("CURLM_UNKNOWN_OPTION")
-        case ADDED_ALREADY         => Some("CURLM_ADDED_ALREADY")
-        case RECURSIVE_API_CALL    => Some("CURLM_RECURSIVE_API_CALL")
-        case WAKEUP_FAILURE        => Some("CURLM_WAKEUP_FAILURE")
-        case BAD_FUNCTION_ARGUMENT => Some("CURLM_BAD_FUNCTION_ARGUMENT")
-        case ABORTED_BY_CALLBACK   => Some("CURLM_ABORTED_BY_CALLBACK")
-        case UNRECOVERABLE_POLL    => Some("CURLM_UNRECOVERABLE_POLL")
-        case LAST                  => Some("CURLM_LAST")
-        case _                     => None
+    extension (value: CurlMultiCode)
+      inline def getName: String =
+        value match
+          case CALL_MULTI_PERFORM    => "CURLM_CALL_MULTI_PERFORM"
+          case OK                    => "CURLM_OK"
+          case BAD_HANDLE            => "CURLM_BAD_HANDLE"
+          case BAD_EASY_HANDLE       => "CURLM_BAD_EASY_HANDLE"
+          case OUT_OF_MEMORY         => "CURLM_OUT_OF_MEMORY"
+          case INTERNAL_ERROR        => "CURLM_INTERNAL_ERROR"
+          case BAD_SOCKET            => "CURLM_BAD_SOCKET"
+          case UNKNOWN_OPTION        => "CURLM_UNKNOWN_OPTION"
+          case ADDED_ALREADY         => "CURLM_ADDED_ALREADY"
+          case RECURSIVE_API_CALL    => "CURLM_RECURSIVE_API_CALL"
+          case WAKEUP_FAILURE        => "CURLM_WAKEUP_FAILURE"
+          case BAD_FUNCTION_ARGUMENT => "CURLM_BAD_FUNCTION_ARGUMENT"
+          case ABORTED_BY_CALLBACK   => "CURLM_ABORTED_BY_CALLBACK"
+          case UNRECOVERABLE_POLL    => "CURLM_UNRECOVERABLE_POLL"
+          case LAST                  => "CURLM_LAST"
 
     extension (a: CurlMultiCode)
       inline def &(b: CurlMultiCode): CurlMultiCode = a & b
@@ -113,12 +115,12 @@ object multi:
     /* last, not used */
     val LAST = define(2)
 
-    inline def getName(inline value: CurlMsgCode): Option[String] =
-      inline value match
-        case NONE => Some("CURLMSG_NONE")
-        case DONE => Some("CURLMSG_DONE")
-        case LAST => Some("CURLMSG_LAST")
-        case _    => None
+    extension (value: CurlMsgCode)
+      inline def getName: String =
+        value match
+          case NONE => "CURLMSG_NONE"
+          case DONE => "CURLMSG_DONE"
+          case LAST => "CURLMSG_LAST"
 
     extension (a: CurlMsgCode)
       inline def &(b: CurlMsgCode): CurlMsgCode = a & b
@@ -183,7 +185,7 @@ object multi:
   object CurlWait:
     given Tag[CurlWait] = Tag.UInt
 
-    inline def define(inline a: Int): CurlWait = a.toUInt
+    inline def define(inline a: Long): CurlWait = a.toUInt
 
     val POLLIN = define(0x0001)
     val POLLPRI = define(0x0002)
@@ -470,11 +472,13 @@ object multi:
   def timeout(multiHandle: Ptr[CurlMulti], milliseconds: Ptr[CLongInt]): CurlMultiCode =
     extern
 
-  @name("CURLMoption") opaque type CurlMultiOption = UInt
+  @name("CURLMoption")
+  opaque type CurlMultiOption = UInt
   object CurlMultiOption:
     given Tag[CurlMultiOption] = Tag.UInt
 
     inline def define(inline a: Long): CurlMultiOption = a.toUInt
+
     /* This is the socket callback function pointer */
     val SOCKETFUNCTION = define(20001)
     /* This is the argument passed to the socket callback */
@@ -586,15 +590,16 @@ object multi:
    * Returns: CURL_PUSH_OK, CURL_PUSH_DENY or CURL_PUSH_ERROROUT
    */
 
-  type CurlPush = CurlPush.OK.type | CurlPush.DENY.type | CurlPush.ERROROUT.type
+  opaque type CurlPush = Int
   object CurlPush:
-    given Tag[CurlPush] = Tag.Int.asInstanceOf[Tag[CurlPush]]
+    given Tag[CurlPush] = Tag.Int
     val OK: Int = 0
     val DENY: Int = 1
     val ERROROUT: Int = 2
 
   /** forward declaration only */
-  @name("curl_pushheaders") opaque type CurlPushHeaders = CStruct0
+  @name("curl_pushheaders")
+  opaque type CurlPushHeaders = CStruct0
   object CurlPushHeaders:
     given Tag[CurlPushHeaders] = Tag.materializeCStruct0Tag
 
@@ -604,7 +609,8 @@ object multi:
   @name("curl_pushheader_byname")
   def CurlPushHeaderByName(h: Ptr[CurlPushHeaders], name: CString): CString = extern
 
-  @name("curl_push_callback") opaque type CurlPushCallback =
+  @name("curl_push_callback")
+  opaque type CurlPushCallback =
     CFuncPtr5[
       /** parent */
       Ptr[Curl],
@@ -619,10 +625,22 @@ object multi:
       CurlPush,
     ]
   object CurlPushCallback:
-    given Tag[CurlPushCallback] =
-      Tag
-        .materializeCFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, CurlPush]
+    given Tag[CurlPushCallback] = Tag.materializeCFuncPtr5[
+      Ptr[Curl],
+      Ptr[Curl],
+      USize,
+      Ptr[CurlPushHeaders],
+      CVoidPtr,
+      CurlPush,
+    ]
 
     inline def apply(
-        inline o: CFuncPtr5[Ptr[Curl], Ptr[Curl], USize, Ptr[CurlPushHeaders], CVoidPtr, CurlPush],
+        inline o: CFuncPtr5[
+          Ptr[Curl],
+          Ptr[Curl],
+          USize,
+          Ptr[CurlPushHeaders],
+          CVoidPtr,
+          CurlPush,
+        ],
     ): CurlPushCallback = o
