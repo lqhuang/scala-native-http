@@ -73,7 +73,7 @@ object BodySubscribersImpl {
     private val cf = new CompletableFuture[R]()
     private var subscription: Subscription = _
     private val subscribed = new AtomicBoolean()
-    private val buffer = new StringBuilder()
+    private val sbuilder = new StringBuilder()
     private val lineSeparator = if (eol == null) System.lineSeparator() else eol
 
     override def onSubscribe(subscription: Subscription): Unit =
@@ -88,28 +88,29 @@ object BodySubscribersImpl {
       try {
         val text = item
           .stream()
-          .map(bb => charset.decode(bb).toString)
+          .map(bb => charset.decode(bb.duplicate()).toString)
           .reduce("", (a, b) => a + b)
-        buffer.append(text)
-        val lines = buffer.toString.split(lineSeparator, -1)
-        // Process all complete lines except the last part
+        sbuilder.append(text)
+        val lines = sbuilder.toString.split(lineSeparator, -1)
+        // Process all complete lines except the last line
         lines.init.foreach(subscriber.onNext(_))
-        // Keep the last part (incomplete line) in buffer.
-        // The last part will be processed in onComplete
-        buffer.clear()
-        buffer.append(lines.last)
+        // Keep the last line in builder, the last line will be processed in `onComplete`
+        sbuilder.clear()
+        sbuilder.append(lines.last)
       } catch {
         case t: Throwable => onError(t)
       }
 
     override def onComplete(): Unit =
       try {
-        // Send any remaining content as the last line
-        if (buffer.nonEmpty) subscriber.onNext(buffer.toString)
+        if (sbuilder.nonEmpty) subscriber.onNext(sbuilder.toString)
         subscriber.onComplete()
       } finally
-        try cf.complete(finisher(subscriber)): Unit
-        catch { case t: Throwable => cf.completeExceptionally(t): Unit }
+        try
+          cf.complete(finisher(subscriber)): Unit
+        catch {
+          case t: Throwable => cf.completeExceptionally(t): Unit
+        }
 
     override def onError(throwable: Throwable): Unit =
       try {
@@ -145,21 +146,24 @@ object BodySubscribersImpl {
         this.subscription = subscription
         this.subscription.request(Long.MaxValue) // read all once
 
-    override def onNext(item: JList[ByteBuffer]): Unit = {
+    override def onNext(item: JList[ByteBuffer]): Unit =
       requireNonNull(item)
-      item.stream().forEach { item =>
-        (item.hasRemaining() && received.add(item)): Unit
+      item.stream().forEach { buf =>
+        requireNonNull(buf)
+        if (buf.hasRemaining()) {
+          val success = received.add(buf.duplicate())
+          if (!success) throw new IllegalStateException("Buffer addition failed")
+        }
       }
-    }
 
-    private def join(bufs: JList[ByteBuffer]): Array[Byte] = {
-      val size = bufs.stream().mapToInt(_.remaining()).sum()
+    private def join(item: JList[ByteBuffer]): Array[Byte] = {
+      val size = item.stream().mapToInt(_.remaining()).sum()
       val res = new Array[Byte](size)
       var from = 0
 
-      bufs.stream().forEach { buf =>
+      item.stream().forEach { buf =>
         val left = buf.remaining()
-        buf.get(res, from, left)
+        buf.duplicate().get(res, from, left)
         from += left
       }
 
@@ -174,11 +178,10 @@ object BodySubscribersImpl {
       } finally
         received.clear()
 
-    override def onError(throwable: Throwable): Unit = {
+    override def onError(throwable: Throwable): Unit =
       received.clear()
       subscription.cancel()
       cf.completeExceptionally(throwable): Unit
-    }
 
     override def getBody(): CompletionStage[T] = cf
   }
@@ -210,33 +213,32 @@ object BodySubscribersImpl {
         this.subscription.request(1)
       }
 
-    override def onNext(item: JList[ByteBuffer]): Unit = {
-      try {
-        val buffers = item.toArray(new Array[ByteBuffer](item.size))
-        while buffers.exists(_.hasRemaining) do fh.write(buffers): Unit
-      } catch {
+    override def onNext(item: JList[ByteBuffer]): Unit =
+      try
+        item.stream().forEach { buf =>
+          requireNonNull(buf)
+          if (buf.hasRemaining()) fh.write(buf.duplicate()): Unit
+        }
+      catch {
         case exc: IOException =>
           closeFileChannel()
           subscription.cancel()
           cf.completeExceptionally(exc)
           return
       }
-
       subscription.request(1)
-    }
 
-    override def onError(e: Throwable): Unit = {
+    override def onError(e: Throwable): Unit =
       subscription.cancel()
       closeFileChannel()
       cf.completeExceptionally(e): Unit
-    }
 
-    override def onComplete(): Unit = {
+    override def onComplete(): Unit =
       closeFileChannel()
       cf.complete(file): Unit
-    }
 
-    override def getBody(): CompletionStage[Path] = cf
+    override def getBody(): CompletionStage[Path] =
+      cf
 
     private def closeFileChannel(): Unit =
       if (fh != null) {
@@ -264,31 +266,29 @@ object BodySubscribersImpl {
         this.subscription.request(1)
       }
 
-    override def onNext(item: JList[ByteBuffer]): Unit = {
+    override def onNext(item: JList[ByteBuffer]): Unit =
       requireNonNull(item)
-      item.stream().forEach { item =>
-        requireNonNull(item)
-        val buf = new Array[Byte](item.remaining())
-        item.get(buf)
-        consumer.accept(Optional.of(buf))
+      item.stream().forEach { buf =>
+        requireNonNull(buf)
+        val data = new Array[Byte](buf.remaining())
+        buf.duplicate().get(data)
+        consumer.accept(Optional.of(data))
       }
       subscription.request(1)
-    }
 
-    override def onError(throwable: Throwable): Unit = {
+    override def onError(throwable: Throwable): Unit =
       requireNonNull(throwable)
       cf.completeExceptionally(throwable): Unit
-    }
 
-    override def onComplete(): Unit = {
+    override def onComplete(): Unit =
       consumer.accept(Optional.empty())
       cf.complete(null): Unit
-    }
   }
 
   def ofByteArrayConsumer(
       consumer: Consumer[Optional[Array[Byte]]],
-  ): BodySubscriber[Void] = new ConsumerSubscriber(consumer)
+  ): BodySubscriber[Void] =
+    new ConsumerSubscriber(consumer)
 
   class InputStreamSubscriber extends InputStream with BodySubscriber[InputStream] {
     private val cf = new CompletableFuture[InputStream]()
@@ -323,7 +323,7 @@ object BodySubscribersImpl {
     override def read(): Int = {
       if (closed) return -1
 
-      if (current == null || !current.hasRemaining) {
+      if (current == null || !current.hasRemaining()) {
         current =
           if buffer.isEmpty
           then null
@@ -336,12 +336,11 @@ object BodySubscribersImpl {
 
     override def getBody(): CompletionStage[InputStream] = cf
 
-    override def close(): Unit = {
+    override def close(): Unit =
       closed = true
-      if (subscribed.compareAndExchange(true, false)) {
+      if (subscribed.compareAndExchange(true, false))
         subscription.cancel()
-      }
-    }
+
   }
 
   def ofInputStream(): BodySubscriber[InputStream] =
@@ -388,13 +387,13 @@ object BodySubscribersImpl {
     override def onComplete(): Unit =
       if (subscriber != null) subscriber.onComplete()
 
-    override def onError(throwable: Throwable): Unit = {
+    override def onError(throwable: Throwable): Unit =
       if (subscriber != null) subscriber.onError(throwable)
-
       cf.completeExceptionally(throwable): Unit
-    }
 
-    override def getBody(): CompletionStage[Publisher[JList[ByteBuffer]]] = cf
+    override def getBody(): CompletionStage[Publisher[JList[ByteBuffer]]] =
+      cf
+
   }
 
   def ofPublisher(): BodySubscriber[Publisher[JList[ByteBuffer]]] =

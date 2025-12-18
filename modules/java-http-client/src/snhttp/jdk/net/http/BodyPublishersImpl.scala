@@ -39,7 +39,8 @@ class ByteArrayPublisher(
       then {
         val bb = ByteBuffer.allocate(length)
         bb.put(bytes)
-        Seq()
+        bb.flip()
+        Seq(bb)
       } else
         for i <- 0 until length by bufSize
         yield {
@@ -47,6 +48,7 @@ class ByteArrayPublisher(
           val size = end - (offset + i)
           val bb = ByteBuffer.allocate(size)
           bb.put(bytes, offset + i, size)
+          bb.flip()
           bb
         }
 

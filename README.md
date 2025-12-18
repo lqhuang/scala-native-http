@@ -17,6 +17,10 @@ Still working in progress, any kind of help is welcome and appreciated.
 
 The development of first three types is the milestone in current stage.
 
+Besides, TLS support is also a important part of HTTP Client, so we also implement `javax.net.ssl` related types as well.
+
+- [x] `javax.net.ssl.SSLContext`
+
 There are also other auxiliary types are enforced by the Java Networking API and are missing in Scala Native core, such as:
 
 1. Vendored by dependencies
@@ -24,9 +28,6 @@ There are also other auxiliary types are enforced by the Java Networking API and
      - Provided by [cquiroz/scala-java-time](https://github.com/cquiroz/scala-java-time)
    - [x] `java.util.Locale`
      - Provided by [cquiroz/scala-java-locales](https://github.com/cquiroz/scala-java-locales)
-   - [ ] `javax.net.ssl.SSLContext`
-     - No existed implementation yet
-     - May try to implement it in the future on upstream project [lolgab/scala-native-crypto](https://github.com/lolgab/scala-native-crypto)
 2. Will try to include in this package
    - [x] `java.net.Proxy`
    - [x] `java.net.ProxySelector`
@@ -70,6 +71,9 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
     - ProtocolException
     - UnknownHostException
     - UnknownServiceException
+  - ssl
+    - [x] SSLContext
+    - [x] SSLParameters
 - java.net.http
   - [x] HttpClient
   - [x] HttpHeaders
@@ -105,6 +109,11 @@ Check `Makefile` for more.
 
 ## Known Issues
 
+### Client session resumption is not supported yet
+
+<!--
+### Properties support
+
 Not all HTTP Client properties listed in [Java Networking Docs](https://docs.oracle.com/en/java/javase/24/core/java-networking.html#GUID-86B96A42-74FE-4E7D-8E60-D64A03862083) are supported, but we may try to implement them in the future. Currently supported properties are:
 
 - [x] `jdk.httpclient.allowRestrictedHeaders`
@@ -132,6 +141,7 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 - [ ] `jdk.tls.client.SignatureSchemes`
 - [ ] `jdk.tls.server.SignatureSchemes`
 - [ ] `jdk.tls.namedGroups`
+-->
 
 ## Future
 

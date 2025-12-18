@@ -39,8 +39,12 @@ class SSLSessionImpl(
     for i <- 0 until length do
       val byte = !(ubytePtr + i)
       buffer.put(i, byte.toByte)
+    buffer.flip()
 
-    buffer.array()
+    val idArray = new Array[Byte](length)
+    buffer.get(idArray)
+    buffer.clear()
+    idArray
   }
 
   def getSessionContext(): SSLSessionContext =
