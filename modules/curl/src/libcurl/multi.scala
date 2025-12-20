@@ -143,23 +143,11 @@ object multi:
 
   @name("CURLMsg")
   opaque type CurlMsg = CStruct3[
-    /**
-     * msg
-     *
-     * what this message means
-     */
+    /** msg: what this message means */
     CurlMsgCode,
-    /**
-     * easy_handle
-     *
-     * the handle it concerns
-     */
+    /** easy_handle: the handle it concerns */
     Ptr[Curl],
-    /**
-     * data
-     *
-     * message-specific data or return code for transfer
-     */
+    /** data: message-specific data or return code for transfer */
     CurlMsgData,
   ]
   object CurlMsg:
@@ -218,7 +206,7 @@ object multi:
    * Returns: a new CURLM handle to use in all 'curl_multi' functions.
    */
   @name("curl_multi_init")
-  def multiInit(): CurlMulti = extern
+  def multiInit(): Ptr[CurlMulti] = extern
 
   /**
    * Name: curl_multi_add_handle()
@@ -228,7 +216,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_add_handle")
-  def multiAddHandle(multiHandle: Ptr[CurlMulti], curl_handle: Ptr[Curl]): CurlMultiCode = extern
+  def multiAddHandle(handle: Ptr[CurlMulti], curlHandle: Ptr[Curl]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_remove_handle()
@@ -238,10 +226,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_remove_handle")
-  def multiRemoveHandle(
-      multiHandle: Ptr[CurlMulti],
-      curlHandle: Ptr[Curl],
-  ): CurlMultiCode = extern
+  def multiRemoveHandle(handle: Ptr[CurlMulti], curlHandle: Ptr[Curl]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_fdset()
@@ -253,7 +238,7 @@ object multi:
    */
   @name("curl_multi_fdset")
   def multiFdSet(
-      multiHandle: Ptr[CurlMulti],
+      handle: Ptr[CurlMulti],
       readFdSet: Ptr[fd_set],
       writeFdSet: Ptr[fd_set],
       excFdSet: Ptr[fd_set],
@@ -269,7 +254,7 @@ object multi:
    */
   @name("curl_multi_wait")
   def multiWait(
-      multiHandle: Ptr[CurlMulti],
+      handle: Ptr[CurlMulti],
       extraFds: Ptr[CurlWaitFd],
       extraNfds: UInt,
       timeoutMs: Int,
@@ -285,7 +270,7 @@ object multi:
    */
   @name("curl_multi_poll")
   def multiPoll(
-      multiHandle: Ptr[CurlMulti],
+      handle: Ptr[CurlMulti],
       extraFds: Ptr[CurlWaitFd],
       extraNfds: UInt,
       timeoutMs: Int,
@@ -300,7 +285,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_wakeup")
-  def multiWakeup(multiHandle: Ptr[CurlMulti]): CurlMultiCode = extern
+  def multiWakeup(handle: Ptr[CurlMulti]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_perform()
@@ -316,7 +301,7 @@ object multi:
    * transfers even when this returns OK.
    */
   @name("curl_multi_perform")
-  def multiPerform(multiHandle: Ptr[CurlMulti], runningHandles: Ptr[Int]): CurlMultiCode = extern
+  def multiPerform(handle: Ptr[CurlMulti], runningHandles: Ptr[Int]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_cleanup()
@@ -328,7 +313,7 @@ object multi:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_cleanup")
-  def multiCleanup(multiHandle: Ptr[CurlMulti]): CurlMultiCode = extern
+  def multiCleanup(handle: Ptr[CurlMulti]): CurlMultiCode = extern
 
   /**
    * Name: curl_multi_info_read()
@@ -353,7 +338,7 @@ object multi:
    * argument points to.
    */
   @name("curl_multi_info_read")
-  def multiInfoRead(multiHandle: Ptr[CurlMulti], msgsInQueue: Ptr[Int]): Ptr[CurlMsg] = extern
+  def multiInfoRead(handle: Ptr[CurlMulti], msgsInQueue: Ptr[Int]): Ptr[CurlMsg] = extern
 
   /**
    * Name: curl_multi_strerror()
@@ -376,6 +361,7 @@ object multi:
   opaque type CurlPoll = Int
   object CurlPoll:
     given Tag[CurlPoll] = Tag.Int
+
     val NONE = 0
     val IN = 1
     val OUT = 2
@@ -398,13 +384,14 @@ object multi:
    *
    * Returns:
    */
-  @name("curl_socket_callback") opaque type CurlSocketCallback =
+  @name("curl_socket_callback")
+  opaque type CurlSocketCallback =
     CFuncPtr5[
       /** easy: easy handle */
       Ptr[Curl],
       /** s: socket */
       CurlSocket,
-      /** what:    see above ????? */
+      /** what: see above ????? */
       Int,
       /** userp: private callback pointer */
       CVoidPtr,
@@ -429,7 +416,8 @@ object multi:
    *
    * Returns: The callback should return zero.
    */
-  @name("curl_multi_timer_callback") opaque type CurlMultiTimerCallback =
+  @name("curl_multi_timer_callback")
+  opaque type CurlMultiTimerCallback =
     CFuncPtr3[
       /** multi: multi handle */
       Ptr[CurlMulti],
@@ -451,7 +439,7 @@ object multi:
 
   @name("curl_multi_socket_action")
   def multiSocketAction(
-      multiHandle: Ptr[CurlMulti],
+      handle: Ptr[CurlMulti],
       s: CurlSocket,
       evBitmask: Int,
       runningHandles: Ptr[Int],
@@ -469,7 +457,7 @@ object multi:
    * Returns: CURLM error code.
    */
   @name("curl_multi_timeout")
-  def timeout(multiHandle: Ptr[CurlMulti], milliseconds: Ptr[CLongInt]): CurlMultiCode =
+  def multiTimeout(handle: Ptr[CurlMulti], milliseconds: Ptr[CLongInt]): CurlMultiCode =
     extern
 
   @name("CURLMoption")
@@ -548,10 +536,10 @@ object multi:
    * Returns: CURLM error code.
    */
   @name("curl_multi_setopt")
-  def setopt(
-      multiHandle: Ptr[CurlMulti],
+  def multiSetopt(
+      handle: Ptr[CurlMulti],
       option: CurlMultiOption,
-      restOptions: CurlMultiOption*,
+      params: Any*,
   ): CurlMultiCode = extern
 
   /**
@@ -563,8 +551,8 @@ object multi:
    * Returns: CURLM error code.
    */
   @name("curl_multi_assign")
-  def assign(
-      multiHandle: Ptr[CurlMulti],
+  def multiAssign(
+      handle: Ptr[CurlMulti],
       sockfd: CurlSocket,
       sockp: CVoidPtr,
   ): CurlMultiCode = extern
@@ -579,7 +567,7 @@ object multi:
    * Returns: NULL on failure, otherwise a CURL **array pointer
    */
   @name("curl_multi_get_handles")
-  def getHandles(multiHandle: Ptr[CurlMulti]): Ptr[Ptr[Curl]] = extern
+  def multiGetHandles(handle: Ptr[CurlMulti]): Ptr[Ptr[Curl]] = extern
 
   /**
    * Name: curl_push_callback
@@ -590,6 +578,7 @@ object multi:
    * Returns: CURL_PUSH_OK, CURL_PUSH_DENY or CURL_PUSH_ERROROUT
    */
 
+  @name("curl_push")
   opaque type CurlPush = Int
   object CurlPush:
     given Tag[CurlPush] = Tag.Int
@@ -604,10 +593,10 @@ object multi:
     given Tag[CurlPushHeaders] = Tag.materializeCStruct0Tag
 
   @name("curl_pushheader_bynum")
-  def CurlPushHeaderByNum(h: Ptr[CurlPushHeaders], num: USize): CString = extern
+  def pushHeaderByNum(handle: Ptr[CurlPushHeaders], num: USize): CString = extern
 
   @name("curl_pushheader_byname")
-  def CurlPushHeaderByName(h: Ptr[CurlPushHeaders], name: CString): CString = extern
+  def pushHeaderByName(handle: Ptr[CurlPushHeaders], name: CString): CString = extern
 
   @name("curl_push_callback")
   opaque type CurlPushCallback =

@@ -62,7 +62,7 @@ object easy:
    * readable error string. This is useful for printing meaningful error messages.
    */
   @name("curl_easy_strerror")
-  def easyStrerror(code: CurlCode): CString = extern
+  def easyStrError(code: CurlCode): CString = extern
 
   /**
    * NAME curl_easy_pause()
@@ -101,14 +101,13 @@ object easy:
   def easyInit(): Ptr[Curl] = extern
 
   @name("curl_easy_setopt")
-  def easySetopt(curl: Ptr[Curl], option: CurlOption, restOptions: CurlOption*): CurlCode =
-    extern
+  def easySetopt(handle: Ptr[Curl], option: CurlOption, params: Any*): CurlCode = extern
 
   @name("curl_easy_perform")
-  def easyPerform(curl: Ptr[Curl]): CurlCode = extern
+  def easyPerform(handle: Ptr[Curl]): CurlCode = extern
 
   @name("curl_easy_cleanup")
-  def easyCleanup(curl: Ptr[Curl]): Unit = extern
+  def easyCleanup(handle: Ptr[Curl]): Unit = extern
 
   /**
    * NAME curl_easy_getinfo()
@@ -122,7 +121,7 @@ object easy:
    * all results from this function are undefined until the transfer is completed.
    */
   @name("curl_easy_getinfo")
-  def easyGetInfo(curl: Ptr[Curl], info: CurlInfo, restInfo: CurlInfo*): CurlCode = extern
+  def easyGetInfo(handle: Ptr[Curl], info: CurlInfo, params: Any*): CurlCode = extern
 
   /**
    * NAME curl_easy_duphandle()
@@ -136,7 +135,7 @@ object easy:
    * identical curl_easy_setopt() invokes in every thread.
    */
   @name("curl_easy_duphandle")
-  def easyDupHandle(curl: Ptr[Curl]): Ptr[Curl] = extern
+  def easyDupHandle(handle: Ptr[Curl]): Ptr[Curl] = extern
 
   /**
    * NAME curl_easy_reset()
@@ -149,7 +148,7 @@ object easy:
    * It does keep: live connections, the Session ID cache, the DNS cache and the cookies.
    */
   @name("curl_easy_reset")
-  def easyReset(curl: Ptr[Curl]): Unit = extern
+  def easyReset(handle: Ptr[Curl]): Unit = extern
 
   /**
    * NAME curl_easy_recv()
@@ -160,7 +159,7 @@ object easy:
    * CURLOPT_CONNECT_ONLY option.
    */
   @name("curl_easy_recv")
-  def easyRecv(curl: Ptr[Curl], buffer: Ptr[Byte], buflen: USize, n: Ptr[USize]): CurlCode =
+  def easyRecv(handle: Ptr[Curl], buffer: Ptr[Byte], buflen: USize, n: Ptr[USize]): CurlCode =
     extern
 
   /**
@@ -172,7 +171,7 @@ object easy:
    * CURLOPT_CONNECT_ONLY option.
    */
   @name("curl_easy_send")
-  def easySend(curl: Ptr[Curl], buffer: Ptr[Byte], buflen: USize, n: Ptr[USize]): CurlCode =
+  def easySend(handle: Ptr[Curl], buffer: Ptr[Byte], buflen: USize, n: Ptr[USize]): CurlCode =
     extern
 
   /**
@@ -183,7 +182,7 @@ object easy:
    * Performs connection upkeep for the given session handle.
    */
   @name("curl_easy_upkeep")
-  def easyUpkeep(curl: Ptr[Curl]): CurlCode = extern
+  def easyUpkeep(handle: Ptr[Curl]): CurlCode = extern
 
   //
   // include <curl/header.h>
@@ -256,25 +255,26 @@ object easy:
     val BAD_ARGUMENT = define(6) /* a function argument was not okay */
     val NOT_BUILT_IN = define(7) /* if API was disabled in the build */
 
-    inline def getName(inline value: CurlHeadderCode): Option[String] =
-      inline value match
-        case OK            => Some("CURLHE_OK")
-        case BADINDEX      => Some("CURLHE_BADINDEX")
-        case MISSING       => Some("CURLHE_MISSING")
-        case NOHEADERS     => Some("CURLHE_NOHEADERS")
-        case NOREQUEST     => Some("CURLHE_NOREQUEST")
-        case OUT_OF_MEMORY => Some("CURLHE_OUT_OF_MEMORY")
-        case BAD_ARGUMENT  => Some("CURLHE_BAD_ARGUMENT")
-        case NOT_BUILT_IN  => Some("CURLHE_NOT_BUILT_IN")
-        case _             => None
+    extension (value: CurlHeadderCode)
+      def getName: String =
+        value match
+          case OK            => "CURLHE_OK"
+          case BADINDEX      => "CURLHE_BADINDEX"
+          case MISSING       => "CURLHE_MISSING"
+          case NOHEADERS     => "CURLHE_NOHEADERS"
+          case NOREQUEST     => "CURLHE_NOREQUEST"
+          case OUT_OF_MEMORY => "CURLHE_OUT_OF_MEMORY"
+          case BAD_ARGUMENT  => "CURLHE_BAD_ARGUMENT"
+          case NOT_BUILT_IN  => "CURLHE_NOT_BUILT_IN"
+          case _             => throw new IllegalStateException("Unknown CurlHeadderCode: " + value)
 
     extension (a: CurlHeadderCode)
       inline def &(b: CurlHeadderCode): CurlHeadderCode = a & b
       inline def |(b: CurlHeadderCode): CurlHeadderCode = a | b
       inline def is(b: CurlHeadderCode): Boolean = (a & b) == b
 
-  def curl_easy_header(
-      easy: Ptr[Curl],
+  def easyHeader(
+      handle: Ptr[Curl],
       name: CString,
       index: USize,
       origin: CurlHeaderOrigin,
@@ -282,8 +282,8 @@ object easy:
       hout: Ptr[Ptr[CurlHeader]],
   ): CurlHeadderCode = extern
 
-  def curl_easy_nextheader(
-      easy: Ptr[Curl],
+  def easyNextHeader(
+      handle: Ptr[Curl],
       origin: CurlHeaderOrigin,
       request: Int,
       prev: Ptr[CurlHeader],

@@ -2,8 +2,8 @@ package java.nio.snhttp.utils
 
 import java.nio.ByteBuffer
 import java.nio.PointerByteBuffer as _PointerByteBuffer
-import scalanative.unsafe
+import scalanative.unsafe.Ptr
 
 object PointerByteBuffer:
-  def wrap(ptr: unsafe.Ptr[Byte], capacity: Int): ByteBuffer =
+  def wrap(ptr: Ptr[Byte], capacity: Int): ByteBuffer =
     _PointerByteBuffer.wrap(ptr, capacity)

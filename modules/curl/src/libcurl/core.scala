@@ -1091,7 +1091,7 @@ object core:
    * This function is thread-safe if CURL_VERSION_THREADSAFE is set in the
    * curl_version_info_data.features flag (fetch by curl_version_info()).
    */
-  def curl_global_init(flags: Long): CurlCode = extern
+  def curl_global_init(flags: CURL_GLOBAL): CurlCode = extern
 
   /**
    * NAME curl_global_init_mem()
@@ -1529,7 +1529,24 @@ object core:
       inline def |(b: CurlClosePolicy): CurlClosePolicy = a | b
       inline def is(b: CurlClosePolicy): Boolean = (a & b) == b
 
-  // TODO: add define symbols `CURL_GLOBAL_*`
+  @name("curl_global_flag")
+  opaque type CURL_GLOBAL = Long
+  object CURL_GLOBAL:
+    given Tag[CURL_GLOBAL] = Tag.Long
+
+    inline def define(inline a: Long): CURL_GLOBAL = a.toLong
+
+    val SSL = define(1 << 0) // no purpose since curl 7.57.0
+    val WIN32 = define(1 << 1)
+    val ALL = SSL | WIN32
+    val NOTHING = define(0)
+    val DEFAULT = SSL
+    val ACK_EINTR = define(1 << 2)
+
+    extension (a: CURL_GLOBAL)
+      inline def &(b: CURL_GLOBAL): CURL_GLOBAL = a & b
+      inline def |(b: CURL_GLOBAL): CURL_GLOBAL = a | b
+      inline def is(b: CURL_GLOBAL): Boolean = (a & b) == b
 
   // TODO:
   //

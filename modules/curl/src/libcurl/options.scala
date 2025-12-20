@@ -9,7 +9,6 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-
 package snhttp.experimental.libcurl
 
 import scala.scalanative.posix.sys.socket
@@ -720,9 +719,7 @@ object options:
     /** use version 2 for HTTPS, version 1.1 for HTTP */
     val VERSION_2TLS: UInt = define(4)
 
-    /**
-     * please use HTTP 2 without HTTP/1.1 Upgrade
-     */
+    /** please use HTTP 2 without HTTP/1.1 Upgrade */
     val VERSION_2_PRIOR_KNOWLEDGE: UInt = define(5)
 
     /**
@@ -736,9 +733,7 @@ object options:
      */
     val VERSION_3ONLY: UInt = define(31)
 
-    /**
-     * *ILLEGAL* http version
-     */
+    /** ILLEGAL http version */
     val VERSION_LAST: UInt = define(32)
 
   //
