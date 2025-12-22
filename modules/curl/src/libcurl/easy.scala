@@ -12,7 +12,7 @@
 package snhttp.experimental.libcurl
 
 import scala.scalanative.unsafe.{extern, alloc, name}
-import scala.scalanative.unsafe.{Ptr, Tag, Zone, CString, CStruct6}
+import scala.scalanative.unsafe.{Ptr, Tag, Zone, CString, CStruct6, CVarArgList}
 import scala.scalanative.unsigned.*
 
 import core.{Curl, CurlCode, CurlInfo}
@@ -101,7 +101,11 @@ object easy:
   def easyInit(): Ptr[Curl] = extern
 
   @name("curl_easy_setopt")
-  def easySetopt(handle: Ptr[Curl], option: CurlOption, params: Any*): CurlCode = extern
+  def easySetopt(
+      handle: Ptr[Curl],
+      option: CurlOption,
+      params: Any*, // CVarArgList
+  ): CurlCode = extern
 
   @name("curl_easy_perform")
   def easyPerform(handle: Ptr[Curl]): CurlCode = extern
@@ -121,7 +125,11 @@ object easy:
    * all results from this function are undefined until the transfer is completed.
    */
   @name("curl_easy_getinfo")
-  def easyGetInfo(handle: Ptr[Curl], info: CurlInfo, params: Any*): CurlCode = extern
+  def easyGetInfo(
+      handle: Ptr[Curl],
+      info: CurlInfo,
+      params: Any*, // CVarArgList
+  ): CurlCode = extern
 
   /**
    * NAME curl_easy_duphandle()

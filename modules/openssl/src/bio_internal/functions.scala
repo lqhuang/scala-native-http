@@ -819,7 +819,11 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
-  @extern def BIO_printf(bio: Ptr[BIO], format: CString, rest: Any*): CInt = extern
+  @extern def BIO_printf(
+      bio: Ptr[BIO],
+      format: CString,
+      rest: Any*, // CVarArgList
+  ): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -1003,7 +1007,8 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
-  @extern def BIO_snprintf(buf: CString, n: size_t, format: CString, rest: Any*): CInt = extern
+  @extern def BIO_snprintf(buf: CString, n: size_t, format: CString, rest: CVarArgList): CInt =
+    extern
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h

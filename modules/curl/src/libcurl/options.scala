@@ -12,9 +12,11 @@
 package snhttp.experimental.libcurl
 
 import scala.scalanative.posix.sys.socket
-import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4}
+import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4, CLong}
 import scala.scalanative.unsafe.{alloc, extern, name}
 import scala.scalanative.unsigned.*
+
+import _type.{_BindgenEnumCLong, _BindgenEnumUInt}
 
 @extern
 object options:
@@ -23,20 +25,19 @@ object options:
   //
 
   /** bitmask defines for `CURLOPT_HEADEROPT` */
-  opaque type CurlOpt_HeaderOpt = UInt
-  object CurlOpt_HeaderOpt:
-    given Tag[CurlOpt_HeaderOpt] = Tag.UInt
-
-    inline def define(inline v: Int): CurlOpt_HeaderOpt = v.toUInt
+  @name("CURLOPT_HEADEROPT")
+  opaque type CurlOptHeaderOpt = CLong
+  object CurlOptHeaderOpt extends _BindgenEnumCLong[CurlOptHeaderOpt]:
+    private inline def define(inline v: Int): CurlOptHeaderOpt = v
 
     val UNIFIED = define(0)
     val SEPARATE = define(1 << 0)
 
   /* bits for the `CURLOPT_ALTSVC_CTRL` option */
-  opaque type CurlOpt_AltSvcCtrl = UInt
-  object CurlOpt_AltSvcCtrl:
-    given Tag[CurlOpt_AltSvcCtrl] = Tag.UInt
-    inline def define(inline v: Long): CurlOpt_AltSvcCtrl = v.toUInt
+  @name("CURLOPT_ALTSVC_CTRL")
+  opaque type CurlOptAltSvcCtrl = CLong
+  object CurlOptAltSvcCtrl extends _BindgenEnumCLong[CurlOptAltSvcCtrl]:
+    private inline def define(inline v: Int): CurlOptAltSvcCtrl = v
 
     val READONLYFILE = define(1 << 2)
     val H1 = define(1 << 3)
@@ -44,11 +45,9 @@ object options:
     val H3 = define(1 << 5)
 
   @name("CURLoption")
-  opaque type CurlOption = UInt
-  object CurlOption:
-    given Tag[CurlOption] = Tag.UInt
-
-    inline def define(inline a: Long): CurlOption = a.toUInt
+  opaque type CurlOption = CLong
+  object CurlOption extends _BindgenEnumCLong[CurlOption]:
+    private inline def define(inline a: Int): CurlOption = a
 
     val WRITEDATA = define(10001)
     val URL = define(10002)
@@ -677,15 +676,13 @@ object options:
    * using more than one IP protocol version, this option might be handy to force libcurl to use a
    * specific IP version.
    */
-  opaque type CurlOpt_IpResolve = UInt
-  object CurlOpt_IpResolve:
-    given Tag[CurlOption] = Tag.UInt
+  @name("CURLOPT_IPRESOLVE")
+  opaque type CurlOptIpResolve = CLong
+  object CurlOptIpResolve extends _BindgenEnumCLong[CurlOptIpResolve]:
 
-    inline def define(inline a: Long): CurlOption = a.toUInt
+    inline def define(inline a: Int): CurlOptIpResolve = a
 
-    /**
-     * default, uses addresses to all IP versions that your system allows
-     */
+    /** default, uses addresses to all IP versions that your system allows */
     val WHATEVER = define(0)
 
     /** uses only IPv4 addresses/connections */
@@ -695,46 +692,46 @@ object options:
     val V6 = define(2)
 
   /** These enums are for use with the `CURLOPT_HTTP_VERSION` option. */
-  opaque type CurlOpt_HttpVersion = UInt
-  object CurlOpt_HttpVersion:
-    given Tag[CurlOpt_HttpVersion] = Tag.UInt
+  @name("CURLOPT_HTTP_VERSION")
+  opaque type CurlOptHttpVersion = CLong
+  object CurlOptHttpVersion extends _BindgenEnumCLong[CurlOptHttpVersion]:
 
-    inline def define(inline a: Long): CurlOpt_HttpVersion = a.toUInt
+    inline def define(inline a: Int): CurlOptHttpVersion = a
 
     /**
      * setting this means we don't care, and that we'd like the library to choose the best possible
      * for us!
      */
-    val VERSION_NONE: UInt = define(0)
+    val VERSION_NONE = define(0)
 
     /** please use HTTP 1.0 in the request */
-    val VERSION_1_0: UInt = define(1)
+    val VERSION_1_0 = define(1)
 
     /** please use HTTP 1.1 in the request */
-    val VERSION_1_1: UInt = define(2)
+    val VERSION_1_1 = define(2)
 
     /** please use HTTP 2 in the request */
-    val VERSION_2_0: UInt = define(3)
+    val VERSION_2_0 = define(3)
 
     /** use version 2 for HTTPS, version 1.1 for HTTP */
-    val VERSION_2TLS: UInt = define(4)
+    val VERSION_2TLS = define(4)
 
     /** please use HTTP 2 without HTTP/1.1 Upgrade */
-    val VERSION_2_PRIOR_KNOWLEDGE: UInt = define(5)
+    val VERSION_2_PRIOR_KNOWLEDGE = define(5)
 
     /**
      * Use HTTP/3, fallback to HTTP/2 or HTTP/1 if needed. For HTTPS only. For HTTP, this option
      * makes libcurl return error.
      */
-    val VERSION_3: UInt = define(30)
+    val VERSION_3 = define(30)
 
     /**
      * Use HTTP/3 without fallback. For HTTPS only. For HTTP, this makes libcurl return error.
      */
-    val VERSION_3ONLY: UInt = define(31)
+    val VERSION_3ONLY = define(31)
 
     /** ILLEGAL http version */
-    val VERSION_LAST: UInt = define(32)
+    val VERSION_LAST = define(32)
 
   //
   // include <curl/options.h>
@@ -742,7 +739,7 @@ object options:
 
   @name("curl_easytype")
   opaque type CurlEasyType = UInt
-  object CurlEasyType:
+  object CurlEasyType extends _BindgenEnumUInt[CurlEasyType]:
     given Tag[CurlEasyType] = Tag.UInt
 
     inline def define(inline a: Long): CurlEasyType = a.toUInt
@@ -766,18 +763,18 @@ object options:
     /* function pointer */
     val FUNCTION = define(8)
 
-    inline def getName(inline value: CurlEasyType): Option[String] =
-      inline value match
-        case LONG     => Some("CURLOT_LONG")
-        case VALUES   => Some("CURLOT_VALUES")
-        case OFF_T    => Some("CURLOT_OFF_T")
-        case OBJECT   => Some("CURLOT_OBJECT")
-        case STRING   => Some("CURLOT_STRING")
-        case SLIST    => Some("CURLOT_SLIST")
-        case CBPTR    => Some("CURLOT_CBPTR")
-        case BLOB     => Some("CURLOT_BLOB")
-        case FUNCTION => Some("CURLOT_FUNCTION")
-        case _        => None
+    extension (inline value: CurlEasyType)
+      inline def getName: String =
+        inline value match
+          case LONG     => "CURLOT_LONG"
+          case VALUES   => "CURLOT_VALUES"
+          case OFF_T    => "CURLOT_OFF_T"
+          case OBJECT   => "CURLOT_OBJECT"
+          case STRING   => "CURLOT_STRING"
+          case SLIST    => "CURLOT_SLIST"
+          case CBPTR    => "CURLOT_CBPTR"
+          case BLOB     => "CURLOT_BLOB"
+          case FUNCTION => "CURLOT_FUNCTION"
 
     extension (a: CurlEasyType)
       inline def &(b: CurlEasyType): CurlEasyType = a & b
@@ -785,7 +782,16 @@ object options:
       inline def is(b: CurlEasyType): Boolean = (a & b) == b
 
   @name("curl_easyoption")
-  opaque type CurlEasyOption = CStruct4[CString, CurlOption, CurlEasyType, UInt]
+  opaque type CurlEasyOption = CStruct4[
+    /** name */
+    CString,
+    /** id */
+    CurlOption,
+    /** type */
+    CurlEasyType,
+    /** flags */
+    UInt,
+  ]
   object CurlEasyOption:
     given Tag[CurlEasyOption] =
       Tag.materializeCStruct4Tag[CString, CurlOption, CurlEasyType, UInt]

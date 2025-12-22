@@ -24,9 +24,10 @@ import scalanative.unsafe.{
   CFuncPtr,
   CFuncPtr3,
   CFuncPtr5,
+  CChar,
   CSize,
   CArray,
-  CChar,
+  CVarArgList,
   Nat,
 }
 import scalanative.unsigned.*
@@ -539,7 +540,7 @@ object multi:
   def multiSetopt(
       handle: Ptr[CurlMulti],
       option: CurlMultiOption,
-      params: Any*,
+      params: Any*, // CVarArgList,
   ): CurlMultiCode = extern
 
   /**
