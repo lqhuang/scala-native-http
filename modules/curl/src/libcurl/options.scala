@@ -16,7 +16,7 @@ import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4, CLong}
 import scala.scalanative.unsafe.{alloc, extern, name}
 import scala.scalanative.unsigned.*
 
-import _type.{_BindgenEnumCLong, _BindgenEnumUInt}
+import _type.{_BindgenEnumCLong, _BindgenEnumUInt, _BindgenEnumInt}
 
 @extern
 object options:
@@ -738,11 +738,11 @@ object options:
   //
 
   @name("curl_easytype")
-  opaque type CurlEasyType = UInt
-  object CurlEasyType extends _BindgenEnumUInt[CurlEasyType]:
-    given Tag[CurlEasyType] = Tag.UInt
+  opaque type CurlEasyType = Int
+  object CurlEasyType extends _BindgenEnumInt[CurlEasyType]:
+    given Tag[CurlEasyType] = Tag.Int
 
-    inline def define(inline a: Long): CurlEasyType = a.toUInt
+    inline def define(inline a: Int): CurlEasyType = a
 
     /* long (a range of values) */
     val LONG = define(0)
@@ -775,11 +775,6 @@ object options:
           case CBPTR    => "CURLOT_CBPTR"
           case BLOB     => "CURLOT_BLOB"
           case FUNCTION => "CURLOT_FUNCTION"
-
-    extension (a: CurlEasyType)
-      inline def &(b: CurlEasyType): CurlEasyType = a & b
-      inline def |(b: CurlEasyType): CurlEasyType = a | b
-      inline def is(b: CurlEasyType): Boolean = (a & b) == b
 
   @name("curl_easyoption")
   opaque type CurlEasyOption = CStruct4[

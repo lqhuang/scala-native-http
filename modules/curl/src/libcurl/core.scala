@@ -25,10 +25,13 @@ import scala.scalanative.unsafe.{
   CFuncPtr3,
   CStruct14,
   CVoidPtr,
+  CLong,
 }
 import scala.scalanative.unsigned.*
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
+
+import snhttp.experimental.libcurl._type._BindgenEnumCLong
 
 import internal.SockAddrFamily
 
@@ -102,6 +105,35 @@ object core:
       inline def &(b: CurlSslBackendId): CurlSslBackendId = a & b
       inline def |(b: CurlSslBackendId): CurlSslBackendId = a | b
       inline def is(b: CurlSslBackendId): Boolean = (a & b) == b
+
+  opaque type CurlFollow = CLong
+  object CurlFollow extends _BindgenEnumCLong[CurlFollow]:
+    given Tag[CurlFollow] = Tag.Size
+
+    inline def define(inline a: Long): CurlFollow = a.toInt
+
+    /** default:    disabled */
+    val DISABLED = define(0L)
+
+    /** bits for the CURLOPT_FOLLOWLOCATION option */
+    val ALL = define(1L)
+
+    /**
+     * Do not use the custom method in the follow-up request if the HTTP code instructs so (301,
+     * 302, 303).
+     */
+    val OBEYCODE = define(2L)
+
+    /** Only use the custom method in the first request, always reset in the next */
+    val FIRSTONLY = define(3L)
+
+    extension (value: CurlFollow)
+      inline def getName: String =
+        inline value match
+          case DISABLED  => "CURLFOLLOW_DISABLED"
+          case ALL       => "CURLFOLLOW_ALL"
+          case OBEYCODE  => "CURLFOLLOW_OBEYCODE"
+          case FIRSTONLY => "CURLFOLLOW_FIRSTONLY"
 
   @name("curl_httppost")
   opaque type CurlHttpPost = CStruct14[
@@ -930,11 +962,20 @@ object core:
   // 5. add enum `curl_khmatch`
   // 6. add func `curl_sshkeycallback`
   // 7. add func `curl_sshhostkeycallback`
-  // 8. add typedef enum `curl_usessl`
+
+  opaque type CurlUseSsl = CLong
+  object CurlUseSsl extends _BindgenEnumCLong[CurlUseSsl]:
+
+    inline def define(inline a: Long): CurlUseSsl = a.toInt
+
+    val NONE = define(0) // do not attempt to use SSL
+    val TRY = define(1) // try using SSL, proceed anyway otherwise
+    val CONTROL = define(2) // SSL for the control connection or fail
+    val ALL = define(3) // SSL for all communication or fail
+    // val LAST = define(4) // not an option, never use
 
   // TODO:
   //
-  // 1. add typedef enum `curl_usessl`
   // 2. add define symbols `CURLSSLOPT_*`
   // 3. add typedef enum `curl_ftpccc`
   // 4. add typedef enum `curl_ftpauth`

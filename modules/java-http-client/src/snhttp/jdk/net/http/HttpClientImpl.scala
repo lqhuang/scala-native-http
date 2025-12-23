@@ -23,13 +23,16 @@ import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.collection.mutable.{LinkedHashSet, HashMap}
 import scala.concurrent.ExecutionContext
+import scala.scalanative.unsafe.{Ptr, Zone, toCString, stackalloc, CVarArgList, CVarArg, Tag}
 
 import snhttp.experimental.libcurl
+import snhttp.experimental.libcurl.core.CurlSlist
+import snhttp.utils.PointerFinalizer
 
 class HttpClientBuilderImpl() extends Builder:
 
   protected[http] var _cookieHandler: Option[CookieHandler] = None
-  protected[http] var _timeout: Option[Duration] = None
+  protected[http] var _connectTimeout: Option[Duration] = None
   protected[http] var _redirect: Redirect = Redirect.NORMAL
   protected[http] var _proxy: Option[ProxySelector] = None
   protected[http] var _authenticator: Option[Authenticator] = None
@@ -48,7 +51,7 @@ class HttpClientBuilderImpl() extends Builder:
   def connectTimeout(duration: Duration): Builder =
     requireNonNull(duration)
     require(!duration.isNegative && !duration.isZero, "duration must be positive")
-    this._timeout = Some(duration)
+    this._connectTimeout = Some(duration)
     this
 
   def sslContext(sslContext: SSLContext): Builder =
@@ -102,8 +105,37 @@ class HttpClientBuilderImpl() extends Builder:
 end HttpClientBuilderImpl
 
 class HttpClientImpl(
-    builder: HttpClientBuilderImpl,
+    private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
+
+  val globalInitRet = libcurl.core.curl_global_init(libcurl.core.CURL_GLOBAL.DEFAULT)
+  globalInitRet match
+    case libcurl.core.CurlCode.OK => ()
+    case _ =>
+      throw new RuntimeException(
+        s"Failed to initialize libcurl global state: error code ${globalInitRet}",
+      )
+
+  protected[http] var ptr: Ptr[libcurl.multi.CurlMulti] = null
+  try {
+    ptr = libcurl.multi.multiInit()
+    if (ptr == null)
+      throw new RuntimeException("Failed to initialize CURLM pointer")
+  } catch {
+    case e: RuntimeException =>
+      libcurl.core.curl_global_cleanup()
+      throw e
+  }
+  PointerFinalizer(
+    this,
+    ptr,
+    _ptr => {
+      val ret = libcurl.multi.multiCleanup(_ptr)
+      libcurl.core.curl_global_cleanup()
+      if (ret != 0)
+        throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
+    },
+  ): Unit
 
   private val _started = new AtomicBoolean(false)
   private val _alive = new AtomicBoolean(false)
@@ -112,16 +144,20 @@ class HttpClientImpl(
 
   private val requests = new LinkedHashSet[HttpRequest]()
 
-  private val _sslContext = builder._sslContext match
+  private[http] lazy val _sslContext = builder._sslContext match
     case Some(ctx) => ctx
     case None      => SSLContext.getDefault()
+  private[http] lazy val _sslParams = builder._sslParams match
+    case Some(params) => params
+    case None         => _sslContext.getDefaultSSLParameters()
 
   private val _executor: Executor =
     builder._executor.getOrElse(ExecutionContext.global)
 
+  /**
+   * Map of active connections: request -> connection info (curl easy handle pointer)
+   */
   private val connections = HashMap()
-
-  val ptr = libcurl.multi.multiInit()
 
   def cookieHandler(): Optional[CookieHandler] =
     builder._cookieHandler match
@@ -129,7 +165,7 @@ class HttpClientImpl(
       case None                => Optional.empty()
 
   def connectTimeout(): Optional[Duration] =
-    builder._timeout match
+    builder._connectTimeout match
       case Some(duration) => Optional.of(duration)
       case None           => Optional.empty()
 
@@ -144,8 +180,9 @@ class HttpClientImpl(
   def sslContext(): SSLContext =
     _sslContext
 
+  // TODO: return a copy
   def sslParameters(): SSLParameters =
-    builder._sslParams.getOrElse(_sslContext.getDefaultSSLParameters())
+    _sslParams
 
   def authenticator(): Optional[Authenticator] =
     builder._authenticator.map(Optional.of).getOrElse(Optional.empty())
@@ -188,8 +225,6 @@ class HttpClientImpl(
       request: HttpRequest,
       responseBodyHandler: BodyHandler[T],
   ): CompletableFuture[HttpResponse[T]] =
-    requireNonNull(request, "`request: HttpRequest` cannot be null")
-    requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
     sendAsync(request, responseBodyHandler, null)
 
   def sendAsync[T](
@@ -197,16 +232,18 @@ class HttpClientImpl(
       responseBodyHandler: BodyHandler[T],
       pushPromiseHandler: PushPromiseHandler[T],
   ): CompletableFuture[HttpResponse[T]] = {
-    requireNonNull(pushPromiseHandler, "pushPromiseHandler cannot be null")
+    requireNonNull(request, "`request: HttpRequest` cannot be null")
+    requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
+    // pushPromiseHandler is nullable
 
-    // For HTTP/1.1, push promises are not supported, so just delegate to the two-parameter version
-    if (builder._version == Version.HTTP_1_1) {
-      sendAsync(request, responseBodyHandler)
-    } else {
-      // For HTTP/2, in a real implementation this would handle server push
-      // For now, just delegate to the two-parameter version
-      sendAsync(request, responseBodyHandler)
+    val conn = HttpConnection(request, this)
+
+    try
+      ???
+    catch {
+      case e: Throwable => ???
     }
+
   }
 
   override def shutdown(): Unit =
@@ -221,7 +258,7 @@ class HttpClientImpl(
     requireNonNull(duration, "duration cannot be null")
 
     val start = System.nanoTime()
-    val timeout = duration.toNanos
+    val timeout = duration.toNanos()
 
     while (!_terminated.get() && (System.nanoTime() - start) < timeout)
       try Thread.sleep(1) // Small sleep to avoid busy waiting
