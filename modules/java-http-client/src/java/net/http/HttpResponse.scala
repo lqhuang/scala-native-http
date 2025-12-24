@@ -34,7 +34,7 @@ trait HttpResponse[T] {
 
   def body(): T
 
-  // def sslSession(): Optional[SSLSession]
+  def sslSession(): Optional[SSLSession]
 
   def uri(): URI
 

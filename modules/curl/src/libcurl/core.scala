@@ -35,6 +35,8 @@ import snhttp.experimental.libcurl._type._BindgenEnumCLong
 
 import internal.SockAddrFamily
 
+import _type._BindgenEnumInt
+
 @extern
 object core:
 
@@ -1361,14 +1363,13 @@ object core:
       def internals_=(value: Ptr[Byte]): Unit = !struct.at2 = value
 
   @name("CURLINFO")
-  opaque type CurlInfo = UInt
-  object CurlInfo:
-    given Tag[CurlInfo] = Tag.UInt
+  opaque type CurlInfo = Int
+  object CurlInfo extends _BindgenEnumInt[CurlInfo]:
 
-    inline def define(inline a: Long): CurlInfo = a.toUInt
+    inline def define(a: Int): CurlInfo = a
 
     // By `#define`
-    val STRING = define(0x100000)
+    val STRING: CurlInfo = define(0x100000)
     val LONG = define(0x200000)
     val DOUBLE = define(0x300000)
     val SLIST = define(0x400000)
@@ -1379,159 +1380,188 @@ object core:
     val TYPEMASK = define(0xf00000)
 
     val NONE = define(0)
-    val EFFECTIVE_URL = STRING + 1.toUInt
-    val RESPONSE_CODE = LONG + 2.toUInt
-    val TOTAL_TIME = DOUBLE + 3.toUInt
-    val NAMELOOKUP_TIME = DOUBLE + 4.toUInt
-    val CONNECT_TIME = DOUBLE + 5.toUInt
-    val PRETRANSFER_TIME = DOUBLE + 6.toUInt
-    // val SIZE_UPLOAD = DOUBLE + 7.toUInt   // deprecated since 7.55.0
-    val SIZE_UPLOAD_T = OFF_T + 7.toUInt
-    // val SIZE_DOWNLOAD = define(3145736)  // deprecated since 7.55.0
-    val SIZE_DOWNLOAD_T = define(6291464)
-    // val SPEED_DOWNLOAD = define(3145737)  // deprecated since 7.55.0
-    val SPEED_DOWNLOAD_T = define(6291465)
-    // val SPEED_UPLOAD = define(3145738)  // deprecated since 7.55.0
-    val SPEED_UPLOAD_T = define(6291466)
-    val HEADER_SIZE = define(2097163)
-    val REQUEST_SIZE = define(2097164)
-    val SSL_VERIFYRESULT = define(2097165)
-    val FILETIME = define(2097166)
-    val FILETIME_T = define(6291470)
-    // val CONTENT_LENGTH_DOWNLOAD = define(3145743)  // deprecated since 7.55.0
-    val CONTENT_LENGTH_DOWNLOAD_T = define(6291471)
-    // val CONTENT_LENGTH_UPLOAD = define(3145744)  // deprecated since 7.55.0
-    val CONTENT_LENGTH_UPLOAD_T = define(6291472)
-    val STARTTRANSFER_TIME = define(3145745)
-    val CONTENT_TYPE = define(1048594)
-    val REDIRECT_TIME = define(3145747)
-    val REDIRECT_COUNT = define(2097172)
-    val PRIVATE = define(1048597)
-    val HTTP_CONNECTCODE = define(2097174)
-    val HTTPAUTH_AVAIL = define(2097175)
-    val PROXYAUTH_AVAIL = define(2097176)
-    val OS_ERRNO = define(2097177)
-    val NUM_CONNECTS = define(2097178)
-    val SSL_ENGINES = define(4194331)
-    val COOKIELIST = define(4194332)
-    // val LASTSOCKET = define(2097181)  // deprecated since 7.55.0
-    val FTP_ENTRY_PATH = define(1048606)
-    val REDIRECT_URL = define(1048607)
-    val PRIMARY_IP = define(1048608)
-    val APPCONNECT_TIME = define(3145761)
-    val CERTINFO = define(4194338)
-    val CONDITION_UNMET = define(2097187)
-    val RTSP_SESSION_ID = define(1048612)
-    val RTSP_CLIENT_CSEQ = define(2097189)
-    val RTSP_SERVER_CSEQ = define(2097190)
-    val RTSP_CSEQ_RECV = define(2097191)
-    val PRIMARY_PORT = define(2097192)
-    val LOCAL_IP = define(1048617)
-    val LOCAL_PORT = define(2097194)
-    // val TLS_SESSION = define(4194347)  // deprecated since 7.55.0
-    val ACTIVESOCKET = define(5242924)
-    val TLS_SSL_PTR = define(4194349)
-    val HTTP_VERSION = define(2097198)
-    val PROXY_SSL_VERIFYRESULT = define(2097199)
-    // val PROTOCOL = define(2097200)  // deprecated since 7.55.0
-    val SCHEME = define(1048625)
-    val TOTAL_TIME_T = define(6291506)
-    val NAMELOOKUP_TIME_T = define(6291507)
-    val CONNECT_TIME_T = define(6291508)
-    val PRETRANSFER_TIME_T = define(6291509)
-    val STARTTRANSFER_TIME_T = define(6291510)
-    val REDIRECT_TIME_T = define(6291511)
-    val APPCONNECT_TIME_T = define(6291512)
-    val RETRY_AFTER = define(6291513)
-    val EFFECTIVE_METHOD = define(1048634)
-    val PROXY_ERROR = define(2097211)
-    val REFERER = define(1048636)
-    val CAINFO = define(1048637)
-    val CAPATH = define(1048638)
-    val XFER_ID = define(6291519)
-    val CONN_ID = define(6291520)
-    val LASTONE = define(64)
+    val EFFECTIVE_URL = STRING + define(1)
+    val RESPONSE_CODE = LONG + define(2)
+    val TOTAL_TIME = DOUBLE + define(3)
+    val NAMELOOKUP_TIME = DOUBLE + define(4)
+    val CONNECT_TIME = DOUBLE + define(5)
+    val PRETRANSFER_TIME = DOUBLE + define(6)
+
+    @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SIZE_UPLOAD_T")
+    val SIZE_UPLOAD = DOUBLE + define(7)
+    val SIZE_UPLOAD_T = OFF_T + define(7)
+
+    @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SIZE_DOWNLOAD_T")
+    val SIZE_DOWNLOAD = DOUBLE + define(8)
+    val SIZE_DOWNLOAD_T = OFF_T + define(8)
+
+    @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SPEED_DOWNLOAD_T")
+    val SPEED_DOWNLOAD = DOUBLE + define(9)
+    val SPEED_DOWNLOAD_T = OFF_T + define(9)
+
+    @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SPEED_UPLOAD_T")
+    val SPEED_UPLOAD = DOUBLE + define(10)
+    val SPEED_UPLOAD_T = OFF_T + define(10)
+
+    val HEADER_SIZE = LONG + define(11)
+    val REQUEST_SIZE = LONG + define(12)
+    val SSL_VERIFYRESULT = LONG + define(13)
+    val FILETIME = LONG + define(14)
+    val FILETIME_T = OFF_T + define(14)
+
+    @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.CONTENT_LENGTH_DOWNLOAD_T")
+    val CONTENT_LENGTH_DOWNLOAD = DOUBLE + define(15)
+    val CONTENT_LENGTH_DOWNLOAD_T = OFF_T + define(15)
+
+    @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.CONTENT_LENGTH_UPLOAD_T")
+    val CONTENT_LENGTH_UPLOAD = DOUBLE + define(16)
+    val CONTENT_LENGTH_UPLOAD_T = OFF_T + define(16)
+
+    val STARTTRANSFER_TIME = DOUBLE + define(17)
+    val CONTENT_TYPE = STRING + define(18)
+    val REDIRECT_TIME = DOUBLE + define(19)
+    val REDIRECT_COUNT = LONG + define(20)
+    val PRIVATE = STRING + define(21)
+    val HTTP_CONNECTCODE = LONG + define(22)
+    val HTTPAUTH_AVAIL = LONG + define(23)
+    val PROXYAUTH_AVAIL = LONG + define(24)
+    val OS_ERRNO = LONG + define(25)
+    val NUM_CONNECTS = LONG + define(26)
+    val SSL_ENGINES = SLIST + define(27)
+    val COOKIELIST = SLIST + define(28)
+
+    @deprecated("deprecated since libcurl 7.45.0. Use CurlInfo.ACTIVESOCKET")
+    val LASTSOCKET = LONG + define(29)
+
+    val FTP_ENTRY_PATH = STRING + define(30)
+    val REDIRECT_URL = STRING + define(31)
+    val PRIMARY_IP = STRING + define(32)
+    val APPCONNECT_TIME = DOUBLE + define(33)
+    val CERTINFO = PTR + define(34)
+    val CONDITION_UNMET = LONG + define(35)
+    val RTSP_SESSION_ID = STRING + define(36)
+    val RTSP_CLIENT_CSEQ = LONG + define(37)
+    val RTSP_SERVER_CSEQ = LONG + define(38)
+    val RTSP_CSEQ_RECV = LONG + define(39)
+    val PRIMARY_PORT = LONG + define(40)
+    val LOCAL_IP = STRING + define(41)
+    val LOCAL_PORT = LONG + define(42)
+
+    @deprecated("deprecated since libcurl 7.48.0. Use CurlInfo.TLS_SSL_PTR")
+    val TLS_SESSION = PTR + define(43)
+
+    val ACTIVESOCKET = SOCKET + define(44)
+    val TLS_SSL_PTR = PTR + define(45)
+    val HTTP_VERSION = LONG + define(46)
+    val PROXY_SSL_VERIFYRESULT = LONG + define(47)
+
+    @deprecated("deprecated since libcurl 7.85.0. Use CurlInfo.SCHEME")
+    val PROTOCOL = STRING + define(48)
+
+    val SCHEME = STRING + define(49)
+    val TOTAL_TIME_T = OFF_T + define(50)
+    val NAMELOOKUP_TIME_T = OFF_T + define(51)
+    val CONNECT_TIME_T = OFF_T + define(52)
+    val PRETRANSFER_TIME_T = OFF_T + define(53)
+    val STARTTRANSFER_TIME_T = OFF_T + define(54)
+    val REDIRECT_TIME_T = OFF_T + define(55)
+    val APPCONNECT_TIME_T = OFF_T + define(56)
+    val RETRY_AFTER = OFF_T + define(57)
+    val EFFECTIVE_METHOD = STRING + define(58)
+    val PROXY_ERROR = LONG + define(59)
+    val REFERER = STRING + define(60)
+    val CAINFO = STRING + define(61)
+    val CAPATH = STRING + define(62)
+    val XFER_ID = OFF_T + define(63)
+    val CONN_ID = OFF_T + define(64)
+    val QUEUE_TIME_T = OFF_T + define(65)
+    val USED_PROXY = LONG + define(66)
+    val POSTTRANSFER_TIME_T = OFF_T + define(67)
+    val EARLYDATA_SENT_T = OFF_T + define(68)
+    val HTTPAUTH_USED = LONG + define(69)
+    val PROXYAUTH_USED = LONG + define(70)
+    val LASTONE = define(70)
 
     /** alias */
     val HTTP_CODE = RESPONSE_CODE
 
-    inline def getName(inline value: CurlInfo): Option[String] =
-      inline value match
-        case NONE             => Some("CURLINFO_NONE")
-        case EFFECTIVE_URL    => Some("CURLINFO_EFFECTIVE_URL")
-        case RESPONSE_CODE    => Some("CURLINFO_RESPONSE_CODE")
-        case TOTAL_TIME       => Some("CURLINFO_TOTAL_TIME")
-        case NAMELOOKUP_TIME  => Some("CURLINFO_NAMELOOKUP_TIME")
-        case CONNECT_TIME     => Some("CURLINFO_CONNECT_TIME")
-        case PRETRANSFER_TIME => Some("CURLINFO_PRETRANSFER_TIME")
-        // case SIZE_UPLOAD               => Some("CURLINFO_SIZE_UPLOAD")
-        case SIZE_UPLOAD_T => Some("CURLINFO_SIZE_UPLOAD_T")
-        // case SIZE_DOWNLOAD             => Some("CURLINFO_SIZE_DOWNLOAD")
-        case SIZE_DOWNLOAD_T => Some("CURLINFO_SIZE_DOWNLOAD_T")
-        // case SPEED_DOWNLOAD            => Some("CURLINFO_SPEED_DOWNLOAD")
-        case SPEED_DOWNLOAD_T => Some("CURLINFO_SPEED_DOWNLOAD_T")
-        // case SPEED_UPLOAD              => Some("CURLINFO_SPEED_UPLOAD")
-        case SPEED_UPLOAD_T   => Some("CURLINFO_SPEED_UPLOAD_T")
-        case HEADER_SIZE      => Some("CURLINFO_HEADER_SIZE")
-        case REQUEST_SIZE     => Some("CURLINFO_REQUEST_SIZE")
-        case SSL_VERIFYRESULT => Some("CURLINFO_SSL_VERIFYRESULT")
-        case FILETIME         => Some("CURLINFO_FILETIME")
-        case FILETIME_T       => Some("CURLINFO_FILETIME_T")
-        // case CONTENT_LENGTH_DOWNLOAD   => Some("CURLINFO_CONTENT_LENGTH_DOWNLOAD")
-        case CONTENT_LENGTH_DOWNLOAD_T => Some("CURLINFO_CONTENT_LENGTH_DOWNLOAD_T")
-        // case CONTENT_LENGTH_UPLOAD     => Some("CURLINFO_CONTENT_LENGTH_UPLOAD")
-        case CONTENT_LENGTH_UPLOAD_T => Some("CURLINFO_CONTENT_LENGTH_UPLOAD_T")
-        case STARTTRANSFER_TIME      => Some("CURLINFO_STARTTRANSFER_TIME")
-        case CONTENT_TYPE            => Some("CURLINFO_CONTENT_TYPE")
-        case REDIRECT_TIME           => Some("CURLINFO_REDIRECT_TIME")
-        case REDIRECT_COUNT          => Some("CURLINFO_REDIRECT_COUNT")
-        case PRIVATE                 => Some("CURLINFO_PRIVATE")
-        case HTTP_CONNECTCODE        => Some("CURLINFO_HTTP_CONNECTCODE")
-        case HTTPAUTH_AVAIL          => Some("CURLINFO_HTTPAUTH_AVAIL")
-        case PROXYAUTH_AVAIL         => Some("CURLINFO_PROXYAUTH_AVAIL")
-        case OS_ERRNO                => Some("CURLINFO_OS_ERRNO")
-        case NUM_CONNECTS            => Some("CURLINFO_NUM_CONNECTS")
-        case SSL_ENGINES             => Some("CURLINFO_SSL_ENGINES")
-        case COOKIELIST              => Some("CURLINFO_COOKIELIST")
-        // case LASTSOCKET                => Some("CURLINFO_LASTSOCKET")
-        case FTP_ENTRY_PATH   => Some("CURLINFO_FTP_ENTRY_PATH")
-        case REDIRECT_URL     => Some("CURLINFO_REDIRECT_URL")
-        case PRIMARY_IP       => Some("CURLINFO_PRIMARY_IP")
-        case APPCONNECT_TIME  => Some("CURLINFO_APPCONNECT_TIME")
-        case CERTINFO         => Some("CURLINFO_CERTINFO")
-        case CONDITION_UNMET  => Some("CURLINFO_CONDITION_UNMET")
-        case RTSP_SESSION_ID  => Some("CURLINFO_RTSP_SESSION_ID")
-        case RTSP_CLIENT_CSEQ => Some("CURLINFO_RTSP_CLIENT_CSEQ")
-        case RTSP_SERVER_CSEQ => Some("CURLINFO_RTSP_SERVER_CSEQ")
-        case RTSP_CSEQ_RECV   => Some("CURLINFO_RTSP_CSEQ_RECV")
-        case PRIMARY_PORT     => Some("CURLINFO_PRIMARY_PORT")
-        case LOCAL_IP         => Some("CURLINFO_LOCAL_IP")
-        case LOCAL_PORT       => Some("CURLINFO_LOCAL_PORT")
-        // case TLS_SESSION               => Some("CURLINFO_TLS_SESSION")
-        case ACTIVESOCKET           => Some("CURLINFO_ACTIVESOCKET")
-        case TLS_SSL_PTR            => Some("CURLINFO_TLS_SSL_PTR")
-        case HTTP_VERSION           => Some("CURLINFO_HTTP_VERSION")
-        case PROXY_SSL_VERIFYRESULT => Some("CURLINFO_PROXY_SSL_VERIFYRESULT")
-        // case PROTOCOL                  => Some("CURLINFO_PROTOCOL")
-        case SCHEME               => Some("CURLINFO_SCHEME")
-        case TOTAL_TIME_T         => Some("CURLINFO_TOTAL_TIME_T")
-        case NAMELOOKUP_TIME_T    => Some("CURLINFO_NAMELOOKUP_TIME_T")
-        case CONNECT_TIME_T       => Some("CURLINFO_CONNECT_TIME_T")
-        case PRETRANSFER_TIME_T   => Some("CURLINFO_PRETRANSFER_TIME_T")
-        case STARTTRANSFER_TIME_T => Some("CURLINFO_STARTTRANSFER_TIME_T")
-        case REDIRECT_TIME_T      => Some("CURLINFO_REDIRECT_TIME_T")
-        case APPCONNECT_TIME_T    => Some("CURLINFO_APPCONNECT_TIME_T")
-        case RETRY_AFTER          => Some("CURLINFO_RETRY_AFTER")
-        case EFFECTIVE_METHOD     => Some("CURLINFO_EFFECTIVE_METHOD")
-        case PROXY_ERROR          => Some("CURLINFO_PROXY_ERROR")
-        case REFERER              => Some("CURLINFO_REFERER")
-        case CAINFO               => Some("CURLINFO_CAINFO")
-        case CAPATH               => Some("CURLINFO_CAPATH")
-        case XFER_ID              => Some("CURLINFO_XFER_ID")
-        case CONN_ID              => Some("CURLINFO_CONN_ID")
-        case LASTONE              => Some("CURLINFO_LASTONE")
-        case HTTP_CODE            => Some("CURLINFO_RESPONSE_CODE")
-        case _                    => None
+    extension (value: CurlInfo)
+      inline def getName: String =
+        inline value match
+          case NONE                      => "CURLINFO_NONE"
+          case EFFECTIVE_URL             => "CURLINFO_EFFECTIVE_URL"
+          case RESPONSE_CODE             => "CURLINFO_RESPONSE_CODE"
+          case TOTAL_TIME                => "CURLINFO_TOTAL_TIME"
+          case NAMELOOKUP_TIME           => "CURLINFO_NAMELOOKUP_TIME"
+          case CONNECT_TIME              => "CURLINFO_CONNECT_TIME"
+          case PRETRANSFER_TIME          => "CURLINFO_PRETRANSFER_TIME"
+          case SIZE_UPLOAD               => "CURLINFO_SIZE_UPLOAD"
+          case SIZE_UPLOAD_T             => "CURLINFO_SIZE_UPLOAD_T"
+          case SIZE_DOWNLOAD             => "CURLINFO_SIZE_DOWNLOAD"
+          case SIZE_DOWNLOAD_T           => "CURLINFO_SIZE_DOWNLOAD_T"
+          case SPEED_DOWNLOAD            => "CURLINFO_SPEED_DOWNLOAD"
+          case SPEED_DOWNLOAD_T          => "CURLINFO_SPEED_DOWNLOAD_T"
+          case SPEED_UPLOAD              => "CURLINFO_SPEED_UPLOAD"
+          case SPEED_UPLOAD_T            => "CURLINFO_SPEED_UPLOAD_T"
+          case HEADER_SIZE               => "CURLINFO_HEADER_SIZE"
+          case REQUEST_SIZE              => "CURLINFO_REQUEST_SIZE"
+          case SSL_VERIFYRESULT          => "CURLINFO_SSL_VERIFYRESULT"
+          case FILETIME                  => "CURLINFO_FILETIME"
+          case FILETIME_T                => "CURLINFO_FILETIME_T"
+          case CONTENT_LENGTH_DOWNLOAD   => "CURLINFO_CONTENT_LENGTH_DOWNLOAD"
+          case CONTENT_LENGTH_DOWNLOAD_T => "CURLINFO_CONTENT_LENGTH_DOWNLOAD_T"
+          case CONTENT_LENGTH_UPLOAD     => "CURLINFO_CONTENT_LENGTH_UPLOAD"
+          case CONTENT_LENGTH_UPLOAD_T   => "CURLINFO_CONTENT_LENGTH_UPLOAD_T"
+          case STARTTRANSFER_TIME        => "CURLINFO_STARTTRANSFER_TIME"
+          case CONTENT_TYPE              => "CURLINFO_CONTENT_TYPE"
+          case REDIRECT_TIME             => "CURLINFO_REDIRECT_TIME"
+          case REDIRECT_COUNT            => "CURLINFO_REDIRECT_COUNT"
+          case PRIVATE                   => "CURLINFO_PRIVATE"
+          case HTTP_CONNECTCODE          => "CURLINFO_HTTP_CONNECTCODE"
+          case HTTPAUTH_AVAIL            => "CURLINFO_HTTPAUTH_AVAIL"
+          case PROXYAUTH_AVAIL           => "CURLINFO_PROXYAUTH_AVAIL"
+          case OS_ERRNO                  => "CURLINFO_OS_ERRNO"
+          case NUM_CONNECTS              => "CURLINFO_NUM_CONNECTS"
+          case SSL_ENGINES               => "CURLINFO_SSL_ENGINES"
+          case COOKIELIST                => "CURLINFO_COOKIELIST"
+          case LASTSOCKET                => "CURLINFO_LASTSOCKET"
+          case FTP_ENTRY_PATH            => "CURLINFO_FTP_ENTRY_PATH"
+          case REDIRECT_URL              => "CURLINFO_REDIRECT_URL"
+          case PRIMARY_IP                => "CURLINFO_PRIMARY_IP"
+          case APPCONNECT_TIME           => "CURLINFO_APPCONNECT_TIME"
+          case CERTINFO                  => "CURLINFO_CERTINFO"
+          case CONDITION_UNMET           => "CURLINFO_CONDITION_UNMET"
+          case RTSP_SESSION_ID           => "CURLINFO_RTSP_SESSION_ID"
+          case RTSP_CLIENT_CSEQ          => "CURLINFO_RTSP_CLIENT_CSEQ"
+          case RTSP_SERVER_CSEQ          => "CURLINFO_RTSP_SERVER_CSEQ"
+          case RTSP_CSEQ_RECV            => "CURLINFO_RTSP_CSEQ_RECV"
+          case PRIMARY_PORT              => "CURLINFO_PRIMARY_PORT"
+          case LOCAL_IP                  => "CURLINFO_LOCAL_IP"
+          case LOCAL_PORT                => "CURLINFO_LOCAL_PORT"
+          case TLS_SESSION               => "CURLINFO_TLS_SESSION"
+          case ACTIVESOCKET              => "CURLINFO_ACTIVESOCKET"
+          case TLS_SSL_PTR               => "CURLINFO_TLS_SSL_PTR"
+          case HTTP_VERSION              => "CURLINFO_HTTP_VERSION"
+          case PROXY_SSL_VERIFYRESULT    => "CURLINFO_PROXY_SSL_VERIFYRESULT"
+          case PROTOCOL                  => "CURLINFO_PROTOCOL"
+          case SCHEME                    => "CURLINFO_SCHEME"
+          case TOTAL_TIME_T              => "CURLINFO_TOTAL_TIME_T"
+          case NAMELOOKUP_TIME_T         => "CURLINFO_NAMELOOKUP_TIME_T"
+          case CONNECT_TIME_T            => "CURLINFO_CONNECT_TIME_T"
+          case PRETRANSFER_TIME_T        => "CURLINFO_PRETRANSFER_TIME_T"
+          case STARTTRANSFER_TIME_T      => "CURLINFO_STARTTRANSFER_TIME_T"
+          case REDIRECT_TIME_T           => "CURLINFO_REDIRECT_TIME_T"
+          case APPCONNECT_TIME_T         => "CURLINFO_APPCONNECT_TIME_T"
+          case RETRY_AFTER               => "CURLINFO_RETRY_AFTER"
+          case EFFECTIVE_METHOD          => "CURLINFO_EFFECTIVE_METHOD"
+          case PROXY_ERROR               => "CURLINFO_PROXY_ERROR"
+          case REFERER                   => "CURLINFO_REFERER"
+          case CAINFO                    => "CURLINFO_CAINFO"
+          case CAPATH                    => "CURLINFO_CAPATH"
+          case XFER_ID                   => "CURLINFO_XFER_ID"
+          case CONN_ID                   => "CURLINFO_CONN_ID"
+          case LASTONE                   => "CURLINFO_LASTONE"
+          case HTTP_CODE                 => "CURLINFO_RESPONSE_CODE"
 
     extension (a: CurlInfo)
       inline def +(b: CurlInfo): CurlInfo = a + b

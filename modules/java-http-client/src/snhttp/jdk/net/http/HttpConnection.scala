@@ -2,6 +2,7 @@ package snhttp.jdk.net.http
 
 import java.net.http.HttpRequest
 import java.net.http.HttpClient.{Version, Redirect}
+import java.net.http.HttpResponse.BodyHandler
 import java.time.Duration
 import java.util.Map as JMap
 
@@ -13,18 +14,22 @@ import snhttp.experimental.libcurl.core.{CurlSlist, CurlFollow, CurlUseSsl}
 import snhttp.experimental.libcurl.options.{CurlOption, CurlOptHttpVersion}
 
 /**
- * Represents a connection to a web server, majorly based on libcurl's easy handle.
+ * Represents a (virtual) connection to a web server, majorly based on libcurl's easy handle.
  */
-private[http] case class HttpConnection(request: HttpRequest, client: HttpClientImpl):
+private[http] case class HttpConnection[T](
+    request: HttpRequest,
+    bodyHandler: BodyHandler[T],
+    client: HttpClientImpl,
+):
 
   private[snhttp] val ptr = libcurl.easy.easyInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURL easy handle")
-  val _ = PointerFinalizer(
-    this,
-    ptr,
-    _ptr => libcurl.easy.easyCleanup(_ptr),
-  )
+  // val _ = PointerFinalizer(
+  //   this,
+  //   ptr,
+  //   _ptr => libcurl.easy.easyCleanup(_ptr),
+  // )
 
   /**
    * When `CurlSlist`(alias `curl_slist`) option is passed to `curl_easy_setopt`, libcurl does not
@@ -32,11 +37,12 @@ private[http] case class HttpConnection(request: HttpRequest, client: HttpClient
    * transfer before you call `curl_slist_free_all` on the list.
    */
   private var slistPtr: Ptr[CurlSlist] = null
-  val _ = PointerFinalizer(
-    this,
-    slistPtr,
-    _slist => libcurl.core.curl_slist_free_all(_slist),
-  )
+
+  // val _ = PointerFinalizer(
+  //   this,
+  //   slistPtr,
+  //   _slist => libcurl.core.curl_slist_free_all(_slist),
+  // )
 
   // given zone: Zone = Zone.open()
   // but how to close it properly ?_?
@@ -153,3 +159,13 @@ private[http] case class HttpConnection(request: HttpRequest, client: HttpClient
 
   def perform(): Unit =
     ???
+
+  def cleanup(): Unit = {
+    if ptr != null
+    then libcurl.easy.easyCleanup(ptr)
+
+    if slistPtr != null
+    then
+      libcurl.core.curl_slist_free_all(slistPtr)
+      slistPtr = null
+  }
