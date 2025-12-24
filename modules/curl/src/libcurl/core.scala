@@ -35,7 +35,7 @@ import snhttp.experimental.libcurl._type._BindgenEnumCLong
 
 import internal.SockAddrFamily
 
-import _type._BindgenEnumInt
+import _type.{_BindgenEnumInt, CurlOff, CurlSocklen}
 
 @extern
 object core:
@@ -1362,26 +1362,25 @@ object core:
       def internals: Ptr[Byte] = struct._2
       def internals_=(value: Ptr[Byte]): Unit = !struct.at2 = value
 
-  @name("CURLINFO")
-  opaque type CurlInfo = Int
+  @name("CURLINFO") opaque type CurlInfo = Int
   object CurlInfo extends _BindgenEnumInt[CurlInfo]:
 
     inline def define(a: Int): CurlInfo = a
 
     // By `#define`
     val STRING: CurlInfo = define(0x100000)
-    val LONG = define(0x200000)
-    val DOUBLE = define(0x300000)
-    val SLIST = define(0x400000)
-    val PTR = define(0x400000)
-    val SOCKET = define(0x500000)
-    val OFF_T = define(0x600000)
-    val MASK = define(0x0fffff)
-    val TYPEMASK = define(0xf00000)
+    val LONG: CurlInfo = define(0x200000)
+    val DOUBLE: CurlInfo = define(0x300000)
+    val SLIST: CurlInfo = define(0x400000)
+    val PTR: CurlInfo = define(0x400000)
+    val SOCKET: CurlInfo = define(0x500000)
+    val OFF_T: CurlInfo = define(0x600000)
+    val MASK: CurlInfo = define(0x0fffff)
+    val TYPEMASK: CurlInfo = define(0xf00000)
 
     val NONE = define(0)
     val EFFECTIVE_URL = STRING + define(1)
-    val RESPONSE_CODE = LONG + define(2)
+    val RESPONSE_CODE: CurlInfo = LONG + define(2)
     val TOTAL_TIME = DOUBLE + define(3)
     val NAMELOOKUP_TIME = DOUBLE + define(4)
     val CONNECT_TIME = DOUBLE + define(5)
@@ -1452,7 +1451,7 @@ object core:
 
     val ACTIVESOCKET = SOCKET + define(44)
     val TLS_SSL_PTR = PTR + define(45)
-    val HTTP_VERSION = LONG + define(46)
+    val HTTP_VERSION: CurlInfo = LONG + define(46)
     val PROXY_SSL_VERIFYRESULT = LONG + define(47)
 
     @deprecated("deprecated since libcurl 7.85.0. Use CurlInfo.SCHEME")
@@ -1651,13 +1650,3 @@ object core:
   /**
    * define symbols `CURLPAUSE_*` is relocated to [[easy]] CurlPause
    */
-
-  //
-  // Import data type definitions from `curl/system.h`
-  //
-
-  @name("curl_off_t")
-  type CurlOff = Size
-
-  @name("curl_socklen_t")
-  type CurlSocklen = socklen_t

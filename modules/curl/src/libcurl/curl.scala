@@ -9,5 +9,6 @@ object curl:
   import core.*
   import options.*
   import easy.*
+  import header.*
   import multi.*
   import websockets.*

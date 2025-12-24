@@ -1,7 +1,10 @@
 package snhttp.experimental.libcurl
 
 import scala.scalanative.unsafe.{Tag, Size, CInt, CLongLong, CLong}
+import scala.scalanative.unsafe.name
 import scala.scalanative.unsigned.UInt
+import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
+import scala.scalanative.posix.time.time_t
 
 private object _type:
   private[libcurl] trait _BindgenEnumUInt[T](using eq: T =:= UInt):
@@ -34,3 +37,13 @@ private object _type:
     given Tag[T] = Tag.Int.asInstanceOf[Tag[T]]
     extension (inline t: T) inline def value: Size = eq.apply(t)
     extension (inline t: T) inline def long: Long = eq.apply(t).toLong
+
+  //
+  // Import data type definitions from `curl/system.h`
+  //
+
+  @name("curl_off_t")
+  type CurlOff = Size
+
+  @name("curl_socklen_t")
+  type CurlSocklen = socklen_t

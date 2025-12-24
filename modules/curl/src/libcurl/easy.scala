@@ -105,13 +105,16 @@ object easy:
       handle: Ptr[Curl],
       option: CurlOption,
       params: Any*, // CVarArgList
-  ): CurlCode = extern
+  ): CurlCode =
+    extern
 
   @name("curl_easy_perform")
-  def easyPerform(handle: Ptr[Curl]): CurlCode = extern
+  def easyPerform(handle: Ptr[Curl]): CurlCode =
+    extern
 
   @name("curl_easy_cleanup")
-  def easyCleanup(handle: Ptr[Curl]): Unit = extern
+  def easyCleanup(handle: Ptr[Curl]): Unit =
+    extern
 
   /**
    * NAME curl_easy_getinfo()
@@ -129,7 +132,8 @@ object easy:
       handle: Ptr[Curl],
       info: CurlInfo,
       params: Any*, // CVarArgList
-  ): CurlCode = extern
+  ): CurlCode =
+    extern
 
   /**
    * NAME curl_easy_duphandle()
@@ -143,7 +147,8 @@ object easy:
    * identical curl_easy_setopt() invokes in every thread.
    */
   @name("curl_easy_duphandle")
-  def easyDupHandle(handle: Ptr[Curl]): Ptr[Curl] = extern
+  def easyDupHandle(handle: Ptr[Curl]): Ptr[Curl] =
+    extern
 
   /**
    * NAME curl_easy_reset()
@@ -156,7 +161,8 @@ object easy:
    * It does keep: live connections, the Session ID cache, the DNS cache and the cookies.
    */
   @name("curl_easy_reset")
-  def easyReset(handle: Ptr[Curl]): Unit = extern
+  def easyReset(handle: Ptr[Curl]): Unit =
+    extern
 
   /**
    * NAME curl_easy_recv()
@@ -190,109 +196,5 @@ object easy:
    * Performs connection upkeep for the given session handle.
    */
   @name("curl_easy_upkeep")
-  def easyUpkeep(handle: Ptr[Curl]): CurlCode = extern
-
-  //
-  // include <curl/header.h>
-  //
-
-  opaque type CurlHeader = CStruct6[CString, CString, USize, USize, UInt, Ptr[Byte]]
-  object CurlHeader:
-    given Tag[CurlHeader] =
-      Tag.materializeCStruct6Tag[CString, CString, USize, USize, UInt, Ptr[Byte]]
-
-    def apply(
-        name: CString,
-        value: CString,
-        amount: USize,
-        index: USize,
-        origin: UInt,
-        anchor: Ptr[Byte],
-    )(using Zone): Ptr[CurlHeader] =
-      val ptr = alloc[CurlHeader](1)
-      (!ptr).name = name
-      (!ptr).value = value
-      (!ptr).amount = amount
-      (!ptr).index = index
-      (!ptr).origin = origin
-      (!ptr).anchor = anchor
-      ptr
-
-    extension (struct: CurlHeader)
-      def name: CString = struct._1
-      def name_=(value: CString): Unit = !struct.at1 = value
-      def value: CString = struct._2
-      def value_=(value: CString): Unit = !struct.at2 = value
-      def amount: USize = struct._3
-      def amount_=(value: USize): Unit = !struct.at3 = value
-      def index: USize = struct._4
-      def index_=(value: USize): Unit = !struct.at4 = value
-      def origin: UInt = struct._5
-      def origin_=(value: UInt): Unit = !struct.at5 = value
-      def anchor: Ptr[Byte] = struct._6
-      def anchor_=(value: Ptr[Byte]): Unit = !struct.at6 = value
-
-  /**
-   * define symbols `CURLH_*`, known as 'origin' bits
-   */
-  opaque type CurlHeaderOrigin = UInt
-  object CurlHeaderOrigin:
-    given Tag[CurlHeaderOrigin] = Tag.UInt
-
-    inline def define(inline v: Int): CurlHeaderOrigin = v.toUInt
-
-    val HEADER = define(1 << 0) /* plain server header */
-    val TRAILER = define(1 << 1) /* trailers */
-    val CONNECT = define(1 << 2) /* CONNECT headers */
-    val `1XX` = define(1 << 3) /* 1xx headers */
-    val PSEUDO = define(1 << 4) /* pseudo headers */
-
-  @name("CURLHcode")
-  opaque type CurlHeadderCode = UInt
-  object CurlHeadderCode:
-    given Tag[CurlHeadderCode] = Tag.UInt
-
-    inline def define(inline a: Long): CurlHeadderCode = a.toUInt
-
-    val OK = define(0)
-    val BADINDEX = define(1) /* header exists but not with this index */
-    val MISSING = define(2) /* no such header exists */
-    val NOHEADERS = define(3) /* no headers at all exist (yet) */
-    val NOREQUEST = define(4) /* no request with this number was used */
-    val OUT_OF_MEMORY = define(5) /* out of memory while processing */
-    val BAD_ARGUMENT = define(6) /* a function argument was not okay */
-    val NOT_BUILT_IN = define(7) /* if API was disabled in the build */
-
-    extension (value: CurlHeadderCode)
-      def getName: String =
-        value match
-          case OK            => "CURLHE_OK"
-          case BADINDEX      => "CURLHE_BADINDEX"
-          case MISSING       => "CURLHE_MISSING"
-          case NOHEADERS     => "CURLHE_NOHEADERS"
-          case NOREQUEST     => "CURLHE_NOREQUEST"
-          case OUT_OF_MEMORY => "CURLHE_OUT_OF_MEMORY"
-          case BAD_ARGUMENT  => "CURLHE_BAD_ARGUMENT"
-          case NOT_BUILT_IN  => "CURLHE_NOT_BUILT_IN"
-          case _             => throw new IllegalStateException("Unknown CurlHeadderCode: " + value)
-
-    extension (a: CurlHeadderCode)
-      inline def &(b: CurlHeadderCode): CurlHeadderCode = a & b
-      inline def |(b: CurlHeadderCode): CurlHeadderCode = a | b
-      inline def is(b: CurlHeadderCode): Boolean = (a & b) == b
-
-  def easyHeader(
-      handle: Ptr[Curl],
-      name: CString,
-      index: USize,
-      origin: CurlHeaderOrigin,
-      request: Int,
-      hout: Ptr[Ptr[CurlHeader]],
-  ): CurlHeadderCode = extern
-
-  def easyNextHeader(
-      handle: Ptr[Curl],
-      origin: CurlHeaderOrigin,
-      request: Int,
-      prev: Ptr[CurlHeader],
-  ): Ptr[CurlHeader] = extern
+  def easyUpkeep(handle: Ptr[Curl]): CurlCode =
+    extern

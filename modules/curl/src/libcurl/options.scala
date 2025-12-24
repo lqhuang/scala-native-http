@@ -693,10 +693,10 @@ object options:
 
   /** These enums are for use with the `CURLOPT_HTTP_VERSION` option. */
   @name("CURLOPT_HTTP_VERSION")
-  opaque type CurlOptHttpVersion = CLong
-  object CurlOptHttpVersion extends _BindgenEnumCLong[CurlOptHttpVersion]:
+  opaque type CurlHttpVersion = CLong
+  object CurlHttpVersion extends _BindgenEnumCLong[CurlHttpVersion]:
 
-    inline def define(inline a: Int): CurlOptHttpVersion = a
+    inline def define(inline a: Int): CurlHttpVersion = a
 
     /**
      * setting this means we don't care, and that we'd like the library to choose the best possible

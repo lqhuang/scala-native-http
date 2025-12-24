@@ -16,7 +16,8 @@ import scala.scalanative.unsafe.{link, extern, alloc, name}
 import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CVoidPtr}
 import scala.scalanative.unsigned.*
 
-import core.{Curl, CurlOff, CurlCode}
+import core.{Curl, CurlCode}
+import _type.CurlOff
 
 @extern
 object websockets:
@@ -25,35 +26,15 @@ object websockets:
    * CurlWsFrame
    */
   opaque type CurlWsFrame = CStruct5[
-    /**
-     * age
-     *
-     * zero
-     */
+    /** age: zero */
     Int,
-    /**
-     * flags
-     *
-     * See the CURLWS_* defines
-     */
+    /** flags: See the `CURLWS_*` defines */
     Int,
-    /**
-     * offset
-     *
-     * the offset of this data into the frame
-     */
+    /** offset: the offset of this data into the frame */
     CurlOff,
-    /**
-     * bytesleft
-     *
-     * number of pending bytes left of the payload
-     */
+    /** bytesleft: number of pending bytes left of the payload */
     CurlOff,
-    /**
-     * len
-     *
-     * size of the current data chunk
-     */
+    /** len:  size of the current data chunk */
     USize,
   ]
   object CurlWsFrame:
@@ -109,7 +90,7 @@ object websockets:
    * CURLOPT_CONNECT_ONLY option.
    */
   @name("curl_ws_recv")
-  def recv(
+  def wsRecv(
       curl: Ptr[Curl],
       buffer: CVoidPtr,
       buflen: USize,
@@ -126,7 +107,7 @@ object websockets:
    * CURLOPT_CONNECT_ONLY option.
    */
   @name("curl_ws_send")
-  def send(
+  def wsSend(
       curl: Ptr[Curl],
       buffer: CVoidPtr,
       buflen: USize,
@@ -136,4 +117,4 @@ object websockets:
   ): CurlCode = extern
 
   @name("curl_ws_meta")
-  def meta(curl: Ptr[Curl]): Ptr[CurlWsFrame] = extern
+  def wsMeta(curl: Ptr[Curl]): Ptr[CurlWsFrame] = extern
