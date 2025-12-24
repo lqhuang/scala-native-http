@@ -9,7 +9,7 @@ import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
 /// @since 11
-final class HttpHeaders(private val headers: JMap[String, JList[String]]):
+final class HttpHeaders private (headers: JMap[String, JList[String]]):
 
   def allValues(name: String): JList[String] =
     headers.getOrDefault(name.toLowerCase(Locale.ROOT), JList.of())

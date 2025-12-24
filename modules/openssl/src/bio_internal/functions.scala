@@ -1077,12 +1077,14 @@ object functions:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
-  @extern def BIO_vprintf(bio: Ptr[BIO], format: CString, args: va_list): CInt = extern
+  @extern def BIO_vprintf(bio: Ptr[BIO], format: CString, args: CVarArgList): CInt =
+    extern
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
-  @extern def BIO_vsnprintf(buf: CString, n: size_t, format: CString, args: va_list): CInt = extern
+  @extern def BIO_vsnprintf(buf: CString, n: size_t, format: CString, args: CVarArgList): CInt =
+    extern
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h

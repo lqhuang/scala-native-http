@@ -93,15 +93,6 @@ object aliases:
     extension (v: asn1_ps_func)
       inline def value: CFuncPtr4[Ptr[BIO], Ptr[Ptr[CUnsignedChar]], Ptr[CInt], Ptr[Byte], CInt] = v
 
-  /**
-   * [bindgen] header: /usr/include/openssl/bio.h
-   */
-  type bio_info_cb = BIO_info_cb
-  object bio_info_cb:
-    given _tag: Tag[bio_info_cb] = BIO_info_cb._tag
-    inline def apply(inline o: BIO_info_cb): bio_info_cb = o
-    extension (v: bio_info_cb) inline def value: BIO_info_cb = v
-
   type size_t = libc.stddef.size_t
   object size_t:
     val _tag: Tag[size_t] = summon[Tag[libc.stddef.size_t]]
@@ -134,9 +125,3 @@ object aliases:
     given _tag: Tag[uintptr_t] = Tag.USize
     inline def apply(inline o: CUnsignedLongInt): uintptr_t = o
     extension (v: uintptr_t) inline def value: CUnsignedLongInt = v
-
-  type va_list = unsafe.CVarArgList
-  object va_list:
-    val _tag: Tag[va_list] = summon[Tag[unsafe.CVarArgList]]
-    inline def apply(inline o: unsafe.CVarArgList): va_list = o
-    extension (v: va_list) inline def value: unsafe.CVarArgList = v

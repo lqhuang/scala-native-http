@@ -6,7 +6,7 @@ import javax.net.ssl.SSLContext
 import scala.concurrent.Future
 import java.util.concurrent.CompletableFuture
 
-def runBasic(): Unit =
+def runAsync(): Unit =
   val sslContext = SSLContext.getDefault()
 
   val client = HttpClient.newBuilder().sslContext(sslContext).build()
@@ -45,6 +45,6 @@ def runConcurrentRequests(): Unit =
 
   val all = CompletableFuture.allOf(requests*).join()
 
-@main def main(args: Array[String]): Unit =
-  runBasic()
+@main def reqAsync(): Unit =
+  runAsync()
   runConcurrentRequests()

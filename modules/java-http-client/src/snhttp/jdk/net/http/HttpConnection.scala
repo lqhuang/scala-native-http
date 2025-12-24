@@ -11,7 +11,7 @@ import scala.scalanative.unsafe.{Ptr, Zone, toCString, stackalloc, Tag}
 import snhttp.utils.PointerFinalizer
 import snhttp.experimental.libcurl
 import snhttp.experimental.libcurl.core.{CurlSlist, CurlFollow, CurlUseSsl}
-import snhttp.experimental.libcurl.options.{CurlOption, CurlOptHttpVersion}
+import snhttp.experimental.libcurl.options.{CurlOption, CurlHttpVersion}
 
 /**
  * Represents a (virtual) connection to a web server, majorly based on libcurl's easy handle.
@@ -61,8 +61,8 @@ private[http] case class HttpConnection[T](
       )
 
       val httpVersion = request.version().orElse(Version.HTTP_2) match
-        case Version.HTTP_1_1 => CurlOptHttpVersion.VERSION_1_1
-        case Version.HTTP_2   => CurlOptHttpVersion.VERSION_2_0
+        case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
+        case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
       val _ = libcurl.easy.easySetopt(
         ptr,
         CurlOption.HTTP_VERSION,

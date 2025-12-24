@@ -20,12 +20,11 @@ def runBasic(): Unit =
 
 def runCustomSSLContext(): Unit =
   val sslContext = SSLContext.getInstance("TLSv1.3")
-  sslContext.init(null, null, null)
 
   val sslParams = sslContext.getDefaultSSLParameters()
   sslParams.setProtocols(Array("TLSv1.3"))
 
-  val client = HttpClient.newBuilder().sslContext(sslContext).sslParameters().build()
+  val client = HttpClient.newBuilder().sslContext(sslContext).sslParameters(sslParams).build()
 
   val request = HttpRequest
     .newBuilder()
@@ -38,6 +37,6 @@ def runCustomSSLContext(): Unit =
   println(s"Status: ${response.statusCode()}")
   println(s"Body: ${response.body()}")
 
-@main def main(args: Array[String]): Unit =
+@main def req(): Unit =
   runBasic()
   runCustomSSLContext()

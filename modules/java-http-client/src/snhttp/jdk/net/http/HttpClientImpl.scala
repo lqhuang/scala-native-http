@@ -1,20 +1,14 @@
 package snhttp.jdk.net.http
 
-import java.io.{IOException, UncheckedIOException}
-import java.net.{
-  Authenticator,
-  CookieHandler,
-  InetAddress,
-  InetSocketAddress,
-  Proxy,
-  ProxySelector,
-  URI,
-}
+import java.io.IOException
+import java.net.{Authenticator, CookieHandler, InetAddress, Proxy, ProxySelector, URI}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, HttpHeaders, WebSocket}
 import java.net.http.HttpClient.{Builder, Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
 import java.time.Duration
-import java.util.{List, Optional}
+import java.util.{ArrayList, Optional, TreeMap}
+import java.util.List as JList
+import java.util.Map as JMap
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, Executor}
 import java.util.concurrent.ExecutionException
@@ -23,10 +17,13 @@ import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.collection.mutable.{LinkedHashSet, HashMap}
 import scala.concurrent.ExecutionContext
-import scala.scalanative.unsafe.{Ptr, Zone, toCString, stackalloc, CVarArgList, CVarArg, Tag}
+import scala.scalanative.unsafe.{Size, Ptr, Zone, toCString, stackalloc, Tag, CLong}
 
 import snhttp.experimental.libcurl
-import snhttp.experimental.libcurl.core.CurlSlist
+import snhttp.experimental.libcurl.core.{CurlSlist, CurlInfo}
+import snhttp.experimental.libcurl.multi.{CurlMsgCode, CurlMsg}
+import snhttp.experimental.libcurl.options.CurlHttpVersion
+import snhttp.experimental.libcurl.header.{CurlHeader, CURLH}
 import snhttp.utils.PointerFinalizer
 
 class HttpClientBuilderImpl() extends Builder:
@@ -234,15 +231,113 @@ class HttpClientImpl(
   ): CompletableFuture[HttpResponse[T]] = {
     requireNonNull(request, "`request: HttpRequest` cannot be null")
     requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
-    // pushPromiseHandler is nullable
 
-    val conn = HttpConnection(request, this)
+    if (pushPromiseHandler != null)
+      throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
 
-    try
-      ???
-    catch {
-      case e: Throwable => ???
-    }
+    val conn = HttpConnection(request, responseBodyHandler, this)
+    val code = libcurl.multi.multiAddHandle(ptr, conn.ptr)
+
+    CompletableFuture.supplyAsync(
+      () => {
+        val stillRunningPtr = stackalloc[Int]()
+        val _ = libcurl.multi.multiPerform(ptr, stillRunningPtr)
+
+        /**
+         * set started flag for http client
+         */
+        _started.compareAndExchange(false, true)
+
+        val msgQPtr = stackalloc[Int]() // zero-initialized
+        var msg: Ptr[CurlMsg] = null
+
+        while {
+          msg = libcurl.multi.multiInfoRead(ptr, msgQPtr)
+          // Stop
+          // if no more messages
+          // or if we have catched the message for curr connection (easyHandle)
+          msg == null || ((!msg).easyHandle == conn.ptr && (!msg).msg == CurlMsgCode.DONE)
+        } do ()
+
+        // We unconfidently assueme here that msg is not null and (!msg).easyHandle == conn.ptr
+        if (msg == null || (!msg).easyHandle != conn.ptr)
+          throw new IllegalStateException(
+            s"Failed to complete HTTP request: no DONE message received for the connection",
+          )
+
+        /**
+         * Collect response code
+         */
+        val _respCodePtr = stackalloc[CLong]()
+        val _ = libcurl.easy.easyGetInfo(
+          conn.ptr,
+          CurlInfo.RESPONSE_CODE,
+          _respCodePtr,
+        )
+
+        /**
+         * Collect http version info
+         */
+        val _versionPtr = stackalloc[CurlHttpVersion]()
+        val _ = libcurl.easy.easyGetInfo(
+          conn.ptr,
+          CurlInfo.HTTP_VERSION,
+          _versionPtr,
+        )
+        val _version = !_versionPtr match
+          case CurlHttpVersion.VERSION_1_1               => HttpClient.Version.HTTP_1_1
+          case CurlHttpVersion.VERSION_2_0               => HttpClient.Version.HTTP_2
+          case CurlHttpVersion.VERSION_2TLS              => HttpClient.Version.HTTP_2
+          case CurlHttpVersion.VERSION_2_PRIOR_KNOWLEDGE => HttpClient.Version.HTTP_2
+          case _ =>
+            throw new RuntimeException(
+              s"Unsupported HTTP version response code with libcurl: ${!_versionPtr}",
+            )
+
+        /**
+         * Collect response headers
+         */
+        var _headerPtr: Ptr[CurlHeader] = null
+        var _prevHeaderPtr: Ptr[CurlHeader] = null
+        val _map: TreeMap[String, JList[String]] = new TreeMap(String.CASE_INSENSITIVE_ORDER)
+        while {
+          _headerPtr = libcurl.header.easyNextHeader(conn.ptr, CURLH.HEADER, -1, _prevHeaderPtr)
+          _headerPtr != null
+        } do {
+          val name = (!_headerPtr).name.toString
+          val value = (!_headerPtr).value.toString
+
+          _map.containsKey(name) match
+            case true => _map.get(name).add(value)
+            case false =>
+              val xs = new ArrayList[String]()
+              xs.add(value)
+              _map.put(name, xs)
+
+          _prevHeaderPtr = _headerPtr
+        }
+        val respHeaders = HttpHeaders.of(_map, (_, _) => true)
+
+        val response = HttpResponseImpl[T](
+          request,
+          _version,
+          (!_respCodePtr).toInt,
+          respHeaders,
+          ???,
+        )
+
+        // Clean up
+        val r = libcurl.multi.multiRemoveHandle(ptr, conn.ptr)
+        if (r != 0)
+          throw new IOException(
+            s"Failed to remove easy handle from multi handle: error code ${r}",
+          )
+        conn.cleanup()
+
+        response
+      },
+      _executor,
+    )
 
   }
 
