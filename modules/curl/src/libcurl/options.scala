@@ -88,7 +88,7 @@ object options:
     val VERBOSE = define(41)
     val HEADER = define(42)
     val NOPROGRESS = define(43)
-    val NOBODY = define(44)
+    val NOBODY = define(44) // HTTP HEAD
     val FAILONERROR = define(45)
     val UPLOAD = define(46)
     val POST = define(47)

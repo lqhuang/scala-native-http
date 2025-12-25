@@ -45,7 +45,7 @@ final class Demand() {
       if fulfilled
       then true
       else {
-        decrease()
+        decrease(): Unit
         loop()
       }
 

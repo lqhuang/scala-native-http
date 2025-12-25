@@ -66,7 +66,7 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
   - [x] URLStreamHandlerFactory
   - Exceptions
     - [x] HttpRetryException
-    - URISyntaxException
+    - URISyntaxException (included in Scala Native, others in similar level are the same)
     - MalformedURLException
     - ProtocolException
     - UnknownHostException
@@ -109,7 +109,16 @@ Check `Makefile` for more.
 
 ## Known Issues
 
-### Client session resumption is not supported yet
+### Fixable (not supported yet)
+
+- Client session resumption
+- Custom SSL providers
+- HTTP/1.1 pipelining
+- HTTP/1.1 connection pooling
+
+### Unfixable
+
+- Curl natively does not support streaming responses
 
 <!--
 ### Properties support

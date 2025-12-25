@@ -1338,7 +1338,7 @@ object core:
    * used to obtain further information regarding the connection. Asked for with
    * CURLINFO_TLS_SSL_PTR or CURLINFO_TLS_SESSION.
    */
-  @name("curl_tlssessioninfo")
+  // known as "curl_tlssessioninfo" in C header
   opaque type CurlTlsSessionInfo = CStruct2[
     /** backend */
     CurlSslBackendId,
@@ -1362,22 +1362,24 @@ object core:
       def internals: Ptr[Byte] = struct._2
       def internals_=(value: Ptr[Byte]): Unit = !struct.at2 = value
 
-  @name("CURLINFO") opaque type CurlInfo = Int
+  // known as "CURLINFO" in C header
+  opaque type CurlInfo = Int
   object CurlInfo extends _BindgenEnumInt[CurlInfo]:
 
     inline def define(a: Int): CurlInfo = a
 
     // By `#define`
-    val STRING: CurlInfo = define(0x100000)
-    val LONG: CurlInfo = define(0x200000)
-    val DOUBLE: CurlInfo = define(0x300000)
-    val SLIST: CurlInfo = define(0x400000)
-    val PTR: CurlInfo = define(0x400000)
-    val SOCKET: CurlInfo = define(0x500000)
-    val OFF_T: CurlInfo = define(0x600000)
-    val MASK: CurlInfo = define(0x0fffff)
-    val TYPEMASK: CurlInfo = define(0xf00000)
+    private val STRING: CurlInfo = define(0x100000)
+    private val LONG: CurlInfo = define(0x200000)
+    private val DOUBLE: CurlInfo = define(0x300000)
+    private val SLIST: CurlInfo = define(0x400000)
+    private val PTR: CurlInfo = define(0x400000)
+    private val SOCKET: CurlInfo = define(0x500000)
+    private val OFF_T: CurlInfo = define(0x600000)
+    private val MASK: CurlInfo = define(0x0fffff)
+    private val TYPEMASK: CurlInfo = define(0xf00000)
 
+    // By typedef enum
     val NONE = define(0)
     val EFFECTIVE_URL = STRING + define(1)
     val RESPONSE_CODE: CurlInfo = LONG + define(2)
