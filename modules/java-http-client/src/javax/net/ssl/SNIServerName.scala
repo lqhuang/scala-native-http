@@ -6,10 +6,7 @@ import java.util.Objects.requireNonNull
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SNIServerName.html
-abstract class SNIServerName protected[ssl] (
-    private val nameType: Int,
-    private val encoded: Array[Byte],
-):
+abstract class SNIServerName protected[ssl] (nameType: Int, encoded: Array[Byte]):
 
   require(nameType >= 0, "Server name type cannot be less than zero")
   require(nameType <= 255, "Server name type cannot be greater than 255")
@@ -48,9 +45,6 @@ abstract class SNIServerName protected[ssl] (
     if nameType == StandardConstants.SNI_HOST_NAME
     then s"type=host_name (0), value=${hex(encodedCopied)}"
     else s"type=($nameType), value=${hex(encodedCopied)}"
-
-  override protected[ssl] def clone(): SNIServerName =
-    SNIServerName(nameType, encoded)
 
   private def hex(bytes: Array[Byte]): String =
     if bytes.length == 0
