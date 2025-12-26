@@ -1,37 +1,45 @@
-package javax.net.ssl
+/**
+ * No java.util.EventObject shim available
+ *
+ * Commenting out for now
+ */
 
-import java.security.Principal
-import java.security.cert.{Certificate, X509Certificate}
-import java.util.EventObject
-import javax.net.ssl.SSLPeerUnverifiedException
+// package javax.net.ssl
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/HandshakeCompletedEvent.html
-class HandshakeCompletedEvent(socket: SSLSocket, session: SSLSession) extends EventObject(socket):
+// import java.security.Principal
+// import java.security.cert.{Certificate, X509Certificate}
+// import java.util.EventObject
+// import javax.net.ssl.SSLPeerUnverifiedException
 
-  def getSession(): SSLSession =
-    session
+// /**
+//  * Refs
+//  *
+//  *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/HandshakeCompletedEvent.html
+//  */
+// class HandshakeCompletedEvent(socket: SSLSocket, session: SSLSession) extends EventObject(socket):
 
-  def getCipherSuite(): String =
-    session.getCipherSuite()
+//   def getSession(): SSLSession =
+//     session
 
-  def getLocalCertificates(): Array[Certificate] =
-    session.getLocalCertificates()
+//   def getCipherSuite(): String =
+//     session.getCipherSuite()
 
-  def getPeerCertificates(): Array[Certificate] =
-    session.getPeerCertificates()
+//   def getLocalCertificates(): Array[Certificate] =
+//     session.getLocalCertificates()
 
-  @deprecated // since Java 9
-  def getPeerCertificateChain(): Array[X509Certificate] = throw new UnsupportedOperationException(
-    "getPeerCertificateChain is deprecated since JDK 9 and not implemented",
-  )
+//   def getPeerCertificates(): Array[Certificate] =
+//     session.getPeerCertificates()
 
-  def getPeerPrincipal(): Principal =
-    session.getPeerPrincipal()
+//   @deprecated // since Java 9
+//   def getPeerCertificateChain(): Array[X509Certificate] = throw new UnsupportedOperationException(
+//     "getPeerCertificateChain is deprecated since JDK 9 and not implemented",
+//   )
 
-  def getLocalPrincipal(): Principal =
-    session.getLocalPrincipal()
+//   def getPeerPrincipal(): Principal =
+//     session.getPeerPrincipal()
 
-  def getSocket(): SSLSocket =
-    super.getSource().asInstanceOf[SSLSocket]
+//   def getLocalPrincipal(): Principal =
+//     session.getLocalPrincipal()
+
+//   def getSocket(): SSLSocket =
+//     super.getSource().asInstanceOf[SSLSocket]

@@ -43,22 +43,24 @@ final class SNIHostName(private val hostname: String)
   override def toString(): String =
     s"type=host_name (${StandardConstants.SNI_HOST_NAME}), value=${hostname}"
 
+end SNIHostName
+
+object SNIHostName:
+
+  private class SNIHostNameMatcher(pattern: Pattern)
+      extends SNIMatcher(StandardConstants.SNI_HOST_NAME):
+    def matches(serverName: SNIServerName): Boolean =
+      serverName match
+        case sniHostName: SNIHostName =>
+          pattern.matcher(sniHostName.getAsciiName()).matches()
+        case _ =>
+          throw new IllegalArgumentException(
+            "serverName is not of the given server name type of hostname (0) type",
+          )
+
   def createSNIMatcher(regex: String): SNIMatcher =
     requireNonNull(regex)
     val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE)
     new SNIHostNameMatcher(pattern)
 
 end SNIHostName
-
-private[ssl] class SNIHostNameMatcher(pattern: Pattern) extends SNIMatcher(0):
-
-  def matches(serverName: SNIServerName): Boolean =
-    serverName match
-      case sniHostName: SNIHostName =>
-        pattern.matcher(sniHostName.getAsciiName()).matches()
-      case _ =>
-        throw new IllegalArgumentException(
-          "serverName is not of the given server name type of hostname (0) type",
-        )
-
-end SNIHostNameMatcher

@@ -1,6 +1,12 @@
-package javax.net.ssl
+/**
+ * No java.util.EventListener shim available
+ *
+ * Commenting out for now
+ */
 
-import java.util.EventListener
+// package javax.net.ssl
 
-trait HandshakeCompletedListener extends EventListener:
-  def handshakeCompleted(event: HandshakeCompletedEvent): Unit
+// import java.util.EventListener
+
+// trait HandshakeCompletedListener extends EventListener:
+//   def handshakeCompleted(event: HandshakeCompletedEvent): Unit
