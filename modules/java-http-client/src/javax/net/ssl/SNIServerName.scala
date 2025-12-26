@@ -3,9 +3,11 @@ package javax.net.ssl
 import java.util.Arrays
 import java.util.Objects.requireNonNull
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SNIServerName.html
+/**
+ * Refs
+ *
+ *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SNIServerName.html
+ */
 abstract class SNIServerName protected[ssl] (nameType: Int, encoded: Array[Byte]):
 
   require(nameType >= 0, "Server name type cannot be less than zero")
@@ -50,17 +52,3 @@ abstract class SNIServerName protected[ssl] (nameType: Int, encoded: Array[Byte]
     if bytes.length == 0
     then "(empty)"
     else bytes.map(x => "%02X".format(x)).mkString(":")
-
-object SNIServerName:
-
-  private case class SNIServerNameImpl(
-      nameType: Int,
-      encoded: Array[Byte],
-  ) extends SNIServerName(nameType, encoded)
-
-  protected[ssl] def apply(
-      nameType: Int,
-      encoded: Array[Byte],
-  ): SNIServerName = SNIServerNameImpl(nameType, encoded)
-
-end SNIServerName
