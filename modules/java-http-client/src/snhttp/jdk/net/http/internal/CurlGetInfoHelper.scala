@@ -12,9 +12,7 @@ import scala.scalanative.unsafe.{stackalloc, fromCString}
 
 import snhttp.utils.PointerFinalizer
 import snhttp.experimental.libcurl
-import snhttp.experimental.libcurl.core.{CurlInfo, Curl}
-import snhttp.experimental.libcurl.options.CurlHttpVersion
-import snhttp.experimental.libcurl.header.{CurlHeader, CURLH}
+import snhttp.experimental.libcurl.{CurlInfo, Curl, CurlHttpVersion, CurlHeader, CurlHeaderOrigin}
 
 class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
 
@@ -25,7 +23,7 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
 
   def statusCode(): Int =
     val _respCodePtr = stackalloc[CLong]()
-    val _ = libcurl.easy.easyGetInfo(
+    val _ = libcurl.easyGetInfo(
       ptr,
       CurlInfo.RESPONSE_CODE,
       _respCodePtr,
@@ -34,7 +32,7 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
 
   def version(): Version =
     val _versionPtr = stackalloc[CurlHttpVersion]()
-    val _ = libcurl.easy.easyGetInfo(
+    val _ = libcurl.easyGetInfo(
       ptr,
       CurlInfo.HTTP_VERSION,
       _versionPtr,
@@ -55,7 +53,7 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
 
     val _map: TreeMap[String, JList[String]] = new TreeMap(String.CASE_INSENSITIVE_ORDER)
     while {
-      _headerPtr = libcurl.header.easyNextHeader(ptr, CURLH.HEADER, -1, _prevHeaderPtr)
+      _headerPtr = libcurl.easyNextHeader(ptr, CurlHeaderOrigin.HEADER, -1, _prevHeaderPtr)
       _headerPtr != null
     } do {
       val name = fromCString((!_headerPtr).name, StandardCharsets.UTF_8)

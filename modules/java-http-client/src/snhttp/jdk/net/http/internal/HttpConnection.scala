@@ -25,11 +25,19 @@ import scala.scalanative.unsafe.{
 
 import snhttp.utils.PointerFinalizer
 import snhttp.experimental.libcurl
-import snhttp.experimental.libcurl.core.{CurlSlist, CurlFollow, CurlUseSsl, CurlInfo, Curl}
-import snhttp.experimental.libcurl.options.{CurlOption, CurlHttpVersion}
-import snhttp.experimental.libcurl.multi.{CurlMsgCode, CurlMsg}
-import snhttp.experimental.libcurl.header.{CurlHeader, CURLH}
-import snhttp.experimental.libcurl.multi.CurlMulti
+import snhttp.experimental.libcurl.{
+  CurlSlist,
+  CurlFollow,
+  CurlUseSsl,
+  CurlInfo,
+  Curl,
+  CurlOption,
+  CurlHttpVersion,
+  CurlMsgCode,
+  CurlMsg,
+  CurlHeader,
+  CurlMulti,
+}
 
 import snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl}
 import java.net.http.HttpRequest.BodyPublishers
@@ -53,13 +61,13 @@ private[http] class HttpConnection[T](
     client: HttpClientImpl,
 ) extends AutoCloseable:
 
-  private[snhttp] val ptr = libcurl.easy.easyInit()
+  private[snhttp] val ptr = libcurl.easyInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURL easy handle")
   // val _ = PointerFinalizer(
   //   this,
   //   ptr,
-  //   _ptr => libcurl.easy.easyCleanup(_ptr),
+  //   _ptr => libcurl.easyCleanup(_ptr),
   // )
 
   /**
@@ -72,7 +80,7 @@ private[http] class HttpConnection[T](
   // val _ = PointerFinalizer(
   //   this,
   //   slistPtr,
-  //   _slist => libcurl.core.curl_slist_free_all(_slist),
+  //   _slist => libcurl.curl_slist_free_all(_slist),
   // )
 
   private val _started = new AtomicBoolean(false)
@@ -92,7 +100,7 @@ private[http] class HttpConnection[T](
    */
   private def init(): Unit = {
     try {
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.URL,
         toCString(request.uri().toString()),
@@ -101,7 +109,7 @@ private[http] class HttpConnection[T](
       val httpVersion = request.version().orElse(Version.HTTP_2) match
         case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
         case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.HTTP_VERSION,
         httpVersion,
@@ -111,7 +119,7 @@ private[http] class HttpConnection[T](
         .timeout()
         .orElse(Duration.ofSeconds(30))
         .toMillis
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.TIMEOUT_MS,
         timeoutMs,
@@ -120,7 +128,7 @@ private[http] class HttpConnection[T](
       val connectTimeoutMs = client.builder._connectTimeout match
         case Some(duration) => duration.toMillis
         case None           => 0L
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.CONNECTTIMEOUT_MS,
         connectTimeoutMs,
@@ -130,7 +138,7 @@ private[http] class HttpConnection[T](
         case Redirect.NEVER  => CurlFollow.DISABLED
         case Redirect.ALWAYS => CurlFollow.ALL
         case Redirect.NORMAL => CurlFollow.OBEYCODE
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.FOLLOWLOCATION,
         followRedirects,
@@ -168,10 +176,10 @@ private[http] class HttpConnection[T](
           if value.isEmpty
           then s"${key};"
           else s"${key}: ${value}"
-        slistPtr = libcurl.core.curl_slist_append(slistPtr, toCString(header))
+        slistPtr = libcurl.slistAppend(slistPtr, toCString(header))
 
       }
-      val _ = libcurl.easy.easySetopt(ptr, CurlOption.HTTPHEADER, slistPtr)
+      val _ = libcurl.easySetopt(ptr, CurlOption.HTTPHEADER, slistPtr)
 
       /**
        * TLS options
@@ -180,9 +188,9 @@ private[http] class HttpConnection[T](
 
       if !scheme.endsWith("s")
       then // no TLS
-        val _ = libcurl.easy.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.NONE)
+        val _ = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.NONE)
       else { // with TLS
-        val _ = libcurl.easy.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.ALL)
+        val _ = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.ALL)
 
         // TODO: https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
         // Register SSL context ptr to set up custom SSL context
@@ -193,12 +201,12 @@ private[http] class HttpConnection[T](
       /**
        * Set body handler
        */
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.WRITEFUNCTION,
         ???,
       )
-      val _ = libcurl.easy.easySetopt(
+      val _ = libcurl.easySetopt(
         ptr,
         CurlOption.WRITEDATA,
         respBody,
@@ -215,22 +223,22 @@ private[http] class HttpConnection[T](
         bodyPublisher.subscribe(postfieldSubscriber)
 
         val data = postfieldSubscriber.getBody().toCompletableFuture().join()
-        val _ = libcurl.easy.easySetopt(ptr, CurlOption.POSTFIELDS, toCString(data))
+        val _ = libcurl.easySetopt(ptr, CurlOption.POSTFIELDS, toCString(data))
       }
       // NOTES:
       // `CURLOPT_POSTFIELDS` implied POST,
       // so postpone setting method until here.
       val _ = request.method() match
         case "GET" =>
-          libcurl.easy.easySetopt(ptr, CurlOption.HTTPGET, 1)
+          libcurl.easySetopt(ptr, CurlOption.HTTPGET, 1)
         case "HEAD" =>
-          libcurl.easy.easySetopt(ptr, CurlOption.NOBODY, 1)
+          libcurl.easySetopt(ptr, CurlOption.NOBODY, 1)
         case "POST" =>
-          libcurl.easy.easySetopt(ptr, CurlOption.POST, 1)
+          libcurl.easySetopt(ptr, CurlOption.POST, 1)
         case "CONNECT" =>
-          libcurl.easy.easySetopt(ptr, CurlOption.CONNECT_ONLY, 1)
+          libcurl.easySetopt(ptr, CurlOption.CONNECT_ONLY, 1)
         case m @ ("PUT" | "DELETE" | "OPTIONS" | "TRACE" | "PATCH") =>
-          libcurl.easy.easySetopt(ptr, CurlOption.CUSTOMREQUEST, toCString(m))
+          libcurl.easySetopt(ptr, CurlOption.CUSTOMREQUEST, toCString(m))
         case other =>
           throw new UnsupportedOperationException(
             s"HTTP method ${other} is not supported yet",
@@ -239,7 +247,7 @@ private[http] class HttpConnection[T](
       /**
        * Finally add easy handle to multi handle
        */
-      val code = libcurl.multi.multiAddHandle(client.ptr, ptr)
+      val code = libcurl.multiAddHandle(client.ptr, ptr)
       if (code != 0)
         throw new RuntimeException(
           s"Failed to add easy handle to multi handle: error code ${code}",
@@ -252,11 +260,11 @@ private[http] class HttpConnection[T](
 
   def close(): Unit = {
     if ptr != null
-    then libcurl.easy.easyCleanup(ptr)
+    then libcurl.easyCleanup(ptr)
 
     if slistPtr != null
     then
-      libcurl.core.curl_slist_free_all(slistPtr)
+      libcurl.slistFreeAll(slistPtr)
       slistPtr = null
 
     zone.close()
@@ -264,7 +272,7 @@ private[http] class HttpConnection[T](
 
   def perform(): Unit =
     val stillRunningPtr = stackalloc[Int]()
-    val _ = libcurl.multi.multiPerform(client.ptr, stillRunningPtr)
+    val _ = libcurl.multiPerform(client.ptr, stillRunningPtr)
     val exp = _started.weakCompareAndSet(false, true)
     if (!exp) throw new IllegalStateException("HTTP connection should be started")
 
@@ -273,7 +281,7 @@ private[http] class HttpConnection[T](
     var msg: Ptr[CurlMsg] = null
 
     while {
-      msg = libcurl.multi.multiInfoRead(client.ptr, msgQPtr)
+      msg = libcurl.multiInfoRead(client.ptr, msgQPtr)
       // Stop
       // if no more messages
       // or if we have catched the message for curr connection (easyHandle)

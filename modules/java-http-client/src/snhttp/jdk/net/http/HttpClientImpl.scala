@@ -20,10 +20,17 @@ import scala.concurrent.ExecutionContext
 import scala.scalanative.unsafe.{Size, Ptr, Zone, toCString, stackalloc, Tag, CLong}
 
 import snhttp.experimental.libcurl
-import snhttp.experimental.libcurl.core.{CurlSlist, CurlInfo}
-import snhttp.experimental.libcurl.multi.{CurlMsgCode, CurlMsg}
-import snhttp.experimental.libcurl.options.CurlHttpVersion
-import snhttp.experimental.libcurl.header.{CurlHeader, CURLH}
+import snhttp.experimental.libcurl.{
+  CurlSlist,
+  CurlInfo,
+  CurlMsgCode,
+  CurlMsg,
+  CurlHttpVersion,
+  CurlHeader,
+  CurlGlobalFlag,
+  CurlErrCode,
+  CurlMulti,
+}
 import snhttp.jdk.net.http.internal.HttpConnection
 import snhttp.utils.PointerFinalizer
 
@@ -106,30 +113,30 @@ class HttpClientImpl(
     private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
 
-  val globalInitRet = libcurl.core.curl_global_init(libcurl.core.CURL_GLOBAL.DEFAULT)
+  val globalInitRet = libcurl.globalInit(CurlGlobalFlag.DEFAULT)
   globalInitRet match
-    case libcurl.core.CurlCode.OK => ()
+    case CurlErrCode.OK => ()
     case _ =>
       throw new RuntimeException(
         s"Failed to initialize libcurl global state: error code ${globalInitRet}",
       )
 
-  protected[http] var ptr: Ptr[libcurl.multi.CurlMulti] = null
+  protected[http] var ptr: Ptr[CurlMulti] = null
   try {
-    ptr = libcurl.multi.multiInit()
+    ptr = libcurl.multiInit()
     if (ptr == null)
       throw new RuntimeException("Failed to initialize CURLM pointer")
   } catch {
     case e: RuntimeException =>
-      libcurl.core.curl_global_cleanup()
+      libcurl.globalCleanup()
       throw e
   }
   PointerFinalizer(
     this,
     ptr,
     _ptr => {
-      val ret = libcurl.multi.multiCleanup(_ptr)
-      libcurl.core.curl_global_cleanup()
+      val ret = libcurl.multiCleanup(_ptr)
+      libcurl.globalCleanup()
       if (ret != 0)
         throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
     },
