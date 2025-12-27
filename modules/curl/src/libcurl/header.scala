@@ -29,7 +29,7 @@ import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 
-import _root_.snhttp.experimental.libcurl._type.{_BindgenEnumInt, _BindgenEnumUInt}
+import _root_.snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumUInt}
 import _root_.snhttp.experimental.libcurl.curl.Curl
 
 object header:

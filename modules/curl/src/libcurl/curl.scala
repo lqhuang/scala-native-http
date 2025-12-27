@@ -33,7 +33,7 @@ import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
-import _root_.snhttp.experimental.libcurl._type.{_BindgenEnumInt, _BindgenEnumCLong}
+import _root_.snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
 import _root_.snhttp.experimental.libcurl.system.CurlOff
 
 object curl:
@@ -1642,6 +1642,7 @@ object curl:
   // known as "CURL_IPRESOLVE_*"
   opaque type CurlIpResolve = CLong
   object CurlIpResolve extends _BindgenEnumCLong[CurlIpResolve]:
+    given Tag[CurlIpResolve] = Tag.Size
 
     inline def define(inline a: Long): CurlIpResolve = a.toSize
 
@@ -1660,6 +1661,7 @@ object curl:
   /** These enums are for use with the `CURLOPT_HTTP_VERSION` option. */
   opaque type CurlHttpVersion = CLong
   object CurlHttpVersion extends _BindgenEnumCLong[CurlHttpVersion]:
+    given Tag[CurlHttpVersion] = Tag.Size
 
     inline def define(inline a: Long): CurlHttpVersion = a.toSize
 
@@ -1703,11 +1705,11 @@ object curl:
   // TODO: Add enum `CURL_NETRC_OPTION`
 
   // known as "CURL_SSLVERSION"
-  opaque type CurlSslVersion = CLong
-  object CurlSslVersion extends _BindgenEnumCLong[CurlSslVersion]:
-    given Tag[CurlSslVersion] = Tag.Size
+  opaque type CurlSSLVersion = CLong
+  object CurlSSLVersion extends _BindgenEnumCLong[CurlSSLVersion]:
+    given Tag[CurlSSLVersion] = Tag.Size
 
-    inline def define(inline a: Long): CurlSslVersion = a.toSize
+    inline def define(inline a: Long): CurlSSLVersion = a.toSize
 
     val DEFAULT = define(0L)
     val TLSv1 = define(1L) // TLS 1.x
@@ -1727,12 +1729,12 @@ object curl:
     inline def define(inline a: Long): CurlSslMaxVersion = a.toSize
 
     val MAX_NONE = define(0L)
-    val MAX_DEFAULT = define(CurlSslVersion.TLSv1.toLong << 16L)
-    val MAX_TLSv1_0 = define(CurlSslVersion.TLSv1_0.toLong << 16L)
-    val MAX_TLSv1_1 = define(CurlSslVersion.TLSv1_1.toLong << 16L)
-    val MAX_TLSv1_2 = define(CurlSslVersion.TLSv1_2.toLong << 16L)
-    val MAX_TLSv1_3 = define(CurlSslVersion.TLSv1_3.toLong << 16L)
-    val MAX_LAST = define(CurlSslVersion.LAST.toLong << 16L) // never use, keep last
+    val MAX_DEFAULT = define(CurlSSLVersion.TLSv1.toLong << 16L)
+    val MAX_TLSv1_0 = define(CurlSSLVersion.TLSv1_0.toLong << 16L)
+    val MAX_TLSv1_1 = define(CurlSSLVersion.TLSv1_1.toLong << 16L)
+    val MAX_TLSv1_2 = define(CurlSSLVersion.TLSv1_2.toLong << 16L)
+    val MAX_TLSv1_3 = define(CurlSSLVersion.TLSv1_3.toLong << 16L)
+    val MAX_LAST = define(CurlSSLVersion.LAST.toLong << 16L) // never use, keep last
 
   // known as "CURL_TLSAUTH"
   opaque type CurlTlsAuth = CLong

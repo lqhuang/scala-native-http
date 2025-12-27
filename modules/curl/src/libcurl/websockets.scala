@@ -19,7 +19,7 @@ import scala.scalanative.libc.stddef.size_t
 
 import _root_.snhttp.experimental.libcurl.curl.{Curl, CurlErrCode}
 import _root_.snhttp.experimental.libcurl.system.CurlOff
-import _root_.snhttp.experimental.libcurl._type.{
+import _root_.snhttp.experimental.libcurl.internal.{
   _BindgenEnumInt,
   _BindgenEnumUInt,
   _BindgenEnumCLong,
