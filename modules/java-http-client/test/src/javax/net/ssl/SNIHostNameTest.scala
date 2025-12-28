@@ -16,15 +16,13 @@
 
 // Ported from https://github.com/google/conscrypt/blob/5b46bc69b6ee129b79c719cd8130a5fb4823a75a/common/src/test/java/org/conscrypt/javax/net/ssl/SNIHostNameTest.java
 
-package org.conscrypt.javax.net.ssl
-
 import java.util
 import javax.net.ssl.SNIHostName
 import javax.net.ssl.StandardConstants
 
 import utest.{Tests, test, assert, assertThrows, TestSuite}
 
-class SSLParametersTest extends TestSuite:
+class SNIHostNameTest extends TestSuite:
 
   val tests = Tests:
 

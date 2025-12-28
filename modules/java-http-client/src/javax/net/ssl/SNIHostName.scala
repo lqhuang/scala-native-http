@@ -30,15 +30,13 @@ final class SNIHostName(private val hostname: String)
   if (hostname.isEmpty || hostname.endsWith("."))
     throw new IllegalArgumentException("hostname is empty or ends with a trailing dot")
 
-  def getAsciiName(): String = new String(hostname.getBytes(US_ASCII), US_ASCII)
+  def getAsciiName(): String =
+    new String(hostname.getBytes(US_ASCII), US_ASCII)
 
   override def equals(other: Any): Boolean =
     other match
       case that: SNIHostName => this.hostname.equalsIgnoreCase(that.hostname)
       case _                 => false
-
-  override def hashCode(): Int =
-    hostname.toLowerCase.hashCode()
 
   override def toString(): String =
     s"type=host_name (${StandardConstants.SNI_HOST_NAME}), value=${hostname}"

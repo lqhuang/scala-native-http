@@ -130,8 +130,8 @@ class HttpHeadersTest extends utest.TestSuite {
       )
       val filter: BiPredicate[String, String] = (key, _) => key.toLowerCase().contains("accept")
       val headers = HttpHeaders.of(headerMap, filter)
-      assert(headers.map().size() == 1)
       val values = headers.allValues("Accept")
+      assert(headers.map().size() == 1)
       assert(values.get(0) == "text/html")
     }
 
@@ -186,14 +186,14 @@ class HttpHeadersTest extends utest.TestSuite {
 
     test("firstValue returns empty optional for non-existent header") {
       val value = exampleHeaders.firstValue("non-existent")
-      assert(value.isPresent, false)
+      assert(value.isEmpty() == true)
     }
 
     test("firstValue returns first value for existing header") {
       val headerMap = JMap.of("Accept", JList.of("text/html", "application/xml"))
       val headers = HttpHeaders.of(headerMap, accpetAllFilter)
       val value = headers.firstValue("Accept")
-      assert(value.isPresent == true)
+      assert(value.isPresent() == true)
       assert(value.get() == "text/html")
     }
 
@@ -201,8 +201,8 @@ class HttpHeadersTest extends utest.TestSuite {
       val headerMap = JMap.of("Content-Length", JList.of("1234"))
       val headers = HttpHeaders.of(headerMap, accpetAllFilter)
       val value = headers.firstValueAsLong("Content-Length")
-      assert(value.isPresent == true)
-      assert(value.getAsLong == 1234L)
+      assert(value.isPresent() == true)
+      assert(value.getAsLong() == 1234L)
     }
 
     test("firstValueAsLong throws exception for non-numeric value") {

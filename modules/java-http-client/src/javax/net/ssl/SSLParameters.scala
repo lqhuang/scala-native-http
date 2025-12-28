@@ -2,7 +2,7 @@ package javax.net.ssl
 
 import java.security.AlgorithmConstraints
 import java.util.List as JList
-import java.util.Collection
+import java.util.{Collection, Collections}
 import java.util.Objects.requireNonNull
 
 import snhttp.jdk.internal.tls.DefaultParams
@@ -19,21 +19,25 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
   def this(cipherSuites: Array[String]) =
     this(cipherSuites, null)
 
-  cipherSuites.find(cs => cs == null || cs.isEmpty()) match
-    case Some(value) =>
-      throw new IllegalArgumentException(
-        "Any element of non-empty array must not be null or empty string",
-      )
-    case None => ()
-  protocols.find(p => p == null || p.isEmpty()) match
-    case Some(value) =>
-      throw new IllegalArgumentException(
-        "Any element of non-empty array must not be null or empty string",
-      )
-    case None => ()
+  // if (cipherSuites != null)
+  //   cipherSuites.foreach(cs =>
+  //     require(
+  //       cs != null && !cs.trim().isEmpty(),
+  //       "Any element of non-empty array must not be null or empty string",
+  //     ),
+  //   )
+  // if (protocols != null)
+  //   protocols.foreach(p =>
+  //     require(
+  //       p != null && !p.trim().isEmpty(),
+  //       "Any element of non-empty array must not be null or empty string",
+  //     ),
+  //   )
 
-  private var _cipherSuites: Array[String] = cipherSuites.clone()
-  private var _protocols: Array[String] = protocols.clone()
+  private var _cipherSuites: Array[String] =
+    if cipherSuites == null then null else cipherSuites.clone()
+  private var _protocols: Array[String] =
+    if protocols == null then null else protocols.clone()
 
   private var _serverNames: JList[SNIServerName] = null
   private var _honorOrder: Boolean = false
@@ -53,17 +57,39 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
   private var _signatureSchemes: Array[String] = null
   private var _namedGroups: Array[String] = null
 
+  private var _sniMatchers: Collection[SNIMatcher] = null
+
   def getCipherSuites(): Array[String] =
-    _cipherSuites
+    if _cipherSuites == null
+    then null
+    else _cipherSuites.clone()
 
   def setCipherSuites(cipherSuites: Array[String]): Unit =
-    _cipherSuites = cipherSuites
+    requireNonNull(cipherSuites)
+    // cipherSuites
+    //   .foreach(cs =>
+    //     require(
+    //       cs != null && !cs.trim().isEmpty(),
+    //       "Any element of non-empty array must not be null or empty string",
+    //     ),
+    //   )
+    _cipherSuites = cipherSuites.clone()
 
   def getProtocols(): Array[String] =
-    _protocols
+    if _protocols == null
+    then null
+    else _protocols.clone()
 
   def setProtocols(protocols: Array[String]): Unit =
-    _protocols = protocols
+    requireNonNull(protocols)
+    // protocols
+    //   .foreach(p =>
+    //     require(
+    //       p != null && !p.trim().isEmpty(),
+    //       "Any element of non-empty array must not be null or empty string",
+    //     ),
+    //   )
+    _protocols = protocols.clone()
 
   def getWantClientAuth(): Boolean =
     _wantClientAuth
@@ -100,40 +126,52 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
     require(!algorithm.isBlank() && !algorithm.isEmpty())
     _identificationAlgorithm = algorithm
 
+  // Implementation notes:
+  //
+  //  - throw `IllegalArgumentException`: if the serverNames contains more than one name of the same name type
   final def setServerNames(serverNames: JList[SNIServerName]): Unit =
     if serverNames == null
     then _serverNames = null
-    else
+    else {
       // `serverNames` can be null but if not null, validate its elements
-      if (serverNames.stream().allMatch(sn => sn != null && sn.getType() >= 0))
+      if (serverNames.stream().anyMatch(sn => sn == null))
         throw new NullPointerException(
           "'serverNames' contains null element",
         )
-      val uniqueCountOfNames = serverNames.stream().map(_.getType()).distinct().count()
+
+      val uniqueCountOfNames = serverNames.stream().map(sn => sn.getType()).distinct().count()
       if (uniqueCountOfNames != serverNames.size())
         throw new IllegalArgumentException(
           "'serverNames' contains element with invalid type",
         )
+
       _serverNames = JList.copyOf(serverNames)
+    }
 
   final def getServerNames(): JList[SNIServerName] =
     _serverNames
 
-  /// Since JDK doc says:
-  /// This method is only useful to SSLSockets or SSLEngines operating in server mode.
-  ///
-  /// We currently focus on client mode, so we leave its implementation blank for now.
-  /// Welcome to contribute.
   final def setSNIMatchers(matchers: Collection[SNIMatcher]): Unit =
-    ???
+    if matchers == null
+    then _sniMatchers = null
+    else {
+      // `matchers` can be null but if not null, validate its elements
+      if (matchers.stream().anyMatch(m => m == null))
+        throw new NullPointerException(
+          "'matchers' contains null element",
+        )
 
-  /// Since JDK doc says:
-  /// This method is only useful to SSLSockets or SSLEngines operating in server mode.
-  ///
-  /// We currently focus on client mode, so we leave its implementation blank for now.
-  /// Welcome to contribute.
+      val uniqueCountOfMatchers = matchers.stream().map(_.getType()).distinct().count()
+      if (uniqueCountOfMatchers != matchers.size())
+        throw new IllegalArgumentException(
+          "'matchers' contains duplicated name types",
+        )
+
+      _sniMatchers = JList.copyOf(matchers)
+    }
+
   final def getSNIMatchers(): Collection[SNIMatcher] =
-    ???
+    _sniMatchers
 
   final def setUseCipherSuitesOrder(honorOrder: Boolean): Unit =
     _honorOrder = honorOrder

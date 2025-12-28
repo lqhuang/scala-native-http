@@ -33,8 +33,8 @@ import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
-import _root_.snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
-import _root_.snhttp.experimental.libcurl.system.CurlOff
+import snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
+import snhttp.experimental.libcurl.system.CurlOff
 
 object curl:
 

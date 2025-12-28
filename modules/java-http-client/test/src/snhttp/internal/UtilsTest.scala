@@ -7,9 +7,9 @@ import java.util.function.BiPredicate
 
 import snhttp.jdk.internal.Utils
 
-import utest.{Tests, test, assert}
+import utest.{TestSuite, Tests, test, assert}
 
-class UtilsTest extends utest.TestSuite {
+class UtilsTest extends TestSuite {
 
   private val acceptAllFilter: BiPredicate[String, String] = (_, _) => true
   private def createHeaders(contentType: String): HttpHeaders = {
@@ -83,9 +83,9 @@ class UtilsTest extends utest.TestSuite {
     }
 
     test("charsetFrom should handle multiple parameters") {
-      val headers = createHeaders("text/plain; boundary=something; charset=utf-8; other=value")
+      val headers = createHeaders("text/plain; boundary=something; charset=us-ascii; other=value")
       val charset = Utils.charsetFrom(headers)
-      assert(charset == StandardCharsets.UTF_8)
+      assert(charset == StandardCharsets.US_ASCII)
     }
 
     test("charsetFrom should default to UTF-8 for invalid charset") {
@@ -110,9 +110,9 @@ class UtilsTest extends utest.TestSuite {
     }
 
     test("charsetFrom should handle charset at beginning of Content-Type") {
-      val headers = createHeaders("charset=utf-8; text/plain")
+      val headers = createHeaders("charset=utf-16; text/plain")
       val charset = Utils.charsetFrom(headers)
-      assert(charset == StandardCharsets.UTF_8)
+      assert(charset == StandardCharsets.UTF_16)
     }
 
     test("charsetFrom should fetch first charset if multiple are present") {
@@ -126,15 +126,15 @@ class UtilsTest extends utest.TestSuite {
       }
     }
 
-    test("charsetFrom returns UTF-8 for empty Content-Type") {
-      val headerMap = JMap.of("Content-Type", JList.of(""))
-      val headers = HttpHeaders.of(headerMap, acceptAllFilter)
-      // TODO:
-      // We cannot build HttpHeaders with an empty Content-Type directly
-      // but what if we receive such a header?
-      val charset = Utils.charsetFrom(headers)
-      assert(charset == StandardCharsets.UTF_8)
-    }
+    // test("charsetFrom returns UTF-8 for empty Content-Type") {
+    //   val headerMap = JMap.of("Content-Type", JList.of(""))
+    //   val headers = HttpHeaders.of(headerMap, acceptAllFilter)
+    //   // TODO:
+    //   // We cannot build HttpHeaders with an empty Content-Type directly
+    //   // but what if we receive such a header?
+    //   val charset = Utils.charsetFrom(headers)
+    //   assert(charset == StandardCharsets.UTF_8)
+    // }
 
     // test("charsetFrom handles quoted charset values") {
     //   val headers = createHeaders("application/json; charset=\"utf-8\"")

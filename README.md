@@ -113,12 +113,12 @@ Check `Makefile` for more.
 
 - Client session resumption
 - Custom SSL providers
-- HTTP/1.1 pipelining
 - HTTP/1.1 connection pooling
+- `java.net.IDN` is not implemented yet, so non-ASCII hostnames (ponycode) may not work as expected
+  - influence `SNIHostName` then `SNIMatcher`
+- Streaming responses
 
 ### Unfixable
-
-- Curl natively does not support streaming responses
 
 <!--
 ### Properties support

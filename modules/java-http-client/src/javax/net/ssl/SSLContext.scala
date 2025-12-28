@@ -60,7 +60,7 @@ object SSLContext:
 
   import snhttp.jdk.internal.tls.DefaultParams
 
-  private var defaultContext: SSLContext = SSLContext.getInstance("TLS")
+  private var defaultContext: SSLContext = SSLContext.getInstance("TLSv1.3")
 
   def getDefault(): SSLContext =
     defaultContext

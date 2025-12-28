@@ -7,8 +7,8 @@ import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.posix.sys.select.fd_set
 
-import _root_.snhttp.experimental.libcurl.options.CurlEasyOption
-import _root_.snhttp.experimental.libcurl.curl.{
+import snhttp.experimental.libcurl.options.CurlEasyOption
+import snhttp.experimental.libcurl.curl.{
   CurlGlobalFlag,
   CurlErrCode,
   CurlOption,
@@ -21,8 +21,8 @@ import _root_.snhttp.experimental.libcurl.curl.{
   CurlPause,
   CurlSocket,
 }
-import _root_.snhttp.experimental.libcurl.header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
-import _root_.snhttp.experimental.libcurl.multi.{
+import snhttp.experimental.libcurl.header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
+import snhttp.experimental.libcurl.multi.{
   CurlMulti,
   CurlMultiCode,
   CurlWaitFd,
@@ -30,9 +30,9 @@ import _root_.snhttp.experimental.libcurl.multi.{
   CurlMultiOption,
   CurlPushHeaders,
 }
-import _root_.snhttp.experimental.libcurl.websockets.{CurlWsFrame, CurlWsSendFlag}
+import snhttp.experimental.libcurl.websockets.{CurlWsFrame, CurlWsSendFlag}
 
-@link("curl/curl")
+@link("curl")
 @extern
 @define("CURL_NO_OLDIES") // deprecate all outdated
 object functions:

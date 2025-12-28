@@ -17,13 +17,9 @@ import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CVoidPtr, CLong, Unsa
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t
 
-import _root_.snhttp.experimental.libcurl.curl.{Curl, CurlErrCode}
-import _root_.snhttp.experimental.libcurl.system.CurlOff
-import _root_.snhttp.experimental.libcurl.internal.{
-  _BindgenEnumInt,
-  _BindgenEnumUInt,
-  _BindgenEnumCLong,
-}
+import snhttp.experimental.libcurl.curl.{Curl, CurlErrCode}
+import snhttp.experimental.libcurl.system.CurlOff
+import snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumUInt, _BindgenEnumCLong}
 
 object websockets:
 

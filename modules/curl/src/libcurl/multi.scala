@@ -28,8 +28,8 @@ import scalanative.unsafe.{
 }
 import scalanative.posix.stddef.size_t
 
-import _root_.snhttp.experimental.libcurl.curl.{Curl, CurlErrCode, CurlSocket}
-import _root_.snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
+import snhttp.experimental.libcurl.curl.{Curl, CurlErrCode, CurlSocket}
+import snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
 
 object multi:
 

@@ -155,7 +155,7 @@ case class HttpRequestBuilderImpl(
       .forEach { entry =>
         val key = entry.getKey
         val values = entry.getValue
-        newHeaderMap.put(key, new ArrayList(JList.copyOf(values))): Unit
+        val _ = newHeaderMap.put(key, JList.copyOf(values))
       }
     newHeaderMap
 

@@ -16,8 +16,8 @@ import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4, CLong, Unsaf
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsigned.UInt
 
-import _root_.snhttp.experimental.libcurl.internal._BindgenEnumInt
-import _root_.snhttp.experimental.libcurl.curl.CurlOption
+import snhttp.experimental.libcurl.internal._BindgenEnumInt
+import snhttp.experimental.libcurl.curl.CurlOption
 
 object options:
 

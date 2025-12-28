@@ -117,7 +117,7 @@ object HttpClient:
   end Redirect
 
   /// @since 11
-  abstract class Builder:
+  trait Builder:
 
     def cookieHandler(cookieHandler: CookieHandler): Builder
 
@@ -149,8 +149,10 @@ object HttpClient:
 
   end Builder
 
-  def newHttpClient(): HttpClient = newBuilder().build()
+  def newHttpClient(): HttpClient =
+    newBuilder().build()
 
-  def newBuilder(): Builder = new HttpClientBuilderImpl()
+  def newBuilder(): Builder =
+    new HttpClientBuilderImpl()
 
 end HttpClient

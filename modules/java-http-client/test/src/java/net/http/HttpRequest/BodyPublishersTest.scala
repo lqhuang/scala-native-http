@@ -1,14 +1,12 @@
 import java.net.http.HttpRequest.BodyPublishers
 import java.nio.ByteBuffer
-import java.nio.file.Files
 import java.nio.file.Path
 import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{TimeUnit, Flow}
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.Flow
 
-import snhttp.testkits.MockSubscriber
+// import snhttp.testkits.MockSubscriber
 
 import utest.{Tests, test, assert, assertThrows}
 

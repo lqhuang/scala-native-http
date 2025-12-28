@@ -189,8 +189,7 @@ object BodySubscribersImpl {
   def ofByteArray[T](finisher: Array[Byte] => T): BodySubscriber[T] =
     new ByteArraySubscriber(finisher)
 
-  class PathSubscriber(private val file: Path, private val openOptions: Seq[OpenOption])
-      extends BodySubscriber[Path] {
+  class PathSubscriber(file: Path, openOptions: Seq[OpenOption]) extends BodySubscriber[Path] {
     private val cf = new CompletableFuture[Path]()
     private var subscription: Subscription = _
     private val subscribed = new AtomicBoolean()
@@ -250,8 +249,8 @@ object BodySubscribersImpl {
   def ofFile(file: Path, openOptions: Seq[OpenOption]): PathSubscriber =
     new PathSubscriber(file, openOptions)
 
-  class ConsumerSubscriber(private val consumer: Consumer[Optional[Array[Byte]]])
-      extends BodySubscriber[Void] {
+  class ConsumerSubscriber(consumer: Consumer[Optional[Array[Byte]]]) extends BodySubscriber[Void]:
+
     private val cf = new CompletableFuture[Void]()
     private var subscription: Subscription = _
     private val subscribed = new AtomicBoolean()
@@ -261,10 +260,9 @@ object BodySubscribersImpl {
     override def onSubscribe(subscription: Subscription): Unit =
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
-      else {
+      else
         this.subscription = subscription
         this.subscription.request(1)
-      }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       requireNonNull(item)
@@ -272,7 +270,13 @@ object BodySubscribersImpl {
         requireNonNull(buf)
         val data = new Array[Byte](buf.remaining())
         buf.duplicate().get(data)
-        consumer.accept(Optional.of(data))
+        try
+          consumer.accept(Optional.of(data))
+        catch {
+          case t: Throwable =>
+            subscription.cancel()
+            onError(t)
+        }
       }
       subscription.request(1)
 
@@ -281,9 +285,16 @@ object BodySubscribersImpl {
       cf.completeExceptionally(throwable): Unit
 
     override def onComplete(): Unit =
-      consumer.accept(Optional.empty())
+      try
+        consumer.accept(Optional.empty())
+      catch {
+        case t: Throwable =>
+          subscription.cancel()
+          onError(t)
+      }
       cf.complete(null): Unit
-  }
+
+  end ConsumerSubscriber
 
   def ofByteArrayConsumer(
       consumer: Consumer[Optional[Array[Byte]]],

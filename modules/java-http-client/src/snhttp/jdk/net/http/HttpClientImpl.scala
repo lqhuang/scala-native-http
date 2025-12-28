@@ -1,23 +1,21 @@
 package snhttp.jdk.net.http
 
 import java.io.IOException
-import java.net.{Authenticator, CookieHandler, InetAddress, Proxy, ProxySelector, URI}
-import java.net.http.{HttpClient, HttpRequest, HttpResponse, HttpHeaders, WebSocket}
+import java.net.{Authenticator, CookieHandler, InetAddress, ProxySelector}
+import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket}
 import java.net.http.HttpClient.{Builder, Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
 import java.time.Duration
-import java.util.{ArrayList, Optional, TreeMap}
-import java.util.List as JList
-import java.util.Map as JMap
+import java.util.Optional
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, Executor}
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
 
-import scala.collection.mutable.{LinkedHashSet, HashMap}
+import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
-import scala.scalanative.unsafe.{Size, Ptr, Zone, toCString, stackalloc, Tag, CLong}
+import scala.scalanative.unsafe.Ptr
 
 import snhttp.experimental.libcurl
 import snhttp.experimental.libcurl.{
@@ -146,8 +144,6 @@ class HttpClientImpl(
   private val _alive = new AtomicBoolean(false)
   private val _terminated = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
-
-  private val requests = new LinkedHashSet[HttpRequest]()
 
   private[http] lazy val _sslContext = builder._sslContext match
     case Some(ctx) => ctx
@@ -294,8 +290,9 @@ class HttpClientImpl(
     // 1. Cancel all pending requests
     // 2. Close all connections immediately
     // 3. Shutdown executor services
-    shutdown()
-    while awaitTermination(Duration.ofSeconds(0L)) == false do ()
+    // shutdown()
+    // while awaitTermination(Duration.ofSeconds(0L)) == false do ()
+    ???
 
   override def newWebSocketBuilder(): WebSocket.Builder = {
     requireNonShutdown()

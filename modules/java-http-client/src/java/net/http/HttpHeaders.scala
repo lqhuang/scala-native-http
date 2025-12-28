@@ -1,18 +1,20 @@
 package java.net.http
 
 import java.lang.Long as JLong
-import java.util.Locale
 import java.util.List as JList
 import java.util.Map as JMap
-import java.util.{Collections, Optional, OptionalLong, TreeMap, TreeSet}
+import java.util.{Collections, Optional, OptionalLong, TreeMap, TreeSet, ArrayList}
 import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
 /// @since 11
 final class HttpHeaders private (headers: JMap[String, JList[String]]):
 
+  // DO NOT USE `JMap.copyOf`, as it is a TreeMap with string case insensitive order
+  val _headers: JMap[String, JList[String]] = Collections.unmodifiableMap(headers)
+
   def allValues(name: String): JList[String] =
-    headers.getOrDefault(name.toLowerCase(Locale.ROOT), JList.of())
+    _headers.getOrDefault(name, JList.of())
 
   def firstValue(name: String): Optional[String] =
     allValues(name).stream().findFirst()
@@ -20,26 +22,27 @@ final class HttpHeaders private (headers: JMap[String, JList[String]]):
   def firstValueAsLong(name: String): OptionalLong =
     allValues(name).stream().mapToLong(JLong.parseLong).findFirst()
 
-  def map(): JMap[String, JList[String]] = Collections.unmodifiableMap(headers)
+  def map(): JMap[String, JList[String]] =
+    _headers
 
   /// Two HTTP headers are equal if each of their corresponding maps are equal.
   final override def equals(obj: Any): Boolean = obj match {
-    case other: HttpHeaders => headers == other.map()
+    case other: HttpHeaders => _headers == other.map()
     case _                  => false
   }
 
   final override def hashCode(): Int =
-    headers
+    _headers
       .entrySet()
       .stream()
       .mapToInt { entry =>
-        val keyHash = entry.getKey.toLowerCase(Locale.ROOT).hashCode
-        val valueHash = entry.getValue.hashCode
+        val keyHash = entry.getKey().hashCode()
+        val valueHash = entry.getValue().hashCode()
         keyHash ^ valueHash
       }
       .sum()
 
-  override def toString: String = s"${super.toString()} { ${map()} }"
+  override def toString: String = s"${super.toString()} { ${_headers} }"
 
 object HttpHeaders:
 
@@ -68,24 +71,33 @@ object HttpHeaders:
       if (newHeaderMap.containsKey(headerKey))
         throw new IllegalArgumentException(s"duplicate header name: '${headerKey}'")
 
-      val headerValues = values
-        .stream()
-        .map { s =>
-          requireNonNull(s, s"header value can not be null")
-          val trimedValue = requireNonNull(s).trim()
-          require(!trimedValue.isEmpty, s"empty value for key '${headerKey}'")
-          trimedValue
-        }
-        .filter { s =>
-          val r = filter.test(headerKey, s)
-          // println(s"filter header: ${headerKey} -> ${s}, result: ${r}")
-          r
-        }
-        .toList()
-      // TODO: bug? even if test returns false, the headerValues will not be empty
-      // println(s"headerValues = ${headerValues.size()}")
+      /**
+       * TODO: bug? the test returns false, and the original value is kept and becomes `null`
+       */
+      // val headerValues = values
+      //   .stream()
+      //   .map { s =>
+      //     requireNonNull(s, s"header value can not be null")
+      //     val trimedValue = requireNonNull(s).trim()
+      //     require(!trimedValue.isEmpty, s"empty value for key '${headerKey}'")
+      //     trimedValue
+      //   }
+      //   .filter(s => !filter.test(headerKey, s))
+      //   .toList()
+      //
 
-      if (!headerValues.isEmpty) newHeaderMap.put(headerKey, headerValues): Unit
+      val headerValues = new ArrayList[String]()
+      values.forEach { s =>
+        requireNonNull(s, s"header value can not be null")
+        val trimedValue = requireNonNull(s).trim()
+        require(!trimedValue.isEmpty, s"empty value for key '${headerKey}'")
+
+        if (filter.test(headerKey, trimedValue))
+          headerValues.add(trimedValue): Unit
+      }
+
+      if (!headerValues.isEmpty)
+        newHeaderMap.put(headerKey, headerValues): Unit
     }
 
     if newHeaderMap.isEmpty

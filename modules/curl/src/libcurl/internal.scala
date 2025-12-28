@@ -1,10 +1,10 @@
 package snhttp.experimental.libcurl
 
-import _root_.scala.scalanative.unsafe.{Tag, Size, CInt, CLong, UnsafeRichLong}
-import _root_.scala.scalanative.unsafe.name
-import _root_.scala.scalanative.unsigned.UInt
-import _root_.scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
-import _root_.scala.scalanative.posix.time.time_t
+import scala.scalanative.unsafe.{Tag, Size, CInt, CLong, UnsafeRichLong}
+import scala.scalanative.unsafe.name
+import scala.scalanative.unsigned.UInt
+import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
+import scala.scalanative.posix.time.time_t
 
 private[libcurl] object internal:
   trait _BindgenEnumUInt[T](using eq: T =:= UInt):

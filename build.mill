@@ -19,6 +19,7 @@ import scalanativelib.ScalaNativeModule
 import scalanativelib.api.{LTO, ReleaseMode}
 
 import com.goyeau.mill.scalafix.ScalafixModule
+
 // import com.github.lolgab.mill.mima.*
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
@@ -85,6 +86,7 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
     // def toolsmvnDeps = Seq(
     //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",
     // )
+
   }
 
 }

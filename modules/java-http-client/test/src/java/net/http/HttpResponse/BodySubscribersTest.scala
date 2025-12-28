@@ -291,9 +291,8 @@ class BodySubscribersTest extends utest.TestSuite {
       subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
       subscriber.onComplete()
 
-      // The body should still complete successfully as the consumer error is isolated
-      val result = subscriber.getBody().toCompletableFuture.get()
-      assert(result == null)
+      assertThrows[Exception]:
+        val result = subscriber.getBody().toCompletableFuture.get()
     }
 
     test("BodySubscribers.ofByteArrayConsumer should call consumer") {

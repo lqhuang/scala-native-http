@@ -16,7 +16,7 @@ import scala.scalanative.unsafe.{Tag, CStruct3}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.posix.stddef.size_t
 
-import _root_.snhttp.experimental.libcurl.internal._BindgenEnumUInt
+import snhttp.experimental.libcurl.internal._BindgenEnumUInt
 
 object easy:
 

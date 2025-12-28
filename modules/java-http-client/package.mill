@@ -13,6 +13,7 @@ object `package` extends build.CommonModule:
 
   def mvnDeps = Seq(
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",
+    mvn"io.github.cquiroz::scala-java-time:2.4.0", // 2.5.0 and 2.6.0 are ill
     mvn"io.github.cquiroz::scala-java-time::2.6.0",
     mvn"com.github.lolgab::scala-native-crypto::0.2.0",
   )
