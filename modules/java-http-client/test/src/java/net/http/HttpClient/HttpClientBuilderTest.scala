@@ -149,6 +149,25 @@ class HttpClientBuilderTest extends TestSuite:
       assert(client != null)
     }
 
+    test("HttpClient should handle various local address configurations") {
+      val loopback = InetAddress.getLoopbackAddress()
+      val anyLocal = InetAddress.getByName("0.0.0.0")
+
+      val client1 = HttpClient
+        .newBuilder()
+        .localAddress(loopback)
+        .build()
+
+      val client2 = HttpClient
+        .newBuilder()
+        .localAddress(anyLocal)
+        .build()
+
+      // Both should be created successfully
+      assert(client1 != null)
+      assert(client2 != null)
+    }
+
     test("HttpClient builder should reject null local address"):
       val builder = HttpClient.newBuilder()
       assertThrows[NullPointerException]:

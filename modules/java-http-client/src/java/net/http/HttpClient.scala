@@ -71,18 +71,7 @@ abstract class HttpClient extends AutoCloseable:
 
   def shutdownNow(): Unit
 
-  def close(): Unit =
-    val interrupted = new AtomicBoolean(false)
-    while !isTerminated() do {
-      shutdown()
-      try
-        awaitTermination(Duration.ofSeconds(10L)): Unit
-      catch {
-        case e: InterruptedException =>
-          if (interrupted.compareAndSet(false, true)) shutdownNow()
-      }
-    }
-    if (interrupted.get()) Thread.currentThread().interrupt()
+  def close(): Unit
 
 object HttpClient:
 

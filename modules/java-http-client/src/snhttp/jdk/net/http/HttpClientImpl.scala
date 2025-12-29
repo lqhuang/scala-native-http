@@ -124,9 +124,10 @@ class HttpClientImpl(
     if (ptr == null)
       throw new RuntimeException("Failed to initialize CURLM pointer")
   } catch {
-    case e: RuntimeException =>
+    case exc: RuntimeException =>
+      // if null ptr, globalCleanup still needs to be called
       libcurl.globalCleanup()
-      throw e
+      throw exc
   }
   PointerFinalizer(
     this,
@@ -142,19 +143,136 @@ class HttpClientImpl(
   private val _started = new AtomicBoolean(false)
   private val _alive = new AtomicBoolean(false)
   private val _terminated = new AtomicBoolean(false)
+  private val _terminable = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
 
-  private[http] lazy val _sslContext = builder._sslContext.orElse(SSLContext.getDefault())
-  private[http] lazy val _sslParams =
+  protected[http] lazy val _sslContext =
+    builder._sslContext.orElse(SSLContext.getDefault())
+  protected[http] lazy val _sslParams =
     builder._sslParams.orElse(_sslContext.getDefaultSSLParameters())
-
-  private val _executor: Executor =
+  protected[http] lazy val _executor: Executor =
     builder._executor.orElse(ExecutionContext.global)
 
   /**
-   * Map of active connections: request -> connection info (curl easy handle pointer)
+   * Main methods of HttpClient
    */
-  // private val connections = HashMap()
+
+  def send[T](
+      request: HttpRequest,
+      responseBodyHandler: BodyHandler[T],
+  ): HttpResponse[T] = {
+    requireNonNull(request, "request cannot be null")
+    requireNonNull(responseBodyHandler, "responseBodyHandler cannot be null")
+
+    try
+      sendAsync(request, responseBodyHandler).get()
+    catch {
+      case exc: ExecutionException =>
+        val cause = exc.getCause()
+        cause match {
+          case e: (IOException | RuntimeException) => throw e
+          case _ => throw new IOException("Unexpected error during HTTP request", cause)
+        }
+      case e: InterruptedException =>
+        Thread.currentThread().interrupt()
+        throw new IOException("HTTP request was interrupted", e)
+    }
+  }
+
+  /** Equivalent to: `sendAsync(request, responseBodyHandler, null)`. */
+  def sendAsync[T](
+      request: HttpRequest,
+      responseBodyHandler: BodyHandler[T],
+  ): CompletableFuture[HttpResponse[T]] =
+    sendAsync(request, responseBodyHandler, null)
+
+  def sendAsync[T](
+      request: HttpRequest,
+      responseBodyHandler: BodyHandler[T],
+      pushPromiseHandler: PushPromiseHandler[T],
+  ): CompletableFuture[HttpResponse[T]] = {
+    requireNonNull(request, "`request: HttpRequest` cannot be null")
+    requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
+    if (pushPromiseHandler != null)
+      throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
+    requireNonShutdown()
+
+    val conn = HttpConnection(request, responseBodyHandler, this)
+
+    CompletableFuture.supplyAsync(
+      () =>
+        try {
+          conn.perform()
+
+          /* set started flag for http client */
+          _started.setPlain(true)
+
+          conn.pollUntilDone()
+
+          val response = conn.buildResponse()
+          response
+        } catch {
+          case e: Exception =>
+            throw new RuntimeException(s"HTTP request failed: ${e.getMessage()}", e)
+        } finally conn.close(),
+      _executor,
+    )
+
+  }
+
+  override def shutdown(): Unit =
+    _terminable.compareAndExchange(false, true): Unit
+    _shutdown.compareAndExchange(false, true): Unit
+
+  /**
+   * Note from JDK docs:
+   *
+   * Blocks until all operations have completed execution after a shutdown request, or the duration
+   * elapses, or the current thread is interrupted, whichever happens first. Operations are any
+   * tasks required to run a request previously submitted with send or sendAsync to completion.
+   *
+   * This method does not wait if the duration to wait is less than or equal to zero. In this case,
+   * the method just tests if the thread has terminated.
+   */
+  override def awaitTermination(duration: Duration): Boolean = {
+    requireNonNull(duration, "duration cannot be null")
+
+    if (duration.isNegative() || duration.isZero())
+      return isTerminated()
+
+    ???
+  }
+
+  /**
+   * Note from JDK docs:
+   *
+   * Note that isTerminated is never true unless either `shutdown` or `shutdownNow` was called
+   * first.
+   */
+  override def isTerminated(): Boolean =
+    _terminated.get()
+
+  override def shutdownNow(): Unit =
+    shutdown()
+
+  override def close(): Unit =
+    val interrupted = new AtomicBoolean(false)
+    while !isTerminated() do {
+      shutdown()
+      try
+        awaitTermination(Duration.ofSeconds(5L)): Unit
+      catch {
+        case e: InterruptedException =>
+          if (interrupted.compareAndSet(false, true))
+            shutdownNow()
+      }
+    }
+    if (interrupted.get())
+      Thread.currentThread().interrupt()
+
+  /**
+   * Getters for HttpClient properties
+   */
 
   def cookieHandler(): Optional[CookieHandler] =
     builder._cookieHandler
@@ -194,111 +312,18 @@ class HttpClientImpl(
   def executor(): Optional[Executor] =
     builder._executor
 
-  def send[T](
-      request: HttpRequest,
-      responseBodyHandler: BodyHandler[T],
-  ): HttpResponse[T] = {
-    requireNonNull(request, "request cannot be null")
-    requireNonNull(responseBodyHandler, "responseBodyHandler cannot be null")
+  override def newWebSocketBuilder(): WebSocket.Builder =
     requireNonShutdown()
-
-    try
-      sendAsync(request, responseBodyHandler).get()
-    catch {
-      case exc: ExecutionException =>
-        val cause = exc.getCause()
-        cause match {
-          case e: (IOException | RuntimeException) => throw e
-          case _ => throw new IOException("Unexpected error during HTTP request", cause)
-        }
-      case e: InterruptedException =>
-        Thread.currentThread().interrupt()
-        throw new IOException("HTTP request was interrupted", e)
-    }
-  }
+    ???
 
   /**
-   * Equivalent to: `sendAsync(request, responseBodyHandler, null)`.
+   * Private helpers
    */
-  def sendAsync[T](
-      request: HttpRequest,
-      responseBodyHandler: BodyHandler[T],
-  ): CompletableFuture[HttpResponse[T]] =
-    sendAsync(request, responseBodyHandler, null)
-
-  def sendAsync[T](
-      request: HttpRequest,
-      responseBodyHandler: BodyHandler[T],
-      pushPromiseHandler: PushPromiseHandler[T],
-  ): CompletableFuture[HttpResponse[T]] = {
-    requireNonNull(request, "`request: HttpRequest` cannot be null")
-    requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
-
-    if (pushPromiseHandler != null)
-      throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
-
-    val conn = HttpConnection(request, responseBodyHandler, this)
-
-    CompletableFuture.supplyAsync(
-      () =>
-        try {
-          conn.perform()
-
-          /* set started flag for http client */
-          _started.setPlain(true)
-
-          conn.pollUntilDone()
-
-          val response = conn.buildResponse()
-          response
-        } catch {
-          case e: Exception =>
-            throw new RuntimeException(s"HTTP request failed: ${e.getMessage()}", e)
-        } finally conn.close(),
-      _executor,
-    )
-
-  }
-
-  override def shutdown(): Unit =
-    _shutdown.compareAndExchange(true, false)
-    ???
-
-  override def awaitTermination(duration: Duration): Boolean = {
-    requireNonNull(duration, "duration cannot be null")
-
-    val start = System.nanoTime()
-    val timeout = duration.toNanos()
-
-    while (!_terminated.get() && (System.nanoTime() - start) < timeout)
-      try Thread.sleep(1) // Small sleep to avoid busy waiting
-      catch
-        case _: InterruptedException =>
-          Thread.currentThread().interrupt()
-          return false
-
-    _terminated.get()
-  }
-
-  override def isTerminated(): Boolean =
-    _terminated.get()
-
-  override def shutdownNow(): Unit =
-    // In a real implementation, this would:
-    // 1. Cancel all pending requests
-    // 2. Close all connections immediately
-    // 3. Shutdown executor services
-    // shutdown()
-    // while awaitTermination(Duration.ofSeconds(0L)) == false do ()
-    ???
-
-  override def newWebSocketBuilder(): WebSocket.Builder = {
-    requireNonShutdown()
-
-    ???
-  }
 
   protected def requireNonShutdown(): Unit =
-    if (_shutdown.get()) throw new IllegalStateException("HttpClient has been shut down")
+    if (_shutdown.get())
+      throw new IllegalStateException(
+        "HttpClient has been shutdown, no new request will be accepted.",
+      )
 
 end HttpClientImpl

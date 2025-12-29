@@ -142,6 +142,11 @@ private[http] class HttpConnection[T](
         case Redirect.NEVER  => CurlFollow.DISABLED
         case Redirect.ALWAYS => CurlFollow.ALL
         case Redirect.NORMAL => CurlFollow.OBEYCODE
+        case null =>
+          throw new IllegalArgumentException(
+            s"Unsupported redirect policy: ${client.builder._redirect}",
+          )
+
       val _ = libcurl.easySetopt(
         ptr,
         CurlOption.FOLLOWLOCATION,
@@ -290,7 +295,7 @@ private[http] class HttpConnection[T](
       // if no more messages
       // or if we have catched the message for curr connection (easyHandle)
       msg == null || ((!msg).easyHandle == ptr && (!msg).msg == CurlMsgCode.DONE)
-    } do ()
+    } do Thread.sleep(100)
 
     // We unconfidently assueme here that msg is not null and (!msg).easyHandle == conn.ptr
     if (msg == null || (!msg).easyHandle != ptr)
