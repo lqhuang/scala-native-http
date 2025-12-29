@@ -23,7 +23,6 @@ import snhttp.experimental.libcurl.{
   CurlInfo,
   CurlMsgCode,
   CurlMsg,
-  CurlHttpVersion,
   CurlHeader,
   CurlGlobalFlag,
   CurlErrCode,

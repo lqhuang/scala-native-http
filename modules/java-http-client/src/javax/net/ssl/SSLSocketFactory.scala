@@ -2,7 +2,6 @@ package javax.net.ssl
 
 import java.net.Socket
 import java.io.InputStream
-import java.util.Locale
 import javax.net.SocketFactory
 
 /// ## Refs

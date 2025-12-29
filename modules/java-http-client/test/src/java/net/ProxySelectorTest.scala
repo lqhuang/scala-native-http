@@ -8,21 +8,20 @@ import utest.{Tests, test, assert, assertThrows}
 class ProxySelectorTest extends utest.TestSuite {
 
   private class TestProxySelector extends ProxySelector:
-    override def select(uri: URI): JList[Proxy] = JList.of(Proxy.NO_PROXY)
-    override def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
+    def select(uri: URI): JList[Proxy] = JList.of(Proxy.NO_PROXY)
+    def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
 
   val tests = Tests {
-    test("getDefault should return null when no system property is set") {
+    test("getDefault should return null when no system property is set"):
       val defaultSelector = ProxySelector.getDefault()
       assert(defaultSelector == null)
-    }
 
     test("setDefault should set the system proxy selector") {
       val originalSelector = ProxySelector.getDefault()
       val customSelector = new TestProxySelector()
 
       ProxySelector.setDefault(customSelector)
-      assert(ProxySelector.getDefault() == customSelector)
+      assert(ProxySelector.getDefault().equals(customSelector))
 
       ProxySelector.setDefault(originalSelector)
     }
@@ -44,58 +43,39 @@ class ProxySelectorTest extends utest.TestSuite {
 
     }
 
-    // // test("NullSelector will raise an exception on select") {
-    // //   val url = new URL("http://127.0.0.1/");
-    // //   ProxySelector.setDefault(null);
-    // //   val con = url.openConnection();
-    // //   con.setConnectTimeout(500);
+    test("of with valid address should create selector for HTTP/HTTPS") {
+      val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+      val selector = ProxySelector.of(proxyAddress)
+      val expectedProxy = Proxy(Proxy.Type.HTTP, proxyAddress)
 
-    // //   intercept[IOException] {
-    // //     con.connect()
-    // //   }
-    // // }
+      val httpUri = new URI("http://example.com")
+      val httpsUri = new URI("https://example.com")
 
-    // test("of with valid address should create selector for HTTP/HTTPS") {
-    //   val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
-    //   val selector = ProxySelector.of(proxyAddress)
-    //   val expectedProxy = Proxy(Proxy.Type.HTTP, proxyAddress)
+      val httpProxies = selector.select(httpUri)
+      val httpsProxies = selector.select(httpsUri)
 
-    //   val httpUri = new URI("http://example.com")
-    //   val httpsUri = new URI("https://example.com")
+      assert(httpProxies.size() == 1)
+      assert(httpProxies.get(0) == expectedProxy)
 
-    //   val httpProxies = selector.select(httpUri)
-    //   val httpsProxies = selector.select(httpsUri)
+      assert(httpsProxies.size() == 1)
+      assert(httpsProxies.get(0) == expectedProxy)
+    }
 
-    //   assert(httpProxies.size() == 1)
-    //   assert(httpProxies.get(0) == expectedProxy)
+    test("static selector should return NO_PROXY for non-HTTP schemes") {
+      val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+      val selector = ProxySelector.of(proxyAddress)
 
-    //   assert(httpsProxies.size() == 1)
-    //   assert(httpsProxies.get(0) == expectedProxy)
-    // }
+      val ftpUri = new URI("ftp://example.com")
+      val socketUri = new URI("socket://example.com:1234")
 
-    // test("static selector should return NO_PROXY for non-HTTP schemes") {
-    //   val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
-    //   val selector = ProxySelector.of(proxyAddress)
+      val ftpProxies = selector.select(ftpUri)
+      val socketProxies = selector.select(socketUri)
 
-    //   val ftpUri = new URI("ftp://example.com")
-    //   val socketUri = new URI("socket://example.com:1234")
+      assert(ftpProxies.size() == 1)
+      assert(ftpProxies.get(0) == Proxy.NO_PROXY)
 
-    //   val ftpProxies = selector.select(ftpUri)
-    //   val socketProxies = selector.select(socketUri)
-
-    //   assert(ftpProxies.size(), 1)
-    //   assert(ftpProxies.get(0), Proxy.NO_PROXY)
-
-    //   assert(socketProxies.size(), 1)
-    //   assert(socketProxies.get(0), Proxy.NO_PROXY)
-    // }
-
-    test("static selector select should throw on null URI") {
-      val selector = ProxySelector.of(null)
-
-      assertThrows[IllegalArgumentException] {
-        selector.select(null): Unit
-      }
+      assert(socketProxies.size() == 1)
+      assert(socketProxies.get(0) == Proxy.NO_PROXY)
     }
 
     test("static selector select should throw on URI without scheme") {
@@ -107,59 +87,50 @@ class ProxySelectorTest extends utest.TestSuite {
       }
     }
 
-    // test("static selector connectFailed should throw on null arguments") {
-    //   val selector = ProxySelector.of(null)
-    //   val uri = new URI("http://example.com")
-    //   val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
-    //   val exception = new IOException("Connection failed")
+    test("static selector select should throw on URI is null") {
+      val selector = ProxySelector.of(null)
+      assertThrows[IllegalArgumentException]:
+        selector.select(null): Unit
+    }
 
-    //   intercept[IllegalArgumentException] {
-    //     selector.connectFailed(null, address, exception)
-    //   }
-    //   intercept[IllegalArgumentException] {
-    //     selector.connectFailed(uri, null, exception)
-    //   }
-    //   intercept[IllegalArgumentException] {
-    //     selector.connectFailed(uri, address, null)
-    //   }
-    // }
+    test("static selector connectFailed should throw on null arguments") {
+      val selector = ProxySelector.of(null)
+      val uri = new URI("http://example.com")
+      val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+      val exception = new IOException("Connection failed")
 
-    // test("static selector connectFailed should not throw with valid arguments") {
-    //   val selector = ProxySelector.of(null)
-    //   val uri = new URI("http://example.com")
-    //   val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
-    //   val exception = new IOException("Connection failed")
+      val _ = assertThrows[IllegalArgumentException]:
+        selector.connectFailed(null, address, exception)
 
-    //   assertNoDiff(
-    //     "", {
-    //       selector.connectFailed(uri, address, exception)
-    //       ""
-    //     },
-    //   )
-    // }
+      val _ = assertThrows[IllegalArgumentException]:
+        selector.connectFailed(uri, null, exception)
 
-    // test("case insensitive scheme matching") {
-    //   val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
-    //   val selector = ProxySelector.of(proxyAddress)
-    //   val expectedProxy = Proxy(Proxy.Type.HTTP, proxyAddress)
+      val _ = assertThrows[IllegalArgumentException]:
+        selector.connectFailed(uri, address, null)
+    }
 
-    //   val httpUri = new URI("HTTP://example.com")
-    //   val httpsUri = new URI("HTTPS://example.com")
+    test("case insensitive scheme matching") {
+      val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+      val selector = ProxySelector.of(proxyAddress)
+      val expectedProxy = Proxy(Proxy.Type.HTTP, proxyAddress)
 
-    //   val httpProxies = selector.select(httpUri)
-    //   val httpsProxies = selector.select(httpsUri)
+      val httpUri = new URI("HTTP://example.com")
+      val httpsUri = new URI("HTTPS://example.com")
 
-    //   assert(httpProxies.size() == 1)
-    //   assert(httpProxies.get(0) == expectedProxy)
+      val httpProxies = selector.select(httpUri)
+      val httpsProxies = selector.select(httpsUri)
 
-    //   assert(httpsProxies.size() == 1)
-    //   assert(httpsProxies.get(0) == expectedProxy)
-    // }
+      assert(httpProxies.size() == 1)
+      assert(httpProxies.get(0) == expectedProxy)
+
+      assert(httpsProxies.size() == 1)
+      assert(httpsProxies.get(0) == expectedProxy)
+    }
 
     // test("-Djava.net.useSystemProxies=true") {
     //   val useSystemProxies = System.getProperty("java.net.useSystemProxies")
     //   val systemSelector = ProxySelector.getDefault()
-    //   assert(systemSelector != null, "System proxy selector should not be null")
+    //   assert(systemSelector != null)
     //   val localURIs = List(
     //     "local",
     //     "localhost",

@@ -106,14 +106,20 @@ private[http] class HttpConnection[T](
         toCString(request.uri().toString()),
       )
 
-      val httpVersion = request.version().orElse(Version.HTTP_2) match
-        case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
-        case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
-      val _ = libcurl.easySetopt(
-        ptr,
-        CurlOption.HTTP_VERSION,
-        httpVersion,
-      )
+      /**
+       * FIXME:
+       *
+       *   - [error] Found 1 unreachable symbols!
+       *   - [error] Unknown type snhttp.experimental.libcurl.curl$.CurlHttpVersion
+       */
+      // val httpVersion = request.version().orElse(Version.HTTP_2) match
+      //   case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
+      //   case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
+      // val _ = libcurl.easySetopt(
+      //   ptr,
+      //   CurlOption.HTTP_VERSION,
+      //   httpVersion,
+      // )
 
       val timeoutMs = request
         .timeout()
