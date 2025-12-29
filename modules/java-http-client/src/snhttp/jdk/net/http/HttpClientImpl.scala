@@ -33,42 +33,42 @@ import snhttp.utils.PointerFinalizer
 
 class HttpClientBuilderImpl() extends Builder:
 
-  protected[http] var _cookieHandler: Option[CookieHandler] = None
-  protected[http] var _connectTimeout: Option[Duration] = None
+  protected[http] var _cookieHandler: Optional[CookieHandler] = Optional.empty()
+  protected[http] var _connectTimeout: Optional[Duration] = Optional.empty()
   protected[http] var _redirect: Redirect = Redirect.NORMAL
-  protected[http] var _proxy: Option[ProxySelector] = None
-  protected[http] var _authenticator: Option[Authenticator] = None
+  protected[http] var _proxy: Optional[ProxySelector] = Optional.empty()
+  protected[http] var _authenticator: Optional[Authenticator] = Optional.empty()
   protected[http] var _version: Version = Version.HTTP_1_1
-  protected[http] var _executor: Option[Executor] = None
-  protected[http] var _sslContext: Option[SSLContext] = None
-  protected[http] var _sslParams: Option[SSLParameters] = None
+  protected[http] var _executor: Optional[Executor] = Optional.empty()
+  protected[http] var _sslContext: Optional[SSLContext] = Optional.empty()
+  protected[http] var _sslParams: Optional[SSLParameters] = Optional.empty()
   protected[http] var _priority: Int = -1
-  protected[http] var _localAddr: Option[InetAddress] = None
+  protected[http] var _localAddr: Optional[InetAddress] = Optional.empty()
 
   def cookieHandler(cookieHandler: CookieHandler): Builder =
     requireNonNull(cookieHandler)
-    this._cookieHandler = Some(cookieHandler)
+    this._cookieHandler = Optional.of(cookieHandler)
     this
 
   def connectTimeout(duration: Duration): Builder =
     requireNonNull(duration)
     require(!duration.isNegative && !duration.isZero, "duration must be positive")
-    this._connectTimeout = Some(duration)
+    this._connectTimeout = Optional.of(duration)
     this
 
   def sslContext(sslContext: SSLContext): Builder =
     requireNonNull(sslContext)
-    this._sslContext = Some(sslContext)
+    this._sslContext = Optional.of(sslContext)
     this
 
   def sslParameters(sslParams: SSLParameters): Builder =
     requireNonNull(sslParams)
-    this._sslParams = Some(sslParams)
+    this._sslParams = Optional.of(sslParams)
     this
 
   def executor(executor: Executor): Builder =
     requireNonNull(executor)
-    this._executor = Some(executor)
+    this._executor = Optional.of(executor)
     this
 
   def followRedirects(redirect: Redirect): Builder =
@@ -88,17 +88,17 @@ class HttpClientBuilderImpl() extends Builder:
 
   def proxy(proxy: ProxySelector): Builder =
     requireNonNull(proxy)
-    this._proxy = Some(proxy)
+    this._proxy = Optional.of(proxy)
     this
 
   def authenticator(authenticator: Authenticator): Builder =
     requireNonNull(authenticator)
-    this._authenticator = Some(authenticator)
+    this._authenticator = Optional.of(authenticator)
     this
 
   override def localAddress(localAddr: InetAddress): Builder =
     requireNonNull(localAddr)
-    this._localAddr = Some(localAddr)
+    this._localAddr = Optional.of(localAddr)
     this
 
   def build(): HttpClient =
@@ -144,15 +144,12 @@ class HttpClientImpl(
   private val _terminated = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
 
-  private[http] lazy val _sslContext = builder._sslContext match
-    case Some(ctx) => ctx
-    case None      => SSLContext.getDefault()
-  private[http] lazy val _sslParams = builder._sslParams match
-    case Some(params) => params
-    case None         => _sslContext.getDefaultSSLParameters()
+  private[http] lazy val _sslContext = builder._sslContext.orElse(SSLContext.getDefault())
+  private[http] lazy val _sslParams =
+    builder._sslParams.orElse(_sslContext.getDefaultSSLParameters())
 
   private val _executor: Executor =
-    builder._executor.getOrElse(ExecutionContext.global)
+    builder._executor.orElse(ExecutionContext.global)
 
   /**
    * Map of active connections: request -> connection info (curl easy handle pointer)
@@ -160,40 +157,42 @@ class HttpClientImpl(
   // private val connections = HashMap()
 
   def cookieHandler(): Optional[CookieHandler] =
-    builder._cookieHandler match
-      case Some(cookieHandler) => Optional.of(cookieHandler)
-      case None                => Optional.empty()
+    builder._cookieHandler
 
   def connectTimeout(): Optional[Duration] =
-    builder._connectTimeout match
-      case Some(duration) => Optional.of(duration)
-      case None           => Optional.empty()
+    builder._connectTimeout
 
   def followRedirects(): Redirect =
     builder._redirect
 
   def proxy(): Optional[ProxySelector] =
-    builder._proxy match
-      case Some(proxySelector) => Optional.of(proxySelector)
-      case None                => Optional.empty()
+    builder._proxy
 
+  /**
+   * Note from JDK docs:
+   *
+   * If no `SSLContext` was set in this client's builder, then the default context is returned.
+   */
   def sslContext(): SSLContext =
     _sslContext
 
-  // TODO: return a copy
+  /**
+   * Note from JDK docs:
+   *
+   * If no SSLParameters were set in the client's builder, then an implementation specific default
+   * set of parameters, that the client will use, is returned.
+   */
   def sslParameters(): SSLParameters =
     _sslParams
 
   def authenticator(): Optional[Authenticator] =
-    builder._authenticator.map(Optional.of).getOrElse(Optional.empty())
+    builder._authenticator
 
   def version(): Version =
     builder._version
 
   def executor(): Optional[Executor] =
-    _executor match
-      case null => Optional.empty()
-      case exec => Optional.of(exec)
+    builder._executor
 
   def send[T](
       request: HttpRequest,

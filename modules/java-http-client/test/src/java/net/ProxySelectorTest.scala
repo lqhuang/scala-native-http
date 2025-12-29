@@ -12,9 +12,11 @@ class ProxySelectorTest extends utest.TestSuite {
     def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
 
   val tests = Tests {
-    test("getDefault should return null when no system property is set"):
+    test("getDefault should return DIRECT when no system property is set"):
       val defaultSelector = ProxySelector.getDefault()
-      assert(defaultSelector == null)
+      val proxies = defaultSelector.select(URI.create("http://example.com"))
+      assert(proxies.size() == 1)
+      assert(proxies.get(0) == Proxy.NO_PROXY)
 
     test("setDefault should set the system proxy selector") {
       val originalSelector = ProxySelector.getDefault()
@@ -105,7 +107,7 @@ class ProxySelectorTest extends utest.TestSuite {
       val _ = assertThrows[IllegalArgumentException]:
         selector.connectFailed(uri, null, exception)
 
-      val _ = assertThrows[IllegalArgumentException]:
+      assertThrows[IllegalArgumentException]:
         selector.connectFailed(uri, address, null)
     }
 

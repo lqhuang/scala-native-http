@@ -131,9 +131,7 @@ private[http] class HttpConnection[T](
         timeoutMs,
       )
 
-      val connectTimeoutMs = client.builder._connectTimeout match
-        case Some(duration) => duration.toMillis
-        case None           => 0L
+      val connectTimeoutMs = client.builder._connectTimeout.map(_.toMillis).orElse(0L)
       val _ = libcurl.easySetopt(
         ptr,
         CurlOption.CONNECTTIMEOUT_MS,
