@@ -1,8 +1,8 @@
 package java.net
 
-import java.text.SimpleDateFormat
-import java.util.{Calendar, GregorianCalendar, List as JList, Locale, Objects, StringTokenizer, TimeZone}
-import java.util.NoSuchElementException
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
+import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
+import java.util.{ArrayList, HashMap, List as JList, Locale, Map, Objects}
 
 final class HttpCookie private[net] (name: String, value: String | Null, rawHeader: String | Null, creationTime: Long)
     extends Cloneable:
@@ -142,38 +142,34 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
     sb.toString
 
   private def expiryDate2DeltaSeconds(dateString: String | Null): Long =
-    val cal = new GregorianCalendar(HttpCookie.GMT)
-    var i = 0
-    while i < HttpCookie.COOKIE_DATE_FORMATS.length do
-      val df = new SimpleDateFormat(HttpCookie.COOKIE_DATE_FORMATS(i), Locale.US)
-      cal.set(1970, 0, 1, 0, 0, 0)
-      df.setTimeZone(HttpCookie.GMT)
-      df.setLenient(false)
-      df.set2DigitYearStart(cal.getTime)
-      try
-        cal.setTime(df.parse(dateString))
-        if !HttpCookie.COOKIE_DATE_FORMATS(i).contains("yyyy") then
-          var year = cal.get(Calendar.YEAR)
-          year %= 100
-          if year < 70 then year += 2000 else year += 1900
-          cal.set(Calendar.YEAR, year)
-        return (cal.getTimeInMillis - whenCreated) / 1000
-      catch case _: Exception =>
-        ()
-      i += 1
-    0
+    if dateString == null then return 0
+    val trimmed = dateString.trim
+    if trimmed.isEmpty then return 0
+
+    HttpCookie.parseHttpDate(trimmed) match
+      case Some(epochSeconds) =>
+        val expiresMillis =
+          try java.lang.Math.multiplyExact(epochSeconds, 1000L)
+          catch case _: ArithmeticException => Long.MaxValue
+        val deltaMillis = expiresMillis - whenCreated
+        if deltaMillis <= 0 then 0 else deltaMillis / 1000L
+      case None => 0
 
 object HttpCookie:
   final val MAX_AGE_UNSPECIFIED: Long = -1L
-  val GMT: TimeZone = TimeZone.getTimeZone("GMT")
-  private val COOKIE_DATE_FORMATS: Array[String] = Array(
-    "EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'",
-    "EEE',' dd MMM yyyy HH:mm:ss 'GMT'",
-    "EEE MMM dd yyyy HH:mm:ss 'GMT'Z",
-    "EEE',' dd-MMM-yy HH:mm:ss 'GMT'",
-    "EEE',' dd MMM yy HH:mm:ss 'GMT'",
-    "EEE MMM dd yy HH:mm:ss 'GMT'Z"
-  )
+  private val RFC1123_FORMATTER: DateTimeFormatter =
+    DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US).withZone(ZoneOffset.UTC)
+  private val RFC850_FORMATTER: DateTimeFormatter =
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive()
+      .appendPattern("EEEE, dd-MMM-yy HH:mm:ss 'GMT'")
+      .toFormatter(Locale.US)
+      .withZone(ZoneOffset.UTC)
+  private val ASCTIME_FORMATTER: DateTimeFormatter =
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive()
+      .appendPattern("EEE MMM dd HH:mm:ss yyyy")
+      .toFormatter(Locale.US)
   private val SET_COOKIE = "set-cookie:"
   private val SET_COOKIE2 = "set-cookie2:"
   private val TSPECIALS = ",; " // deliberately includes space
@@ -181,8 +177,8 @@ object HttpCookie:
   private trait CookieAttributeAssignor:
     def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit
 
-  private val ASSIGNORS: java.util.Map[String, CookieAttributeAssignor] =
-    val map = new java.util.HashMap[String, CookieAttributeAssignor]()
+  private val ASSIGNORS: Map[String, CookieAttributeAssignor] =
+    val map = new HashMap[String, CookieAttributeAssignor]()
     map.put("comment", new CookieAttributeAssignor {
       override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
         if cookie.getComment() == null then cookie.setComment(attrValue)
@@ -217,8 +213,7 @@ object HttpCookie:
     })
     map.put("version", new CookieAttributeAssignor {
       override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
-        try cookie.setVersion(Integer.parseInt(attrValue))
-        catch case _: NumberFormatException => ()
+        safeParseInt(attrValue).foreach(cookie.setVersion)
     })
     map
 
@@ -247,14 +242,40 @@ object HttpCookie:
     else if diff == -1 && domain.charAt(0) == '.' then host.equalsIgnoreCase(domain.substring(1))
     else false
 
+  /**
+   * Check if the request path matches the cookie path.
+   *
+   * Per RFC 6265:
+   * - The cookie-path is a prefix of the request-path, and
+   * - Either the cookie-path equals the request-path, or
+   * - The cookie-path ends with "/", or
+   * - The first character of the request-path that is not included in the cookie-path is a "/"
+   *
+   * @param path
+   *   the request path (URI path)
+   * @param pathToMatchWith
+   *   the cookie path to match against
+   * @return
+   *   true if the path matches, false otherwise
+   */
+  def pathMatches(path: String | Null, pathToMatchWith: String | Null): Boolean =
+    if path == null || pathToMatchWith == null then return false
+    if path == pathToMatchWith then true
+    else if path.startsWith(pathToMatchWith) then
+      if pathToMatchWith.endsWith("/") then true
+      else if path.length > pathToMatchWith.length && path.charAt(pathToMatchWith.length) == '/' then true
+      else false
+    else false
+
   def parse(header: String, retainHeader: Boolean, currentTimeMillis: Long): JList[HttpCookie] =
     Objects.requireNonNull(header)
     var work = header
     val version = guessCookieVersion(work)
     if startsWithIgnoreCase(work, SET_COOKIE2) then work = work.substring(SET_COOKIE2.length)
     else if startsWithIgnoreCase(work, SET_COOKIE) then work = work.substring(SET_COOKIE.length)
+    work = work.trim
 
-    val cookies = new java.util.ArrayList[HttpCookie]()
+    val cookies = new ArrayList[HttpCookie]()
     if version == 0 then
       val cookie = parseInternal(work, retainHeader, currentTimeMillis)
       cookie.setVersion(0)
@@ -272,11 +293,10 @@ object HttpCookie:
     var currentTimeMillis = currentTime
     if currentTimeMillis == -1L then currentTimeMillis = System.currentTimeMillis()
 
-    val tokenizer = new StringTokenizer(header, ";")
-    val namevaluePair =
-      try tokenizer.nextToken()
-      catch case _: NoSuchElementException => throw IllegalArgumentException("Empty cookie header string")
+    val segments = splitAttributes(header)
+    if segments.isEmpty then throw IllegalArgumentException("Empty cookie header string")
 
+    val namevaluePair = segments(0)
     val index = namevaluePair.indexOf('=')
     if index == -1 then throw IllegalArgumentException("Invalid cookie name-value pair")
     val name = namevaluePair.substring(0, index).trim
@@ -288,14 +308,16 @@ object HttpCookie:
     var expiresValue: String | Null = null
     var maxAgeValue: String | Null = null
 
-    while tokenizer.hasMoreTokens do
-      val nv = tokenizer.nextToken()
+    var i = 1
+    while i < segments.length do
+      val nv = segments(i)
       val idx = nv.indexOf('=')
       val attrName = if idx != -1 then nv.substring(0, idx).trim else nv.trim
       val attrValue = if idx != -1 then nv.substring(idx + 1).trim else null
       if attrName.equalsIgnoreCase("max-age") && maxAgeValue == null then maxAgeValue = attrValue
       else if attrName.equalsIgnoreCase("expires") && expiresValue == null then expiresValue = attrValue
       else assignAttribute(cookie, attrName, attrValue)
+      i += 1
 
     assignMaxAgeAttribute(cookie, expiresValue, maxAgeValue)
     cookie
@@ -307,38 +329,69 @@ object HttpCookie:
 
   private def assignMaxAgeAttribute(cookie: HttpCookie, expiresValue: String | Null, maxAgeValue: String | Null): Unit =
     if cookie.getMaxAge() != MAX_AGE_UNSPECIFIED then return
-    if expiresValue == null && maxAgeValue == null then return
+    val maxAgeCandidate = stripOffSurroundingQuote(maxAgeValue)
 
-    val expires = stripOffSurroundingQuote(expiresValue)
-    val maxAge = stripOffSurroundingQuote(maxAgeValue)
-
-    try
-      if maxAge != null then
-        val parsed = java.lang.Long.parseLong(maxAge)
-        cookie.setMaxAge(parsed)
-        return
-    catch case _: NumberFormatException => ()
-
-    try
-      if expires != null then
-        val delta = cookie.expiryDate2DeltaSeconds(expires)
-        cookie.setMaxAge(if delta > 0 then delta else 0)
-    catch case _: NumberFormatException => ()
+    safeParseLong(maxAgeCandidate) match
+      case Some(value) => cookie.setMaxAge(value)
+      case None =>
+        val expiresCandidate = stripOffSurroundingQuote(expiresValue)
+        if expiresCandidate != null then
+          val delta = cookie.expiryDate2DeltaSeconds(expiresCandidate)
+          cookie.setMaxAge(delta)
 
   private def splitMultiCookies(header: String): JList[String] =
-    val cookies = new java.util.ArrayList[String]()
-    var quoteCount = 0
-    var p = 0
-    var q = 0
-    while p < header.length do
-      val c = header.charAt(p)
-      if c == '"' then quoteCount += 1
-      if c == ',' && quoteCount % 2 == 0 then
-        cookies.add(header.substring(q, p))
-        q = p + 1
-      p += 1
-    cookies.add(header.substring(q))
+    val cookies = new ArrayList[String]()
+    val builder = new java.lang.StringBuilder()
+    var inQuotes = false
+    var escape = false
+    var i = 0
+    while i < header.length do
+      val ch = header.charAt(i)
+      if ch == '\\' && !escape then
+        escape = true
+        builder.append(ch)
+      else
+        if ch == '"' && !escape then inQuotes = !inQuotes
+        if ch == ',' && !inQuotes then
+          val token = builder.toString.trim
+          if !token.isEmpty then cookies.add(token)
+          builder.setLength(0)
+        else builder.append(ch)
+        escape = false
+      i += 1
+    val last = builder.toString.trim
+    if !last.isEmpty then cookies.add(last)
     cookies
+
+  private def splitAttributes(header: String): Array[String] =
+    val parts = new ArrayList[String]()
+    val builder = new java.lang.StringBuilder()
+    var inQuotes = false
+    var escape = false
+    var i = 0
+    while i < header.length do
+      val ch = header.charAt(i)
+      if ch == '\\' && !escape then
+        escape = true
+        builder.append(ch)
+      else
+        if ch == '"' && !escape then inQuotes = !inQuotes
+        if ch == ';' && !inQuotes then
+          val segment = builder.toString.trim
+          if !segment.isEmpty then parts.add(segment)
+          builder.setLength(0)
+        else builder.append(ch)
+        escape = false
+      i += 1
+    val last = builder.toString.trim
+    if !last.isEmpty then parts.add(last)
+
+    val result = Array.ofDim[String](parts.size())
+    var idx = 0
+    while idx < parts.size() do
+      result(idx) = parts.get(idx)
+      idx += 1
+    result
 
   private def guessCookieVersion(header: String): Int =
     var lowered = header
@@ -350,10 +403,10 @@ object HttpCookie:
     else 0
 
   private def stripOffSurroundingQuote(str: String | Null): String | Null =
-    if str != null && str.length > 2 then
-      if str.charAt(0) == '"' && str.charAt(str.length - 1) == '"' then return str.substring(1, str.length - 1)
-      if str.charAt(0) == '\'' && str.charAt(str.length - 1) == '\'' then return str.substring(1, str.length - 1)
-    str
+    if str == null then null
+    else if str.length >= 2 && str.charAt(0) == '"' && str.charAt(str.length - 1) == '"' then str.substring(1, str.length - 1)
+    else if str.length >= 2 && str.charAt(0) == '\'' && str.charAt(str.length - 1) == '\'' then str.substring(1, str.length - 1)
+    else str
 
   private def startsWithIgnoreCase(s: String | Null, start: String): Boolean =
     if s == null || start == null then false
@@ -372,5 +425,83 @@ object HttpCookie:
     if s eq t then true
     else if s != null && t != null then s.equalsIgnoreCase(t)
     else false
+
+  private def safeParseInt(value: String | Null): Option[Int] =
+    if value == null then None
+    else
+      val trimmed = value.trim
+      if trimmed.isEmpty then None
+      else
+        try Some(java.lang.Integer.parseInt(trimmed))
+        catch case _: NumberFormatException => None
+
+  private def safeParseLong(value: String | Null): Option[Long] =
+    if value == null then None
+    else
+      val trimmed = value.trim
+      if trimmed.isEmpty then None
+      else
+        try Some(java.lang.Long.parseLong(trimmed))
+        catch case _: NumberFormatException => None
+
+  private def parseHttpDate(input: String): Option[Long] =
+    if input == null then None
+    else
+      val trimmed = input.trim
+      if trimmed.isEmpty then None
+      else
+        parseRfc1123(trimmed)
+          .orElse(parseRfc850(trimmed))
+          .orElse(parseAsctime(trimmed))
+
+  private def parseRfc1123(text: String): Option[Long] =
+    try
+      val zdt = ZonedDateTime.parse(text, RFC1123_FORMATTER)
+      Some(zdt.toEpochSecond)
+    catch case _: Exception => None
+
+  private def parseRfc850(text: String): Option[Long] =
+    try
+      val parsed = ZonedDateTime.parse(text, RFC850_FORMATTER)
+      val year = parsed.getYear
+      val adjusted =
+        if year >= 0 && year < 100 then
+          val actual = if year < 70 then year + 2000 else year + 1900
+          parsed.withYear(actual)
+        else parsed
+      Some(adjusted.toEpochSecond)
+    catch case _: Exception => None
+
+  private def parseAsctime(text: String): Option[Long] =
+    val normalized = normalizeAsctime(text)
+    try
+      val parsed = LocalDateTime.parse(normalized, ASCTIME_FORMATTER)
+      Some(parsed.toEpochSecond(ZoneOffset.UTC))
+    catch case _: Exception => None
+
+  private def normalizeAsctime(value: String): String =
+    val collapsed = collapseSpaces(value.trim)
+    val tokens = collapsed.split(" ")
+    if tokens.length == 5 then
+      val day = tokens(2)
+      val padded = if day.length == 1 then "0" + day else day
+      s"${tokens(0)} ${tokens(1)} $padded ${tokens(3)} ${tokens(4)}"
+    else collapsed
+
+  private def collapseSpaces(value: String): String =
+    val builder = new java.lang.StringBuilder(value.length)
+    var previousSpace = false
+    var i = 0
+    while i < value.length do
+      val ch = value.charAt(i)
+      if ch == ' ' then
+        if !previousSpace then builder.append(ch)
+        previousSpace = true
+      else
+        builder.append(ch)
+        previousSpace = false
+      i += 1
+    builder.toString
+
 
   // SharedSecrets hook is intentionally omitted in Scala Native port.
