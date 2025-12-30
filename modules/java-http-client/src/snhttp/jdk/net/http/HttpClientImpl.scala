@@ -13,9 +13,10 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
 
+import scala.concurrent.duration.DurationInt
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
-import scala.scalanative.unsafe.Ptr
+import scala.scalanative.unsafe.{Ptr, stackalloc}
 
 import snhttp.experimental.libcurl
 import snhttp.experimental.libcurl.{
@@ -27,6 +28,7 @@ import snhttp.experimental.libcurl.{
   CurlGlobalFlag,
   CurlErrCode,
   CurlMulti,
+  CurlMultiCode,
 }
 import snhttp.jdk.net.http.internal.HttpConnection
 import snhttp.utils.PointerFinalizer

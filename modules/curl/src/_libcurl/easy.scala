@@ -9,14 +9,14 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental.libcurl
+package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsafe.{Tag, CStruct3}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.posix.stddef.size_t
 
-import snhttp.experimental.libcurl.internal._BindgenEnumUInt
+import snhttp.experimental._libcurl.internal._BindgenEnumUInt
 
 object easy:
 

@@ -1,4 +1,4 @@
-package snhttp.experimental.libcurl
+package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.{Ptr, CString, CVoidPtr, CLong}
 import scala.scalanative.unsafe.{alloc, extern, name, link, define}
@@ -7,8 +7,8 @@ import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.posix.sys.select.fd_set
 
-import snhttp.experimental.libcurl.options.CurlEasyOption
-import snhttp.experimental.libcurl.curl.{
+import snhttp.experimental._libcurl.options.CurlEasyOption
+import snhttp.experimental._libcurl.curl.{
   CurlGlobalFlag,
   CurlErrCode,
   CurlOption,
@@ -21,8 +21,8 @@ import snhttp.experimental.libcurl.curl.{
   CurlPause,
   CurlSocket,
 }
-import snhttp.experimental.libcurl.header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
-import snhttp.experimental.libcurl.multi.{
+import snhttp.experimental._libcurl.header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
+import snhttp.experimental._libcurl.multi.{
   CurlMulti,
   CurlMultiCode,
   CurlWaitFd,
@@ -30,7 +30,8 @@ import snhttp.experimental.libcurl.multi.{
   CurlMultiOption,
   CurlPushHeaders,
 }
-import snhttp.experimental.libcurl.websockets.{CurlWsFrame, CurlWsSendFlag}
+import snhttp.experimental._libcurl.websockets.{CurlWsFrame, CurlWsSendFlag}
+import snhttp.experimental._libcurl.system.CurlOff
 
 @link("curl")
 @extern

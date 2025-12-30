@@ -9,7 +9,7 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental.libcurl
+package snhttp.experimental._libcurl
 
 import scalanative.unsafe.alloc
 import scalanative.unsafe.{
@@ -28,8 +28,8 @@ import scalanative.unsafe.{
 }
 import scalanative.posix.stddef.size_t
 
-import snhttp.experimental.libcurl.curl.{Curl, CurlErrCode, CurlSocket}
-import snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
+import snhttp.experimental._libcurl.curl.{Curl, CurlErrCode, CurlSocket}
+import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
 
 object multi:
 
@@ -72,9 +72,9 @@ object multi:
     val UNRECOVERABLE_POLL = define(12)
     val LAST = define(13)
 
-    extension (value: CurlMultiCode)
-      inline def getName: String =
-        inline value match
+    implicit class RichCurlMultiCode(value: CurlMultiCode) extends AnyVal:
+      def getName: String =
+        value match
           case CALL_MULTI_PERFORM    => "CURLM_CALL_MULTI_PERFORM"
           case OK                    => "CURLM_OK"
           case BAD_HANDLE            => "CURLM_BAD_HANDLE"

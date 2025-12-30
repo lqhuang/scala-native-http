@@ -9,7 +9,7 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental.libcurl
+package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.{alloc, name, link, extern, define}
 import scala.scalanative.unsafe.{
@@ -33,8 +33,8 @@ import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
-import snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
-import snhttp.experimental.libcurl.system.CurlOff
+import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
+import snhttp.experimental._libcurl.system.CurlOff
 
 object curl:
 
@@ -614,13 +614,13 @@ object curl:
    * Always add new return codes last. Never *EVER* remove any. The return codes must remain the
    * same!
    */
-  // We keep it as Size to match the union alignment in [[CurlMsgData]]
   // known as enum "CURLcode"
+  // NOTE: We keep it as `Size` type to match the union alignment in [[CurlMsgData]]
   opaque type CurlErrCode = Size
-  object CurlErrCode:
+  object CurlErrCode extends _BindgenEnumCLong[CurlErrCode]:
     given Tag[CurlErrCode] = Tag.Size
 
-    inline def define(inline a: Int): CurlErrCode = a
+    private inline def define(inline a: Int): CurlErrCode = a
 
     val OK = define(0)
     val UNSUPPORTED_PROTOCOL = define(1)
@@ -724,121 +724,117 @@ object curl:
     val UNRECOVERABLE_POLL = define(99)
     val CURL_LAST = define(100)
 
-    inline def getName(inline value: CurlErrCode): Option[String] =
-      inline value match
-        case OK                       => Some("CURLE_OK")
-        case UNSUPPORTED_PROTOCOL     => Some("CURLE_UNSUPPORTED_PROTOCOL")
-        case FAILED_INIT              => Some("CURLE_FAILED_INIT")
-        case URL_MALFORMAT            => Some("CURLE_URL_MALFORMAT")
-        case NOT_BUILT_IN             => Some("CURLE_NOT_BUILT_IN")
-        case COULDNT_RESOLVE_PROXY    => Some("CURLE_COULDNT_RESOLVE_PROXY")
-        case COULDNT_RESOLVE_HOST     => Some("CURLE_COULDNT_RESOLVE_HOST")
-        case COULDNT_CONNECT          => Some("CURLE_COULDNT_CONNECT")
-        case WEIRD_SERVER_REPLY       => Some("CURLE_WEIRD_SERVER_REPLY")
-        case REMOTE_ACCESS_DENIED     => Some("CURLE_REMOTE_ACCESS_DENIED")
-        case FTP_ACCEPT_FAILED        => Some("CURLE_FTP_ACCEPT_FAILED")
-        case FTP_WEIRD_PASS_REPLY     => Some("CURLE_FTP_WEIRD_PASS_REPLY")
-        case FTP_ACCEPT_TIMEOUT       => Some("CURLE_FTP_ACCEPT_TIMEOUT")
-        case FTP_WEIRD_PASV_REPLY     => Some("CURLE_FTP_WEIRD_PASV_REPLY")
-        case FTP_WEIRD_227_FORMAT     => Some("CURLE_FTP_WEIRD_227_FORMAT")
-        case FTP_CANT_GET_HOST        => Some("CURLE_FTP_CANT_GET_HOST")
-        case HTTP2                    => Some("CURLE_HTTP2")
-        case FTP_COULDNT_SET_TYPE     => Some("CURLE_FTP_COULDNT_SET_TYPE")
-        case PARTIAL_FILE             => Some("CURLE_PARTIAL_FILE")
-        case FTP_COULDNT_RETR_FILE    => Some("CURLE_FTP_COULDNT_RETR_FILE")
-        case OBSOLETE20               => Some("CURLE_OBSOLETE20")
-        case QUOTE_ERROR              => Some("CURLE_QUOTE_ERROR")
-        case HTTP_RETURNED_ERROR      => Some("CURLE_HTTP_RETURNED_ERROR")
-        case WRITE_ERROR              => Some("CURLE_WRITE_ERROR")
-        case OBSOLETE24               => Some("CURLE_OBSOLETE24")
-        case UPLOAD_FAILED            => Some("CURLE_UPLOAD_FAILED")
-        case READ_ERROR               => Some("CURLE_READ_ERROR")
-        case OUT_OF_MEMORY            => Some("CURLE_OUT_OF_MEMORY")
-        case OPERATION_TIMEDOUT       => Some("CURLE_OPERATION_TIMEDOUT")
-        case OBSOLETE29               => Some("CURLE_OBSOLETE29")
-        case FTP_PORT_FAILED          => Some("CURLE_FTP_PORT_FAILED")
-        case FTP_COULDNT_USE_REST     => Some("CURLE_FTP_COULDNT_USE_REST")
-        case OBSOLETE32               => Some("CURLE_OBSOLETE32")
-        case RANGE_ERROR              => Some("CURLE_RANGE_ERROR")
-        case HTTP_POST_ERROR          => Some("CURLE_HTTP_POST_ERROR")
-        case SSL_CONNECT_ERROR        => Some("CURLE_SSL_CONNECT_ERROR")
-        case BAD_DOWNLOAD_RESUME      => Some("CURLE_BAD_DOWNLOAD_RESUME")
-        case FILE_COULDNT_READ_FILE   => Some("CURLE_FILE_COULDNT_READ_FILE")
-        case LDAP_CANNOT_BIND         => Some("CURLE_LDAP_CANNOT_BIND")
-        case LDAP_SEARCH_FAILED       => Some("CURLE_LDAP_SEARCH_FAILED")
-        case OBSOLETE40               => Some("CURLE_OBSOLETE40")
-        case FUNCTION_NOT_FOUND       => Some("CURLE_FUNCTION_NOT_FOUND")
-        case ABORTED_BY_CALLBACK      => Some("CURLE_ABORTED_BY_CALLBACK")
-        case BAD_FUNCTION_ARGUMENT    => Some("CURLE_BAD_FUNCTION_ARGUMENT")
-        case OBSOLETE44               => Some("CURLE_OBSOLETE44")
-        case INTERFACE_FAILED         => Some("CURLE_INTERFACE_FAILED")
-        case OBSOLETE46               => Some("CURLE_OBSOLETE46")
-        case TOO_MANY_REDIRECTS       => Some("CURLE_TOO_MANY_REDIRECTS")
-        case UNKNOWN_OPTION           => Some("CURLE_UNKNOWN_OPTION")
-        case SETOPT_OPTION_SYNTAX     => Some("CURLE_SETOPT_OPTION_SYNTAX")
-        case OBSOLETE50               => Some("CURLE_OBSOLETE50")
-        case OBSOLETE51               => Some("CURLE_OBSOLETE51")
-        case GOT_NOTHING              => Some("CURLE_GOT_NOTHING")
-        case SSL_ENGINE_NOTFOUND      => Some("CURLE_SSL_ENGINE_NOTFOUND")
-        case SSL_ENGINE_SETFAILED     => Some("CURLE_SSL_ENGINE_SETFAILED")
-        case SEND_ERROR               => Some("CURLE_SEND_ERROR")
-        case RECV_ERROR               => Some("CURLE_RECV_ERROR")
-        case OBSOLETE57               => Some("CURLE_OBSOLETE57")
-        case SSL_CERTPROBLEM          => Some("CURLE_SSL_CERTPROBLEM")
-        case SSL_CIPHER               => Some("CURLE_SSL_CIPHER")
-        case PEER_FAILED_VERIFICATION => Some("CURLE_PEER_FAILED_VERIFICATION")
-        case BAD_CONTENT_ENCODING     => Some("CURLE_BAD_CONTENT_ENCODING")
-        case OBSOLETE62               => Some("CURLE_OBSOLETE62")
-        case FILESIZE_EXCEEDED        => Some("CURLE_FILESIZE_EXCEEDED")
-        case USE_SSL_FAILED           => Some("CURLE_USE_SSL_FAILED")
-        case SEND_FAIL_REWIND         => Some("CURLE_SEND_FAIL_REWIND")
-        case SSL_ENGINE_INITFAILED    => Some("CURLE_SSL_ENGINE_INITFAILED")
-        case LOGIN_DENIED             => Some("CURLE_LOGIN_DENIED")
-        case TFTP_NOTFOUND            => Some("CURLE_TFTP_NOTFOUND")
-        case TFTP_PERM                => Some("CURLE_TFTP_PERM")
-        case REMOTE_DISK_FULL         => Some("CURLE_REMOTE_DISK_FULL")
-        case TFTP_ILLEGAL             => Some("CURLE_TFTP_ILLEGAL")
-        case TFTP_UNKNOWNID           => Some("CURLE_TFTP_UNKNOWNID")
-        case REMOTE_FILE_EXISTS       => Some("CURLE_REMOTE_FILE_EXISTS")
-        case TFTP_NOSUCHUSER          => Some("CURLE_TFTP_NOSUCHUSER")
-        case OBSOLETE75               => Some("CURLE_OBSOLETE75")
-        case OBSOLETE76               => Some("CURLE_OBSOLETE76")
-        case SSL_CACERT_BADFILE       => Some("CURLE_SSL_CACERT_BADFILE")
-        case REMOTE_FILE_NOT_FOUND    => Some("CURLE_REMOTE_FILE_NOT_FOUND")
-        case SSH                      => Some("CURLE_SSH")
-        case SSL_SHUTDOWN_FAILED      => Some("CURLE_SSL_SHUTDOWN_FAILED")
-        case AGAIN                    => Some("CURLE_AGAIN")
-        case SSL_CRL_BADFILE          => Some("CURLE_SSL_CRL_BADFILE")
-        case SSL_ISSUER_ERROR         => Some("CURLE_SSL_ISSUER_ERROR")
-        case FTP_PRET_FAILED          => Some("CURLE_FTP_PRET_FAILED")
-        case RTSP_CSEQ_ERROR          => Some("CURLE_RTSP_CSEQ_ERROR")
-        case RTSP_SESSION_ERROR       => Some("CURLE_RTSP_SESSION_ERROR")
-        case FTP_BAD_FILE_LIST        => Some("CURLE_FTP_BAD_FILE_LIST")
-        case CHUNK_FAILED             => Some("CURLE_CHUNK_FAILED")
-        case NO_CONNECTION_AVAILABLE  => Some("CURLE_NO_CONNECTION_AVAILABLE")
-        case SSL_PINNEDPUBKEYNOTMATCH => Some("CURLE_SSL_PINNEDPUBKEYNOTMATCH")
-        case SSL_INVALIDCERTSTATUS    => Some("CURLE_SSL_INVALIDCERTSTATUS")
-        case HTTP2_STREAM             => Some("CURLE_HTTP2_STREAM")
-        case RECURSIVE_API_CALL       => Some("CURLE_RECURSIVE_API_CALL")
-        case AUTH_ERROR               => Some("CURLE_AUTH_ERROR")
-        case HTTP3                    => Some("CURLE_HTTP3")
-        case QUIC_CONNECT_ERROR       => Some("CURLE_QUIC_CONNECT_ERROR")
-        case PROXY                    => Some("CURLE_PROXY")
-        case SSL_CLIENTCERT           => Some("CURLE_SSL_CLIENTCERT")
-        case UNRECOVERABLE_POLL       => Some("CURLE_UNRECOVERABLE_POLL")
-        case CURL_LAST                => Some("CURL_LAST")
-        case _                        => None
-    extension (a: CurlErrCode)
-      inline def &(b: CurlErrCode): CurlErrCode = a & b
-      inline def |(b: CurlErrCode): CurlErrCode = a | b
-      inline def is(b: CurlErrCode): Boolean = (a & b) == b
+    implicit class RichCurlErrCode(value: CurlErrCode) extends AnyVal:
+      def getName: String =
+        value match
+          case OK                       => "CURLE_OK"
+          case UNSUPPORTED_PROTOCOL     => "CURLE_UNSUPPORTED_PROTOCOL"
+          case FAILED_INIT              => "CURLE_FAILED_INIT"
+          case URL_MALFORMAT            => "CURLE_URL_MALFORMAT"
+          case NOT_BUILT_IN             => "CURLE_NOT_BUILT_IN"
+          case COULDNT_RESOLVE_PROXY    => "CURLE_COULDNT_RESOLVE_PROXY"
+          case COULDNT_RESOLVE_HOST     => "CURLE_COULDNT_RESOLVE_HOST"
+          case COULDNT_CONNECT          => "CURLE_COULDNT_CONNECT"
+          case WEIRD_SERVER_REPLY       => "CURLE_WEIRD_SERVER_REPLY"
+          case REMOTE_ACCESS_DENIED     => "CURLE_REMOTE_ACCESS_DENIED"
+          case FTP_ACCEPT_FAILED        => "CURLE_FTP_ACCEPT_FAILED"
+          case FTP_WEIRD_PASS_REPLY     => "CURLE_FTP_WEIRD_PASS_REPLY"
+          case FTP_ACCEPT_TIMEOUT       => "CURLE_FTP_ACCEPT_TIMEOUT"
+          case FTP_WEIRD_PASV_REPLY     => "CURLE_FTP_WEIRD_PASV_REPLY"
+          case FTP_WEIRD_227_FORMAT     => "CURLE_FTP_WEIRD_227_FORMAT"
+          case FTP_CANT_GET_HOST        => "CURLE_FTP_CANT_GET_HOST"
+          case HTTP2                    => "CURLE_HTTP2"
+          case FTP_COULDNT_SET_TYPE     => "CURLE_FTP_COULDNT_SET_TYPE"
+          case PARTIAL_FILE             => "CURLE_PARTIAL_FILE"
+          case FTP_COULDNT_RETR_FILE    => "CURLE_FTP_COULDNT_RETR_FILE"
+          case OBSOLETE20               => "CURLE_OBSOLETE20"
+          case QUOTE_ERROR              => "CURLE_QUOTE_ERROR"
+          case HTTP_RETURNED_ERROR      => "CURLE_HTTP_RETURNED_ERROR"
+          case WRITE_ERROR              => "CURLE_WRITE_ERROR"
+          case OBSOLETE24               => "CURLE_OBSOLETE24"
+          case UPLOAD_FAILED            => "CURLE_UPLOAD_FAILED"
+          case READ_ERROR               => "CURLE_READ_ERROR"
+          case OUT_OF_MEMORY            => "CURLE_OUT_OF_MEMORY"
+          case OPERATION_TIMEDOUT       => "CURLE_OPERATION_TIMEDOUT"
+          case OBSOLETE29               => "CURLE_OBSOLETE29"
+          case FTP_PORT_FAILED          => "CURLE_FTP_PORT_FAILED"
+          case FTP_COULDNT_USE_REST     => "CURLE_FTP_COULDNT_USE_REST"
+          case OBSOLETE32               => "CURLE_OBSOLETE32"
+          case RANGE_ERROR              => "CURLE_RANGE_ERROR"
+          case HTTP_POST_ERROR          => "CURLE_HTTP_POST_ERROR"
+          case SSL_CONNECT_ERROR        => "CURLE_SSL_CONNECT_ERROR"
+          case BAD_DOWNLOAD_RESUME      => "CURLE_BAD_DOWNLOAD_RESUME"
+          case FILE_COULDNT_READ_FILE   => "CURLE_FILE_COULDNT_READ_FILE"
+          case LDAP_CANNOT_BIND         => "CURLE_LDAP_CANNOT_BIND"
+          case LDAP_SEARCH_FAILED       => "CURLE_LDAP_SEARCH_FAILED"
+          case OBSOLETE40               => "CURLE_OBSOLETE40"
+          case FUNCTION_NOT_FOUND       => "CURLE_FUNCTION_NOT_FOUND"
+          case ABORTED_BY_CALLBACK      => "CURLE_ABORTED_BY_CALLBACK"
+          case BAD_FUNCTION_ARGUMENT    => "CURLE_BAD_FUNCTION_ARGUMENT"
+          case OBSOLETE44               => "CURLE_OBSOLETE44"
+          case INTERFACE_FAILED         => "CURLE_INTERFACE_FAILED"
+          case OBSOLETE46               => "CURLE_OBSOLETE46"
+          case TOO_MANY_REDIRECTS       => "CURLE_TOO_MANY_REDIRECTS"
+          case UNKNOWN_OPTION           => "CURLE_UNKNOWN_OPTION"
+          case SETOPT_OPTION_SYNTAX     => "CURLE_SETOPT_OPTION_SYNTAX"
+          case OBSOLETE50               => "CURLE_OBSOLETE50"
+          case OBSOLETE51               => "CURLE_OBSOLETE51"
+          case GOT_NOTHING              => "CURLE_GOT_NOTHING"
+          case SSL_ENGINE_NOTFOUND      => "CURLE_SSL_ENGINE_NOTFOUND"
+          case SSL_ENGINE_SETFAILED     => "CURLE_SSL_ENGINE_SETFAILED"
+          case SEND_ERROR               => "CURLE_SEND_ERROR"
+          case RECV_ERROR               => "CURLE_RECV_ERROR"
+          case OBSOLETE57               => "CURLE_OBSOLETE57"
+          case SSL_CERTPROBLEM          => "CURLE_SSL_CERTPROBLEM"
+          case SSL_CIPHER               => "CURLE_SSL_CIPHER"
+          case PEER_FAILED_VERIFICATION => "CURLE_PEER_FAILED_VERIFICATION"
+          case BAD_CONTENT_ENCODING     => "CURLE_BAD_CONTENT_ENCODING"
+          case OBSOLETE62               => "CURLE_OBSOLETE62"
+          case FILESIZE_EXCEEDED        => "CURLE_FILESIZE_EXCEEDED"
+          case USE_SSL_FAILED           => "CURLE_USE_SSL_FAILED"
+          case SEND_FAIL_REWIND         => "CURLE_SEND_FAIL_REWIND"
+          case SSL_ENGINE_INITFAILED    => "CURLE_SSL_ENGINE_INITFAILED"
+          case LOGIN_DENIED             => "CURLE_LOGIN_DENIED"
+          case TFTP_NOTFOUND            => "CURLE_TFTP_NOTFOUND"
+          case TFTP_PERM                => "CURLE_TFTP_PERM"
+          case REMOTE_DISK_FULL         => "CURLE_REMOTE_DISK_FULL"
+          case TFTP_ILLEGAL             => "CURLE_TFTP_ILLEGAL"
+          case TFTP_UNKNOWNID           => "CURLE_TFTP_UNKNOWNID"
+          case REMOTE_FILE_EXISTS       => "CURLE_REMOTE_FILE_EXISTS"
+          case TFTP_NOSUCHUSER          => "CURLE_TFTP_NOSUCHUSER"
+          case OBSOLETE75               => "CURLE_OBSOLETE75"
+          case OBSOLETE76               => "CURLE_OBSOLETE76"
+          case SSL_CACERT_BADFILE       => "CURLE_SSL_CACERT_BADFILE"
+          case REMOTE_FILE_NOT_FOUND    => "CURLE_REMOTE_FILE_NOT_FOUND"
+          case SSH                      => "CURLE_SSH"
+          case SSL_SHUTDOWN_FAILED      => "CURLE_SSL_SHUTDOWN_FAILED"
+          case AGAIN                    => "CURLE_AGAIN"
+          case SSL_CRL_BADFILE          => "CURLE_SSL_CRL_BADFILE"
+          case SSL_ISSUER_ERROR         => "CURLE_SSL_ISSUER_ERROR"
+          case FTP_PRET_FAILED          => "CURLE_FTP_PRET_FAILED"
+          case RTSP_CSEQ_ERROR          => "CURLE_RTSP_CSEQ_ERROR"
+          case RTSP_SESSION_ERROR       => "CURLE_RTSP_SESSION_ERROR"
+          case FTP_BAD_FILE_LIST        => "CURLE_FTP_BAD_FILE_LIST"
+          case CHUNK_FAILED             => "CURLE_CHUNK_FAILED"
+          case NO_CONNECTION_AVAILABLE  => "CURLE_NO_CONNECTION_AVAILABLE"
+          case SSL_PINNEDPUBKEYNOTMATCH => "CURLE_SSL_PINNEDPUBKEYNOTMATCH"
+          case SSL_INVALIDCERTSTATUS    => "CURLE_SSL_INVALIDCERTSTATUS"
+          case HTTP2_STREAM             => "CURLE_HTTP2_STREAM"
+          case RECURSIVE_API_CALL       => "CURLE_RECURSIVE_API_CALL"
+          case AUTH_ERROR               => "CURLE_AUTH_ERROR"
+          case HTTP3                    => "CURLE_HTTP3"
+          case QUIC_CONNECT_ERROR       => "CURLE_QUIC_CONNECT_ERROR"
+          case PROXY                    => "CURLE_PROXY"
+          case SSL_CLIENTCERT           => "CURLE_SSL_CLIENTCERT"
+          case UNRECOVERABLE_POLL       => "CURLE_UNRECOVERABLE_POLL"
+          case CURL_LAST                => "CURL_LAST"
 
   // known as "CURLproxycode"
   opaque type CurlRroxyCode = Int
   object CurlRroxyCode:
     given Tag[CurlRroxyCode] = Tag.Int
 
-    inline def define(inline a: Int): CurlRroxyCode = a
+    private inline def define(inline a: Int): CurlRroxyCode = a
 
     val OK = define(0)
     val BAD_ADDRESS_TYPE = define(1)
@@ -930,7 +926,7 @@ object curl:
   object CurlProxyType extends _BindgenEnumCLong[CurlProxyType]:
     given Tag[CurlProxyType] = Tag.Size
 
-    inline def define(inline a: Long): CurlProxyType = a.toSize
+    private inline def define(inline a: Long): CurlProxyType = a.toSize
 
     val HTTP = define(0L)
     val HTTP_1_0 = define(1L)
@@ -966,7 +962,7 @@ object curl:
   opaque type CurlUseSsl = Int
   object CurlUseSsl extends _BindgenEnumInt[CurlUseSsl]:
 
-    inline def define(inline a: Long): CurlUseSsl = a.toInt
+    private inline def define(inline a: Long): CurlUseSsl = a.toInt
 
     val NONE = define(0) // do not attempt to use SSL
     val TRY = define(1) // try using SSL, proceed anyway otherwise
@@ -1011,6 +1007,7 @@ object curl:
   // 5. add func `curl_hstswrite_callback`
   // 6. add define symbols `CURLHSTS_*`
 
+  // known as "CURLoption"
   opaque type CurlOption = Int
   object CurlOption extends _BindgenEnumInt[CurlOption]:
     given Tag[CurlOption] = Tag.Int

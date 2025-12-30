@@ -4,11 +4,11 @@ import java.net.http.{HttpRequest, HttpHeaders, HttpResponse}
 import java.net.http.HttpClient.{Version, Redirect}
 import java.net.http.HttpResponse.{BodyHandler, BodySubscribers, ResponseInfo}
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.util.Map as JMap
 import java.util.List as JList
 import java.util.concurrent.atomic.AtomicBoolean
 
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalanative.unsafe.{
   Ptr,
   Zone,
@@ -22,6 +22,7 @@ import scala.scalanative.unsafe.{
   CString,
   CStruct2,
 }
+import scala.scalanative.unsigned.UnsignedRichInt
 
 import snhttp.utils.PointerFinalizer
 import snhttp.experimental.libcurl
@@ -41,6 +42,8 @@ import snhttp.experimental.libcurl.{
 
 import snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl}
 import java.net.http.HttpRequest.BodyPublishers
+import snhttp.experimental.libcurl.CurlMultiCode
+import snhttp.experimental.libcurl.CurlMultiCode.getName
 
 type CurlData = CStruct2[
   /** memory */
@@ -61,14 +64,14 @@ private[http] class HttpConnection[T](
     client: HttpClientImpl,
 ) extends AutoCloseable:
 
-  private[snhttp] val ptr = libcurl.easyInit()
+  private[snhttp] var ptr = libcurl.easyInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURL easy handle")
-  // val _ = PointerFinalizer(
-  //   this,
-  //   ptr,
-  //   _ptr => libcurl.easyCleanup(_ptr),
-  // )
+  val _ = PointerFinalizer(
+    this,
+    ptr,
+    _ptr => libcurl.easyCleanup(_ptr),
+  )
 
   /**
    * When `CurlSlist`(alias `curl_slist`) option is passed to `curl_easy_setopt`, libcurl does not
@@ -76,12 +79,11 @@ private[http] class HttpConnection[T](
    * transfer before you call `curl_slist_free_all` on the list.
    */
   private var slistPtr: Ptr[CurlSlist] = null
-
-  // val _ = PointerFinalizer(
-  //   this,
-  //   slistPtr,
-  //   _slist => libcurl.curl_slist_free_all(_slist),
-  // )
+  val _ = PointerFinalizer(
+    this,
+    slistPtr,
+    _slist => libcurl.slistFreeAll(_slist),
+  )
 
   private val _started = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
@@ -123,8 +125,8 @@ private[http] class HttpConnection[T](
 
       val timeoutMs = request
         .timeout()
-        .orElse(Duration.ofSeconds(30))
-        .toMillis
+        .map(_.toMillis())
+        .orElse(30 * 1000L) // default to 30 seconds
       val _ = libcurl.easySetopt(
         ptr,
         CurlOption.TIMEOUT_MS,
@@ -268,11 +270,11 @@ private[http] class HttpConnection[T](
   }
 
   def close(): Unit = {
-    if ptr != null
-    then libcurl.easyCleanup(ptr)
+    if (ptr != null)
+      libcurl.easyCleanup(ptr)
+      ptr = null
 
-    if slistPtr != null
-    then
+    if (slistPtr != null)
       libcurl.slistFreeAll(slistPtr)
       slistPtr = null
 

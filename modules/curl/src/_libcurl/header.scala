@@ -9,7 +9,7 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental.libcurl
+package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsafe.{
@@ -29,8 +29,8 @@ import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 
-import snhttp.experimental.libcurl.internal.{_BindgenEnumInt, _BindgenEnumUInt}
-import snhttp.experimental.libcurl.curl.Curl
+import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumUInt}
+import snhttp.experimental._libcurl.curl.Curl
 
 object header:
 
