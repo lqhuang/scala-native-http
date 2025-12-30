@@ -32,7 +32,7 @@ private[jdk] object CookieUtils:
 
     // Copy existing headers from request
     request.headers().map().forEach { (name, values) =>
-      result.put(name, new ArrayList(values))
+      result.put(name, new ArrayList(values)): Unit
     }
 
     // Add cookies from cookie handler if present
@@ -47,9 +47,9 @@ private[jdk] object CookieUtils:
               val existing = result.get(name)
               if existing != null then
                 val merged = new ArrayList(existing)
-                values.forEach(v => if v != null then merged.add(v))
-                result.put(name, merged)
-              else result.put(name, new ArrayList(values))
+                values.forEach(v => if v != null then merged.add(v): Unit)
+                result.put(name, merged): Unit
+              else result.put(name, new ArrayList(values)): Unit
           }
       catch
         case e: IOException =>
@@ -79,7 +79,7 @@ private[jdk] object CookieUtils:
         // Convert HttpHeaders to Map format expected by CookieHandler.put
         val headerMap = new HashMap[String, JList[String]]()
         responseHeaders.map().forEach { (name, values) =>
-          headerMap.put(name, new ArrayList(values))
+          headerMap.put(name, new ArrayList(values)): Unit
         }
         cookieHandler.put(uri, headerMap)
       catch
@@ -127,7 +127,7 @@ private[jdk] object CookieUtils:
       while it.hasNext do
         val cookie = it.next()
         if cookie != null && !cookie.isEmpty then
-          if !first then sb.append("; ")
+          if !first then sb.append("; "): Unit
           first = false
-          sb.append(cookie)
+          sb.append(cookie): Unit
       if sb.length > 0 then sb.toString else null

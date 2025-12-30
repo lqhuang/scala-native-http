@@ -40,7 +40,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
       // Remove any existing cookie with the same name, domain, and path
       if effectiveUri != null then
         val existing = uriIndex.get(effectiveUri)
-        if existing != null then existing.removeIf(c => cookie.equals(c))
+        if existing != null then existing.removeIf(c => cookie.equals(c)): Unit
 
       // Don't add cookies that are already expired
       if cookie.hasExpired() then return
@@ -50,8 +50,8 @@ private[net] class InMemoryCookieStore extends CookieStore:
         var list = uriIndex.get(effectiveUri)
         if list == null then
           list = new ArrayList[HttpCookie]()
-          uriIndex.put(effectiveUri, list)
-        list.add(cookie)
+          uriIndex.put(effectiveUri, list): Unit
+        list.add(cookie): Unit
     finally lock.unlock()
 
   override def get(uri: URI): JList[HttpCookie] =
@@ -70,7 +70,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
         val cookieIt = cookies.iterator()
         while cookieIt.hasNext do
           val cookie = cookieIt.next()
-          if !result.contains(cookie) && matchesCookie(uri, cookie) then result.add(cookie)
+          if !result.contains(cookie) && matchesCookie(uri, cookie) then result.add(cookie): Unit
 
       Collections.unmodifiableList(result)
     finally lock.unlock()
@@ -86,7 +86,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
         val cookieIt = cookies.iterator()
         while cookieIt.hasNext do
           val cookie = cookieIt.next()
-          if !result.contains(cookie) then result.add(cookie)
+          if !result.contains(cookie) then result.add(cookie): Unit
       Collections.unmodifiableList(result)
     finally lock.unlock()
 
@@ -95,7 +95,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
     try
       val result = new ArrayList[URI]()
       val it = uriIndex.keySet().iterator()
-      while it.hasNext do result.add(it.next())
+      while it.hasNext do result.add(it.next()): Unit
       Collections.unmodifiableList(result)
     finally lock.unlock()
 
@@ -124,7 +124,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
     val uriIt = uriIndex.values().iterator()
     while uriIt.hasNext do
       val cookies = uriIt.next()
-      cookies.removeIf(c => c.hasExpired(currentTime))
+      cookies.removeIf(c => c.hasExpired(currentTime)): Unit
 
   /**
    * Get an effective URI for storing a cookie. Normalizes the URI to just scheme + host.

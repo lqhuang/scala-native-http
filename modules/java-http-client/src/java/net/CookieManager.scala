@@ -1,6 +1,5 @@
 package java.net
 
-import java.io.IOException
 import java.util.{
   ArrayList,
   Collections,
@@ -68,7 +67,6 @@ class CookieManager(store: CookieStore | Null, policy: CookiePolicy | Null) exte
    */
   def getCookieStore(): CookieStore = cookieStore
 
-  @throws[IOException]
   override def get(uri: URI, requestHeaders: JMap[String, JList[String]]): JMap[String, JList[String]] =
     Objects.requireNonNull(uri, "uri is null")
     Objects.requireNonNull(requestHeaders, "requestHeaders is null")
@@ -95,19 +93,18 @@ class CookieManager(store: CookieStore | Null, policy: CookiePolicy | Null) exte
             // Skip secure cookies for non-secure requests
             ()
           else
-            if !first then sb.append("; ")
+            if !first then sb.append("; "): Unit
             first = false
             sb.append(cookie.getName())
             val value = cookie.getValue()
-            if value != null then sb.append("=").append(value)
+            if value != null then sb.append("=").append(value): Unit
 
       if sb.length > 0 then
         cookieHeader.add(sb.toString())
-        result.put("Cookie", Collections.unmodifiableList(cookieHeader))
+        result.put("Cookie", Collections.unmodifiableList(cookieHeader)): Unit
 
     Collections.unmodifiableMap(result)
 
-  @throws[IOException]
   override def put(uri: URI, responseHeaders: JMap[String, JList[String]]): Unit =
     Objects.requireNonNull(uri, "uri is null")
     Objects.requireNonNull(responseHeaders, "responseHeaders is null")

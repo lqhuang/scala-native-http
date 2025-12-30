@@ -28,8 +28,6 @@ trait CookieStore:
    *   URI
    * @param cookie
    *   the cookie to store
-   * @throws NullPointerException
-   *   if cookie is null
    */
   def add(uri: URI | Null, cookie: HttpCookie): Unit
 
@@ -41,8 +39,6 @@ trait CookieStore:
    *   the uri associated with the cookies to be returned
    * @return
    *   an immutable list of HttpCookie, return empty list if no cookies match the given URI
-   * @throws NullPointerException
-   *   if uri is null
    */
   def get(uri: URI): JList[HttpCookie]
 
@@ -74,8 +70,6 @@ trait CookieStore:
    *   the cookie to remove
    * @return
    *   true if this store contained the specified cookie
-   * @throws NullPointerException
-   *   if cookie is null
    */
   def remove(uri: URI | Null, cookie: HttpCookie): Boolean
 
