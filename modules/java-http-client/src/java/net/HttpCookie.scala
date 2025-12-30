@@ -136,9 +136,9 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
   private def toRFC2965HeaderString(): String =
     val sb = new java.lang.StringBuilder()
     sb.append(getName()).append("=\"").append(getValue()).append('"')
-    if getPath() != null then sb.append(";$Path=\"").append(getPath()).append('"')
-    if getDomain() != null then sb.append(";$Domain=\"").append(getDomain()).append('"')
-    if getPortlist() != null then sb.append(";$Port=\"").append(getPortlist()).append('"')
+    if getPath() != null then sb.append(";$Path=\"").append(getPath()).append('"'): Unit
+    if getDomain() != null then sb.append(";$Domain=\"").append(getDomain()).append('"'): Unit
+    if getPortlist() != null then sb.append(";$Port=\"").append(getPortlist()).append('"'): Unit
     sb.toString
 
   private def expiryDate2DeltaSeconds(dateString: String | Null): Long =
@@ -279,14 +279,14 @@ object HttpCookie:
     if version == 0 then
       val cookie = parseInternal(work, retainHeader, currentTimeMillis)
       cookie.setVersion(0)
-      cookies.add(cookie)
+      cookies.add(cookie): Unit
     else
       val cookieStrings = splitMultiCookies(work)
       val it = cookieStrings.iterator()
       while it.hasNext do
         val cookie = parseInternal(it.next(), retainHeader, currentTimeMillis)
         cookie.setVersion(1)
-        cookies.add(cookie)
+        cookies.add(cookie): Unit
     cookies
 
   private def parseInternal(header: String, retainHeader: Boolean, currentTime: Long): HttpCookie =
@@ -354,13 +354,13 @@ object HttpCookie:
         if ch == '"' && !escape then inQuotes = !inQuotes
         if ch == ',' && !inQuotes then
           val token = builder.toString.trim
-          if !token.isEmpty then cookies.add(token)
+          if !token.isEmpty then cookies.add(token): Unit
           builder.setLength(0)
         else builder.append(ch)
         escape = false
       i += 1
     val last = builder.toString.trim
-    if !last.isEmpty then cookies.add(last)
+    if !last.isEmpty then cookies.add(last): Unit
     cookies
 
   private def splitAttributes(header: String): Array[String] =
@@ -378,13 +378,13 @@ object HttpCookie:
         if ch == '"' && !escape then inQuotes = !inQuotes
         if ch == ';' && !inQuotes then
           val segment = builder.toString.trim
-          if !segment.isEmpty then parts.add(segment)
+          if !segment.isEmpty then parts.add(segment): Unit
           builder.setLength(0)
         else builder.append(ch)
         escape = false
       i += 1
     val last = builder.toString.trim
-    if !last.isEmpty then parts.add(last)
+    if !last.isEmpty then parts.add(last): Unit
 
     val result = Array.ofDim[String](parts.size())
     var idx = 0
@@ -495,7 +495,7 @@ object HttpCookie:
     while i < value.length do
       val ch = value.charAt(i)
       if ch == ' ' then
-        if !previousSpace then builder.append(ch)
+        if !previousSpace then builder.append(ch): Unit
         previousSpace = true
       else
         builder.append(ch)
