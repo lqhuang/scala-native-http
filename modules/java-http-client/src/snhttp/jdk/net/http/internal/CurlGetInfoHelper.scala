@@ -71,10 +71,3 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
 
     HttpHeaders.of(_map, (_, _) => true)
   }
-
-object CurlGetInfoHelper:
-
-  def apply(ptr: Ptr[Curl]): CurlGetInfoHelper =
-    new CurlGetInfoHelper(ptr)
-
-end CurlGetInfoHelper

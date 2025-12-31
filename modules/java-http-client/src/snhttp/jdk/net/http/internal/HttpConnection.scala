@@ -202,10 +202,8 @@ private[http] class HttpConnection[T](
         val _ = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.NONE)
       else { // with TLS
         val _ = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.ALL)
-
         // TODO: https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
         // Register SSL context ptr to set up custom SSL context
-
         // ()
       }
 
@@ -234,12 +232,13 @@ private[http] class HttpConnection[T](
         bodyPublisher.subscribe(postfieldSubscriber)
 
         val data = postfieldSubscriber.getBody().toCompletableFuture().join()
-        val _ = libcurl.easySetopt(ptr, CurlOption.POSTFIELDS, toCString(data))
+
+        val _postfields_ret = libcurl.easySetopt(ptr, CurlOption.POSTFIELDS, toCString(data))
       }
       // NOTES:
       // `CURLOPT_POSTFIELDS` implied POST,
       // so postpone setting method until here.
-      val _ = request.method() match
+      val _method_ret = request.method() match
         case "GET" =>
           libcurl.easySetopt(ptr, CurlOption.HTTPGET, 1)
         case "HEAD" =>

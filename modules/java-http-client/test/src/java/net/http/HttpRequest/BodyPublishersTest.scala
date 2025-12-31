@@ -33,7 +33,7 @@ class BodyPublishersTest extends TestSuite:
       publisher.subscribe(subscriber)
       subscriber.subscription.request(10)
 
-      val recv = MockSubscriber.flattenBuffers(subscriber.received)
+      val recv = MockSubscriber.concatAll(subscriber.received)
       assert(recv.length == contentLength)
       assert(recv.sameElements(contentBytes))
 
@@ -48,7 +48,7 @@ class BodyPublishersTest extends TestSuite:
       publisher.subscribe(subscriber)
       subscriber.subscription.request(10)
 
-      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      val received = MockSubscriber.concatAll(subscriber.received)
       assert(received.sameElements(arr))
     }
 
@@ -61,7 +61,7 @@ class BodyPublishersTest extends TestSuite:
       publisher.subscribe(subscriber)
       subscriber.subscription.request(10)
 
-      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      val received = MockSubscriber.concatAll(subscriber.received)
       assert(received.sameElements(arr.slice(1, 4)))
     }
 
@@ -77,7 +77,7 @@ class BodyPublishersTest extends TestSuite:
       publisher.subscribe(subscriber)
       subscriber.subscription.request(Long.MaxValue)
 
-      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      val received = MockSubscriber.concatAll(subscriber.received)
       assert(received.length == arr.length)
       assert(received.sameElements(arr))
     }
@@ -98,7 +98,7 @@ class BodyPublishersTest extends TestSuite:
       publisher.subscribe(subscriber)
       subscriber.subscription.request(10)
 
-      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      val received = MockSubscriber.concatAll(subscriber.received)
       assert(received.length == PropertyUtils.BUFFER_SIZE * 2 + 100)
       assert(
         received.sameElements(
@@ -118,7 +118,7 @@ class BodyPublishersTest extends TestSuite:
     //   publisher.subscribe(subscriber)
     //   subscriber.subscription.request(15)
 
-    //   val received = MockSubscriber.flattenBuffers(subscriber.received)
+    //   val received = MockSubscriber.concatAll(subscriber.received)
     //   assert(received.sameElements(arrays.flatten))
     // }
 

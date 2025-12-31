@@ -12,9 +12,9 @@ class HttpResponseImpl[T](
     _statusCode: Int,
     _headers: HttpHeaders,
     _body: T,
-    _sslSession: Optional[SSLSession],
-    _connectionLabel: Optional[String],
-    _previousResponse: Optional[HttpResponse[T]],
+    _sslSession: Optional[SSLSession] = Optional.empty(),
+    _connectionLabel: Optional[String] = Optional.empty(),
+    // _previousResponse: Optional[HttpResponse[T]] = Optional.empty(),
 ) extends HttpResponse[T]:
 
   def statusCode(): Int = _statusCode
@@ -24,7 +24,7 @@ class HttpResponseImpl[T](
 
   def request(): HttpRequest = _request
 
-  def previousResponse(): Optional[HttpResponse[T]] = _previousResponse
+  def previousResponse(): Optional[HttpResponse[T]] = ??? // _previousResponse
 
   def headers(): HttpHeaders = _headers
 
@@ -36,27 +36,27 @@ class HttpResponseImpl[T](
 
   def version(): HttpClient.Version = _version
 
-object HttpResponseImpl:
+// object HttpResponseImpl:
 
-  def apply[T](
-      request: HttpRequest,
-      version: HttpClient.Version,
-      statusCode: Int,
-      headers: HttpHeaders,
-      body: T,
-      sslSession: Optional[SSLSession] = Optional.empty(),
-      connectionLabel: Optional[String] = Optional.empty(),
-      previousResponse: Optional[HttpResponse[T]] = Optional.empty(),
-  ): HttpResponseImpl[T] =
-    new HttpResponseImpl[T](
-      request,
-      version,
-      statusCode,
-      headers,
-      body,
-      sslSession,
-      connectionLabel,
-      previousResponse,
-    )
+// def apply[T](
+//     request: HttpRequest,
+//     version: HttpClient.Version,
+//     statusCode: Int,
+//     headers: HttpHeaders,
+//     body: T,
+//     sslSession: Optional[SSLSession] = Optional.empty(),
+//     connectionLabel: Optional[String] = Optional.empty(),
+//     previousResponse: Optional[HttpResponse[T]] = Optional.empty(),
+// ): HttpResponseImpl[T] =
+//   new HttpResponseImpl[T](
+//     request,
+//     version,
+//     statusCode,
+//     headers,
+//     body,
+//     sslSession,
+//     connectionLabel,
+//     previousResponse,
+//   )
 
-end HttpResponseImpl
+// end HttpResponseImpl

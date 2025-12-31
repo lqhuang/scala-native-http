@@ -8,21 +8,21 @@ import java.util.Map as JMap
 import java.util.function.Function
 
 import snhttp.jdk.net.http.ResponseInfoImpl
-// import snhttp.testkits.MockSubscriber
+import snhttp.jdk.testkits.MockBodySubscriber
 
-import utest.{Tests, test, assert}
+import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 // TODO: not implemented, tests are commented out for now
 
-class BodyHandlersTest extends utest.TestSuite:
+class BodyHandlersTest extends TestSuite:
 
-  private def createHeaders(map: Map[String, String]): HttpHeaders = {
+  private def createHeaders(map: Map[String, String]): HttpHeaders =
     val entries = map.map { case (k, v) => JMap.entry(k, JList.of(v)) }.toSeq
     val headerMap = JMap.ofEntries(entries*)
     HttpHeaders.of(headerMap, (_, _) => true)
-  }
+
   private def createResponseInfo(map: Map[String, String] = Map.empty): ResponseInfo =
-    return ResponseInfoImpl(
+    ResponseInfoImpl(
       200,
       createHeaders(map),
       HttpClient.Version.HTTP_1_1,
@@ -34,23 +34,23 @@ class BodyHandlersTest extends utest.TestSuite:
     // Test BodyHandlers.fromSubscriber() //
     // ================================== //
 
-    // test("BodyHandlers.fromSubscriber should handle custom finisher exceptions") {
-    //   val mockSubscriber = MockSubscriber[JList[ByteBuffer]]()
-    //   val faultyFinisher: Function[MockSubscriber[JList[ByteBuffer]], String] =
-    //     _ => throw new RuntimeException("Finisher error")
+    test("BodyHandlers.fromSubscriber should handle custom finisher exceptions") {
+      val mockSubscriber = MockBodySubscriber[JList[ByteBuffer]]()
+      val faultyFinisher: Function[MockBodySubscriber[JList[ByteBuffer]], String] =
+        _ => throw new RuntimeException("Finisher error")
 
-    //   val subscriber = BodySubscribers.fromSubscriber(mockSubscriber, faultyFinisher)
-    //   subscriber.onSubscribe(new Subscription {
-    //     override def request(n: Long): Unit = ()
-    //     override def cancel(): Unit = ()
-    //   })
-    //   subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
-    //   subscriber.onComplete()
+      val subscriber = BodySubscribers.fromSubscriber(mockSubscriber, faultyFinisher)
+      subscriber.onSubscribe(new Subscription {
+        override def request(n: Long): Unit = ()
+        override def cancel(): Unit = ()
+      })
+      subscriber.onNext(JList.of(ByteBuffer.wrap("test".getBytes())))
+      subscriber.onComplete()
 
-    //   intercept[Exception] {
-    //     subscriber.getBody().toCompletableFuture.get()
-    //   }
-    // }
+      assertThrows[Exception] {
+        subscriber.getBody().toCompletableFuture.get(): Unit
+      }
+    }
 
     // ============================ //
     // Test BodyHandlers.ofString() //
