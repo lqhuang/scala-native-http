@@ -179,12 +179,12 @@ object HttpResponse {
   }
 
   /// @since 11
-  trait BodySubscriber[T] extends Subscriber[JList[ByteBuffer]] {
+  trait BodySubscriber[T] extends Subscriber[JList[ByteBuffer]]:
     def getBody(): CompletionStage[T]
-  }
 
-  abstract class BodySubscribers {}
-  object BodySubscribers {
+  abstract class BodySubscribers
+  object BodySubscribers:
+
     def fromSubscriber(
         subscriber: Subscriber[? >: JList[ByteBuffer]],
     ): BodySubscriber[Void] =
@@ -217,18 +217,13 @@ object HttpResponse {
     def ofByteArray(): BodySubscriber[Array[Byte]] =
       BodySubscribersImpl.ofByteArray(identity)
 
-    def ofFile(
-        file: Path,
-        openOptions: OpenOption*,
-    ): BodySubscriber[Path] =
+    def ofFile(file: Path, openOptions: OpenOption*): BodySubscriber[Path] =
       BodySubscribersImpl.ofFile(file, openOptions)
 
     def ofFile(file: Path): BodySubscriber[Path] =
       ofFile(file, CREATE, WRITE)
 
-    def ofByteArrayConsumer(
-        consumer: Consumer[Optional[Array[Byte]]],
-    ): BodySubscriber[Void] =
+    def ofByteArrayConsumer(consumer: Consumer[Optional[Array[Byte]]]): BodySubscriber[Void] =
       BodySubscribersImpl.ofByteArrayConsumer(consumer)
 
     def ofInputStream(): BodySubscriber[InputStream] =
@@ -246,16 +241,16 @@ object HttpResponse {
     def discarding(): BodySubscriber[Void] =
       BodySubscribersImpl.discarding()
 
-    def buffering[T](downstream: BodySubscriber[T], bufferSize: Int): BodySubscriber[T] = {
+    def buffering[T](downstream: BodySubscriber[T], bufferSize: Int): BodySubscriber[T] =
       require(bufferSize > 0, "must be greater than 0")
       BodySubscribersImpl.BufferingSubscriber(downstream, bufferSize)
-    }
 
     def mapping[T, U](
         upstream: BodySubscriber[T],
         mapper: Function[? >: T, ? <: U],
     ): BodySubscriber[U] =
       BodySubscribersImpl.MappingSubscriber(upstream, mapper)
-  }
+
+  end BodySubscribers
 
 }

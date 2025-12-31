@@ -113,7 +113,7 @@ object HttpRequest:
     def contentLength(): Long
   }
 
-  abstract class BodyPublishers {}
+  abstract class BodyPublishers
   object BodyPublishers:
 
     def fromPublisher(publisher: Flow.Publisher[? <: ByteBuffer]): BodyPublisher =
@@ -128,7 +128,8 @@ object HttpRequest:
     def ofString(body: String, charset: Charset): BodyPublisher =
       BodyPublishersImpl.ofString(body, charset)
 
-    def ofString(body: String): BodyPublisher = ofString(body, UTF_8)
+    def ofString(body: String): BodyPublisher =
+      ofString(body, UTF_8)
 
     def ofInputStream(streamSupplier: Supplier[? <: InputStream]): BodyPublisher =
       BodyPublishersImpl.ofInputStream(streamSupplier)

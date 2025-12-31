@@ -1,45 +1,54 @@
-import java.net.http.HttpRequest.BodyPublishers
-import java.nio.ByteBuffer
-import java.nio.file.Path
 import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.util.concurrent.{TimeUnit, Flow}
-import java.util.concurrent.atomic.AtomicBoolean
+import java.net.http.HttpRequest.BodyPublishers
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
+import java.util.concurrent.Flow
+import java.util.List as JList
 
-// import snhttp.testkits.MockSubscriber
+import snhttp.jdk.testkits.MockSubscriber
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{TestSuite, Tests, test, assert, assertThrows}
 
-class BodyPublishersTest extends utest.TestSuite {
+class BodyPublishersTest extends TestSuite:
+  val tests = Tests:
 
-  val tests = Tests {
     test("noBody publisher is instance of BodyPublisher") {
       val publisher = BodyPublishers.noBody()
       assert(publisher.isInstanceOf[Flow.Publisher[ByteBuffer]])
     }
 
     test("ofString publishes correct bytes and contentLength") {
-      val str = "Hello, World!"
-      val publisher = BodyPublishers.ofString(str)
-      // val subscriber = MockSubscriber[ByteBuffer]()
-      // publisher.subscribe(subscriber)
-      // subscriber.subscription.request(10)
-      // assert(subscriber.waitForCompletion(1000))
-      // val received = subscriber.received.flatMap(buf => buf.array().take(buf.limit()))
-      // assertEquals(received, str.getBytes(UTF_8).toList)
-      // assertEquals(publisher.contentLength(), str.getBytes(UTF_8).length.toLong)
+      val content = "Hello, World!"
+      val contentBytes = content.getBytes(StandardCharsets.UTF_8)
+      println(s"contentBytes: ${contentBytes.mkString(", ")}")
+      val contentLength = contentBytes.length.toLong
+      println(s"contentLength: $contentLength")
+      val publisher = BodyPublishers.ofString(content, StandardCharsets.UTF_8)
+      assert(publisher.contentLength() == contentLength)
+
+      val subscriber = MockSubscriber()
+      publisher.subscribe(subscriber)
+      subscriber.subscription.request(10)
+
+      val recv = MockSubscriber.flattenBuffers(subscriber.received)
+      assert(recv.length == contentLength)
+      assert(recv.sameElements(contentBytes))
+
     }
 
     test("ofByteArray publishes correct bytes and contentLength") {
       val arr = Array[Byte](1, 2, 3, 4, 5)
-      // val publisher = BodyPublishers.ofByteArray(arr)
+      val publisher = BodyPublishers.ofByteArray(arr)
+      // assert(publisher.contentLength() == arr.length.toLong)
+
       // val subscriber = MockSubscriber[ByteBuffer]()
       // publisher.subscribe(subscriber)
       // subscriber.subscription.request(10)
       // assert(subscriber.waitForCompletion(1000))
       // val received = subscriber.received.flatMap(buf => buf.array().take(buf.limit()))
       // assertEquals(received, arr.toList)
-      // assertEquals(publisher.contentLength(), arr.length.toLong)
     }
 
     // works now but  hang out
@@ -166,5 +175,3 @@ class BodyPublishersTest extends utest.TestSuite {
     //   assertEquals(received, arr.toList)
     //   assertEquals(publisher.contentLength(), arr.length.toLong)
     // }
-  }
-}

@@ -95,7 +95,7 @@ class BodySubscribersTest extends utest.TestSuite {
       })
       subscriber.onError(testError)
 
-      assertThrows[Exception] {
+      assertThrows[RuntimeException] {
         subscriber.getBody().toCompletableFuture.get(): Unit
       }
     }

@@ -120,11 +120,16 @@ Check `Makefile` for more.
 
 ### Unfixable
 
-<!--
 ### Properties support
 
-Not all HTTP Client properties listed in [Java Networking Docs](https://docs.oracle.com/en/java/javase/24/core/java-networking.html#GUID-86B96A42-74FE-4E7D-8E60-D64A03862083) are supported, but we may try to implement them in the future. Currently supported properties are:
+Not all HTTP Client properties listed in
 
+- [Java Networking Docs](https://docs.oracle.com/en/java/javase/24/core/java-networking.html#GUID-86B96A42-74FE-4E7D-8E60-D64A03862083)
+- [Module `java.net.http` - System properties used by the `java.net.http` API](https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/module-summary.html)
+
+are well supported, but we may try to implement them in the future. Currently supported properties are:
+
+- [x] `java.net.useSystemProxies`
 - [x] `jdk.httpclient.allowRestrictedHeaders`
 - [ ] `jdk.httpclient.auth.retrylimit`
 - [x] `jdk.httpclient.bufsize`
@@ -134,7 +139,7 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 - [ ] `jdk.httpclient.enableAllMethodRetry`
 - [ ] `jdk.httpclient.enablepush`
 - [ ] `jdk.httpclient.hpack.maxheadertablesize`
-- [ ] `jdk.httpclient.HttpClient.log`
+- `jdk.httpclient.HttpClient.log`
 - [ ] `jdk.httpclient.keepalive.timeout`
 - [ ] `jdk.httpclient.keepalive.timeout.h2`
 - [ ] `jdk.httpclient.maxframesize`
@@ -148,9 +153,8 @@ Not all HTTP Client properties listed in [Java Networking Docs](https://docs.ora
 - [ ] `jdk.httpclient.windowsize`
 - [ ] `jdk.internal.httpclient.disableHostnameVerification`
 - [ ] `jdk.tls.client.SignatureSchemes`
-- [ ] `jdk.tls.server.SignatureSchemes`
+- `jdk.tls.server.SignatureSchemes`
 - [ ] `jdk.tls.namedGroups`
--->
 
 ## Future
 

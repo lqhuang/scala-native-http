@@ -14,7 +14,7 @@ import utest.{Tests, test, assert}
 
 // TODO: not implemented, tests are commented out for now
 
-class BodyHandlersTest extends utest.TestSuite {
+class BodyHandlersTest extends utest.TestSuite:
 
   private def createHeaders(map: Map[String, String]): HttpHeaders = {
     val entries = map.map { case (k, v) => JMap.entry(k, JList.of(v)) }.toSeq
@@ -28,7 +28,7 @@ class BodyHandlersTest extends utest.TestSuite {
       HttpClient.Version.HTTP_1_1,
     )
 
-  val tests = Tests {
+  val tests = Tests:
 
     // ================================== //
     // Test BodyHandlers.fromSubscriber() //
@@ -205,5 +205,3 @@ class BodyHandlersTest extends utest.TestSuite {
       val responseInfo = createResponseInfo()
       val subscriber = handler(responseInfo)
     }
-  }
-}

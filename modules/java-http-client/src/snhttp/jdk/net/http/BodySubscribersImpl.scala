@@ -133,7 +133,7 @@ object BodySubscribersImpl {
 
   class ByteArraySubscriber[T](finisher: Array[Byte] => T) extends BodySubscriber[T] {
     private val cf = new CompletableFuture[T]()
-    private var subscription: Subscription = _
+    private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
     private val result = new ArrayList[Byte]()
