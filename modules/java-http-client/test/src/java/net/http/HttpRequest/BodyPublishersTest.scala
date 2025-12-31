@@ -7,6 +7,9 @@ import java.nio.file.Path
 import java.util.concurrent.Flow
 import java.util.List as JList
 
+import scala.util.Random
+
+import snhttp.jdk.internal.PropertyUtils
 import snhttp.jdk.testkits.MockSubscriber
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
@@ -21,11 +24,9 @@ class BodyPublishersTest extends TestSuite:
 
     test("ofString publishes correct bytes and contentLength") {
       val content = "Hello, World!"
-      val contentBytes = content.getBytes(StandardCharsets.UTF_8)
-      println(s"contentBytes: ${contentBytes.mkString(", ")}")
+      val contentBytes = content.getBytes(StandardCharsets.UTF_16)
       val contentLength = contentBytes.length.toLong
-      println(s"contentLength: $contentLength")
-      val publisher = BodyPublishers.ofString(content, StandardCharsets.UTF_8)
+      val publisher = BodyPublishers.ofString(content, StandardCharsets.UTF_16)
       assert(publisher.contentLength() == contentLength)
 
       val subscriber = MockSubscriber()
@@ -41,42 +42,86 @@ class BodyPublishersTest extends TestSuite:
     test("ofByteArray publishes correct bytes and contentLength") {
       val arr = Array[Byte](1, 2, 3, 4, 5)
       val publisher = BodyPublishers.ofByteArray(arr)
-      // assert(publisher.contentLength() == arr.length.toLong)
+      assert(publisher.contentLength() == arr.length.toLong)
 
-      // val subscriber = MockSubscriber[ByteBuffer]()
-      // publisher.subscribe(subscriber)
-      // subscriber.subscription.request(10)
-      // assert(subscriber.waitForCompletion(1000))
-      // val received = subscriber.received.flatMap(buf => buf.array().take(buf.limit()))
-      // assertEquals(received, arr.toList)
+      val subscriber = MockSubscriber()
+      publisher.subscribe(subscriber)
+      subscriber.subscription.request(10)
+
+      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      assert(received.sameElements(arr))
     }
 
-    // works now but  hang out
     test("ofByteArray with offset/length publishes correct slice") {
-      // val arr = Array[Byte](10, 20, 30, 40, 50)
-      // val publisher = BodyPublishers.ofByteArray(arr, 1, 3)
-      //   val subscriber = MockSubscriber[ByteBuffer]()
-      //   publisher.subscribe(subscriber)
-      //   subscriber.subscription.request(10)
-      //   assert(subscriber.waitForCompletion(1000))
-      //   val received =
-      //     subscriber.received.flatMap(buf => buf.array().slice(buf.position(), buf.limit()))
-      //   assertEquals(received, arr.slice(1, 4).toList)
-      //   assertEquals(publisher.contentLength(), 3L)
+      val arr = Array[Byte](10, 20, 30, 40, 50)
+      val publisher = BodyPublishers.ofByteArray(arr, 1, 3)
+      val subscriber = MockSubscriber()
+      assert(publisher.contentLength() == 3L)
+
+      publisher.subscribe(subscriber)
+      subscriber.subscription.request(10)
+
+      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      assert(received.sameElements(arr.slice(1, 4)))
+    }
+
+    test(
+      "ofByteArray publishes correct bytes and contentLength while length larger than BUFFER_SIZE",
+    ) {
+      assert(PropertyUtils.BUFFER_SIZE > 512)
+      val arr: Array[Byte] = Random.nextBytes(2 * PropertyUtils.BUFFER_SIZE + 512)
+      val publisher = BodyPublishers.ofByteArray(arr)
+      assert(publisher.contentLength() == arr.length.toLong)
+
+      val subscriber = MockSubscriber()
+      publisher.subscribe(subscriber)
+      subscriber.subscription.request(Long.MaxValue)
+
+      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      assert(received.length == arr.length)
+      assert(received.sameElements(arr))
+    }
+
+    test(
+      "ofByteArray with offset/length publishes correct slice while length larger than BUFFER_SIZE",
+    ) {
+      assert(PropertyUtils.BUFFER_SIZE > 512)
+      val arr: Array[Byte] = Random.nextBytes(4 * PropertyUtils.BUFFER_SIZE + 512)
+      val publisher = BodyPublishers.ofByteArray(
+        arr,
+        PropertyUtils.BUFFER_SIZE / 2,
+        PropertyUtils.BUFFER_SIZE * 2 + 100,
+      )
+      assert(publisher.contentLength() == PropertyUtils.BUFFER_SIZE * 2 + 100)
+
+      val subscriber = MockSubscriber()
+      publisher.subscribe(subscriber)
+      subscriber.subscription.request(10)
+
+      val received = MockSubscriber.flattenBuffers(subscriber.received)
+      assert(received.length == PropertyUtils.BUFFER_SIZE * 2 + 100)
+      assert(
+        received.sameElements(
+          arr.slice(
+            PropertyUtils.BUFFER_SIZE / 2,
+            PropertyUtils.BUFFER_SIZE / 2 + PropertyUtils.BUFFER_SIZE * 2 + 100,
+          ),
+        ),
+      )
+
     }
 
     // test("ofByteArrays publishes all arrays as ByteBuffers") {
     //   val arrays = Seq(Array[Byte](1, 2), Array[Byte](3, 4, 5))
     //   val publisher = BodyPublishers.ofByteArrays(arrays)
-    //   val subscriber = MockSubscriber[ByteBuffer]()
+    //   val subscriber = MockSubscriber()
     //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(10)
-    //   assert(subscriber.waitForCompletion(1000))
-    //   val received = subscriber.received.flatMap(buf => buf.array().take(buf.limit()))
-    //   assertEquals(received, arrays.flatten)
+    //   subscriber.subscription.request(15)
+
+    //   val received = MockSubscriber.flattenBuffers(subscriber.received)
+    //   assert(received.sameElements(arrays.flatten))
     // }
 
-    // will hang out
     test("ofInputStream publishes bytes from InputStream") {
       val arr = Array[Byte](42, 43, 44)
       val is = ByteArrayInputStream(arr)

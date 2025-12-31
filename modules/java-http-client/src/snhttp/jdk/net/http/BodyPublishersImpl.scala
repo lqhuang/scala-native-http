@@ -33,7 +33,7 @@ class ByteArrayPublisher(
 ) extends BodyPublisher {
   requireNonNull(bytes, "bytes must not be null")
   require(
-    offset >= 0 && length >= 0 && (length - offset) <= bytes.length,
+    offset >= 0 && length >= 0 && (bytes.length - offset) >= length,
     "invalid offset and length for the given byte array",
   )
 
@@ -41,26 +41,30 @@ class ByteArrayPublisher(
     length
 
   override def subscribe(subscriber: BufferSubscriber): Unit = {
-    val demandLength = length - offset
-
+    // val demandLength = length
     val bufs: Seq[ByteBuffer] =
-      if demandLength <= bufSize
-      then {
+      if length <= bufSize
+      then
         val bb = ByteBuffer.allocate(length)
-        bb.put(bytes)
+        bb.put(bytes, offset, length)
         bb.flip()
         Seq(bb)
-      } else
-        for i <- 0 until demandLength by bufSize
-        yield {
-          val end = math.min((i + 1) * bufSize, length)
+      else {
+        val group =
+          if length % bufSize == 0
+          then length / bufSize
+          else length / bufSize + 1
+
+        for i <- 0 until group
+        yield
           val start = offset + i * bufSize
-          val size = end - start
+          // compute size for the last buffer, which is the min between `bufSize` and remaining bytes
+          val size = bufSize.min(bytes.length - start).min(length - i * bufSize)
           val bb = ByteBuffer.allocate(size)
           bb.put(bytes, start, size)
           bb.flip()
           bb
-        }
+      }
 
     val delegate = DelegatePublisher(bufs)
     delegate.subscribe(subscriber)
