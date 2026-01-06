@@ -127,8 +127,6 @@ class HttpClientImpl(
       throw new RuntimeException("Failed to initialize CURLM pointer")
   } catch {
     case exc: RuntimeException =>
-      // if null ptr, globalCleanup still needs to be called
-      libcurl.globalCleanup()
       throw exc
   }
   PointerFinalizer(
@@ -207,16 +205,18 @@ class HttpClientImpl(
           conn.perform()
 
           /* set started flag for http client */
-          _started.setPlain(true)
-
-          conn.pollUntilDone()
+          _started.compareAndExchange(false, true): Unit
+          conn.waitUntilDoneReceived()
 
           val response = conn.buildResponse()
           response
         } catch {
-          case e: Exception =>
-            throw new RuntimeException(s"HTTP request failed: ${e.getMessage()}", e)
-        } finally conn.close(),
+          case exc: Exception =>
+            throw new RuntimeException(s"HTTP request failed: ${exc.getMessage()}", exc)
+        } finally {
+          conn.close()
+          this.close()
+        },
       _executor,
     )
 
@@ -242,7 +242,10 @@ class HttpClientImpl(
     if (duration.isNegative() || duration.isZero())
       return isTerminated()
 
-    ???
+    val ret = libcurl.multiCleanup(ptr)
+    if ret == CurlMultiCode.OK
+    then _terminated.compareAndExchange(false, true)
+    else throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
   }
 
   /**
@@ -262,11 +265,10 @@ class HttpClientImpl(
     while !isTerminated() do {
       shutdown()
       try
-        awaitTermination(Duration.ofSeconds(5L)): Unit
+        awaitTermination(Duration.ofSeconds(3L)): Unit
       catch {
         case e: InterruptedException =>
-          if (interrupted.compareAndSet(false, true))
-            shutdownNow()
+          interrupted.compareAndSet(false, true): Unit
       }
     }
     if (interrupted.get())

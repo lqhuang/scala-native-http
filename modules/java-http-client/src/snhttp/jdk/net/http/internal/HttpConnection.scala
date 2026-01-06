@@ -3,28 +3,37 @@ package snhttp.jdk.net.http.internal
 import java.net.http.{HttpRequest, HttpHeaders, HttpResponse}
 import java.net.http.HttpClient.{Version, Redirect}
 import java.net.http.HttpResponse.{BodyHandler, BodySubscribers, ResponseInfo}
+import java.net.http.HttpRequest.BodyPublishers
 import java.nio.charset.StandardCharsets
 import java.util.Map as JMap
 import java.util.List as JList
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.{Duration, DurationInt}
+import scala.util.boundary
+import scala.util.boundary.break
 import scala.scalanative.unsafe.{
   Ptr,
   Zone,
   toCString,
+  fromCString,
   fromCStringSlice,
   stackalloc,
   alloc,
+  CChar,
   Tag,
   CLong,
   CSize,
   CString,
   CStruct2,
+  CFuncPtr4,
+  sizeof,
 }
+import scala.scalanative.libc.stdlib.{malloc, calloc, free, realloc}
+import scala.scalanative.libc.string.memcpy
 import scala.scalanative.unsigned.UnsignedRichInt
+import scala.util.Random
 
-import snhttp.utils.PointerFinalizer
 import snhttp.experimental.libcurl
 import snhttp.experimental.libcurl.{
   CurlSlist,
@@ -38,12 +47,12 @@ import snhttp.experimental.libcurl.{
   CurlMsg,
   CurlHeader,
   CurlMulti,
+  CurlMultiCode,
 }
-
+import snhttp.experimental.libcurl.CurlMultiCode.RichCurlMultiCode
+import snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
 import snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl}
-import java.net.http.HttpRequest.BodyPublishers
-import snhttp.experimental.libcurl.CurlMultiCode
-import snhttp.experimental.libcurl.CurlMultiCode.getName
+import snhttp.utils.PointerFinalizer
 
 type CurlData = CStruct2[
   /** memory */
@@ -90,23 +99,33 @@ private[http] class HttpConnection[T](
 
   given zone: Zone = Zone.open()
 
-  val respBody: Ptr[CurlData] = alloc[CurlData]()
+  // val respBody: Ptr[CurlData] = alloc()
+  // (!respBody)._1 = toCString(Random.nextString(1024 * 1024 * 1024))
+  // (!respBody)._2 = 0.toUInt
+  val respBody = malloc(sizeof[CurlData]).asInstanceOf[Ptr[CurlData]]
+  (!respBody)._1 = calloc(4096.toUInt, sizeof[CChar])
+  (!respBody)._2 = 0.toUInt
+
+  val respHeader = malloc(sizeof[CurlData]).asInstanceOf[Ptr[CurlData]]
+  (!respHeader)._1 = calloc(4096.toUInt, sizeof[CChar])
+  (!respHeader)._2 = 0.toUInt
 
   init()
 
   /**
    * Setup options for this connection based on the `request` and `client` config.
    *
-   * FIXME: error handling. catch libcurl error codes (now just `_` to ignore) and throw proper
-   * exceptions.
+   * FIXME: Improve error handling. Catch libcurl error codes (now just placeholder `_` to ignore)
+   * and throw proper exceptions.
    */
   private def init(): Unit = {
     try {
-      val _ = libcurl.easySetopt(
+      val _url_ret = libcurl.easySetopt(
         ptr,
         CurlOption.URL,
         toCString(request.uri().toString()),
       )
+      // println(s"DEBUG: Set URL: ${_url_ret.getName}")
 
       /**
        * FIXME:
@@ -127,18 +146,20 @@ private[http] class HttpConnection[T](
         .timeout()
         .map(_.toMillis())
         .orElse(30 * 1000L) // default to 30 seconds
-      val _ = libcurl.easySetopt(
+      val _timeout_ret = libcurl.easySetopt(
         ptr,
         CurlOption.TIMEOUT_MS,
         timeoutMs,
       )
+      // println(s"DEBUG: Set timeout ${_timeout_ret.getName}")
 
       val connectTimeoutMs = client.builder._connectTimeout.map(_.toMillis).orElse(0L)
-      val _ = libcurl.easySetopt(
+      val _ct_ret = libcurl.easySetopt(
         ptr,
         CurlOption.CONNECTTIMEOUT_MS,
         connectTimeoutMs,
       )
+      // println(s"DEBUG: Set connect timeout: ${_ct_ret.getName}")
 
       val followRedirects = client.builder._redirect match
         case Redirect.NEVER  => CurlFollow.DISABLED
@@ -149,11 +170,12 @@ private[http] class HttpConnection[T](
             s"Unsupported redirect policy: ${client.builder._redirect}",
           )
 
-      val _ = libcurl.easySetopt(
+      val _follow_ret = libcurl.easySetopt(
         ptr,
         CurlOption.FOLLOWLOCATION,
         followRedirects,
       )
+      // println(s"DEBUG: Set follow redirects: ${_follow_ret.getName}")
 
       /**
        * ref: https://curl.se/libcurl/c/curl_slist_append.html
@@ -188,37 +210,44 @@ private[http] class HttpConnection[T](
           then s"${key};"
           else s"${key}: ${value}"
         slistPtr = libcurl.slistAppend(slistPtr, toCString(header))
-
+        // println(s"DEBUG: Appended header: ${header} to slistPtr: ${slistPtr}")
       }
-      val _ = libcurl.easySetopt(ptr, CurlOption.HTTPHEADER, slistPtr)
+      val _header_ret = libcurl.easySetopt(ptr, CurlOption.HTTPHEADER, slistPtr)
+      // println(s"DEBUG: Set headers: ${_header_ret.getName}")
 
       /**
        * TLS options
        */
       val scheme = request.uri().getScheme().toLowerCase().strip()
-
       if !scheme.endsWith("s")
       then // no TLS
-        val _ = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.NONE)
+        val _use_ssl_ret = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.NONE)
+        // println(s"DEBUG: Set USE_SSL to NONE, ${_use_ssl_ret.getName}")
       else { // with TLS
-        val _ = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.ALL)
+        val _use_ssl_ret = libcurl.easySetopt(ptr, CurlOption.USE_SSL, CurlUseSsl.TRY)
         // TODO: https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
         // Register SSL context ptr to set up custom SSL context
         // ()
+        // println(s"DEBUG: Set USE_SSL to TRY, ${_use_ssl_ret.getName}")
       }
 
       /**
        * Set body handler
        */
-      val _ = libcurl.easySetopt(
+      val _writefunction_ret = libcurl.easySetopt(
         ptr,
         CurlOption.WRITEFUNCTION,
-        ???,
+        writeFunction,
       )
-      val _ = libcurl.easySetopt(
+      val _writedata_ret = libcurl.easySetopt(
         ptr,
         CurlOption.WRITEDATA,
         respBody,
+      )
+      val _headerdata_ret = libcurl.easySetopt(
+        ptr,
+        CurlOption.HEADERDATA,
+        respHeader,
       )
 
       /**
@@ -230,7 +259,6 @@ private[http] class HttpConnection[T](
         val postfieldSubscriber = CurlBodySubscriber(bodySubscriber)
 
         bodyPublisher.subscribe(postfieldSubscriber)
-
         val data = postfieldSubscriber.getBody().toCompletableFuture().join()
 
         val _postfields_ret = libcurl.easySetopt(ptr, CurlOption.POSTFIELDS, toCString(data))
@@ -253,6 +281,7 @@ private[http] class HttpConnection[T](
           throw new UnsupportedOperationException(
             s"HTTP method ${other} is not supported yet",
           )
+      // println(s"DEBUG: Set HTTP method: ${_method_ret.getName}")
 
       /**
        * Finally add easy handle to multi handle
@@ -262,10 +291,13 @@ private[http] class HttpConnection[T](
         throw new RuntimeException(
           s"Failed to add easy handle to multi handle: error code ${code}",
         )
+      // println(s"DEBUG: Added easy handle to multi handle with code: ${code}")
 
     } catch {
       case e: Exception => throw e
     }
+
+    // println("INFO: Curl options initialized successfully")
   }
 
   def close(): Unit = {
@@ -281,51 +313,99 @@ private[http] class HttpConnection[T](
   }
 
   def perform(): Unit =
-    val stillRunningPtr = stackalloc[Int]()
-    val _ = libcurl.multiPerform(client.ptr, stillRunningPtr)
-    val exp = _started.weakCompareAndSet(false, true)
-    if (!exp) throw new IllegalStateException("HTTP connection should be started")
+    // println("DEBUG: Performing CURL multi perform...")
+    // val ret = libcurl.multiPerform(client.ptr, _runningCounterPtr)
+    // println(ret.getName)
+    // _started.weakCompareAndSet(false, true): Unit
+    ()
 
-  def pollUntilDone(): Unit = {
-    val msgQPtr = stackalloc[Int]() // zero-initialized
-    var msg: Ptr[CurlMsg] = null
+  def pollUntilDone(timeout: Duration): Unit =
+    require(timeout <= Int.MaxValue.milliseconds, "Timeout too large")
+    val _runningCounterPtr: Ptr[Int] = stackalloc[Int]()
 
     while {
-      msg = libcurl.multiInfoRead(client.ptr, msgQPtr)
-      // Stop
-      // if no more messages
-      // or if we have catched the message for curr connection (easyHandle)
-      msg == null || ((!msg).easyHandle == ptr && (!msg).msg == CurlMsgCode.DONE)
+      val ret = libcurl.multiPerform(client.ptr, _runningCounterPtr)
+      // println(s"DEBUG: CURL multi perform result: ${ret.getName}")
+      // println(s"DEBUG: CURL still running counter result: ${!_runningCounterPtr}")
+
+      if ret == CurlMultiCode.OK
+      then
+        val pollResult = libcurl.multiPoll(client.ptr, null, 0.toUInt, timeout.toMillis.toInt, null)
+        // println(s"DEBUG: CURL multi poll result: ${pollResult.getName}")
+        !(!_runningCounterPtr == 0 && pollResult == CurlMultiCode.OK)
+      else
+        throw new RuntimeException(
+          s"CURL multi perform failed with code: ${ret}",
+        )
     } do Thread.sleep(100)
 
-    // We unconfidently assueme here that msg is not null and (!msg).easyHandle == conn.ptr
-    if (msg == null || (!msg).easyHandle != ptr)
-      throw new IllegalStateException(
-        s"Failed to complete HTTP request: no DONE message received for the connection",
-      )
+  def waitUntilDoneReceived(): Unit =
+    pollUntilDone(1000.milliseconds)
+    // Zone {
+    //   val msgQPtr = stackalloc[Int]() // zero-initialized
+    //   var msg: Ptr[CurlMsg] = null
+    //   while {
+    //     msg = libcurl.multiInfoRead(client.ptr, msgQPtr)
+    //     // Stop
+    //     // if we have catched the message for curr connection (easyHandle)
+    //     msg == null || !((!msg).easyHandle == ptr && (!msg).msg == CurlMsgCode.DONE)
+    //     // msg == null ||
+    //   } do Thread.sleep(100)
 
-    _shutdown.set(true)
-  }
+    //   // We unconfidently assueme here that msg is not null and (!msg).easyHandle == conn.ptr
+    //   if (msg == null || (!msg).easyHandle != ptr)
+    //     throw new IllegalStateException(
+    //       s"Failed to complete HTTP request: no DONE message received for the connection",
+    //     )
+    // }
 
   def buildResponse(): HttpResponse[T] = {
-    val respData = fromCStringSlice((!respBody)._1, (!respBody)._2)
+
+    val respData = fromCString((!respBody)._1, StandardCharsets.UTF_8)
+    println(s"DEBUG: Response Body received: ${respData}")
+
+    free((!respBody)._1)
+    free(respBody)
+
+    free((!respHeader)._1)
+    free(respHeader)
+
     val info = CurlGetInfoHelper(ptr)
-    val subscriber = CurlBodySubscriber(responseBodyHandler(info))
-    val publisher = BodyPublishers.ofString(respData)
 
-    publisher.subscribe(subscriber)
-    val body = subscriber.getBody().toCompletableFuture().join()
+    try {
+      val subscriber = new CurlBodySubscriber(responseBodyHandler(info))
+      val publisher = BodyPublishers.ofString(respData, StandardCharsets.UTF_8)
+      publisher.subscribe(subscriber)
 
-    info.close()
+      val body = subscriber.getBody().toCompletableFuture().join()
 
-    ???
-    // HttpResponseImpl(
-    //   request,
-    //   info.version(),
-    //   info.statusCode(),
-    //   info.headers(),
-    //   body,
-    // ).asInstanceOf[HttpResponse[T]]
+      new HttpResponseImpl(
+        request,
+        info.version(),
+        info.statusCode(),
+        info.headers(),
+        body,
+      )
+    } catch {
+      case exc: Exception =>
+        throw new RuntimeException(
+          s"Failed to build HttpResponse: ${exc.getMessage()}",
+          exc,
+        )
+    } finally info.close()
+  }
+
+  val writeFunction: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlData], CSize] = {
+    (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlData]) =>
+      // println(s"DEBUG: In writeFunction callback...")
+      val index: CSize = (!data)._2
+      val increment: CSize = size * nmemb
+
+      (!data)._2 = (!data)._2 + increment
+      (!data)._1 = realloc((!data)._1, (!data)._2 + 1.toUInt)
+      memcpy((!data)._1 + index, ptr, increment): Unit
+      !(!data)._1.+((!data)._2) = 0.toByte
+      size * nmemb
   }
 
 end HttpConnection
