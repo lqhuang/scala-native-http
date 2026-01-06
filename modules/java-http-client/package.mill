@@ -4,6 +4,8 @@ import mill.api.Cross
 import mill.scalalib.DepSyntax
 
 object `package` extends build.CommonModule:
+  def artifactName = "scala-native-java-http-client"
+
   def moduleDeps = Seq(
     build.modules.core,
     build.modules.curl,
@@ -15,5 +17,5 @@ object `package` extends build.CommonModule:
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",
     mvn"io.github.cquiroz::scala-java-time:2.4.0", // 2.5.0 and 2.6.0 are ill
     mvn"io.github.cquiroz::scala-java-time::2.6.0",
-    mvn"com.github.lolgab::scala-native-crypto::0.2.0",
+    mvn"com.github.lolgab::scala-native-crypto::0.0.0-71-dbb5bd-DIRTYd86da5b1",
   )
