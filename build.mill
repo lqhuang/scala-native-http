@@ -60,7 +60,10 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
     "-Wnonunit-statement",
     "-Wconf:msg=(discarded.*value|pure.*statement):error",
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
+    // "-explain-cyclic",
+    // "-Ydebug-cyclic",
     // "-explain",
+    // "-deprecation",
   )
 
   /// Define Scala Native Module

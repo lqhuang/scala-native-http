@@ -7,8 +7,9 @@ import java.nio.charset.StandardCharsets
 import java.util.{ArrayList, TreeMap}
 import java.util.List as JList
 
-import scala.scalanative.unsafe.{Ptr, CLong, Zone}
+import scala.scalanative.unsafe.{Ptr, CLong, Zone, UnsafeRichLong}
 import scala.scalanative.unsafe.{stackalloc, fromCString}
+import scala.scalanative.unsigned.UnsignedRichLong
 
 import snhttp.utils.PointerFinalizer
 import snhttp.experimental.libcurl
@@ -28,6 +29,7 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
       CurlInfo.RESPONSE_CODE,
       _respCodePtr,
     )
+    // println(s"Retrieved response code from libcurl: ${(!_respCodePtr).toInt}")
     (!_respCodePtr).toInt
 
   def version(): Version =
@@ -37,6 +39,7 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
       CurlInfo.HTTP_VERSION,
       _versionPtr,
     )
+    println(s"DEBUG: Retrieved HTTP version from libcurl: ${!_versionPtr}")
     !_versionPtr match
       case CurlHttpVersion.VERSION_1_1               => Version.HTTP_1_1
       case CurlHttpVersion.VERSION_2_0               => Version.HTTP_2
@@ -68,6 +71,5 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
 
       _prevHeaderPtr = _headerPtr
     }
-
     HttpHeaders.of(_map, (_, _) => true)
   }
