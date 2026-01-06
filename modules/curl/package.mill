@@ -8,12 +8,6 @@ object `package` extends build.CommonModule {
 
   def artifactName = "scala-native-curl"
 
-  def moduleDeps = Seq(build.modules.core)
-
-  def mvnDeps = Seq(
-    mvn"com.github.lolgab::native-loop-core::0.3.0",
-  )
-
   val osName: "darwin" | "linux" | "windows" = {
     val _osName = Properties.osName.toLowerCase()
     if (_osName.contains("mac")) "darwin"

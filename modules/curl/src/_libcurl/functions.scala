@@ -53,14 +53,6 @@ object functions:
   def curlVersion(): CString = extern
 
   /**
-   * curl_easy_escape is relocated to [[easy]] easyEscape
-   */
-
-  /**
-   * curl_easy_unescape is relocated to [[easy]] easyUnescape
-   */
-
-  /**
    * NAME curl_global_init()
    *
    * DESCRIPTION

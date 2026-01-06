@@ -1809,8 +1809,8 @@ object curl:
     /** struct curl_slist *next */
     Ptr[_],
   ]
+  given Tag[CurlSlist] = Tag.materializeCStruct2Tag[CString, Ptr[_]]
   object CurlSlist:
-    given Tag[CurlSlist] = Tag.materializeCStruct2Tag[CString, Ptr[_]]
 
     def apply(data: CString, next: Ptr[CurlSlist])(using Zone): Ptr[CurlSlist] =
       val ptr = alloc[CurlSlist](1)
@@ -2183,9 +2183,8 @@ object curl:
 
   // known as "curl_global_flag"
   opaque type CurlGlobalFlag = CLong
+  given Tag[CurlGlobalFlag] = Tag.Size
   object CurlGlobalFlag extends _BindgenEnumCLong[CurlGlobalFlag]:
-    given Tag[CurlGlobalFlag] = Tag.Size
-
     inline def define(inline a: Int): CurlGlobalFlag = a.toSize
 
     val SSL = define(1 << 0) // no purpose since curl 7.57.0

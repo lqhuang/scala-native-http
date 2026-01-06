@@ -21,11 +21,10 @@ import snhttp.experimental._libcurl.internal._BindgenEnumUInt
 object easy:
 
   opaque type CurlBlobFlag = UInt
+  given Tag[CurlBlobFlag] = Tag.UInt
+
   object CurlBlobFlag extends _BindgenEnumUInt[CurlBlobFlag]:
-    given Tag[CurlBlobFlag] = Tag.UInt
-
     inline def define(inline a: Long): CurlBlobFlag = a.toUInt
-
     val Copy: CurlBlobFlag = define(0)
     val Nocopy: CurlBlobFlag = define(1)
 

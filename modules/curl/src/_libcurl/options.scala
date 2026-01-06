@@ -23,9 +23,8 @@ object options:
 
   // known as enum "curl_easytype"
   opaque type CurlEasyType = Int
+  given Tag[CurlEasyType] = Tag.Int
   object CurlEasyType extends _BindgenEnumInt[CurlEasyType]:
-    given Tag[CurlEasyType] = Tag.Int
-
     inline def define(inline a: Int): CurlEasyType = a
 
     /* long (a range of values) */
