@@ -8,26 +8,26 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 
 object Utils {
   private val CHARSET_PATTERN = Pattern.compile(
-    "charset\\s*=\\s*([^\\s;]+)\\s*",
-    // "charset\\s*=\\s*([\\w\\d\\-]+)",
+    "(?:^|;)\\s*\\bcharset\\s*=\\s*([^\\s;]+)\\s*",
     Pattern.CASE_INSENSITIVE,
   )
   /// Get the `Charset` from `Content-Type` field. Defaults to `UTF_8`
   ///
   /// Reference for `Content-type` header:
-  ///   https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type
+  ///
+  /// 1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type
+  /// 2. https://datatracker.ietf.org/doc/html/rfc7231
   def charsetFrom(headers: HttpHeaders): Charset = {
     val contentType = headers.firstValue("Content-Type")
 
     if contentType.isEmpty()
     then StandardCharsets.UTF_8
     else {
-      println(s"Content-Type header: ${contentType.get()}")
       val matcher = CHARSET_PATTERN.matcher(contentType.get())
 
-      if matcher.matches()
+      if matcher.find()
       then
-        val trimed = matcher.group(1)
+        val trimed = matcher.group(1).trim().stripPrefix("\"").stripSuffix("\"")
         val charsetName = if trimed.isEmpty then None else Some(trimed)
         try
           Charset.forName(charsetName.getOrElse("utf-8"))

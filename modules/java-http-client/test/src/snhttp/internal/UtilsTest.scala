@@ -54,17 +54,55 @@ class UtilsTest extends TestSuite {
       assert(charset == StandardCharsets.ISO_8859_1)
     }
 
+    test("charsetFrom should handle quoted charset parameter") {
+      Seq(
+        "text/html;charset=utf-16",
+        "text/html;charset=UTF-16",
+        "Text/HTML;Charset=\"utf-16\"",
+        "text/html; charset=\"utf-16\"",
+        "text/html; charset=   \"utf-16\"",
+      ).foreach { contentType =>
+        val headers = createHeaders(contentType)
+        val charset = Utils.charsetFrom(headers)
+        assert(charset == StandardCharsets.UTF_16)
+      }
+    }
+
     test("charsetFrom should handle case-insensitive charset parameter") {
       Seq(
         "text/plain; charset=us-ascii",
         "text/plain; CHARSET=us-ascii",
-        "text/plain; charset = US-ASCII",
+        "text/plain; charset = \"US-ASCII\"",
         "text/plain; charset=US-ASCII; other=value",
         "text/plain; CHARSET=US-ASCII; other=value",
       ).foreach { contentType =>
         val headers = createHeaders(contentType)
         val charset = Utils.charsetFrom(headers)
         assert(charset == StandardCharsets.US_ASCII)
+      }
+    }
+
+    test("charsetFrom should only handle exact `charset` keyword") {
+      Seq(
+        "text/plain; _charset=us-ascii",
+        "text/plain; hhh_charset=us-ascii",
+        "text/plain; charset= 'us-ascii",
+        "text/plain; god-charset=us-ascii",
+        "text/plain; ad charset=us-ascii",
+        "text/plain; CHARSETttttt=us-ascii",
+        "text/plain; charsetaaa = US-ASCII",
+        "text/plain; charsett = US-ASCII",
+        "text/plain; ccccccharset=US-ASCII",
+        "text/plain;-charset=us-ascii",
+        "text/plain;    -charset=us-ascii",
+        "text/plain; 'charset=us-ascii",
+        "text/plain; '-charset=us-ascii",
+        "text/plain;'charset=us-ascii",
+        "text/plain; aa'charset=us-ascii",
+      ).foreach { contentType =>
+        val headers = createHeaders(contentType)
+        val charset = Utils.charsetFrom(headers)
+        assert(charset == StandardCharsets.UTF_8)
       }
     }
 
