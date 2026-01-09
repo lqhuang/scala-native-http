@@ -7,9 +7,3 @@ object `package` extends build.CommonModule:
   def moduleDeps = Seq(
     build.modules.`java-http-client`,
   )
-
-  def mvnDeps = Seq(
-    mvn"io.github.cquiroz::scala-java-locales::1.5.4",
-    mvn"io.github.cquiroz::scala-java-time::2.6.0",
-    mvn"com.github.lolgab::scala-native-crypto::0.0.0-54-f859f9-DIRTY2f7b7129",
-  )

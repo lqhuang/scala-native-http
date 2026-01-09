@@ -8,7 +8,7 @@ def runReqBasic(): Unit =
 
   val request = HttpRequest
     .newBuilder()
-    .uri(URI.create("http://www.example.com"))
+    .uri(URI.create("http://localhost:8000"))
     .GET()
     .build()
   val response = client.send(request, HttpResponse.BodyHandlers.ofString())
@@ -35,6 +35,9 @@ def runCustomSSLContext(): Unit =
   println(s"Status: ${response.statusCode()}")
   println(s"Body: ${response.body()}")
 
-@main def req(): Unit =
-  runReqBasic()
-  runCustomSSLContext()
+// ------------------------------------------ //
+//   Main entry point                         //
+// ------------------------------------------ //
+
+runReqBasic()
+// runCustomSSLContext()

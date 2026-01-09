@@ -1,1 +1,2 @@
 *.mill linguist-language=Scala
+*.sc   linguist-language=Scala

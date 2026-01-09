@@ -3,15 +3,15 @@ import java.net.{URI, InetSocketAddress, SocketAddress}
 import java.io.IOException
 import java.util.List as JList
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{TestSuite, Tests, test, assert, assertThrows}
 
-class ProxySelectorTest extends utest.TestSuite {
+class ProxySelectorTest extends TestSuite:
 
   private class TestProxySelector extends ProxySelector:
     def select(uri: URI): JList[Proxy] = JList.of(Proxy.NO_PROXY)
     def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
 
-  val tests = Tests {
+  val tests = Tests:
     test("getDefault should return DIRECT when no system property is set"):
       val defaultSelector = ProxySelector.getDefault()
       val proxies = defaultSelector.select(URI.create("http://example.com"))
@@ -140,5 +140,3 @@ class ProxySelectorTest extends utest.TestSuite {
     //   )
     //   /// TODO: unfinished test
     // }
-  }
-}

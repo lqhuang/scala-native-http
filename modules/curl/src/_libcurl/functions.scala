@@ -203,7 +203,7 @@ object functions:
   def easySetopt(
       handle: Ptr[Curl],
       option: CurlOption,
-      params: Any*, // CVarArgList
+      params: Any, // CVarArgList
   ): CurlErrCode =
     extern
 
@@ -230,7 +230,7 @@ object functions:
   def easyGetInfo(
       handle: Ptr[Curl],
       info: CurlInfo,
-      params: Any*, // CVarArgList
+      params: Any, // CVarArgList
   ): CurlErrCode =
     extern
 
@@ -505,7 +505,7 @@ object functions:
   def multiSetopt(
       handle: Ptr[CurlMulti],
       option: CurlMultiOption,
-      params: Any*, // CVarArgList,
+      params: Any, // CVarArgList,
   ): CurlMultiCode = extern
 
   /**

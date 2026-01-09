@@ -6,7 +6,7 @@ def runSimplePostRequest(): Unit =
   val request = HttpRequest
     .newBuilder()
     .uri(URI.create("https://postman-echo.com/post"))
-    .headers("Content-Type", "text/plain;charset=UTF-8")
+    .headers("Content-Type", "text/plain; charset=UTF-8")
     .POST(BodyPublishers.ofString("Sample request body"))
     .build()
   val client = HttpClient.newBuilder().build()
@@ -14,5 +14,7 @@ def runSimplePostRequest(): Unit =
   println(s"Status: ${response.statusCode()}")
   println(s"Response Body: ${response.body()}")
 
-@main def mainPost(): Unit =
-  runSimplePostRequest()
+// ------------------------------------------ //
+//   Main entry point                         //
+// ------------------------------------------ //
+runSimplePostRequest()

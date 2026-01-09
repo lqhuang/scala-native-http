@@ -68,7 +68,10 @@ def runConcurrentRequests(): Unit =
 
   val all = CompletableFuture.allOf(requests*).join()
 
-@main def mainReqAsync(): Unit =
-  runAsync()
-  runAsyncTLS()
-  runConcurrentRequests()
+// ------------------------------------------ //
+//   Main entry point                         //
+// ------------------------------------------ //
+
+runAsync()
+runAsyncTLS()
+runConcurrentRequests()
