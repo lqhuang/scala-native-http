@@ -45,6 +45,8 @@ class CurlGetInfoHelper(ptr: Ptr[Curl]) extends ResponseInfo with AutoCloseable:
       case CurlHttpVersion.VERSION_2_0               => Version.HTTP_2
       case CurlHttpVersion.VERSION_2TLS              => Version.HTTP_2
       case CurlHttpVersion.VERSION_2_PRIOR_KNOWLEDGE => Version.HTTP_2
+      case CurlHttpVersion.VERSION_3                 => Version.HTTP_3
+      case CurlHttpVersion.VERSION_3ONLY             => Version.HTTP_3
       case _ =>
         throw new RuntimeException(
           s"Unsupported HTTP version response code with libcurl: ${!_versionPtr}",

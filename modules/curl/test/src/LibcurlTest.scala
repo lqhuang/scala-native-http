@@ -1,19 +1,43 @@
-import snhttp.experimental.libcurl.{
-  CurlOption,
-  easyInit,
-  easySetopt,
-  easyPerform,
-  CurlErrCode,
-  easyCleanup,
+import scala.scalanative.unsafe.{
+  CFuncPtr4,
+  CSize,
+  Ptr,
+  stackalloc,
+  alloc,
+  CString,
+  Zone,
+  toCString,
+  CQuote,
 }
+import scala.scalanative.libc.{string, stdio}
+import scala.util.Using
 
-import scalanative.unsafe.{CFuncPtr4, CSize, Ptr, stackalloc, CString, CQuote}
-import scala.scalanative.libc.string
-import scala.scalanative.libc.stdio
+import snhttp.experimental.libcurl
+import snhttp.experimental.libcurl.{CurlOption, CurlErrCode, Curl, CurlInfo, CurlHttpVersion}
+import snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
 
 import utest.{TestSuite, Tests, test, assert}
 
 object LibcurlTest extends TestSuite:
+
+  given zone: Zone = Zone.open()
+
+  // val curlInitRet = libcurl.globalInit(libcurl.CurlGlobalFlag.DEFAULT)
+  // try assert(curlInitRet == CurlErrCode.OK)
+  // catch
+  //   case e: Throwable =>
+  //     println(
+  //       s"Global init of Curl failed with code ${curlInitRet} (str err: ${curlInitRet.getName})",
+  //     )
+  //     libcurl.globalCleanup()
+  //     throw e
+
+  override def utestAfterAll(): Unit =
+    zone.close()
+    // libcurl.globalCleanup()
+
+  given Using.Releasable[Ptr[Curl]] = curlPtr => libcurl.easyCleanup(curlPtr)
+
   val tests = Tests:
 
     test("writedata callback function should be called on data received") {
@@ -21,17 +45,46 @@ object LibcurlTest extends TestSuite:
         (ptr: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[Byte]) =>
           val chunk = stackalloc[Byte](nmemb)
           val _ = string.strncpy(chunk, ptr, nmemb)
-          val _ = stdio.printf(c"Chunk: %s\n", chunk)
+          // val _ = stdio.printf(c"Chunk: %s\n", chunk)
           nmemb * size
       }
-      val curl = easyInit()
-      assert(curl != null)
 
-      val _ = easySetopt(curl, CurlOption.URL, c"https://httpbin.org/get")
-      val _ = easySetopt(curl, CurlOption.WRITEFUNCTION, write_data_callback)
+      Using(libcurl.easyInit()) { curl =>
+        assert(curl != null)
 
-      val res = easyPerform(curl)
-      assert(res == CurlErrCode.OK)
-      easyCleanup(curl)
+        val _ = libcurl.easySetopt(curl, CurlOption.URL, c"https://httpbin.org/get")
+        val _ = libcurl.easySetopt(curl, CurlOption.WRITEFUNCTION, write_data_callback)
+        val res = libcurl.easyPerform(curl)
 
+        if (res != CurlErrCode.OK)
+          println(s"Failed with code ${res} (str err: ${res.getName})")
+
+        assert(res == CurlErrCode.OK)
+      }
+    }
+
+    test("Get Curl info after performing a request") {
+
+      for (version <- Seq(stackalloc[CurlHttpVersion](), alloc[CurlHttpVersion]())) do {
+        !version = CurlHttpVersion.VERSION_LAST // an invalid version to start with
+
+        Using(libcurl.easyInit()) { curl =>
+          assert(curl != null)
+
+          val _ = libcurl.easySetopt(curl, CurlOption.URL, c"http://httpbin.org/get")
+          val res = libcurl.easyPerform(curl)
+          if (res != CurlErrCode.OK)
+            println(s" Failed with code ${res} (str err: ${res.getName})")
+          assert(res == CurlErrCode.OK)
+
+          val ret = libcurl.easyGetInfo(curl, CurlInfo.HTTP_VERSION, version)
+          if (ret != CurlErrCode.OK)
+            println(s"Failed to get curl info with code ${ret} (str err: ${ret.getName})")
+          assert(ret == CurlErrCode.OK)
+
+          !version match
+            case CurlHttpVersion.VERSION_1_1 => assert(!version == CurlHttpVersion.VERSION_1_1)
+            case _                           => assert(false)
+        }
+      }
     }
