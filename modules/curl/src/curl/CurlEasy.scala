@@ -1,6 +1,6 @@
 package snhttp.experimental.curl
 
-import scala.scalanative.unsafe.{Ptr, Size, CString, toCString, CLong}
+import scala.scalanative.unsafe.{Ptr, Size, CString, toCString, CLong, Zone}
 import scala.scalanative.posix.stddef.size_t
 
 import _root_.snhttp.experimental.libcurl.{
@@ -10,20 +10,27 @@ import _root_.snhttp.experimental.libcurl.{
   CurlPause,
   CurlInfo,
   CurlSlist as _CurlSlist,
+  CurlBlob as _CurlBlob,
 }
 import _root_.snhttp.experimental.libcurl
 import snhttp.experimental._libcurl.multi.CurlWait
 
 class CurlEasy(ptr: Ptr[_Curl]) extends AnyVal:
 
-  def setOption(option: CurlOption, value: CLong): Unit =
+  def setCLongOption(option: CurlOption, value: CLong): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
 
-  def setOption(option: CurlOption, value: CString): Unit =
+  def setStringOption(using zone: Zone)(option: CurlOption, value: String): Unit =
+    val ret = libcurl.easySetopt(ptr, option, toCString(value))
+
+  def setPtrOption(option: CurlOption, value: Ptr[?]): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
 
-  // def setOption(option: CurlOption, value: Unit): Unit =
-  //   val ret = libcurl.easySetopt(ptr, option, value)
+  def setSlistOption(option: CurlOption, value: _CurlSlist): Unit =
+    val ret = libcurl.easySetopt(ptr, option, value)
+
+  def setBlobOption(option: CurlOption, value: _CurlBlob): Unit =
+    val ret = libcurl.easySetopt(ptr, option, value)
 
   def perform(): CurlErrCode =
     libcurl.easyPerform(ptr)

@@ -1,8 +1,17 @@
 package snhttp.experimental.curl
 
-import scala.scalanative.unsafe.{Ptr, Size, CString, toCString, stackalloc, UnsafeRichInt, CVoidPtr}
+import scala.scalanative.unsafe.{
+  Ptr,
+  Size,
+  CString,
+  toCString,
+  stackalloc,
+  UnsafeRichInt,
+  CVoidPtr,
+  Zone,
+  CLong,
+}
 import scala.scalanative.unsigned.UInt
-import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.posix.sys.select.fd_set
 
 import _root_.snhttp.experimental.libcurl.{
@@ -68,11 +77,14 @@ class CurlMulti(ptr: Ptr[_CurlMulti]) extends AnyVal:
     !ms = milliseconds.toSize
     libcurl.multiTimeout(ptr, ms)
 
-  def setOption(option: CurlMultiOption, value: Size): CurlMultiCode =
-    libcurl.multiSetopt(ptr, option, value)
+  def setCLongOption(option: CurlMultiOption, value: CLong): Unit =
+    val ret = libcurl.multiSetopt(ptr, option, value)
 
-  def setOption(option: CurlMultiOption, value: CString): CurlMultiCode =
-    libcurl.multiSetopt(ptr, option, value)
+  def setStringOption(using zone: Zone)(option: CurlMultiOption, value: String): Unit =
+    val ret = libcurl.multiSetopt(ptr, option, toCString(value))
+
+  def setPtrOption(option: CurlMultiOption, value: Ptr[?]): Unit =
+    val ret = libcurl.multiSetopt(ptr, option, value)
 
   def assign(sockfd: CurlSocket, sockp: CVoidPtr): CurlMultiCode =
     libcurl.multiAssign(ptr, sockfd, sockp)
