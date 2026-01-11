@@ -27,7 +27,7 @@ object LibcurlTest extends TestSuite:
   // catch
   //   case e: Throwable =>
   //     println(
-  //       s"Global init of Curl failed with code ${curlInitRet} (str err: ${curlInitRet.getName})",
+  //       s"Global init of Curl failed with code ${curlInitRet} (str err: ${curlInitRet.getname})",
   //     )
   //     libcurl.globalCleanup()
   //     throw e
@@ -57,7 +57,7 @@ object LibcurlTest extends TestSuite:
         val res = libcurl.easyPerform(curl)
 
         if (res != CurlErrCode.OK)
-          println(s"Failed with code ${res} (str err: ${res.getName})")
+          println(s"Failed with code ${res} (str err: ${res.getname})")
 
         assert(res == CurlErrCode.OK)
       }
@@ -74,12 +74,12 @@ object LibcurlTest extends TestSuite:
           val _ = libcurl.easySetopt(curl, CurlOption.URL, c"http://httpbin.org/get")
           val res = libcurl.easyPerform(curl)
           if (res != CurlErrCode.OK)
-            println(s" Failed with code ${res} (str err: ${res.getName})")
+            println(s" Failed with code ${res} (str err: ${res.getname})")
           assert(res == CurlErrCode.OK)
 
           val ret = libcurl.easyGetInfo(curl, CurlInfo.HTTP_VERSION, version)
           if (ret != CurlErrCode.OK)
-            println(s"Failed to get curl info with code ${ret} (str err: ${ret.getName})")
+            println(s"Failed to get curl info with code ${ret} (str err: ${ret.getname})")
           assert(ret == CurlErrCode.OK)
 
           !version match

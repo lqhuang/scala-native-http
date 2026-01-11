@@ -84,8 +84,8 @@ object curl:
     val BORINGSSL = OPENSSL
     val LIBRESSL = OPENSSL
 
-    inline def getName(inline value: CurlSslBackendId): Option[String] =
-      inline value match
+    def getname(value: CurlSslBackendId): Option[String] =
+      value match
         case NONE            => Some("CURLSSLBACKEND_NONE")
         case OPENSSL         => Some("CURLSSLBACKEND_OPENSSL")
         case GNUTLS          => Some("CURLSSLBACKEND_GNUTLS")
@@ -127,9 +127,9 @@ object curl:
     /** Only use the custom method in the first request, always reset in the next */
     val FIRSTONLY = define(3L)
 
-    extension (value: CurlFollow)
-      inline def getName: String =
-        inline value match
+    implicit class RichCurlFollow(value: CurlFollow) extends AnyVal:
+      def getname: String =
+        value match
           case DISABLED  => "CURLFOLLOW_DISABLED"
           case ALL       => "CURLFOLLOW_ALL"
           case OBEYCODE  => "CURLFOLLOW_OBEYCODE"
@@ -405,8 +405,8 @@ object curl:
     /** never use */
     val LAST = define(2)
 
-    inline def getName(inline value: CurlSockType): Option[String] =
-      inline value match
+    def getname(value: CurlSockType): Option[String] =
+      value match
         case IPCXN  => Some("CURLSOCKTYPE_IPCXN")
         case ACCEPT => Some("CURLSOCKTYPE_ACCEPT")
         case LAST   => Some("CURLSOCKTYPE_LAST")
@@ -539,8 +539,8 @@ object curl:
     /** never use */
     val LAST = define(3)
 
-    inline def getName(inline value: CurlIoErr): Option[String] =
-      inline value match
+    def getname(value: CurlIoErr): Option[String] =
+      value match
         case OK          => Some("CURLIOE_OK")
         case UNKNOWNCMD  => Some("CURLIOE_UNKNOWNCMD")
         case FAILRESTART => Some("CURLIOE_FAILRESTART")
@@ -566,8 +566,8 @@ object curl:
     /** never use */
     val LAST = define(2)
 
-    inline def getName(inline value: CurlIoCmd): Option[String] =
-      inline value match
+    def getname(value: CurlIoCmd): Option[String] =
+      value match
         case NOP         => Some("CURLIOCMD_NOP")
         case RESTARTREAD => Some("CURLIOCMD_RESTARTREAD")
         case LAST        => Some("CURLIOCMD_LAST")
@@ -725,7 +725,7 @@ object curl:
     val CURL_LAST = define(100)
 
     implicit class RichCurlErrCode(value: CurlErrCode) extends AnyVal:
-      def getName: String =
+      def getname: String =
         value match
           case OK                       => "CURLE_OK"
           case UNSUPPORTED_PROTOCOL     => "CURLE_UNSUPPORTED_PROTOCOL"
@@ -830,11 +830,11 @@ object curl:
           case CURL_LAST                => "CURL_LAST"
 
   // known as "CURLproxycode"
-  opaque type CurlRroxyCode = Int
-  object CurlRroxyCode:
-    given Tag[CurlRroxyCode] = Tag.Int
+  opaque type CurlProxyCode = Int
+  object CurlProxyCode:
+    given Tag[CurlProxyCode] = Tag.Int
 
-    private inline def define(inline a: Int): CurlRroxyCode = a
+    private inline def define(inline a: Int): CurlProxyCode = a
 
     val OK = define(0)
     val BAD_ADDRESS_TYPE = define(1)
@@ -872,8 +872,8 @@ object curl:
     val USER_REJECTED = define(33)
     val LAST = define(34)
 
-    inline def getName(inline value: CurlRroxyCode): Option[String] =
-      inline value match
+    def getname(value: CurlProxyCode): Option[String] =
+      value match
         case OK                => Some("CURLPX_OK")
         case BAD_ADDRESS_TYPE  => Some("CURLPX_BAD_ADDRESS_TYPE")
         case BAD_VERSION       => Some("CURLPX_BAD_VERSION")
@@ -912,10 +912,10 @@ object curl:
         case LAST                         => Some("CURLPX_LAST")
         case _                            => None
 
-    extension (a: CurlRroxyCode)
-      inline def &(b: CurlRroxyCode): CurlRroxyCode = a & b
-      inline def |(b: CurlRroxyCode): CurlRroxyCode = a | b
-      inline def is(b: CurlRroxyCode): Boolean = (a & b) == b
+    extension (a: CurlProxyCode)
+      inline def &(b: CurlProxyCode): CurlProxyCode = a & b
+      inline def |(b: CurlProxyCode): CurlProxyCode = a | b
+      inline def is(b: CurlProxyCode): Boolean = (a & b) == b
 
   // TODO: add func `curl_conv_callback``
 
@@ -937,17 +937,16 @@ object curl:
     val SOCKS4A = define(6L)
     val SOCKS5_HOSTNAME = define(7L)
 
-    inline def getName(inline value: CurlProxyType): Option[String] =
-      inline value match
-        case HTTP            => Some("CURLPROXY_HTTP")
-        case HTTP_1_0        => Some("CURLPROXY_HTTP_1_0")
-        case HTTPS           => Some("CURLPROXY_HTTPS")
-        case HTTPS2          => Some("CURLPROXY_HTTPS2")
-        case SOCKS4          => Some("CURLPROXY_SOCKS4")
-        case SOCKS5          => Some("CURLPROXY_SOCKS5")
-        case SOCKS4A         => Some("CURLPROXY_SOCKS4A")
-        case SOCKS5_HOSTNAME => Some("CURLPROXY_SOCKS5_HOSTNAME")
-        case _               => None
+    def getname(value: CurlProxyType): String =
+      value match
+        case HTTP            => "CURLPROXY_HTTP"
+        case HTTP_1_0        => "CURLPROXY_HTTP_1_0"
+        case HTTPS           => "CURLPROXY_HTTPS"
+        case HTTPS2          => "CURLPROXY_HTTPS2"
+        case SOCKS4          => "CURLPROXY_SOCKS4"
+        case SOCKS5          => "CURLPROXY_SOCKS5"
+        case SOCKS4A         => "CURLPROXY_SOCKS4A"
+        case SOCKS5_HOSTNAME => "CURLPROXY_SOCKS5_HOSTNAME"
 
   // TODO:
   //
@@ -1322,8 +1321,8 @@ object curl:
     val LASTENTRY = define(10324)
 
     extension (value: CurlOption)
-      inline def getName: String =
-        inline value match
+      def getname: String =
+        value match
           case WRITEDATA                  => "CURLOPT_WRITEDATA"
           case URL                        => "CURLOPT_URL"
           case PORT                       => "CURLOPT_PORT"
@@ -1749,8 +1748,8 @@ object curl:
      */
     val LAST = define(2)
 
-    inline def getName(inline value: CurlTlsAuth): Option[String] =
-      inline value match
+    def getname(value: CurlTlsAuth): Option[String] =
+      value match
         case NONE => Some("CURL_TLSAUTH_NONE")
         case SRP  => Some("CURL_TLSAUTH_SRP")
         case LAST => Some("CURL_TLSAUTH_LAST")
@@ -1880,8 +1879,8 @@ object curl:
     val TOO_LATE = define(2)
     val NO_BACKENDS = define(3) /* libcurl was built without any SSL support */
 
-    inline def getName(inline value: CurlSslSet): Option[String] =
-      inline value match
+    def getname(value: CurlSslSet): Option[String] =
+      value match
         case OK              => Some("CURLSSLSET_OK")
         case UNKNOWN_BACKEND => Some("CURLSSLSET_UNKNOWN_BACKEND")
         case TOO_LATE        => Some("CURLSSLSET_TOO_LATE")
@@ -2078,8 +2077,8 @@ object curl:
     val HTTP_CODE = RESPONSE_CODE
 
     extension (value: CurlInfo)
-      inline def getName: String =
-        inline value match
+      def getname: String =
+        value match
           case NONE                      => "CURLINFO_NONE"
           case EFFECTIVE_URL             => "CURLINFO_EFFECTIVE_URL"
           case RESPONSE_CODE             => "CURLINFO_RESPONSE_CODE"
@@ -2170,8 +2169,8 @@ object curl:
     val CALLBACK = define(5)
     val LAST = define(6)
 
-    inline def getName(inline value: CurlClosePolicy): Option[String] =
-      inline value match
+    def getname(value: CurlClosePolicy): Option[String] =
+      value match
         case NONE                => Some("CURLCLOSEPOLICY_NONE")
         case OLDEST              => Some("CURLCLOSEPOLICY_OLDEST")
         case LEAST_RECENTLY_USED => Some("CURLCLOSEPOLICY_LEAST_RECENTLY_USED")

@@ -43,7 +43,7 @@ object multi:
   object CurlMultiCode extends _BindgenEnumInt[CurlMultiCode]:
     given Tag[CurlMultiCode] = Tag.Int
 
-    inline def define(inline a: Int): CurlMultiCode = a
+    private inline def define(inline a: Int): CurlMultiCode = a
 
     /* please call curl_multi_perform() or curl_multi_socket*() soon */
     val CALL_MULTI_PERFORM = define(-1)
@@ -73,7 +73,7 @@ object multi:
     val LAST = define(13)
 
     implicit class RichCurlMultiCode(value: CurlMultiCode) extends AnyVal:
-      def getName: String =
+      def getname: String =
         value match
           case CALL_MULTI_PERFORM    => "CURLM_CALL_MULTI_PERFORM"
           case OK                    => "CURLM_OK"
@@ -117,8 +117,8 @@ object multi:
     val LAST = define(2)
 
     extension (value: CurlMsgCode)
-      inline def getName: String =
-        inline value match
+      def getname: String =
+        value match
           case NONE => "CURLMSG_NONE"
           case DONE => "CURLMSG_DONE"
           case LAST => "CURLMSG_LAST"
@@ -314,31 +314,26 @@ object multi:
     /* the last unused */
     val LASTENTRY = define(17)
 
-    inline def getName(inline value: CurlMultiOption): Option[String] =
-      inline value match
-        case SOCKETFUNCTION              => Some("CURLMOPT_SOCKETFUNCTION")
-        case SOCKETDATA                  => Some("CURLMOPT_SOCKETDATA")
-        case PIPELINING                  => Some("CURLMOPT_PIPELINING")
-        case TIMERFUNCTION               => Some("CURLMOPT_TIMERFUNCTION")
-        case TIMERDATA                   => Some("CURLMOPT_TIMERDATA")
-        case MAXCONNECTS                 => Some("CURLMOPT_MAXCONNECTS")
-        case MAX_HOST_CONNECTIONS        => Some("CURLMOPT_MAX_HOST_CONNECTIONS")
-        case MAX_PIPELINE_LENGTH         => Some("CURLMOPT_MAX_PIPELINE_LENGTH")
-        case CONTENT_LENGTH_PENALTY_SIZE => Some("CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE")
-        case CHUNK_LENGTH_PENALTY_SIZE   => Some("CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE")
-        case PIPELINING_SITE_BL          => Some("CURLMOPT_PIPELINING_SITE_BL")
-        case PIPELINING_SERVER_BL        => Some("CURLMOPT_PIPELINING_SERVER_BL")
-        case MAX_TOTAL_CONNECTIONS       => Some("CURLMOPT_MAX_TOTAL_CONNECTIONS")
-        case PUSHFUNCTION                => Some("CURLMOPT_PUSHFUNCTION")
-        case PUSHDATA                    => Some("CURLMOPT_PUSHDATA")
-        case MAX_CONCURRENT_STREAMS      => Some("CURLMOPT_MAX_CONCURRENT_STREAMS")
-        case LASTENTRY                   => Some("CURLMOPT_LASTENTRY")
-        case _                           => None
-
-    extension (a: CurlMultiOption)
-      inline def &(b: CurlMultiOption): CurlMultiOption = a & b
-      inline def |(b: CurlMultiOption): CurlMultiOption = a | b
-      inline def is(b: CurlMultiOption): Boolean = (a & b) == b
+    implicit class RichCurlMultiOption(value: CurlMultiOption) extends AnyVal:
+      def getname(value: CurlMultiOption): String =
+        value match
+          case SOCKETFUNCTION              => "CURLMOPT_SOCKETFUNCTION"
+          case SOCKETDATA                  => "CURLMOPT_SOCKETDATA"
+          case PIPELINING                  => "CURLMOPT_PIPELINING"
+          case TIMERFUNCTION               => "CURLMOPT_TIMERFUNCTION"
+          case TIMERDATA                   => "CURLMOPT_TIMERDATA"
+          case MAXCONNECTS                 => "CURLMOPT_MAXCONNECTS"
+          case MAX_HOST_CONNECTIONS        => "CURLMOPT_MAX_HOST_CONNECTIONS"
+          case MAX_PIPELINE_LENGTH         => "CURLMOPT_MAX_PIPELINE_LENGTH"
+          case CONTENT_LENGTH_PENALTY_SIZE => "CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE"
+          case CHUNK_LENGTH_PENALTY_SIZE   => "CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE"
+          case PIPELINING_SITE_BL          => "CURLMOPT_PIPELINING_SITE_BL"
+          case PIPELINING_SERVER_BL        => "CURLMOPT_PIPELINING_SERVER_BL"
+          case MAX_TOTAL_CONNECTIONS       => "CURLMOPT_MAX_TOTAL_CONNECTIONS"
+          case PUSHFUNCTION                => "CURLMOPT_PUSHFUNCTION"
+          case PUSHDATA                    => "CURLMOPT_PUSHDATA"
+          case MAX_CONCURRENT_STREAMS      => "CURLMOPT_MAX_CONCURRENT_STREAMS"
+          case LASTENTRY                   => "CURLMOPT_LASTENTRY"
 
   // TODO: add CURLMinfo_offt
   // known as "CURLMinfo_offt"

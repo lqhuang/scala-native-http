@@ -13,7 +13,6 @@ import _root_.snhttp.experimental.libcurl.{
   CurlBlob as _CurlBlob,
 }
 import _root_.snhttp.experimental.libcurl
-import snhttp.experimental._libcurl.multi.CurlWait
 
 class CurlEasy(ptr: Ptr[_Curl]) extends AnyVal:
 
@@ -61,5 +60,8 @@ object CurlEasy:
   def apply(): CurlEasy =
     val cptr = libcurl.easyInit()
     new CurlEasy(cptr)
+
+  def apply(ptr: Ptr[_Curl]): CurlEasy =
+    new CurlEasy(ptr)
 
 end CurlEasy
