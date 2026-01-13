@@ -16,15 +16,15 @@ import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4, CLong, Unsaf
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsigned.UInt
 
-import snhttp.experimental._libcurl.internal._BindgenEnumInt
+import snhttp.experimental._libcurl.internal._BindgenEnumCInt
 import snhttp.experimental._libcurl.curl.CurlOption
 
 object options:
 
   // known as enum "curl_easytype"
   opaque type CurlEasyType = Int
-  given Tag[CurlEasyType] = Tag.Int
-  object CurlEasyType extends _BindgenEnumInt[CurlEasyType]:
+  object CurlEasyType extends _BindgenEnumCInt[CurlEasyType]:
+    given Tag[CurlEasyType] = Tag.Int
     inline def define(inline a: Int): CurlEasyType = a
 
     /* long (a range of values) */

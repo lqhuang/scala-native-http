@@ -29,7 +29,7 @@ import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 
-import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumUInt}
+import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumUInt}
 import snhttp.experimental._libcurl.curl.Curl
 
 object header:
@@ -114,7 +114,7 @@ object header:
 
   // known as enum "CURLHcode"
   opaque type CurlHeaderErrCode = Int
-  object CurlHeaderErrCode extends _BindgenEnumInt[CurlHeaderErrCode]:
+  object CurlHeaderErrCode extends _BindgenEnumCInt[CurlHeaderErrCode]:
 
     given _tag: Tag[CurlHeaderErrCode] = Tag.Int
     inline def define(inline a: Long): CurlHeaderErrCode = a.toInt

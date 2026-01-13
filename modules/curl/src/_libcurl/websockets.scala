@@ -19,7 +19,7 @@ import scala.scalanative.libc.stddef.size_t
 
 import snhttp.experimental._libcurl.curl.{Curl, CurlErrCode}
 import snhttp.experimental._libcurl.system.CurlOff
-import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumUInt, _BindgenEnumCLong}
+import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumUInt, _BindgenEnumCLong}
 
 object websockets:
 
@@ -67,7 +67,7 @@ object websockets:
    * curl websockets frame flag bits
    */
   opaque type CurlWsFrameFlag = Int
-  object CurlWsFrameFlag extends _BindgenEnumInt[CurlWsFrameFlag]:
+  object CurlWsFrameFlag extends _BindgenEnumCInt[CurlWsFrameFlag]:
     given Tag[CurlWsFrameFlag] = Tag.Int
     inline def define(inline a: Int): CurlWsFrameFlag = a
 

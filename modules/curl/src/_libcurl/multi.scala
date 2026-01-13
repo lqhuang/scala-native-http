@@ -29,7 +29,7 @@ import scalanative.unsafe.{
 import scalanative.posix.stddef.size_t
 
 import snhttp.experimental._libcurl.curl.{Curl, CurlErrCode, CurlSocket}
-import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
+import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumCLong}
 
 object multi:
 
@@ -40,7 +40,7 @@ object multi:
 
   // known as "CURLMcode"
   type CurlMultiCode = Int
-  object CurlMultiCode extends _BindgenEnumInt[CurlMultiCode]:
+  object CurlMultiCode extends _BindgenEnumCInt[CurlMultiCode]:
     given Tag[CurlMultiCode] = Tag.Int
 
     private inline def define(inline a: Int): CurlMultiCode = a
@@ -123,19 +123,21 @@ object multi:
           case DONE => "CURLMSG_DONE"
           case LAST => "CURLMSG_LAST"
 
+  // type CurlMsgData = CurlErrCode
   type CurlMsgData = CVoidPtr | CurlErrCode
   object CurlMsgData:
     /**
      * its size must be the max of the two sizes, its alignment the max of the two alignments
      */
-    given tagCurMsgData: Tag[CurlMsgData] = {
-      val tagPtr = summon[Tag[CVoidPtr]]
-      val tagCode = summon[Tag[CurlErrCode]]
+    given tagCurMsgData: Tag[CurlMsgData] = Tag.Size.asInstanceOf[Tag[CurlMsgData]]
+    //   {
+    //   val tagPtr = summon[Tag[CVoidPtr]]
+    //   val tagCode = summon[Tag[CurlErrCode]]
 
-      if tagPtr.size >= tagCode.size
-      then tagPtr.asInstanceOf[Tag[CurlMsgData]]
-      else tagCode.asInstanceOf[Tag[CurlMsgData]]
-    }
+    //   if tagPtr.size >= tagCode.size
+    //   then tagPtr.asInstanceOf[Tag[CurlMsgData]]
+    //   else tagCode.asInstanceOf[Tag[CurlMsgData]]
+    // }
 
   // known as "CURLMsg"
   opaque type CurlMsg = CStruct3[

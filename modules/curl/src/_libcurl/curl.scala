@@ -33,7 +33,7 @@ import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
-import snhttp.experimental._libcurl.internal.{_BindgenEnumInt, _BindgenEnumCLong}
+import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumCLong}
 import snhttp.experimental._libcurl.system.CurlOff
 
 object curl:
@@ -106,11 +106,11 @@ object curl:
       inline def |(b: CurlSslBackendId): CurlSslBackendId = a | b
       inline def is(b: CurlSslBackendId): Boolean = (a & b) == b
 
-  opaque type CurlFollow = Int
-  object CurlFollow extends _BindgenEnumInt[CurlFollow]:
-    given Tag[CurlFollow] = Tag.Int
+  opaque type CurlFollow = CLong
+  object CurlFollow extends _BindgenEnumCLong[CurlFollow]:
+    given Tag[CurlFollow] = Tag.Size
 
-    inline def define(inline a: Long): CurlFollow = a.toInt
+    inline def define(inline a: Long): CurlFollow = a.toSize
 
     /** default:    disabled */
     val DISABLED = define(0L)
@@ -959,7 +959,7 @@ object curl:
   // 7. add func `curl_sshhostkeycallback`
 
   opaque type CurlUseSsl = Int
-  object CurlUseSsl extends _BindgenEnumInt[CurlUseSsl]:
+  object CurlUseSsl extends _BindgenEnumCInt[CurlUseSsl]:
 
     private inline def define(inline a: Long): CurlUseSsl = a.toInt
 
@@ -1008,7 +1008,7 @@ object curl:
 
   // known as "CURLoption"
   opaque type CurlOption = Int
-  object CurlOption extends _BindgenEnumInt[CurlOption]:
+  object CurlOption extends _BindgenEnumCInt[CurlOption]:
     given Tag[CurlOption] = Tag.Int
 
     private inline def define(inline a: Int): CurlOption = a
@@ -1954,7 +1954,7 @@ object curl:
 
   // known as "CURLINFO" in C header
   opaque type CurlInfo = Int
-  object CurlInfo extends _BindgenEnumInt[CurlInfo]:
+  object CurlInfo extends _BindgenEnumCInt[CurlInfo]:
 
     inline def define(a: Int): CurlInfo = a
 
@@ -2156,7 +2156,7 @@ object curl:
 
   // known as enum "curl_closepolicy"
   opaque type CurlClosePolicy = Int
-  object CurlClosePolicy extends _BindgenEnumInt[CurlClosePolicy]:
+  object CurlClosePolicy extends _BindgenEnumCInt[CurlClosePolicy]:
     given Tag[CurlClosePolicy] = Tag.Int
 
     inline def define(inline a: Int): CurlClosePolicy = a
@@ -2216,7 +2216,7 @@ object curl:
 
   // known as "CURLPAUSE_*"
   opaque type CurlPause = Int
-  object CurlPause extends _BindgenEnumInt[CurlPause]:
+  object CurlPause extends _BindgenEnumCInt[CurlPause]:
     given Tag[CurlPause] = Tag.Int
 
     inline def define(inline a: Int): CurlPause = a

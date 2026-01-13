@@ -13,9 +13,9 @@ private[_libcurl] object internal:
       inline def long: Long = eq.apply(t).toLong
       inline def uint: UInt = eq.apply(t)
 
-  trait _BindgenEnumInt[T](using eq: T =:= Int):
+  trait _BindgenEnumCInt[T](using eq: T =:= CInt):
     extension (inline t: T)
-      inline def value: Int = eq.apply(t)
+      inline def value: CInt = eq.apply(t)
       inline def int: Int = eq.apply(t).toInt
       inline def long: Long = eq.apply(t).toLong
 

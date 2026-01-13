@@ -21,7 +21,9 @@ class CurlInfo(ptr: Ptr[Curl]) extends AnyVal:
 
   def osErrNo: Int =
     val _osErrno = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ptr, _CurlInfo.OS_ERRNO, _osErrno)
+    val ret = libcurl.easyGetInfo(ptr, _CurlInfo.OS_ERRNO, _osErrno)
+    if ret != libcurl.CurlErrCode.OK then
+      throw new RuntimeException(s"Failed to get OS_ERRNO: ${ret}")
     (!_osErrno).toInt
 
   def responseCode: Int =
@@ -81,7 +83,7 @@ class CurlInfo(ptr: Ptr[Curl]) extends AnyVal:
     val _ = libcurl.easyGetInfo(ptr, _CurlInfo.PROXYAUTH_USED, _proxyAuthUsed)
     (!_proxyAuthUsed).toLong
 
-  def CURLINFO_PROXY_ERROR: Int =
+  def proxyError: Int =
     val _proxyError = stackalloc[CLong]()
     val _ = libcurl.easyGetInfo(ptr, _CurlInfo.PROXY_ERROR, _proxyError)
     (!_proxyError).toInt
