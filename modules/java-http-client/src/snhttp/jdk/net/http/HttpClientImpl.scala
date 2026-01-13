@@ -2,6 +2,7 @@ package snhttp.jdk.net.http
 
 import java.io.IOException
 import java.net.{Authenticator, CookieHandler, InetAddress, ProxySelector}
+import java.net.ConnectException
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket}
 import java.net.http.HttpClient.{Builder, Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
@@ -13,13 +14,16 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
 
-import scala.concurrent.duration.DurationInt
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
 import scala.scalanative.unsafe.{Ptr, stackalloc}
+import scala.scalanative.unsigned.UnsignedRichInt
 
-import snhttp.experimental.libcurl
-import snhttp.experimental.libcurl.{
+import _root_.snhttp.experimental.curl.CurlErrCodeException
+import _root_.snhttp.experimental.curl.CurlMulti as CurlMultiWrapper
+import _root_.snhttp.experimental.libcurl
+import _root_.snhttp.experimental.libcurl.{
+  Curl,
   CurlSlist,
   CurlInfo,
   CurlMsgCode,
@@ -30,8 +34,10 @@ import snhttp.experimental.libcurl.{
   CurlMulti,
   CurlMultiCode,
 }
-import snhttp.jdk.net.http.internal.HttpConnection
-import snhttp.utils.PointerFinalizer
+import _root_.snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
+import _root_.snhttp.experimental.libcurl.CurlMultiCode.RichCurlMultiCode
+import _root_.snhttp.jdk.net.http.internal.HttpConnection
+import _root_.snhttp.utils.PointerFinalizer
 
 class HttpClientBuilderImpl() extends Builder:
 
@@ -108,43 +114,33 @@ class HttpClientBuilderImpl() extends Builder:
 
 end HttpClientBuilderImpl
 
-class HttpClientImpl(
+final class HttpClientImpl(
     private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
 
-  val globalInitRet = libcurl.globalInit(CurlGlobalFlag.DEFAULT)
-  globalInitRet match
-    case CurlErrCode.OK => ()
-    case _ =>
-      throw new RuntimeException(
-        s"Failed to initialize libcurl global state: error code ${globalInitRet}",
-      )
-
-  protected[http] var ptr: Ptr[CurlMulti] = null
-  try {
-    ptr = libcurl.multiInit()
-    if (ptr == null)
-      throw new RuntimeException("Failed to initialize CURLM pointer")
-  } catch {
-    case exc: RuntimeException =>
-      throw exc
-  }
+  protected[http] val ptr: Ptr[CurlMulti] = libcurl.multiInit()
+  if (ptr == null)
+    throw new RuntimeException("Failed to initialize CURLM pointer")
   PointerFinalizer(
     this,
     ptr,
     _ptr => {
       val ret = libcurl.multiCleanup(_ptr)
-      libcurl.globalCleanup()
       if (ret != 0)
         throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
     },
   ): Unit
+
+  private val _multi = CurlMultiWrapper(ptr)
+  private val _runningCounter = stackalloc[Int]()
 
   private val _started = new AtomicBoolean(false)
   private val _alive = new AtomicBoolean(false)
   private val _terminated = new AtomicBoolean(false)
   private val _terminable = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
+
+  private val _connections = HashMap.empty[Ptr[Curl], HttpConnection[?]]
 
   protected[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
@@ -170,12 +166,9 @@ class HttpClientImpl(
       case exc: ExecutionException =>
         val cause = exc.getCause()
         cause match {
-          case e: (IOException | RuntimeException) => throw e
-          case _ => throw new IOException("Unexpected error during HTTP request", cause)
+          case e: ConnectException => throw e
+          case _                   => throw exc
         }
-      case e: InterruptedException =>
-        Thread.currentThread().interrupt()
-        throw new IOException("HTTP request was interrupted", e)
     }
   }
 
@@ -197,29 +190,24 @@ class HttpClientImpl(
       throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
     requireNonShutdown()
 
-    val conn = HttpConnection(request, responseBodyHandler, this)
+    def _task() = {
+      val conn = HttpConnection(request, responseBodyHandler, this)
+      _connections.put(conn.ptr, conn): Unit
 
-    CompletableFuture.supplyAsync(
-      () =>
-        try {
-          conn.perform()
+      try {
+        perform()
+        conn.waitUntilDoneReceived()
+        val response = conn.buildResponse()
+        response
+      } catch {
+        case exc: CurlErrCodeException =>
+          if exc.code.value.toInt == 5 || exc.code.value.toInt == 6 || exc.code.value.toInt == 7
+          then throw new ConnectException(s"HTTP request failed: ${exc.getMessage()}")
+          else throw exc
+      } finally unregisterConnection(conn)
+    }
 
-          /* set started flag for http client */
-          _started.compareAndExchange(false, true): Unit
-          conn.waitUntilDoneReceived()
-
-          val response = conn.buildResponse()
-          response
-        } catch {
-          case exc: Exception =>
-            throw new RuntimeException(s"HTTP request failed: ${exc.getMessage()}", exc)
-        } finally {
-          conn.close()
-          this.close()
-        },
-      _executor,
-    )
-
+    CompletableFuture.supplyAsync(() => _task(), _executor)
   }
 
   override def shutdown(): Unit =
@@ -321,13 +309,69 @@ class HttpClientImpl(
     ???
 
   /**
+   * Non-JDK public methods
+   */
+
+  private[http] def registerConnection(conn: HttpConnection[?]): Unit =
+    val ret = _multi.addCurlEasy(conn.ptr)
+    if (ret != CurlMultiCode.OK)
+      conn.close()
+      throw new RuntimeException(s"CURLM add easy failed: error code ${ret} (${ret.getname})")
+    // register connection only after added to multi handle successfully
+    _connections.put(conn.ptr, conn): Unit
+
+  private[http] def running: Boolean =
+    !_runningCounter != 0
+
+  private[http] def performAndPoll(timeoutMs: Int): Unit =
+    perform()
+    poll(timeoutMs)
+    collectInfo()
+
+  /**
    * Private helpers
    */
 
-  protected def requireNonShutdown(): Unit =
+  private def requireNonShutdown(): Unit =
     if (_shutdown.get())
       throw new IllegalStateException(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
+
+  private def perform(): Unit =
+    // /* set started flag for http client */
+    // _started.compareAndExchange(false, true): Unit
+    val ret = _multi.perform(_runningCounter)
+    println(s"DEBUG: CURL multi perform result: ${ret.getname}")
+    if (ret != CurlMultiCode.OK)
+      throw new IOException(s"CURLM perform failed: error code ${ret} (${ret.getname})")
+
+  private def poll(timeoutMs: Int): Unit =
+    val ret = _multi.poll(null, 0.toUInt, timeoutMs, null)
+    println(s"DEBUG: CURL multi poll result: ${ret.getname}")
+    if (ret != CurlMultiCode.OK)
+      throw new IOException(s"CURLM poll failed: error code ${ret} (${ret.getname})")
+
+  private def collectInfo(): Unit =
+    var msg: Ptr[CurlMsg] = null
+    while
+      val msgCount = stackalloc[Int]()
+      msg = _multi.infoRead(msgCount)
+      println(s"DEBUG: CURL multi info read msg count: ${!msgCount}")
+      println(s"DEBUG: CURL multi info read msg ptr: ${msg}")
+      msg != null
+    do
+      val ptr = (!msg).easyHandle
+      val conn = _connections.getOrElse(
+        ptr,
+        throw new IllegalStateException(
+          s"Failed to find HttpConnection for CURL easy handle pointer: ${ptr}",
+        ),
+      )
+      conn.assignCurlMsg(msg)
+
+  private def unregisterConnection(conn: HttpConnection[?]): Unit =
+    conn.close()
+    _connections.remove(conn.ptr): Unit
 
 end HttpClientImpl

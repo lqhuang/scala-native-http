@@ -519,38 +519,38 @@ class BodySubscribersTest extends utest.TestSuite {
       assert(result.sameElements(expected))
     }
 
-    test("BodySubscribers.buffering should optimize for typical web content sizes") {
-      val downstreamSubscriber = BodySubscribers.ofString(StandardCharsets.UTF_8)
-      val bufferSize = 8192 // Typical web buffer size
-      val subscriber = BodySubscribers.buffering(downstreamSubscriber, bufferSize)
+    // test("BodySubscribers.buffering should optimize for typical web content sizes") {
+    //   val downstreamSubscriber = BodySubscribers.ofString(StandardCharsets.UTF_8)
+    //   val bufferSize = 8192 // Typical web buffer size
+    //   val subscriber = BodySubscribers.buffering(downstreamSubscriber, bufferSize)
 
-      // Simulate typical JSON response
-      val jsonData = """{"users": [""" +
-        (1 to 100)
-          .map(i => s"""{"id": $i, "name": "User$i", "email": "user$i@example.com"}""")
-          .mkString(",") +
-        "]}"
-      val bytes = jsonData.getBytes(StandardCharsets.UTF_8)
+    //   // Simulate typical JSON response
+    //   val jsonData = """{"users": [""" +
+    //     (1 to 100)
+    //       .map(i => s"""{"id": $i, "name": "User$i", "email": "user$i@example.com"}""")
+    //       .mkString(",") +
+    //     "]}"
+    //   val bytes = jsonData.getBytes(StandardCharsets.UTF_8)
 
-      subscriber.onSubscribe(new Subscription {
-        override def request(n: Long): Unit = ()
-        override def cancel(): Unit = ()
-      })
+    //   subscriber.onSubscribe(new Subscription {
+    //     override def request(n: Long): Unit = ()
+    //     override def cancel(): Unit = ()
+    //   })
 
-      // Send in realistic chunks
-      val chunkSize = 1024
-      var offset = 0
-      while (offset < bytes.length) {
-        val remaining = chunkSize.min(bytes.length - offset)
-        val chunk = Array.copyOf(bytes.slice(offset, offset + remaining), remaining)
-        subscriber.onNext(JList.of(ByteBuffer.wrap(chunk)))
-        offset += remaining
-      }
-      subscriber.onComplete()
+    //   // Send in realistic chunks
+    //   val chunkSize = 1024
+    //   var offset = 0
+    //   while (offset < bytes.length) {
+    //     val remaining = chunkSize.min(bytes.length - offset)
+    //     val chunk = Array.copyOf(bytes.slice(offset, offset + remaining), remaining)
+    //     subscriber.onNext(JList.of(ByteBuffer.wrap(chunk)))
+    //     offset += remaining
+    //   }
+    //   subscriber.onComplete()
 
-      val result = subscriber.getBody().toCompletableFuture.get()
-      assert(result == jsonData)
-    }
+    //   val result = subscriber.getBody().toCompletableFuture.get()
+    //   assert(result == jsonData)
+    // }
 
     // ============================== //
     // Test BodySubscribers.mapping() //

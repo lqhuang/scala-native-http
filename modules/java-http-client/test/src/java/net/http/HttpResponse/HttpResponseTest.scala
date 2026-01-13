@@ -5,9 +5,7 @@ import java.util.List as JList
 
 import utest.{Tests, test, assert}
 
-class HttpResponseTest extends utest.TestSuite {
+class HttpResponseTest extends utest.TestSuite:
 
-  val tests = Tests {
+  val tests = Tests:
     test("HttpResponse should return correct status code, body, and headers") {}
-  }
-}

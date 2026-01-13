@@ -8,16 +8,14 @@ import java.io.OutputStream
 
 class HttpResponseImpl[T](
     _request: HttpRequest,
-    _version: HttpClient.Version,
-    _statusCode: Int,
-    _headers: HttpHeaders,
+    _responseInfo: ResponseInfoImpl,
     _body: T,
     _sslSession: Optional[SSLSession] = Optional.empty(),
     _connectionLabel: Optional[String] = Optional.empty(),
     // _previousResponse: Optional[HttpResponse[T]] = Optional.empty(),
 ) extends HttpResponse[T]:
 
-  def statusCode(): Int = _statusCode
+  def statusCode(): Int = _responseInfo.statusCode()
 
   /// @since 25
   override def connectionLabel(): Optional[String] = _connectionLabel
@@ -26,7 +24,7 @@ class HttpResponseImpl[T](
 
   def previousResponse(): Optional[HttpResponse[T]] = ??? // _previousResponse
 
-  def headers(): HttpHeaders = _headers
+  def headers(): HttpHeaders = _responseInfo.headers()
 
   def body(): T = _body
 
@@ -34,7 +32,7 @@ class HttpResponseImpl[T](
 
   def uri(): URI = _request.uri()
 
-  def version(): HttpClient.Version = _version
+  def version(): HttpClient.Version = _responseInfo.version()
 
 // object HttpResponseImpl:
 

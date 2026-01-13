@@ -3,10 +3,10 @@ package snhttp.jdk.net.http
 import java.net.http.{HttpClient, HttpHeaders, HttpResponse}
 import java.net.http.HttpResponse.ResponseInfo
 
-case class ResponseInfoImpl(
+final class ResponseInfoImpl(
     _statusCode: Int,
-    _headers: HttpHeaders,
     _version: HttpClient.Version,
+    _headers: HttpHeaders,
 ) extends ResponseInfo:
 
   def statusCode(): Int = _statusCode
@@ -18,6 +18,6 @@ case class ResponseInfoImpl(
 object ResponseInfoImpl:
 
   def from(response: HttpResponse[?]): ResponseInfo =
-    ResponseInfoImpl(response.statusCode(), response.headers(), response.version())
+    ResponseInfoImpl(response.statusCode(), response.version(), response.headers())
 
 end ResponseInfoImpl

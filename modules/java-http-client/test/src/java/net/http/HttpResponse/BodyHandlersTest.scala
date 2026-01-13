@@ -24,8 +24,8 @@ class BodyHandlersTest extends TestSuite:
   private def createResponseInfo(map: Map[String, String] = Map.empty): ResponseInfo =
     ResponseInfoImpl(
       200,
-      createHeaders(map),
       HttpClient.Version.HTTP_1_1,
+      createHeaders(map),
     )
 
   val tests = Tests:
@@ -184,7 +184,7 @@ class BodyHandlersTest extends TestSuite:
     test("BodyHandlers.discarding should create discarding handler") {
       val handler = BodyHandlers.discarding()
       val responseInfo =
-        ResponseInfoImpl(204, createHeaders(Map.empty), HttpClient.Version.HTTP_1_1)
+        ResponseInfoImpl(204, HttpClient.Version.HTTP_1_1, createHeaders(Map.empty))
       val subscriber = handler(responseInfo)
     }
 
