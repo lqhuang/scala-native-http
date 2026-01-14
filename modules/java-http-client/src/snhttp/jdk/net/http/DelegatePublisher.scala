@@ -2,24 +2,20 @@ package snhttp.jdk.net.http
 
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
+import java.util.concurrent.{Future, ExecutorService, Executors}
 
-import scala.util.control.NonFatal
 import scala.util.{Try, Success, Failure}
-
-import scala.concurrent.ExecutionContext.global
+import scala.util.control.NonFatal
 
 private class SimpleSubscription[T](
     subscriber: Subscriber[? >: T],
     iterable: Iterable[T],
+    executor: ExecutorService,
 ) extends Subscription:
 
+  private val bufferedIter = iterable.iterator.buffered
   private val errored = new AtomicBoolean(false)
-  private val completed = new AtomicBoolean(false)
-  private val cancelled = new AtomicBoolean(false)
-
-  private val running = new AtomicBoolean(false)
-
-  private val iter = iterable.iterator.buffered
+  private var future: Future[Unit] = null
 
   /**
    * Notes from JDK docs:
@@ -29,30 +25,43 @@ private class SimpleSubscription[T](
    * additional `onNext` invocations (or fewer if terminated).
    */
   override def request(n: Long): Unit =
-    if (n < 0) subscriber.onError(IllegalArgumentException(s"n must be positive, but was $n"))
+    if (futureIsDone) return ()
+
+    if n < 0
+    then
+      executor.execute(() =>
+        errored.set(true)
+        subscriber.onError(IllegalArgumentException(s"n must be positive, but get ${n}")),
+      )
     else
-      var demand = n
-      while demand > 0
-        && iter.hasNext
-        && cancelled.get() == false
-      do
-        try
-          val next = iter.next()
-          subscriber.onNext(next)
-          demand -= 1
-        catch {
-          case NonFatal(t) =>
-            if (errored.compareAndSet(false, true))
-              subscriber.onError(t)
-            demand = 0
-        }
+      future = executor.submit { () =>
+        val demand = new AtomicLong(n)
+        while demand.get() > 0 && bufferedIter.hasNext && !futureIsCancelled
+        do
+          try
+            val next = bufferedIter.next()
+            subscriber.onNext(next)
+            demand.decrementAndGet(): Unit
+          catch
+            case NonFatal(exc) =>
+              if (errored.compareAndSet(false, true))
+                subscriber.onError(exc)
+              demand.set(0)
+      }
 
   override def cancel(): Unit =
-    if (!isCancellable)
-      cancelled.compareAndExchange(false, true): Unit
+    if (isCancellable)
+      if (future != null)
+        future.cancel(false): Unit
 
-  def isCancellable: Boolean =
-    !(errored.get() || cancelled.get() || completed.get())
+  private def futureIsCancelled: Boolean =
+    future != null && future.isCancelled()
+
+  private def futureIsDone: Boolean =
+    future != null && future.isDone()
+
+  private def isCancellable: Boolean =
+    !(errored.get() || futureIsDone)
 
 end SimpleSubscription
 
@@ -60,22 +69,31 @@ class DelegatePublisher[T] private (
     // private val iter: Iterable[T],
     // private val error: Throwable,
     iterable: Try[Iterable[T]],
+    executor: ExecutorService,
 ) extends Publisher[T]:
+
+  private val subscribed = new AtomicBoolean(false)
 
   override def subscribe(subscriber: Subscriber[? >: T]): Unit =
     iterable match
       case Failure(exc) =>
         subscriber.onError(exc)
       case Success(it) =>
-        val sub = SimpleSubscription[T](subscriber, it)
-        subscriber.onSubscribe(sub)
+        if !subscribed.compareAndSet(false, true)
+        then
+          subscriber.onError(
+            IllegalStateException("This Publisher allows only a single Subscriber"),
+          )
+        else
+          val sub = SimpleSubscription[T](subscriber, it, executor)
+          subscriber.onSubscribe(sub)
 
 object DelegatePublisher:
 
   def apply[T](iterable: Iterable[T]): DelegatePublisher[T] =
-    new DelegatePublisher(Success(iterable))
+    new DelegatePublisher(Success(iterable), Executors.newWorkStealingPool())
 
   def apply[T](t: Throwable): DelegatePublisher[T] =
-    new DelegatePublisher(Failure(t))
+    new DelegatePublisher(Failure(t), Executors.newWorkStealingPool())
 
 end DelegatePublisher
