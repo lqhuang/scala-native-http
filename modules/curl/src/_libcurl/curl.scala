@@ -13,28 +13,33 @@ package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.{alloc, name, link, extern, define}
 import scala.scalanative.unsafe.{
-  Tag,
-  Ptr,
-  Zone,
-  Size,
+  CFuncPtr2,
+  CFuncPtr3,
+  CFuncPtr4,
+  CFuncPtr5,
+  CInt,
   CLong,
+  CSize,
   CString,
   CStruct2,
   CStruct5,
-  CFuncPtr2,
-  CFuncPtr3,
   CStruct14,
   CVoidPtr,
+  Ptr,
+  Size,
+  Tag,
   UnsafeRichInt,
   UnsafeRichLong,
+  Zone,
 }
 import scala.scalanative.unsigned.UInt
 import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
-import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumCLong}
-import snhttp.experimental._libcurl.system.CurlOff
+import _root_.snhttp.experimental._libcurl.easy.CurlData
+import _root_.snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumCLong}
+import _root_.snhttp.experimental._libcurl.system.CurlOff
 
 object curl:
 
@@ -52,9 +57,7 @@ object curl:
   opaque type CurlSocket = Int
   object CurlSocket:
     given Tag[CurlSocket] = Tag.Int
-
     inline def define(inline v: Int): CurlSocket = v
-
     val BAD = define(-1)
 
   /**
@@ -84,27 +87,27 @@ object curl:
     val BORINGSSL = OPENSSL
     val LIBRESSL = OPENSSL
 
-    def getname(value: CurlSslBackendId): Option[String] =
+    def getname(value: CurlSslBackendId): String =
       value match
-        case NONE            => Some("CURLSSLBACKEND_NONE")
-        case OPENSSL         => Some("CURLSSLBACKEND_OPENSSL")
-        case GNUTLS          => Some("CURLSSLBACKEND_GNUTLS")
-        case OBSOLETE4       => Some("CURLSSLBACKEND_OBSOLETE4")
-        case WOLFSSL         => Some("CURLSSLBACKEND_WOLFSSL")
-        case SCHANNEL        => Some("CURLSSLBACKEND_SCHANNEL")
-        case SECURETRANSPORT => Some("CURLSSLBACKEND_SECURETRANSPORT")
-        case MBEDTLS         => Some("CURLSSLBACKEND_MBEDTLS")
-        case BEARSSL         => Some("CURLSSLBACKEND_BEARSSL")
-        case RUSTLS          => Some("CURLSSLBACKEND_RUSTLS")
-        case AWSLC           => Some("CURLSSLBACKEND_AWSLC")
-        case BORINGSSL       => Some("CURLSSLBACKEND_BORINGSSL")
-        case LIBRESSL        => Some("CURLSSLBACKEND_LIBRESSL")
-        case _               => None
+        case NONE            => "CURLSSLBACKEND_NONE"
+        case OPENSSL         => "CURLSSLBACKEND_OPENSSL"
+        case GNUTLS          => "CURLSSLBACKEND_GNUTLS"
+        case OBSOLETE4       => "CURLSSLBACKEND_OBSOLETE4"
+        case WOLFSSL         => "CURLSSLBACKEND_WOLFSSL"
+        case SCHANNEL        => "CURLSSLBACKEND_SCHANNEL"
+        case SECURETRANSPORT => "CURLSSLBACKEND_SECURETRANSPORT"
+        case MBEDTLS         => "CURLSSLBACKEND_MBEDTLS"
+        case BEARSSL         => "CURLSSLBACKEND_BEARSSL"
+        case RUSTLS          => "CURLSSLBACKEND_RUSTLS"
+        case AWSLC           => "CURLSSLBACKEND_AWSLC"
+        case BORINGSSL       => "CURLSSLBACKEND_BORINGSSL"
+        case LIBRESSL        => "CURLSSLBACKEND_LIBRESSL"
 
     extension (a: CurlSslBackendId)
       inline def &(b: CurlSslBackendId): CurlSslBackendId = a & b
       inline def |(b: CurlSslBackendId): CurlSslBackendId = a | b
       inline def is(b: CurlSslBackendId): Boolean = (a & b) == b
+  end CurlSslBackendId
 
   opaque type CurlFollow = CLong
   object CurlFollow extends _BindgenEnumCLong[CurlFollow]:
@@ -134,92 +137,66 @@ object curl:
           case ALL       => "CURLFOLLOW_ALL"
           case OBEYCODE  => "CURLFOLLOW_OBEYCODE"
           case FIRSTONLY => "CURLFOLLOW_FIRSTONLY"
+  end CurlFollow
 
   // known as "curl_httppost"
   opaque type CurlHttpPost = CStruct14[
     /**
-     * * next
-     *
-     * next entry in the list
+     * next: next entry in the list
      */
     Ptr[Byte], // Ptr[CurlHttpPost]
     /**
-     * * name
-     *
-     * pointer to allocated name
+     * name: pointer to allocated name
      */
     CString,
     /**
-     * * namelength
-     *
-     * length of name length
+     * namelength: length of name length
      */
     Long,
     /**
-     * * contents
-     *
-     * pointer to allocated data contents
+     * contents: pointer to allocated data contents
      */
     CString,
     /**
-     * * contentslength
-     *
-     * length of contents field, see also CURL_HTTPPOST_LARGE
+     * contentslength: length of contents field, see also `CURL_HTTPPOST_LARGE`
      */
     Long,
     /**
-     * * buffer
-     *
-     * pointer to allocated buffer contents
+     * buffer: pointer to allocated buffer contents
      */
     CString,
     /**
-     * * bufferlength
-     *
-     * length of buffer field
+     * bufferlength: length of buffer field
      */
     Long,
     /**
-     * * contenttype
-     *
-     * Content-Type
+     * contenttype: Content-Type
      */
     CString,
     /**
-     * * contentheader
-     *
-     * list of extra headers for this form
+     * contentheader: list of extra headers for this form
      */
     Ptr[Byte], // Ptr[CurlSlist],
     /**
-     * * more
-     *
-     * if one field name has more than one file, this link should link to following files
+     * more: if one field name has more than one file, this link should link to following files
      */
     Ptr[Byte], // Ptr[CurlHttpPost]
     /**
-     * flags
-     *
-     * curl http post flags
+     * flags: curl http post flags
      */
     CurlHttpPostFlag,
     /**
-     * * showfilename
-     *
-     * The filename to show. If not set, the actual filename will be used (if this is a file part)
+     * showfilename: The filename to show. If not set, the actual filename will be used (if this is
+     * a file part)
      */
     CString,
     /**
-     * * userp
-     *
-     * custom pointer used for HTTPPOST_CALLBACK posts
+     * userp: custom pointer used for HTTPPOST_CALLBACK posts
      */
     CVoidPtr,
     /**
-     * * contentlen
-     *
-     * alternative length of contents field. Used if CURL_HTTPPOST_LARGE is set. Added in curl
-     * 7.46.0
+     * contentlen: alternative length of contents field. Used if `CURL_HTTPPOST_LARGE` is set. Added
+     * in curl 7.46.0
      */
     CurlOff,
   ]
@@ -306,9 +283,10 @@ object curl:
       def userp_=(value: CVoidPtr): Unit = !struct.at13 = value
       def contentlen: CurlOff = struct._14
       def contentlen_=(value: CurlOff): Unit = !struct.at14 = value
+  end CurlHttpPost
 
   /**
-   * * define CURL_HTTPPOST_*
+   * known as defined `CURL_HTTPPOST_*` symbols
    */
   opaque type CurlHttpPostFlag = Int
   object CurlHttpPostFlag:
@@ -341,15 +319,61 @@ object curl:
 
     /** use size in 'contentlen', added in 7.46.0 */
     val LARGE = define(1 << 7)
+  end CurlHttpPostFlag
 
-  val CURL_PROGRESSFUNC_CONTINUE = 0x10000001
+  // val CURL_PROGRESSFUNC_CONTINUE = 0x10000001
 
-  // TODO: add structs
-  //
-  // 1. curl_progress_callback
-  // 2. curl_xferinfo_callback
-  // 3. curl_write_callback
-  // 4. curl_resolver_start_callback
+  type CurlXferInfoCallback = CFuncPtr5[
+    /** clientp */
+    CVoidPtr,
+    /** dltotal */
+    CurlOff,
+    /** dlnow */
+    CurlOff,
+    /** ultotal */
+    CurlOff,
+    /** ulnow */
+    CurlOff,
+    /** return */
+    CInt,
+  ]
+
+  // val CURL_MAX_READ_SIZE = (10 * 1024 * 1024).toUSize
+  // val CURL_MAX_WRITE_SIZE = (16384).toUSize
+  // val CURL_MAX_HTTP_HEADER = (100*1024).toUSize
+
+  /* This is a magic return code for the write callback that, when returned,
+   will signal libcurl to pause receiving on the current transfer. */
+  val CURL_WRITEFUNC_PAUSE = 0x10000001
+
+  /* This is a magic return code for the write callback that, when returned,
+   will signal an error from the callback. */
+  val CURL_WRITEFUNC_ERROR = 0xffffffff
+
+  /** known as "curl_write_callback" */
+  type CurlWriteCallback = CFuncPtr4[
+    /** buffer */
+    Ptr[Byte],
+    /** size */
+    CSize,
+    /** nitems */
+    CSize,
+    /** outstream */
+    CVoidPtr,
+    CSize,
+  ]
+
+  /** This callback will be called when a new resolver request is made */
+  type CurlResolverStartCallback = CFuncPtr3[
+    /** resolver_state */
+    CVoidPtr,
+    /** hostname */
+    CString,
+    /** port */
+    CInt,
+    /** return */
+    CInt,
+  ]
 
   // TODO:
   //
@@ -378,17 +402,52 @@ object curl:
   //    known as `CURL_SEEKFUNC_*`
   // 2. add func `curl_seek_callback`
 
-  // TODO:
-  //
-  // 1. add defined return code for the read callback
-  //    known as `CURL_READFUNC_*`
-  // 2. add func `curl_read_callback`
+  /**
+   * This is a return code for the read callback that, when returned, will signal libcurl to
+   * immediately abort the current transfer.
+   */
+  val CURL_READFUNC_ABORT = 0x10000000
 
-  // TODO:
-  //
-  // 1. add defined Return code for when the trailing headers callback
-  //    known as `CURL_TRAILERFUNC_*`
-  // 2. add func `curl_read_callback`
+  /**
+   * This is a return code for the read callback that, when returned, will signal libcurl to pause
+   * sending data on the current transfer.
+   */
+  val CURL_READFUNC_PAUSE = 0x10000001
+
+  /**
+   * Return code for when the trailing headers' callback has terminated without any errors
+   */
+  val CURL_TRAILERFUNC_OK = 0
+
+  /**
+   * Return code for when was an error in the trailing header's list and we want to abort the
+   * request
+   */
+  val CURL_TRAILERFUNC_ABORT = 1
+
+  // known as "curl_read_callback"
+  type CurlReadCallback = CFuncPtr4[
+    /** buffer */
+    CString,
+    /** size */
+    CSize,
+    /** nitems */
+    CSize,
+    /** instream */
+    CVoidPtr,
+    /** return */
+    CSize,
+  ]
+
+  // known as "curl_trailer_callback"
+  type CurlTrailerCallback = CFuncPtr2[
+    /** instream */
+    Ptr[CurlSlist],
+    /** userdata */
+    CVoidPtr,
+    /** return */
+    CInt,
+  ]
 
   // known as enum "curlsocktype"
   opaque type CurlSockType = Int
@@ -416,6 +475,7 @@ object curl:
       inline def &(b: CurlSockType): CurlSockType = a & b
       inline def |(b: CurlSockType): CurlSockType = a | b
       inline def is(b: CurlSockType): Boolean = (a & b) == b
+  end CurlSockType
 
   /**
    * The return code from the sockopt_callback can signal information back to libcurl:
@@ -427,10 +487,9 @@ object curl:
 
     val OK = define(0)
 
-    /**
-     * causes libcurl to abort and return CURLE_ABORTED_BY_CALLBACK
-     */
+    /** causes libcurl to abort and return CURLE_ABORTED_BY_CALLBACK */
     val ERROR = define(1)
+  end CurlSockOpt
 
   // known as "curl_sockopt_callback"
   opaque type CurlSockOptCallback =
@@ -596,16 +655,49 @@ object curl:
         inline o: CFuncPtr3[Ptr[Curl], CurlIoCmd, CVoidPtr, CurlIoErr],
     ): CurlIoctlCallback = o
 
-  // TODO:
-  //
-  // 1. add the kind of data `curl_infotype` that is passed to information_callback
-  // typedef enum {} curl_infotype
-  // 2. add func `curl_debug_callback`
+    // known as enum curl_infotype
+  opaque type CurlInfoType = CInt
+  object CurlInfoType extends _BindgenEnumCInt[CurlInfoType]:
+    given Tag[CurlInfoType] = Tag.Int
 
-  // TODO:
-  //
-  // 1. add func `curl_prereq_callback`
-  // 1. add define symbols CURL_PREREQFUNC_*
+    inline def define(inline a: Int): CurlInfoType = a
+
+    val TEXT = define(0)
+    val HEADER_IN = define(1)
+    val HEADER_OUT = define(2)
+    val DATA_IN = define(3)
+    val DATA_OUT = define(4)
+    val SSL_DATA_IN = define(5)
+    val SSL_DATA_OUT = define(6)
+    val END = define(7)
+
+    implicit class RichCurlInfoType(value: CurlInfoType) extends AnyVal:
+      def getname: String =
+        value match
+          case TEXT         => "CURLINFO_TEXT"
+          case HEADER_IN    => "CURLINFO_HEADER_IN"
+          case HEADER_OUT   => "CURLINFO_HEADER_OUT"
+          case DATA_IN      => "CURLINFO_DATA_IN"
+          case DATA_OUT     => "CURLINFO_DATA_OUT"
+          case SSL_DATA_IN  => "CURLINFO_SSL_DATA_IN"
+          case SSL_DATA_OUT => "CURLINFO_SSL_DATA_OUT"
+          case END          => "CURLINFO_END"
+
+  // known as "curl_debug_callback"
+  type CurlDebugCallback = CFuncPtr5[
+    /** handle */
+    Ptr[Curl],
+    /** type */
+    CurlInfoType,
+    /** data */
+    CString,
+    /** size */
+    CSize,
+    /** userptr */
+    CVoidPtr,
+    /** return */
+    CInt,
+  ]
 
   /**
    * All possible error codes from all sorts of curl functions. Future versions may return other

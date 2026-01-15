@@ -12,9 +12,9 @@
 package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.alloc
-import scala.scalanative.unsafe.{Tag, CStruct3}
+import scala.scalanative.unsafe.{Tag, CStruct2, CStruct3, Ptr}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
-import scala.scalanative.posix.stddef.size_t
+import scala.scalanative.libc.stddef.size_t
 
 import snhttp.experimental._libcurl.internal._BindgenEnumUInt
 
@@ -35,4 +35,12 @@ object easy:
     size_t,
     /** flags */
     CurlBlobFlag,
+  ]
+
+  /** Used by CURLOPT_WRITEDATA and more */
+  type CurlData = CStruct2[
+    /** memory */
+    Ptr[Byte],
+    /** size */
+    size_t,
   ]

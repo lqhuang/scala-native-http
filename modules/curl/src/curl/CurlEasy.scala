@@ -27,7 +27,7 @@ class CurlEasy(ptr: Ptr[_Curl]) extends AnyVal:
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def setStringOption(using zone: Zone)(option: CurlOption, value: String): Unit =
+  def setStringOption(option: CurlOption, value: String)(using zone: Zone): Unit =
     val ret = libcurl.easySetopt(ptr, option, toCString(value))
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
