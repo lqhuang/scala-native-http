@@ -66,10 +66,10 @@ class BodyPublishersTest extends TestSuite:
     }
 
     test(
-      "ofByteArray publishes correct bytes and contentLength while length larger than BUFFER_SIZE",
+      "ofByteArray publishes correct bytes and contentLength while length larger than INTERNAL_BUFFER_SIZE",
     ) {
-      assert(PropertyUtils.BUFFER_SIZE > 512)
-      val arr: Array[Byte] = Random.nextBytes(2 * PropertyUtils.BUFFER_SIZE + 512)
+      assert(PropertyUtils.INTERNAL_BUFFER_SIZE > 512)
+      val arr: Array[Byte] = Random.nextBytes(2 * PropertyUtils.INTERNAL_BUFFER_SIZE + 512)
       val publisher = BodyPublishers.ofByteArray(arr)
       assert(publisher.contentLength() == arr.length.toLong)
 
@@ -83,28 +83,28 @@ class BodyPublishersTest extends TestSuite:
     }
 
     test(
-      "ofByteArray with offset/length publishes correct slice while length larger than BUFFER_SIZE",
+      "ofByteArray with offset/length publishes correct slice while length larger than INTERNAL_BUFFER_SIZE",
     ) {
-      assert(PropertyUtils.BUFFER_SIZE > 512)
-      val arr: Array[Byte] = Random.nextBytes(4 * PropertyUtils.BUFFER_SIZE + 512)
+      assert(PropertyUtils.INTERNAL_BUFFER_SIZE > 512)
+      val arr: Array[Byte] = Random.nextBytes(4 * PropertyUtils.INTERNAL_BUFFER_SIZE + 512)
       val publisher = BodyPublishers.ofByteArray(
         arr,
-        PropertyUtils.BUFFER_SIZE / 2,
-        PropertyUtils.BUFFER_SIZE * 2 + 100,
+        PropertyUtils.INTERNAL_BUFFER_SIZE / 2,
+        PropertyUtils.INTERNAL_BUFFER_SIZE * 2 + 100,
       )
-      assert(publisher.contentLength() == PropertyUtils.BUFFER_SIZE * 2 + 100)
+      assert(publisher.contentLength() == PropertyUtils.INTERNAL_BUFFER_SIZE * 2 + 100)
 
       val subscriber = MockSubscriber()
       publisher.subscribe(subscriber)
       subscriber.subscription.request(10)
 
       val received = MockSubscriber.concatAll(subscriber.received)
-      assert(received.length == PropertyUtils.BUFFER_SIZE * 2 + 100)
+      assert(received.length == PropertyUtils.INTERNAL_BUFFER_SIZE * 2 + 100)
       assert(
         received.sameElements(
           arr.slice(
-            PropertyUtils.BUFFER_SIZE / 2,
-            PropertyUtils.BUFFER_SIZE / 2 + PropertyUtils.BUFFER_SIZE * 2 + 100,
+            PropertyUtils.INTERNAL_BUFFER_SIZE / 2,
+            PropertyUtils.INTERNAL_BUFFER_SIZE / 2 + PropertyUtils.INTERNAL_BUFFER_SIZE * 2 + 100,
           ),
         ),
       )
