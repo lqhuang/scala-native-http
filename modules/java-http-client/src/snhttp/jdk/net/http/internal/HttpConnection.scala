@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Map as JMap
 import java.util.List as JList
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.SubmissionPublisher
 
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.scalanative.unsafe.{
