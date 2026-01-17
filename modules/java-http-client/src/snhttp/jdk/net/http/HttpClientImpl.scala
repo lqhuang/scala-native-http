@@ -118,7 +118,7 @@ final class HttpClientImpl(
     private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
 
-  protected[http] val ptr: Ptr[CurlMulti] = libcurl.multiInit()
+  private[http] val ptr: Ptr[CurlMulti] = libcurl.multiInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURLM pointer")
   PointerFinalizer(
@@ -134,7 +134,7 @@ final class HttpClientImpl(
   private val _multi = CurlMultiWrapper(ptr)
   private val _runningCounter = stackalloc[Int]()
 
-  private val _started = new AtomicBoolean(false)
+  // private val _started = new AtomicBoolean(false)
   private val _alive = new AtomicBoolean(false)
   private val _terminated = new AtomicBoolean(false)
   private val _terminable = new AtomicBoolean(false)
@@ -142,11 +142,11 @@ final class HttpClientImpl(
 
   private val _connections = HashMap.empty[Ptr[Curl], HttpConnection[?]]
 
-  protected[http] lazy val _sslContext =
+  private[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
-  protected[http] lazy val _sslParams =
+  private[http] lazy val _sslParams =
     builder._sslParams.orElse(_sslContext.getDefaultSSLParameters())
-  protected[http] lazy val _executor: Executor =
+  private[http] lazy val _executor: Executor =
     builder._executor.orElse(ExecutionContext.global)
 
   /**
@@ -357,8 +357,6 @@ final class HttpClientImpl(
     while
       val msgCount = stackalloc[Int]()
       msg = _multi.infoRead(msgCount)
-      println(s"DEBUG: CURL multi info read msg count: ${!msgCount}")
-      println(s"DEBUG: CURL multi info read msg ptr: ${msg}")
       msg != null
     do
       val ptr = (!msg).easyHandle

@@ -18,14 +18,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.{Consumer, Function}
 import java.util.stream.Stream
 
-object BodySubscribersImpl {
+object BodySubscribersImpl:
 
   final class SubscriberAdapter[S <: Subscriber[? >: JList[ByteBuffer]], R](
       subscriber: S,
       finisher: Function[? >: S, ? <: R],
   ) extends BodySubscriber[R] {
     private val cf = new CompletableFuture[R]()
-    private var subscription: Subscription = _
+    private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
     override def onSubscribe(subscription: Subscription): Unit =
@@ -68,7 +68,7 @@ object BodySubscribersImpl {
       eol: String,
   ) extends BodySubscriber[R] {
     private val cf = new CompletableFuture[R]()
-    private var subscription: Subscription = _
+    private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
     private val sbuilder = new StringBuilder()
     private val lineSeparator = if (eol == null) System.lineSeparator() else eol
@@ -193,10 +193,10 @@ object BodySubscribersImpl {
 
   class PathSubscriber(file: Path, openOptions: Seq[OpenOption]) extends BodySubscriber[Path] {
     private val cf = new CompletableFuture[Path]()
-    private var subscription: Subscription = _
+    private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
-    @volatile private var fh: FileChannel = _
+    @volatile private var fh: FileChannel = null
 
     override def onSubscribe(subscription: Subscription): Unit =
       if !subscribed.compareAndSet(false, true)
@@ -254,7 +254,7 @@ object BodySubscribersImpl {
   class ConsumerSubscriber(consumer: Consumer[Optional[Array[Byte]]]) extends BodySubscriber[Void]:
 
     private val cf = new CompletableFuture[Void]()
-    private var subscription: Subscription = _
+    private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
     override def getBody(): CompletionStage[Void] = cf
@@ -303,38 +303,38 @@ object BodySubscribersImpl {
   ): BodySubscriber[Void] =
     new ConsumerSubscriber(consumer)
 
-  class InputStreamSubscriber extends InputStream with BodySubscriber[InputStream] {
+  class InputStreamSubscriber extends InputStream with BodySubscriber[InputStream]:
+
     private val cf = new CompletableFuture[InputStream]()
-    private var subscription: Subscription = _
-    private val subscribed = new AtomicBoolean()
+    private var subscription: Subscription = null
+    private val subscribed = new AtomicBoolean(false)
 
     private val buffer = new ArrayList[ByteBuffer]()
-    private var current: ByteBuffer = _
-    private var closed = false
+    private var current: ByteBuffer = null
+    private var closed = new AtomicBoolean(false)
 
     override def onSubscribe(subscription: Subscription): Unit =
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
-      else {
+      else
         this.subscription = subscription
-        subscription.request(1)
-      }
+        this.subscription.request(1)
 
     override def onNext(item: JList[ByteBuffer]): Unit =
-      if (!closed) {
+      if (!closed.get()) {
         buffer.addAll(item)
         subscription.request(1)
       }
 
     override def onComplete(): Unit =
-      closed = true
+      closed.compareAndExchange(false, true): Unit
 
     override def onError(throwable: Throwable): Unit =
-      closed = true
+      closed.compareAndExchange(false, true)
       cf.completeExceptionally(throwable): Unit
 
     override def read(): Int = {
-      if (closed) return -1
+      if (closed.get()) return -1
 
       if (current == null || !current.hasRemaining()) {
         current =
@@ -350,11 +350,11 @@ object BodySubscribersImpl {
     override def getBody(): CompletionStage[InputStream] = cf
 
     override def close(): Unit =
-      closed = true
-      if (subscribed.compareAndExchange(true, false))
+      closed.compareAndExchange(false, true)
+      if (subscribed.get())
         subscription.cancel()
 
-  }
+  end InputStreamSubscriber
 
   def ofInputStream(): BodySubscriber[InputStream] =
     new InputStreamSubscriber()
@@ -375,10 +375,10 @@ object BodySubscribersImpl {
   class PublishingBodySubscriber extends BodySubscriber[Publisher[JList[ByteBuffer]]] {
     private val cf = new CompletableFuture[Publisher[JList[ByteBuffer]]]()
     private val subscribed = new AtomicBoolean()
-    private var subscription: Subscription = _
+    private var subscription: Subscription = null
 
-    private var publisher: Publisher[JList[ByteBuffer]] = _
-    private var subscriber: Subscriber[? >: JList[ByteBuffer]] = _
+    private var publisher: Publisher[JList[ByteBuffer]] = null
+    private var subscriber: Subscriber[? >: JList[ByteBuffer]] = null
 
     override def onSubscribe(subscription: Subscription): Unit =
       if !subscribed.compareAndSet(false, true)
@@ -437,7 +437,7 @@ object BodySubscribersImpl {
       downstream: BodySubscriber[T],
       bufferSize: Int,
   ) extends BodySubscriber[T] {
-    private[this] var subscription: Subscription = _
+    private[this] var subscription: Subscription = null
     private[this] val subscribed = new AtomicBoolean()
 
     private[this] val buffer = new ArrayList[ByteBuffer]()
@@ -485,7 +485,8 @@ object BodySubscribersImpl {
   class MappingSubscriber[T, U](
       upstream: BodySubscriber[T],
       mapper: Function[? >: T, ? <: U],
-  ) extends BodySubscriber[U] {
+  ) extends BodySubscriber[U]:
+
     override def onSubscribe(subscription: Subscription): Unit =
       upstream.onSubscribe(subscription)
 
@@ -500,7 +501,8 @@ object BodySubscribersImpl {
 
     override def getBody(): CompletionStage[U] =
       upstream.getBody().thenApply(mapper)
-  }
+
+  end MappingSubscriber
 
   def replacing[U](value: U): BodySubscriber[U] =
     new NullSubscriber(Optional.ofNullable(value))
@@ -517,5 +519,3 @@ object BodySubscribersImpl {
       mapper: Function[? >: T, ? <: U],
   ): BodySubscriber[U] =
     new MappingSubscriber(upstream, mapper)
-
-}

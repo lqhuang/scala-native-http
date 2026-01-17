@@ -41,7 +41,7 @@ object LibcurlTest extends TestSuite:
   val tests = Tests:
 
     test("writedata callback function should be called on data received") {
-      val write_data_callback = CFuncPtr4.fromScalaFunction {
+      val writeDataCallback = CFuncPtr4.fromScalaFunction {
         (ptr: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[Byte]) =>
           val chunk = stackalloc[Byte](nmemb)
           val _ = string.strncpy(chunk, ptr, nmemb)
@@ -53,7 +53,7 @@ object LibcurlTest extends TestSuite:
         assert(curl != null)
 
         val _ = libcurl.easySetopt(curl, CurlOption.URL, c"https://httpbin.org/get")
-        val _ = libcurl.easySetopt(curl, CurlOption.WRITEFUNCTION, write_data_callback)
+        val _ = libcurl.easySetopt(curl, CurlOption.WRITEFUNCTION, writeDataCallback)
         val res = libcurl.easyPerform(curl)
 
         if (res != CurlErrCode.OK)

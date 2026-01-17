@@ -12,15 +12,17 @@ import java.util.function.Function
 
 import snhttp.jdk.internal.Utils.filenameFrom
 
-object BodyHandlersImpl {
+object BodyHandlersImpl:
 
   class PathBodyHandler(
       private val file: Path,
       private val openOptions: Seq[OpenOption],
-  ) extends BodyHandler[Path] {
+  ) extends BodyHandler[Path]:
+
     override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
       BodySubscribers.ofFile(file, openOptions*)
-  }
+
+  end PathBodyHandler
 
   def ofFile(file: Path, openOptions: Seq[OpenOption]): PathBodyHandler =
     new PathBodyHandler(file, openOptions)
@@ -28,13 +30,14 @@ object BodyHandlersImpl {
   class FileDownloadBodyHandler(
       private val directory: Path,
       private val openOptions: Seq[OpenOption],
-  ) extends BodyHandler[Path] {
-    override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] = {
+  ) extends BodyHandler[Path]:
+
+    override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
       val filename = filenameFrom(responseInfo.headers())
       val targetFile = directory.resolve(filename)
       BodySubscribers.ofFile(targetFile, openOptions*)
-    }
-  }
+
+  end FileDownloadBodyHandler
 
   def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] =
     new FileDownloadBodyHandler(directory, openOptions)
@@ -44,14 +47,14 @@ object BodyHandlersImpl {
       pushPromiseHandler: Function[HttpRequest, BodyHandler[T]],
       pushPromisesMap: ConcurrentMap[HttpRequest, CompletableFuture[HttpResponse[T]]],
   ) extends HttpResponse.PushPromiseHandler[T]:
+
     def applyPushPromise(
         initiatingRequest: HttpRequest,
         pushPromiseRequest: HttpRequest,
         acceptor: Function[BodyHandler[T], CompletableFuture[HttpResponse[T]]],
-    ): Unit = {
+    ): Unit =
       val bodyHandler = pushPromiseHandler.apply(pushPromiseRequest)
       val responseFuture = acceptor.apply(bodyHandler)
       pushPromisesMap.put(pushPromiseRequest, responseFuture): Unit
-    }
 
-}
+  end PushPromisesHandlerWithMap

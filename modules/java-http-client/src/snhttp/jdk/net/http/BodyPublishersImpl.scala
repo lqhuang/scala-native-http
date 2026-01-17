@@ -13,24 +13,28 @@ import java.util.Objects.requireNonNull
 import scala.collection.immutable.LazyList
 import scala.util.{Try, Failure, Success}
 
-import snhttp.jdk.internal.PropertyUtils
+import _root_.snhttp.jdk.internal.PropertyUtils
+import _root_.snhttp.jdk.net.http.internal.DelegatePublisher
 
 type BufferSubscriber = Subscriber[? >: ByteBuffer]
 
-class NoBodyPublisher() extends BodyPublisher {
+class NoBodyPublisher() extends BodyPublisher:
+
   val delegate: Publisher[ByteBuffer] = DelegatePublisher(Seq(ByteBuffer.allocate(0)))
 
   def contentLength() = 0
 
   def subscribe(subscriber: BufferSubscriber) = delegate.subscribe(subscriber)
-}
+
+end NoBodyPublisher
 
 class ByteArrayPublisher(
     bytes: Array[Byte],
     offset: Int,
     length: Int,
-    bufSize: Int = PropertyUtils.DEFAULT_BUFFER_SIZE,
-) extends BodyPublisher {
+    bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
+) extends BodyPublisher:
+
   requireNonNull(bytes, "bytes must not be null")
   require(
     offset >= 0 && length >= 0 && (bytes.length - offset) >= length,
@@ -69,12 +73,14 @@ class ByteArrayPublisher(
     val delegate = DelegatePublisher(bufs)
     delegate.subscribe(subscriber)
   }
-}
+
+end ByteArrayPublisher
 
 class StringPublisher(
     private val body: String,
     private val charset: Charset,
-) extends BodyPublisher {
+) extends BodyPublisher:
+
   requireNonNull(body != null, "body must not be null")
   requireNonNull(charset != null, "charset must not be null")
 
@@ -86,20 +92,24 @@ class StringPublisher(
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
     delegate.subscribe(subscriber)
-}
 
-class ByteArraysPublisher(private val iter: Iterable[Array[Byte]]) extends BodyPublisher {
+end StringPublisher
+
+class ByteArraysPublisher(private val iter: Iterable[Array[Byte]]) extends BodyPublisher:
+
   override def contentLength(): Long = -1
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
     val delegate = DelegatePublisher(iter.map(ByteBuffer.wrap))
     delegate.subscribe(subscriber)
-}
+
+end ByteArraysPublisher
 
 class InputStreamPublisher(
     supplier: Supplier[? <: InputStream],
-    bufSize: Int = PropertyUtils.DEFAULT_BUFFER_SIZE,
-) extends BodyPublisher {
+    bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
+) extends BodyPublisher:
+
   override def contentLength(): Long = -1
 
   override def subscribe(subscriber: BufferSubscriber): Unit = {
@@ -121,12 +131,13 @@ class InputStreamPublisher(
     val publisher = DelegatePublisher(bufs)
     publisher.subscribe(subscriber)
   }
-}
+
+end InputStreamPublisher
 
 class FilePublisher(
     path: Path,
-    bufSize: Int = PropertyUtils.DEFAULT_BUFFER_SIZE,
-) extends BodyPublisher {
+    bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
+) extends BodyPublisher:
 
   private val file =
     path.toFile()
@@ -144,17 +155,21 @@ class FilePublisher(
       else DelegatePublisher[ByteBuffer](new FileNotFoundException(s"File not found: $path"))
     publisher.subscribe(subscriber)
   }
-}
 
-class PublisherWrapper(publisher: Publisher[? <: ByteBuffer], length: Long) extends BodyPublisher {
+end FilePublisher
+
+class PublisherWrapper(publisher: Publisher[? <: ByteBuffer], length: Long) extends BodyPublisher:
+
   override def contentLength(): Long =
     length
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
     publisher.subscribe(subscriber)
-}
 
-class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher {
+end PublisherWrapper
+
+class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher:
+
   override def contentLength(): Long =
     val lengths = publishers.map(_.contentLength())
     val sum = lengths.fold(0L)((x, y) => if x < 0 || y < 0 then -1 else x + y)
@@ -162,7 +177,8 @@ class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher 
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
     publishers.foreach(p => p.subscribe(subscriber))
-}
+
+end ConcatPublisher
 
 object BodyPublishersImpl:
 

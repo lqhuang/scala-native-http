@@ -1,4 +1,4 @@
-package snhttp.jdk.net.http
+package snhttp.jdk.net.http.internal
 
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
