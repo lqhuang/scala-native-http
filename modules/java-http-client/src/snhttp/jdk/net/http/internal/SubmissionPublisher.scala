@@ -1,71 +1,68 @@
-/**
- * Inspired by
- * https://github.com/aDotInTheVoid/jsr166/blob/trunk/src/main/java/util/concurrent/SubmissionPublisher.java
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the
- * public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/
+/*
+ * Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group
+ * and released to the public domain, as explained at
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 package java.util.concurrent
 
 import java.lang.invoke.VarHandle
-import java.util.List as JList
 import java.util.Objects.requireNonNull
-import java.util.{ArrayList, Collections}
-import java.util.concurrent.{
-  CompletableFuture,
-  TimeUnit,
-  ForkJoinPool,
-  Executor,
-  Flow,
-  ConcurrentHashMap,
-}
 import java.util.concurrent.atomic.{
-  AtomicBoolean,
-  AtomicInteger,
-  AtomicLong,
-  AtomicReferenceArray,
-  AtomicReference,
+  AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference,
+  AtomicReferenceArray
 }
 import java.util.concurrent.locks.LockSupport
+import java.util.concurrent.{
+  CompletableFuture, ConcurrentHashMap, Executor, Flow, ForkJoinPool, TimeUnit
+}
 import java.util.function.{BiConsumer, BiPredicate, Consumer}
+import java.util.{ArrayList, Collections, List as JList}
 
 import scala.util.boundary
 import scala.util.boundary.break
 
-/**
- * Reference:
- *
- *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/SubmissionPublisher.html
- *
- * since JDK 9
- */
+// Reference:
+//
+// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/SubmissionPublisher.html
+//
+// @since JDK 9
 class SubmissionPublisher[T](
     private val executor: Executor,
     private val maxBufferCapacity: Int,
-    private val handler: BiConsumer[? >: Flow.Subscriber[? >: T], ? >: Throwable],
+    private val handler: BiConsumer[? >: Flow.Subscriber[
+      ? >: T
+    ], ? >: Throwable]
 ) extends Flow.Publisher[T]
     with AutoCloseable {
 
-  import SubmissionPublisher.{BufferedSubscription, ConsumerSubscriber}
-  import SubmissionPublisher.{BUFFER_CAPACITY_LIMIT, INITIAL_CAPACITY}
+  import SubmissionPublisher.{
+    BUFFER_CAPACITY_LIMIT, BufferedSubscription, ConsumerSubscriber,
+    INITIAL_CAPACITY
+  }
 
   def this() =
     this(ForkJoinPool.commonPool(), Flow.defaultBufferSize(), null)
 
   def this(executor: Executor, maxBufferCapacity: Int) =
-    this(executor, SubmissionPublisher.roundToPowerOfTwo(maxBufferCapacity), null)
+    this(
+      executor,
+      SubmissionPublisher.roundToPowerOfTwo(maxBufferCapacity),
+      null
+    )
 
   requireNonNull(executor, "executor cannot be null")
   require(maxBufferCapacity > 0, "maxBufferCapacity must be positive")
 
-  /**
-   * Clients (BufferedSubscriptions) are maintained in a linked list (via their "next" fields). This
-   * works well for publish loops. It requires O(n) traversal to check for duplicate subscribers,
-   * but we expect that subscribing is much less common than publishing. Unsubscribing occurs only
-   * during traversal loops, when BufferedSubscription methods return negative values signifying
-   * that they have been closed. To reduce head-of-line blocking, submit and offer methods first
-   * call BufferedSubscription.offer on each subscriber, and place saturated ones in retries list
-   * (using nextRetry field), and retry, possibly blocking or dropping.
+  /*
+   * Clients (BufferedSubscriptions) are maintained in a linked list (via their
+   * "next" fields). This works well for publish loops. It requires O(n)
+   * traversal to check for duplicate subscribers, but we expect that
+   * subscribing is much less common than publishing. Unsubscribing occurs only
+   * during traversal loops, when BufferedSubscription methods return negative
+   * values signifying that they have been closed. To reduce head-of-line
+   * blocking, submit and offer methods first call BufferedSubscription.offer
+   * on each subscriber, and place saturated ones in retries list (using
+   * nextRetry field), and retry, possibly blocking or dropping.
    */
   private var clients: BufferedSubscription[T] = null
 
@@ -86,8 +83,9 @@ class SubmissionPublisher[T](
     val subscription = new BufferedSubscription[T](
       subscriber,
       executor,
-      if maxBufferCapacity > BUFFER_CAPACITY_LIMIT then INITIAL_CAPACITY else maxBufferCapacity,
-      handler,
+      if (maxBufferCapacity > BUFFER_CAPACITY_LIMIT) INITIAL_CAPACITY
+      else maxBufferCapacity,
+      handler
     )
 
     synchronized {
@@ -119,9 +117,10 @@ class SubmissionPublisher[T](
           if (curr.isClosed()) { // detach curr node
             curr.next = null
 
-            if pred == null
-            then clients = next
-            else pred.next = next
+            if (pred == null)
+              clients = next
+            else
+              pred.next = next
           } // force fmt style
           else if (subscriber eq curr.subscriber) {
             curr.onError(new IllegalStateException("Duplicate subscribe"))
@@ -140,14 +139,17 @@ class SubmissionPublisher[T](
   def submit(item: T): Int =
     _offer(item, Long.MaxValue, null)
 
-  def offer(item: T, onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T]): Int =
+  def offer(
+      item: T,
+      onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T]
+  ): Int =
     _offer(item, 0L, onDrop)
 
   def offer(
       item: T,
       timeout: Long,
       unit: TimeUnit,
-      onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T],
+      onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T]
   ): Int =
     _offer(item, unit.toNanos(timeout), onDrop)
 
@@ -159,8 +161,7 @@ class SubmissionPublisher[T](
         ownerThread = null
       }
 
-      while curr != null
-      do {
+      while (curr != null) {
         val next = curr.next
         curr.next = null
         curr.onComplete()
@@ -178,8 +179,7 @@ class SubmissionPublisher[T](
         closedException = error
       }
 
-      while curr != null
-      do {
+      while (curr != null) {
         val next = curr.next
         curr.next = null
         curr.onError(error)
@@ -195,17 +195,15 @@ class SubmissionPublisher[T](
     closedException
 
   def hasSubscribers(): Boolean =
-    if closed.get()
-    then false
+    if (closed.get())
+      false
     else
       synchronized {
         var curr = clients
         boundary {
-          while curr != null
-          do {
+          while (curr != null) {
             val next = curr.next
-            if curr.isClosed()
-            then { // remove this node
+            if (curr.isClosed()) { // remove this node
               curr.next = null
               curr = next
               clients = next
@@ -218,8 +216,8 @@ class SubmissionPublisher[T](
       }
 
   def getNumberOfSubscribers(): Int =
-    if closed.get()
-    then 0
+    if (closed.get())
+      0
     else
       synchronized {
         cleanAndCount()
@@ -238,17 +236,16 @@ class SubmissionPublisher[T](
       var next: BufferedSubscription[T] = null
       var curr = clients
 
-      while curr != null
-      do {
+      while (curr != null) {
         next = curr.next
 
-        if curr.isClosed()
-        then
+        if (curr.isClosed()) {
           curr.next = null
-          if pred == null
-          then clients = next
-          else pred.next = next
-        else // append to list
+          if (pred == null)
+            clients = next
+          else
+            pred.next = next
+        } else // append to list
           subs.add(curr.subscriber)
 
         curr = next
@@ -259,24 +256,24 @@ class SubmissionPublisher[T](
 
   def isSubscribed(subscriber: Flow.Subscriber[? >: T]): Boolean = {
     requireNonNull(subscriber, "subscriber cannot be null")
-    if closed.get()
-    then false
+    if (closed.get())
+      false
     else {
       synchronized {
         var pred: BufferedSubscription[T] = null
         var next: BufferedSubscription[T] = null
         var curr = clients
 
-        boundary:
-          while curr != null
-          do {
+        boundary {
+          while (curr != null) {
             next = curr.next
 
             if (curr.isClosed()) {
               curr.next = null
-              if pred == null
-              then clients = next
-              else pred.next = next
+              if (pred == null)
+                clients = next
+              else
+                pred.next = next
             } // force fmt style
             else if (subscriber eq curr.subscriber)
               break(true)
@@ -286,6 +283,7 @@ class SubmissionPublisher[T](
             curr = next
           }
           false
+        }
       }
     }
   }
@@ -299,18 +297,17 @@ class SubmissionPublisher[T](
       var next: BufferedSubscription[T] = null
       var curr = clients
 
-      while curr != null
-      do {
+      while (curr != null) {
         val lag = curr.estimateLag()
         val demand = curr.demand.get()
         next = curr.next
 
         if (lag < 0) {
           curr.next = null
-
-          if pred == null
-          then clients = next
-          else pred.next = next
+          if (pred == null)
+            clients = next
+          else
+            pred.next = next
         } else {
           if ((demand - lag) < min)
             min = demand
@@ -322,9 +319,10 @@ class SubmissionPublisher[T](
       }
     }
 
-    if nonEmpty
-    then min
-    else 0
+    if (nonEmpty)
+      min
+    else
+      0
   }
 
   def estimateMaximumLag(): Long = {
@@ -340,9 +338,10 @@ class SubmissionPublisher[T](
 
         if (lag < 0) {
           curr.next = null
-          if pred == null
-          then clients = next
-          else pred.next = next
+          if (pred == null)
+            clients = next
+          else
+            pred.next = next
         } // force fmt style
         else {
           if (lag > max) max = lag
@@ -366,15 +365,14 @@ class SubmissionPublisher[T](
   // Private methods and implementation details
   //
 
-  /**
-   * Common implementation for all three forms of submit and offer.
+  /** Common implementation for all three forms of submit and offer.
    *
-   * Acts as submit if nanos == Long.MaxValue, else offer.
+   *  Acts as submit if nanos == Long.MaxValue, else offer.
    */
   private def _offer(
       item: T,
       timeoutNanos: Long,
-      onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T],
+      onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T]
   ): Int = {
     requireNonNull(item, "item cannot be null")
 
@@ -391,8 +389,8 @@ class SubmissionPublisher[T](
 
       var curr = clients
 
-      if curr == null
-      then complete.set(closed.get())
+      if (curr == null)
+        complete.set(closed.get())
       else {
         complete.set(false)
         val cleanMe = new AtomicBoolean(false)
@@ -400,16 +398,17 @@ class SubmissionPublisher[T](
         var retries: BufferedSubscription[T] = null
         var rtail: BufferedSubscription[T] = null
 
-        while {
+        while ({
           val next = curr.next
           val stat = curr.offer(item, unowned)
 
           if (stat == 0) {
             curr.nextRetry = null
 
-            if rtail == null
-            then retries = curr
-            else rtail.nextRetry = curr
+            if (rtail == null)
+              retries = curr
+            else
+              rtail.nextRetry = curr
 
             rtail = curr
           } // force fmt style
@@ -421,24 +420,24 @@ class SubmissionPublisher[T](
 
           curr = next
           curr != null
-        }
-        do ()
+        }) {}
 
         if (retries != null || cleanMe.get())
-          lag = retryOffer(item, timeoutNanos, onDrop, retries, lag, cleanMe.get())
+          lag =
+            retryOffer(item, timeoutNanos, onDrop, retries, lag, cleanMe.get())
       }
 
     }
 
-    if complete.get()
-    then throw new IllegalStateException("Closed")
-    else lag
+    if (complete.get())
+      throw new IllegalStateException("Closed")
+    else
+      lag
   }
 
-  /**
-   * Helps, (timed) waits for, and/or drops buffers on list
+  /** Helps, (timed) waits for, and/or drops buffers on list
    *
-   * returns lag or negative drops (for use in offer).
+   *  returns lag or negative drops (for use in offer).
    */
   private def retryOffer(
       item: T,
@@ -446,14 +445,13 @@ class SubmissionPublisher[T](
       onDrop: BiPredicate[Flow.Subscriber[? >: T], ? >: T],
       retries: BufferedSubscription[T],
       lag: Int,
-      cleanMe: Boolean,
+      cleanMe: Boolean
   ): Int = {
     var _lag = lag
     var _cleanMe = cleanMe
 
     var currRetry = retries
-    while currRetry != null
-    do {
+    while (currRetry != null) {
       val nextRetry = currRetry.nextRetry
       currRetry.nextRetry = null
 
@@ -461,11 +459,14 @@ class SubmissionPublisher[T](
         currRetry.awaitSpace(timeoutNanos)
 
       var stat = currRetry.retryOffer(item)
-      if (stat == 0 && onDrop != null && onDrop.test(currRetry.subscriber, item))
+      if (stat == 0 && onDrop != null && onDrop.test(
+            currRetry.subscriber,
+            item
+          ))
         stat = currRetry.retryOffer(item)
 
       if (stat == 0)
-        _lag = if lag >= 0 then -1 else lag - 1
+        _lag = if (lag >= 0) -1 else lag - 1
       else if (stat < 0)
         _cleanMe = true
       else if (lag >= 0 && stat > lag)
@@ -480,9 +481,8 @@ class SubmissionPublisher[T](
     _lag
   }
 
-  /**
-   * Returns current list count after removing closed subscribers. Call only while holding lock.
-   * Used mainly by retryOffer for cleanup.
+  /** Returns current list count after removing closed subscribers. Call only
+   *  while holding lock. Used mainly by retryOffer for cleanup.
    */
   private def cleanAndCount(): Int = {
     var count = 0
@@ -491,19 +491,20 @@ class SubmissionPublisher[T](
     var next: BufferedSubscription[T] = null
     var curr = clients
 
-    while curr != null
-    do {
+    while (curr != null) {
       next = curr.next
 
-      if curr.isClosed()
-      then
+      if (curr.isClosed()) {
         curr.next = null
-        if pred == null
-        then clients = next
-        else pred.next = next
-      else
+        if (pred == null)
+          clients = next
+        else
+          pred.next = next
+      } // force fmt style
+      else {
         pred = curr
         count += 1
+      }
 
       curr = next
     }
@@ -518,8 +519,8 @@ object SubmissionPublisher {
   /** The largest possible power of two array size. */
   final val BUFFER_CAPACITY_LIMIT: Int = 1 << 30
 
-  /**
-   * Initial buffer capacity used when maxBufferCapacity is greater. Must be a power of two.
+  /** Initial buffer capacity used when maxBufferCapacity is greater. Must be a
+   *  power of two.
    */
   final val INITIAL_CAPACITY: Int = 32
 
@@ -531,17 +532,18 @@ object SubmissionPublisher {
     n |= n >>> 8
     n |= n >>> 16
 
-    if n <= 0
-    then 2
-    else if n >= BUFFER_CAPACITY_LIMIT
-    then BUFFER_CAPACITY_LIMIT
-    else n + 1
+    if (n <= 0)
+      2
+    else if (n >= BUFFER_CAPACITY_LIMIT)
+      BUFFER_CAPACITY_LIMIT
+    else
+      n + 1
   }
 
   /** Subscriber for method consume */
   final class ConsumerSubscriber[T](
       status: CompletableFuture[Unit],
-      consumer: Consumer[? >: T],
+      consumer: Consumer[? >: T]
   ) extends Flow.Subscriber[T] {
     var subscription: Flow.Subscription = null
 
@@ -566,28 +568,28 @@ object SubmissionPublisher {
       }
   }
 
-  /**
-   * A task for consuming buffer items and signals, created and executed whenever they become
-   * available. A task consumes as many items/signals as possible before terminating, at which point
-   * another task is created when needed. The dual Runnable and ForkJoinTask declaration saves
-   * overhead when executed by ForkJoinPools, without impacting other kinds of Executors.
+  /** A task for consuming buffer items and signals, created and executed
+   *  whenever they become available. A task consumes as many items/signals as
+   *  possible before terminating, at which point another task is created when
+   *  needed. The dual Runnable and ForkJoinTask declaration saves overhead when
+   *  executed by ForkJoinPools, without impacting other kinds of Executors.
    */
-  final private[SubmissionPublisher] class ConsumerTask[T](
-      private[SubmissionPublisher] val consumer: BufferedSubscription[T],
+  private[SubmissionPublisher] final class ConsumerTask[T](
+      private[SubmissionPublisher] val consumer: BufferedSubscription[T]
   ) extends ForkJoinTask[Unit]
       with Runnable {
-    final override def getRawResult(): Unit =
+    override final def getRawResult(): Unit =
       ()
 
-    final override protected[concurrent] def setRawResult(value: Unit): Unit =
+    override protected[concurrent] final def setRawResult(value: Unit): Unit =
       ()
 
-    final override protected[concurrent] def exec(): Boolean = {
+    override protected[concurrent] final def exec(): Boolean = {
       consumer.consume()
       false
     }
 
-    final override def run(): Unit =
+    override final def run(): Unit =
       consumer.consume()
   }
 
@@ -609,11 +611,13 @@ object SubmissionPublisher {
 
   }
 
-  final private[concurrent] class BufferedSubscription[T] private[concurrent] (
+  private[concurrent] final class BufferedSubscription[T] private[concurrent] (
       private[concurrent] val subscriber: Flow.Subscriber[? >: T],
       private var executor: Executor,
       private val maxCapacity: Int,
-      private val handler: BiConsumer[? >: Flow.Subscriber[? >: T], ? >: Throwable],
+      private val handler: BiConsumer[? >: Flow.Subscriber[
+        ? >: T
+      ], ? >: Throwable]
   ) extends Flow.Subscription
       with ForkJoinPool.ManagedBlocker {
 
@@ -628,12 +632,15 @@ object SubmissionPublisher {
     private var timeout = 0L // > 0 if timed wait
     private val head = new AtomicInteger(0) // next position to take
     private val tail = new AtomicInteger(0) // next position to put
-    private var buffer = AtomicReferenceArray[T](maxCapacity) // buffer array
+    // buffer array
+    private var buffer =
+      new AtomicReferenceArray[T](maxCapacity)
 
     val demand = new AtomicLong(0L) // unfilled requests
     val waiting = new AtomicInteger(0) // nonzero if producer blocked
 
-    @volatile private var pendingError: Throwable = null // holds until onError issued
+    // holds until onError issued
+    @volatile private var pendingError: Throwable = null
     @volatile private var waiter: Thread = null // blocked producer thread
 
     // next node for main linked list
@@ -654,14 +661,12 @@ object SubmissionPublisher {
     // Utilities used by SubmissionPublisher
     //
 
-    /**
-     * Returns true if closed (consumer task may still be running).
+    /** Returns true if closed (consumer task may still be running).
      */
     def isClosed() =
       (ctl.get() & CtlFlag.CLOSED) != 0
 
-    /**
-     * Returns estimated number of buffered items, or negative if closed.
+    /** Returns estimated number of buffered items, or negative if closed.
      */
     def estimateLag(): Int = {
       val lag = tail.get() - head.get()
@@ -674,16 +679,15 @@ object SubmissionPublisher {
     // Methods for submitting items
     //
 
-    /**
-     * Tries to add item and start consumer task if necessary.
+    /** Tries to add item and start consumer task if necessary.
      *
-     * @return
-     *   negative if closed, 0 if saturated, else estimated lag
+     *  @return
+     *    negative if closed, 0 if saturated, else estimated lag
      */
     def offer(item: T, unowned: Boolean): Int = {
       val _tail = tail.get()
       val size = _tail + 1 - head.get()
-      val cap = if buffer == null then 0 else buffer.length()
+      val cap = if (buffer == null) 0 else buffer.length()
       val index = _tail & (cap - 1)
 
       var stat = 0
@@ -693,8 +697,10 @@ object SubmissionPublisher {
             growAndOffer(item, _tail)
           else if (size >= cap || unowned) // need volatile CAS
             buffer.compareAndExchange(index, null.asInstanceOf[T], item) != null
-          else
-            buffer.setRelease(index, item); true
+          else {
+            buffer.setRelease(index, item)
+            true
+          }
 
         if (added) {
           tail.getAndIncrement()
@@ -705,25 +711,22 @@ object SubmissionPublisher {
       startOnOffer(stat)
     }
 
-    /**
-     * Tries to create or expand buffer, then adds item if possible.
+    /** Tries to create or expand buffer, then adds item if possible.
      */
     private def growAndOffer(item: T, tail: Int): Boolean = {
       var cap = 0
-      var newCap = 0
+      var newCap: Int = 0
       var newBuffer: AtomicReferenceArray[T] = null
 
-      if (
-        (buffer != null)
-        && {
-          cap = buffer.length()
-          cap > 0
-        } // force fmt style
-        && {
-          newCap = buffer.length() << 1
-          newCap > 0
-        }
-      )
+      if ((buffer != null)
+          && {
+            cap = buffer.length()
+            cap > 0
+          } // force fmt style
+          && {
+            newCap = buffer.length() << 1
+            newCap > 0
+          })
         try
           newBuffer = new AtomicReferenceArray[T](newCap)
         catch {
@@ -742,8 +745,8 @@ object SubmissionPublisher {
           for (k <- mask to 0 by -1) {
             val x = buffer.getAndSet(_tail & mask, null.asInstanceOf[T])
 
-            if x == null
-            then break(()) // already consumed
+            if (x == null)
+              break(()) // already consumed
             else {
               _tail -= 1
               newBuffer.set(_tail & newMask, x)
@@ -758,48 +761,42 @@ object SubmissionPublisher {
       }
     }
 
-    /**
-     * Version of offer for retries (no resize or bias)
+    /** Version of offer for retries (no resize or bias)
      */
     def retryOffer(item: T): Int = {
       var stat = 0
       var cap = 0
 
-      if (
-        buffer != null
-        && {
-          cap = buffer.length()
-          cap > 0
-        }
-        && buffer.compareAndExchange(
-          (cap - 1) & tail.get(),
-          null.asInstanceOf[T],
-          item,
-        ) != null
-      )
+      if (buffer != null
+          && {
+            cap = buffer.length()
+            cap > 0
+          }
+          && buffer.compareAndExchange(
+            (cap - 1) & tail.get(),
+            null.asInstanceOf[T],
+            item
+          ) != null)
         stat = tail.incrementAndGet() - head.get()
 
       startOnOffer(stat);
     }
 
-    /**
-     * Tries to start consumer task after offer.
+    /** Tries to start consumer task after offer.
      *
-     * @return
-     *   negative if now closed, else argument
+     *  @return
+     *    negative if now closed, else argument
      */
     private def startOnOffer(stat: Int): Int = {
       var _ctl = ctl.get()
       var _stat = stat
 
       // start or keep alive if requests exist and not active
-      if (
-        (_ctl & (CtlFlag.REQS | CtlFlag.ACTIVE)) == CtlFlag.REQS
-        && {
-          _ctl = ctl.getAndSet(_ctl | CtlFlag.RUN | CtlFlag.ACTIVE)
-          (_ctl & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0
-        }
-      )
+      if ((_ctl & (CtlFlag.REQS | CtlFlag.ACTIVE)) == CtlFlag.REQS
+          && {
+            _ctl = ctl.getAndSet(_ctl | CtlFlag.RUN | CtlFlag.ACTIVE)
+            (_ctl & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0
+          })
         tryStart()
       else if ((_ctl & CtlFlag.CLOSED) != 0)
         _stat = -1
@@ -807,8 +804,7 @@ object SubmissionPublisher {
       _stat
     }
 
-    /**
-     * Tries to start consumer task. Sets error state on failure.
+    /** Tries to start consumer task. Sets error state on failure.
      */
     private def tryStart(): Unit =
       try {
@@ -825,21 +821,18 @@ object SubmissionPublisher {
     // Signals to consumer tasks
     //
 
-    /**
-     * Sets the given control bits, starting task if not running or closed.
+    /** Sets the given control bits, starting task if not running or closed.
      *
-     * @param bits
-     *   state bits, assumed to include RUN but not CLOSED
+     *  @param bits
+     *    state bits, assumed to include RUN but not CLOSED
      */
     def startOnSignal(bits: Int): Unit = {
       val _ctl = ctl.get()
-      if (
-        (_ctl & bits) != bits
-        && {
-          ctl.set(_ctl | bits)
-          (_ctl & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0
-        }
-      )
+      if ((_ctl & bits) != bits
+          && {
+            ctl.set(_ctl | bits)
+            (_ctl & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0
+          })
         tryStart()
     }
 
@@ -849,8 +842,8 @@ object SubmissionPublisher {
     def onComplete(): Unit =
       startOnSignal(CtlFlag.RUN | CtlFlag.ACTIVE | CtlFlag.COMPLETE)
 
-    /**
-     * Issues error signal, asynchronously if a task is running, else synchronously.
+    /** Issues error signal, asynchronously if a task is running, else
+     *  synchronously.
      */
     def onError(exc: Throwable): Unit = {
       val _ctl = ctl.get()
@@ -863,40 +856,41 @@ object SubmissionPublisher {
         if ((_ctl & CtlFlag.RUN) == 0)
           tryStart()
         else if (buffer != null)
-          (0 until buffer.length()).foreach(i => buffer.lazySet(i, null.asInstanceOf[T]))
+          (0 until buffer.length()).foreach(i =>
+            buffer.lazySet(i, null.asInstanceOf[T])
+          )
       }
     }
 
-    /**
-     * Causes consumer task to exit if active (without reporting onError unless there is already a
-     * pending error), and disables.
+    /** Causes consumer task to exit if active (without reporting onError unless
+     *  there is already a pending error), and disables.
      */
     override def cancel(): Unit =
       onError(null)
 
-    /**
-     * Adds to demand and possibly starts task.
+    /** Adds to demand and possibly starts task.
      */
     override def request(n: Long): Unit =
       if (n > 0L) {
-        while {
+        while ({
           val p = demand.get()
           val d = p + n // saturate
-          !demand.compareAndSet(p, if d < p then Long.MaxValue else d)
-        }
-        do ()
+          !demand.compareAndSet(p, if (d < p) Long.MaxValue else d)
+        }) {}
 
         startOnSignal(CtlFlag.RUN | CtlFlag.ACTIVE | CtlFlag.REQS)
       } // force fmt style
       else
-        onError(new IllegalArgumentException("non-positive subscription request"))
+        onError(
+          new IllegalArgumentException("non-positive subscription request")
+        )
 
     //
     // Consumer task actions
     //
 
-    /**
-     * Consumer loop, called from ConsumerTask, or indirectly when helping during submit.
+    /** Consumer loop, called from ConsumerTask, or indirectly when helping
+     *  during submit.
      */
     def consume(): Unit =
       if (subscriber != null) { // hoist checks else disabled
@@ -907,8 +901,7 @@ object SubmissionPublisher {
         var _tail = tail.get()
 
         boundary {
-          while true
-          do {
+          while (true) {
             val _ctl = ctl.get()
             var taken = 0
             var empty = false
@@ -917,24 +910,43 @@ object SubmissionPublisher {
               closeOnError(subscriber, null)
               break(())
             } // force fmt style
-            else if ({ taken = takeItems(subscriber, _demand, _head); taken > 0 }) {
+            else if ({
+              taken = takeItems(subscriber, _demand, _head); taken > 0
+            }) {
               _head += taken
               head.set(_head)
               _demand = demandSubtractAndGet(taken.toLong)
             } // force fmt style
-            else if ({ _demand = demand.get(); _demand == 0L } && ((_ctl & CtlFlag.REQS) != 0))
-              ctl.weakCompareAndSetPlain(_ctl, _ctl & ~CtlFlag.REQS): Unit // exhausted demand
+            else if ({
+                  _demand = demand.get(); _demand == 0L
+                } && ((_ctl & CtlFlag.REQS) != 0))
+              ctl.weakCompareAndSetPlain(
+                _ctl,
+                _ctl & ~CtlFlag.REQS
+              ): Unit // exhausted demand
             else if (_demand != 0L && (_ctl & CtlFlag.REQS) == 0)
-              ctl.weakCompareAndSetPlain(_ctl, _ctl | CtlFlag.REQS): Unit // new demand
-            else if ({ val _tail_old = _tail; _tail = tail.get(); _tail_old == _tail }) {
+              ctl.weakCompareAndSetPlain(
+                _ctl,
+                _ctl | CtlFlag.REQS
+              ): Unit // new demand
+            else if ({
+              val _tail_old = _tail; _tail = tail.get(); _tail_old == _tail
+            }) {
               // stability check
-              if ({ empty = _tail == _head; empty } && (_ctl & CtlFlag.COMPLETE) != 0) {
+              if ({
+                    empty = _tail == _head; empty
+                  } && (_ctl & CtlFlag.COMPLETE) != 0) {
                 closeOnComplete(subscriber) // end of stream
                 break(())
               } // force fmt style
               else if (empty || _demand == 0L) {
-                val bit = if (_ctl & CtlFlag.ACTIVE) != 0 then CtlFlag.ACTIVE else CtlFlag.RUN
-                if (ctl.weakCompareAndSetPlain(_ctl, _ctl & ~bit) && bit == CtlFlag.RUN)
+                val bit =
+                  if ((_ctl & CtlFlag.ACTIVE) != 0) CtlFlag.ACTIVE
+                  else CtlFlag.RUN
+                if (ctl.weakCompareAndSetPlain(
+                      _ctl,
+                      _ctl & ~bit
+                    ) && bit == CtlFlag.RUN)
                   break(())
               }
             }
@@ -943,34 +955,32 @@ object SubmissionPublisher {
         }
       }
 
-    /**
-     * Consumes some items until unavailable or bound or error.
+    /** Consumes some items until unavailable or bound or error.
      *
-     * @param sub
-     *   subscriber
-     * @param demand
-     *   current demand
-     * @param head
-     *   current head
-     * @return
-     *   number taken
+     *  @param sub
+     *    subscriber
+     *  @param demand
+     *    current demand
+     *  @param head
+     *    current head
+     *  @return
+     *    number taken
      */
-    def takeItems(sub: Flow.Subscriber[? >: T], demand: Long, head: Int): Int = {
+    def takeItems(
+        sub: Flow.Subscriber[? >: T],
+        demand: Long,
+        head: Int
+    ): Int = {
       var h = head
       var k = 0
       var cap = 0
 
-      if (
-        buffer != null
-        && { cap = buffer.length(); cap > 0 }
-      ) {
+      if (buffer != null
+          && { cap = buffer.length(); cap > 0 }) {
         val m = cap - 1
         val b = (m >>> 3) + 1 // min(1, cap/8)
 
-        val n =
-          if demand < b.toLong
-          then demand.toInt
-          else b
+        val n = if (demand < b.toLong) demand.toInt else b
 
         boundary {
           while (k < n) {
@@ -1002,29 +1012,29 @@ object SubmissionPublisher {
           false
       }
 
-    /**
-     * Processes exception in Subscriber.onNext.
+    /** Processes exception in Subscriber.onNext.
      */
     def handleOnNext(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit = {
-      try if (handler != null) handler.accept(sub, exc)
-      catch case ignore: Throwable => ()
+      try {
+        if (handler != null) handler.accept(sub, exc)
+      } catch {
+        case ignore: Throwable => ()
+      }
 
       closeOnError(sub, exc)
     }
 
-    /**
-     * Issues subscriber.onSubscribe if this is first signal.
+    /** Issues subscriber.onSubscribe if this is first signal.
      */
-    def subscribeOnOpen(sub: Flow.Subscriber[? >: T]): Unit =
+    def subscribeOnOpen(sub: Flow.Subscriber[? >: T]): Unit = {
       val _ctl = ctl.get()
-      if (
-        ((_ctl & CtlFlag.OPEN) == 0)
-        && {
-          ctl.set(_ctl | CtlFlag.OPEN)
-          (_ctl & CtlFlag.OPEN) == 0
-        }
-      )
+      if (((_ctl & CtlFlag.OPEN) == 0)
+          && {
+            ctl.set(_ctl | CtlFlag.OPEN)
+            (_ctl & CtlFlag.OPEN) == 0
+          })
         consumeSubscribe(sub)
+    }
 
     def consumeSubscribe(sub: Flow.Subscriber[? >: T]): Unit =
       try if (sub != null) sub.onSubscribe(this) // ignore if disabled
@@ -1033,8 +1043,7 @@ object SubmissionPublisher {
           closeOnError(sub, exc)
       }
 
-    /**
-     * Issues subscriber.onComplete unless already closed.
+    /** Issues subscriber.onComplete unless already closed.
      */
     def closeOnComplete(sub: Flow.Subscriber[? >: T]): Unit = {
       val _ctl = ctl.get()
@@ -1042,14 +1051,14 @@ object SubmissionPublisher {
       if ((_ctl & CtlFlag.CLOSED) == 0) consumeComplete(sub)
     }
 
-    def consumeComplete(sub: Flow.Subscriber[? >: T]): Unit =
-      try if (sub != null) sub.onComplete
+    def consumeComplete(sub: Flow.Subscriber[? >: T]): Unit = {
+      try if (sub != null) sub.onComplete()
       catch case ignore: Throwable => ()
+    }
 
-    /**
-     * Issues subscriber.onError, and unblocks producer if needed.
+    /** Issues subscriber.onError, and unblocks producer if needed.
      */
-    def closeOnError(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit =
+    def closeOnError(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit = {
       var _exc = exc
       val _ctl = ctl.get()
       ctl.set(_ctl | CtlFlag.ERROR | CtlFlag.CLOSED)
@@ -1061,15 +1070,16 @@ object SubmissionPublisher {
         signalWaiter()
         consumeError(sub, _exc)
       }
+    }
 
-    def consumeError(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit =
+    def consumeError(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit = {
       try if (exc != null && sub != null) sub.onError(exc)
       catch case ignore: Throwable => ()
+    }
 
     // Blocking support
 
-    /**
-     * Unblocks waiting producer.
+    /** Unblocks waiting producer.
      */
     def signalWaiter(): Unit = {
       var w: Thread = null
@@ -1077,22 +1087,20 @@ object SubmissionPublisher {
       if (waiter != null) LockSupport.unpark(w)
     }
 
-    /**
-     * Returns true if closed or space available. For ManagedBlocker.
+    /** Returns true if closed or space available. For ManagedBlocker.
      */
     def isReleasable(): Boolean = {
       var cap = 0
 
       (ctl.get() & CtlFlag.CLOSED) != 0 // closed
-      || (
-        buffer != null
+        || (
+          buffer != null
           && { cap = buffer.length(); cap > 0 }
           && buffer.getAcquire((cap - 1) & tail.get()) == null
-      )
+        )
     }
 
-    /**
-     * Helps or blocks until timeout, closed, or space available.
+    /** Helps or blocks until timeout, closed, or space available.
      */
     def awaitSpace(nanos: Long): Unit =
       if (!isReleasable()) {
@@ -1107,30 +1115,32 @@ object SubmissionPublisher {
           }
 
           if (timeout == BufferedSubscription.INTERRUPTED)
-            Thread.currentThread.interrupt()
+            Thread.currentThread().interrupt()
         }
       }
 
-    /**
-     * Blocks until closed, space available or timeout. For ManagedBlocker.
+    /** Blocks until closed, space available or timeout. For ManagedBlocker.
      */
     def block(): Boolean = {
       var nanos = timeout
       val timed = timeout < Long.MaxValue
-      val deadline = if timed then System.nanoTime() + nanos else 0L
+      val deadline = if (timed) System.nanoTime() + nanos else 0L
 
       boundary {
-        while (!isReleasable())
+        while (!isReleasable()) {
           if (Thread.interrupted()) {
             timeout = BufferedSubscription.INTERRUPTED
             if (timed) break(())
           } // force fmt style
-          else if (timed && { nanos = deadline - System.nanoTime(); nanos <= 0L })
+          else if (timed && {
+                nanos = deadline - System.nanoTime(); nanos <= 0L
+              })
             break(())
           else if (waiter == null) waiter = Thread.currentThread()
           else if (waiting eq 0) waiting.set(1)
           else if (timed) LockSupport.parkNanos(this, nanos)
           else LockSupport.park(this)
+        }
         ()
       }
 
