@@ -9,6 +9,7 @@ import java.util.{
   Map as JMap,
   Objects,
 }
+import snhttp.jdk.net.InMemoryCookieStore
 
 /**
  * CookieManager provides a concrete implementation of CookieHandler, which separates the storage of
