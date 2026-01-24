@@ -28,7 +28,7 @@ import scala.util.boundary.break
 // @since JDK 9
 class SubmissionPublisher[T](
     private val executor: Executor,
-    private val _maxBufferCapacity: Int, // will be rounded to power of two
+    private val maxBufferCapacity: Int, // will be rounded to power of two
     private val handler: BiConsumer[? >: Flow.Subscriber[
       ? >: T
     ], ? >: Throwable]
@@ -55,10 +55,9 @@ class SubmissionPublisher[T](
     )
 
   requireNonNull(executor, "executor cannot be null")
-  require(_maxBufferCapacity > 0, "maxBufferCapacity must be positive")
+  require(maxBufferCapacity > 0, "maxBufferCapacity must be positive")
 
-  val realMaxBufferCapacity =
-    SubmissionPublisher.roundToPowerOfTwo(_maxBufferCapacity)
+  val maxCap = SubmissionPublisher.roundToPowerOfTwo(maxBufferCapacity)
 
   /*
    * Clients (BufferedSubscriptions) are maintained in a linked list (via their
@@ -74,30 +73,31 @@ class SubmissionPublisher[T](
   @volatile private var clients: BufferedSubscription[T] = null
 
   /** Run status, updated only within locks */
-  @volatile var closed = false
+  @volatile private var closed = false
 
   /** If non-null, the exception in closeExceptionally */
-  @volatile var closedException: Throwable = null
+  @volatile private var closedException: Throwable = null
 
   /** Set true on first call to subscribe, to initialize possible owner */
-  private val subscribed = new AtomicBoolean(false)
+  @volatile private var subscribed = false
 
   /** The first caller thread to subscribe, or null if thread ever changed */
   @volatile private var ownerThread: Thread = null
 
   override def subscribe(subscriber: Flow.Subscriber[? >: T]): Unit = {
     requireNonNull(subscriber, "subscriber cannot be null")
+    val initCap = if (maxCap < INITIAL_CAPACITY) maxCap else INITIAL_CAPACITY
     val subscription = new BufferedSubscription[T](
       subscriber,
       executor,
-      if (realMaxBufferCapacity < INITIAL_CAPACITY) realMaxBufferCapacity
-      else realMaxBufferCapacity,
-      realMaxBufferCapacity,
+      initCap,
+      maxCap,
       handler
     )
 
     synchronized {
-      if (!subscribed.compareAndExchange(false, true)) {
+      if (!subscribed) {
+        subscribed = true
         ownerThread = Thread.currentThread()
       }
 
@@ -128,11 +128,11 @@ class SubmissionPublisher[T](
               clients = next
             else
               pred.next = next
-          } // force fmt style
+          } // force line break (fmt)
           else if (subscriber.equals(curr.subscriber)) {
             curr.onError(new IllegalStateException("Duplicate subscribe"))
             break(())
-          } // force fmt style
+          } // force line break (fmt)
           else {
             pred = curr
           }
@@ -195,8 +195,8 @@ class SubmissionPublisher[T](
         if (!closed) { // don't clobber racing close
           clients = null
           ownerThread = null
-          closed = true // set both closed and closedException
-          closedException = error // synchronously
+          closed = true // set both closed
+          closedException = error // and closedException synchronously
         }
       }
 
@@ -248,7 +248,7 @@ class SubmissionPublisher[T](
     executor
 
   def getMaxBufferCapacity(): Int =
-    realMaxBufferCapacity
+    maxCap
 
   def getSubscribers(): JList[Flow.Subscriber[? >: T]] = {
     val subs = new ArrayList[Flow.Subscriber[? >: T]]
@@ -297,7 +297,7 @@ class SubmissionPublisher[T](
                 clients = next
               else
                 pred.next = next
-            } // force fmt style
+            } // force line break (fmt)
             else if (subscriber.equals(curr.subscriber))
               break(true)
             else
@@ -366,7 +366,7 @@ class SubmissionPublisher[T](
             clients = next
           else
             pred.next = next
-        } // force fmt style
+        } // force line break (fmt)
         else {
           if (lag > max) max = lag
           pred = curr
@@ -434,10 +434,10 @@ class SubmissionPublisher[T](
               rtail.nextRetry = curr
 
             rtail = curr
-          } // force fmt style
+          } // force line break (fmt)
           else if (stat < 0) { // closed
             cleanMe.set(true) // remove later
-          } // force fmt style
+          } // force line break (fmt)
           else if (stat > lag)
             lag = stat
 
@@ -523,7 +523,7 @@ class SubmissionPublisher[T](
           clients = next
         else
           pred.next = next
-      } // force fmt style
+      } // force line break (fmt)
       else {
         pred = curr
         count += 1
@@ -769,9 +769,9 @@ object SubmissionPublisher {
           && {
             cap = buffer.length()
             cap > 0
-          } // force fmt style
+          } // force line break (fmt)
           && {
-            newCap = buffer.length() << 1
+            newCap = cap << 1
             newCap > 0
           })
         try {
@@ -918,7 +918,7 @@ object SubmissionPublisher {
         }) {}
 
         startOnSignal(CtlFlag.RUN | CtlFlag.ACTIVE | CtlFlag.REQS)
-      } // force fmt style
+      } // force line break (fmt)
       else
         onError(
           new IllegalArgumentException("non-positive subscription request")
@@ -948,7 +948,7 @@ object SubmissionPublisher {
             if ((_ctl & CtlFlag.ERROR) != 0) {
               closeOnError(subscriber, null)
               break(())
-            } // force fmt style
+            } // force line break (fmt)
             else if ({
               taken = takeItems(subscriber, _demand, _head)
               taken > 0
@@ -956,7 +956,7 @@ object SubmissionPublisher {
               _head += taken
               head.set(_head)
               _demand = demandSubtractAndGet(taken.toLong)
-            } // force fmt style
+            } // force line break (fmt)
             else if ({
                   _demand = demand.get(); _demand == 0L
                 } && ((_ctl & CtlFlag.REQS) != 0)) // exhausted demand
@@ -972,7 +972,7 @@ object SubmissionPublisher {
                   } && (_ctl & CtlFlag.COMPLETE) != 0) {
                 closeOnComplete(subscriber) // end of stream
                 break(())
-              } // force fmt style
+              } // force line break (fmt)
               else if (empty || _demand == 0L) {
                 val bit =
                   if ((_ctl & CtlFlag.ACTIVE) != 0) CtlFlag.ACTIVE
@@ -1042,7 +1042,7 @@ object SubmissionPublisher {
         if (sub != null)
           sub.onNext(x)
         true
-      } // force fmt style
+      } // force line break (fmt)
       catch {
         case exc: Throwable =>
           handleOnNext(sub, exc)
@@ -1165,7 +1165,7 @@ object SubmissionPublisher {
           if (Thread.interrupted()) {
             timeout = BufferedSubscription.INTERRUPTED
             if (timed) break(())
-          } // force fmt style
+          } // force line break (fmt)
           else if (timed && {
                 nanos = deadline - System.nanoTime(); nanos <= 0L
               })
