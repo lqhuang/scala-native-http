@@ -765,8 +765,7 @@ object SubmissionPublisher {
       var newCap: Int = 0
       var newBuffer: AtomicReferenceArray[AnyRef] = null
 
-      if ((buffer != null)
-          && {
+      if ({
             cap = buffer.length()
             cap > 0
           } // force line break (fmt)
@@ -813,8 +812,7 @@ object SubmissionPublisher {
       var stat = 0
       var cap = 0
 
-      if (buffer != null
-          && {
+      if ({
             cap = buffer.length()
             cap > 0
           }
@@ -1039,8 +1037,7 @@ object SubmissionPublisher {
 
     def consumeNext(sub: Flow.Subscriber[? >: T], x: T): Boolean =
       try {
-        if (sub != null)
-          sub.onNext(x)
+        sub.onNext(x)
         true
       } // force line break (fmt)
       catch {
@@ -1070,7 +1067,7 @@ object SubmissionPublisher {
 
     def consumeSubscribe(sub: Flow.Subscriber[? >: T]): Unit = {
       try {
-        if (sub != null) sub.onSubscribe(this) // ignore if disabled
+        sub.onSubscribe(this) // ignore if disabled
       } catch {
         case exc: Throwable =>
           closeOnError(sub, exc)
@@ -1085,7 +1082,7 @@ object SubmissionPublisher {
 
     def consumeComplete(sub: Flow.Subscriber[? >: T]): Unit =
       try {
-        if (sub != null) sub.onComplete()
+        sub.onComplete()
       } catch {
         case ignore: Throwable => ()
       }
@@ -1108,7 +1105,7 @@ object SubmissionPublisher {
 
     def consumeError(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit =
       try {
-        if (exc != null && sub != null) sub.onError(exc)
+        if (exc != null) sub.onError(exc)
       } catch {
         case ignore: Throwable => ()
       }
@@ -1129,11 +1126,8 @@ object SubmissionPublisher {
       var cap = 0
 
       (ctl.get() & CtlFlag.CLOSED) != 0 // closed
-        || (
-          buffer != null
-          && { cap = buffer.length(); cap > 0 }
-          && buffer.getAcquire((cap - 1) & tail.get()) == null
-        )
+        || ({ cap = buffer.length(); cap > 0 }
+        && buffer.getAcquire((cap - 1) & tail.get()) == null)
     }
 
     /** Helps or blocks until timeout, closed, or space available. */
