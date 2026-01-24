@@ -37,41 +37,42 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
     @volatile var lastError: Throwable = null
 
     override def onSubscribe(s: Flow.Subscription): Unit = {
-      threadAssertTrue(sn == null)
+      assert(sn == null)
       sn = s
-      notifyAll()
+      // notifyAll()
       if (throwOnCall) throw new SPException()
       if (request) sn.request(1L)
     }
 
     override def onNext(t: Integer): Unit = {
       nexts += 1
-      notifyAll()
+      // notifyAll()
       val current = t.intValue()
-      threadAssertTrue(current >= last)
+      assert(current >= last)
       last = current
       if (request) sn.request(1L)
       if (throwOnCall) throw new SPException()
     }
 
     override def onError(t: Throwable): Unit = {
-      threadAssertTrue(completes == 0)
-      threadAssertTrue(errors == 0)
+      assert(completes == 0)
+      assert(errors == 0)
       lastError = t
       errors += 1
-      notifyAll()
+      // notifyAll()
     }
 
     override def onComplete(): Unit = {
-      threadAssertTrue(completes == 0)
+      assert(completes == 0)
       completes += 1
-      notifyAll()
+      // notifyAll()
     }
 
     def awaitSubscribe(): Unit =
       boundary {
         while (sn == null)
-          try wait()
+          try
+            wait(1L)
           catch {
             case ex: Exception =>
               threadUnexpectedException(ex)
@@ -82,7 +83,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
     def awaitNext(n: Int): Unit =
       boundary {
         while (nexts < n)
-          try wait()
+          try
+            wait(1L)
           catch {
             case ex: Exception =>
               threadUnexpectedException(ex)
@@ -93,7 +95,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
     def awaitComplete(): Unit =
       boundary {
         while (completes == 0 && errors == 0)
-          try wait()
+          try
+            wait(1L)
           catch {
             case ex: Exception =>
               threadUnexpectedException(ex)
@@ -104,7 +107,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
     def awaitError(): Unit =
       boundary {
         while (errors == 0)
-          try wait()
+          try
+            wait(1L)
           catch {
             case ex: Exception =>
               threadUnexpectedException(ex)
@@ -137,7 +141,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
   def checkInitialState(p: SubmissionPublisher[_]): Unit = {
     assert(p.hasSubscribers() == false)
     assert(0 == p.getNumberOfSubscribers())
-    assert(p.getSubscribers.isEmpty() == true)
+    assert(p.getSubscribers().isEmpty() == true)
     assert(p.isClosed() == false)
     assert(p.getClosedException() == null)
     val n = p.getMaxBufferCapacity()
@@ -148,7 +152,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
     assert(0 == p.estimateMaximumLag())
   }
 
-  def tests = Tests {
+  def tests = Tests:
 
     /**
      * A default-constructed SubmissionPublisher has no subscribers, is not closed, has default
@@ -251,7 +255,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       p.subscribe(s)
       assert(p.hasSubscribers() == true)
       assert(1 == p.getNumberOfSubscribers())
-      assert(p.getSubscribers.contains(s) == true)
+      assert(p.getSubscribers().contains(s) == true)
       assert(p.isSubscribed(s) == true)
       s.awaitSubscribe()
       assert(s.sn != null)
@@ -262,8 +266,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       p.subscribe(s2)
       assert(p.hasSubscribers() == true)
       assert(2 == p.getNumberOfSubscribers())
-      assert(p.getSubscribers.contains(s) == true)
-      assert(p.getSubscribers.contains(s2) == true)
+      assert(p.getSubscribers().contains(s) == true)
+      assert(p.getSubscribers().contains(s2) == true)
       assert(p.isSubscribed(s) == true)
       assert(p.isSubscribed(s2) == true)
       s2.awaitSubscribe()
@@ -314,7 +318,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       p.subscribe(s)
       assert(p.hasSubscribers() == true)
       assert(1 == p.getNumberOfSubscribers())
-      assert(p.getSubscribers.contains(s) == true)
+      assert(p.getSubscribers().contains(s) == true)
       assert(p.isSubscribed(s) == true)
       s.awaitSubscribe()
       assert(s.sn != null)
@@ -415,9 +419,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       assert(p.isSubscribed(s1) == false)
     }
 
-    /**
-     * Throwing an exception in onNext causes onError
-     */
+    /** Throwing an exception in onNext causes onError */
     test("ThrowOnNext") {
       val p = basicPublisher()
       val s1 = new TestSubscriber()
@@ -463,9 +465,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       assert(1 == calls.get())
     }
 
-    /**
-     * onNext items are issued in the same order to each subscriber
-     */
+    /** onNext items are issued in the same order to each subscriber */
     test("Order") {
       val p = basicPublisher()
       val s1 = new TestSubscriber()
@@ -483,9 +483,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       assert(1 == s1.completes)
     }
 
-    /**
-     * onNext is issued only if requested
-     */
+    /** onNext is issued only if requested */
     test("Request1") {
       val p = basicPublisher()
       val s1 = new TestSubscriber()
@@ -510,9 +508,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       assert(1 == s1.completes)
     }
 
-    /**
-     * onNext is not issued when requests become zero
-     */
+    /** onNext is not issued when requests become zero */
     test("Request2") {
       val p = basicPublisher()
       val s1 = new TestSubscriber()
@@ -532,9 +528,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       assert(1 == s1.nexts)
     }
 
-    /**
-     * Non-positive request causes error
-     */
+    /** Non-positive request causes error */
     test("Request3") {
       val p = basicPublisher()
       val s1 = new TestSubscriber()
@@ -989,4 +983,3 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
         p.submit(i)
       assert(count.get() < n)
     }
-  }
