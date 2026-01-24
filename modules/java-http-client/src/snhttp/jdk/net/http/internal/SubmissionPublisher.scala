@@ -312,8 +312,9 @@ class SubmissionPublisher[T](
           else
             pred.next = next
         } else {
-          if ((demand - lag) < min)
-            min = demand
+          val _diff = demand - lag
+          if (_diff < min)
+            min = _diff
           nonEmpty = true
           pred = curr
         }
@@ -634,14 +635,17 @@ object SubmissionPublisher {
     private var timeout = 0L // > 0 if timed wait
     private val head = new AtomicInteger(0) // next position to take
     private val tail = new AtomicInteger(0) // next position to put
+
     // buffer array
     private var buffer = new AtomicReferenceArray[AnyRef](maxCapacity)
 
-    val demand = new AtomicLong(0L) // unfilled requests
-    val waiting = new AtomicInteger(0) // nonzero if producer blocked
+    // unfilled requests
+    val demand = new AtomicLong(0L)
 
     // holds until onError issued
     @volatile private var pendingError: Throwable = null
+
+    @volatile private var waiting: Int = 0 // nonzero if producer blocked
     @volatile private var waiter: Thread = null // blocked producer thread
 
     // next node for main linked list
@@ -695,11 +699,11 @@ object SubmissionPublisher {
           if (size >= cap && cap < maxCapacity) // resize
             growAndOffer(item, _tail)
           else if (size >= cap || unowned) // need volatile CAS
-            buffer.compareAndExchange(
+            buffer.compareAndSet(
               index,
               null,
               item.asInstanceOf[AnyRef]
-            ) != null
+            )
           else {
             buffer.setRelease(index, item.asInstanceOf[AnyRef])
             true
@@ -740,8 +744,8 @@ object SubmissionPublisher {
       else { // take and move items
         val mask = cap - 1
         val newMask = newCap - 1
+        newBuffer.set(tail & newMask, item.asInstanceOf[AnyRef])
         var _tail = tail - 1
-        newBuffer.set(_tail & newMask, item.asInstanceOf[AnyRef])
 
         boundary {
           for (k <- mask to 0 by -1) {
@@ -750,8 +754,8 @@ object SubmissionPublisher {
             if (x == null)
               break(()) // already consumed
             else {
-              _tail -= 1
               newBuffer.set(_tail & newMask, x)
+              _tail -= 1
             }
           }
           ()
@@ -773,11 +777,11 @@ object SubmissionPublisher {
             cap = buffer.length()
             cap > 0
           }
-          && buffer.compareAndExchange(
+          && buffer.compareAndSet(
             (cap - 1) & tail.get(),
             null,
             item.asInstanceOf[AnyRef]
-          ) != null)
+          ))
         stat = tail.incrementAndGet() - head.get()
 
       startOnOffer(stat);
@@ -794,10 +798,9 @@ object SubmissionPublisher {
 
       // start or keep alive if requests exist and not active
       if ((_ctl & (CtlFlag.REQS | CtlFlag.ACTIVE)) == CtlFlag.REQS
-          && {
-            ctl.set(_ctl | CtlFlag.RUN | CtlFlag.ACTIVE)
-            (_ctl & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0
-          })
+          && (ctl.getAndSet(
+            _ctl | CtlFlag.RUN | CtlFlag.ACTIVE
+          ) & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0)
         tryStart()
       else if ((_ctl & CtlFlag.CLOSED) != 0)
         _stat = -1
@@ -813,7 +816,7 @@ object SubmissionPublisher {
           executor.execute(task)
       } catch {
         case exc: (RuntimeException | Error) =>
-          ctl.set(ctl.get() | CtlFlag.ERROR | CtlFlag.CLOSED)
+          ctl.getAndSet(ctl.get() | CtlFlag.ERROR | CtlFlag.CLOSED)
           throw exc
       }
 
@@ -828,11 +831,8 @@ object SubmissionPublisher {
      */
     def startOnSignal(bits: Int): Unit = {
       val _ctl = ctl.get()
-      if ((_ctl & bits) != bits
-          && {
-            ctl.set(_ctl | bits)
-            (_ctl & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0
-          })
+      if ((_ctl & bits) != bits &&
+          (ctl.getAndSet(_ctl | bits) & (CtlFlag.RUN | CtlFlag.CLOSED)) == 0)
         tryStart()
     }
 
@@ -846,12 +846,12 @@ object SubmissionPublisher {
      *  synchronously.
      */
     def onError(exc: Throwable): Unit = {
-      val _ctl = ctl.get()
 
       if (exc != null)
         pendingError = exc // races are OK
 
-      ctl.set(_ctl | CtlFlag.ERROR | CtlFlag.RUN | CtlFlag.ACTIVE)
+      val _ctl =
+        ctl.getAndUpdate(x => x | CtlFlag.ERROR | CtlFlag.RUN | CtlFlag.ACTIVE)
       if ((_ctl & CtlFlag.CLOSED) == 0) {
         if ((_ctl & CtlFlag.RUN) == 0)
           tryStart()
@@ -1021,8 +1021,9 @@ object SubmissionPublisher {
     /** Issues subscriber.onSubscribe if this is first signal. */
     def subscribeOnOpen(sub: Flow.Subscriber[? >: T]): Unit = {
       val _ctl = ctl.get()
-      if ((_ctl & CtlFlag.OPEN) == 0) {
-        ctl.set(_ctl | CtlFlag.OPEN)
+      if ((_ctl & CtlFlag.OPEN) == 0
+          &&
+          (ctl.getAndSet(_ctl | CtlFlag.OPEN) & CtlFlag.OPEN) == 0) {
         consumeSubscribe(sub)
       }
     }
@@ -1038,9 +1039,7 @@ object SubmissionPublisher {
 
     /** Issues subscriber.onComplete unless already closed. */
     def closeOnComplete(sub: Flow.Subscriber[? >: T]): Unit = {
-      val _ctl = ctl.get()
-      ctl.set(_ctl | CtlFlag.CLOSED)
-      if ((_ctl & CtlFlag.CLOSED) == 0)
+      if ((ctl.getAndUpdate(c => c | CtlFlag.CLOSED) & CtlFlag.CLOSED) == 0)
         consumeComplete(sub)
     }
 
@@ -1054,9 +1053,10 @@ object SubmissionPublisher {
     /** Issues subscriber.onError, and unblocks producer if needed. */
     def closeOnError(sub: Flow.Subscriber[? >: T], exc: Throwable): Unit = {
       var _exc = exc
-      val _ctl = ctl.get()
-      ctl.set(_ctl | CtlFlag.ERROR | CtlFlag.CLOSED)
-      if ((_ctl & CtlFlag.CLOSED) == 0) {
+      if ((ctl.getAndUpdate(c =>
+            c | CtlFlag.ERROR | CtlFlag.CLOSED
+          ) & CtlFlag.CLOSED)
+            == 0) {
         if (exc == null)
           _exc = pendingError
         pendingError = null // detach
@@ -1080,7 +1080,7 @@ object SubmissionPublisher {
     /** Unblocks waiting producer. */
     def signalWaiter(): Unit = {
       val w: Thread = waiter
-      waiting.set(0)
+      waiting = 0
       if (w != null) LockSupport.unpark(w)
     }
 
@@ -1131,7 +1131,7 @@ object SubmissionPublisher {
               })
             break(())
           else if (waiter == null) waiter = Thread.currentThread()
-          else if (waiting == 0) waiting.set(1)
+          else if (waiting == 0) waiting = 1
           else if (timed) LockSupport.parkNanos(this, nanos)
           else LockSupport.park(this)
         }
@@ -1139,7 +1139,7 @@ object SubmissionPublisher {
       }
 
       waiter = null
-      waiting.set(0)
+      waiting = 0
       true
     }
 
