@@ -36,17 +36,17 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
     @volatile var request = true
     @volatile var lastError: Throwable = null
 
-    override def onSubscribe(s: Flow.Subscription): Unit = {
+    override def onSubscribe(s: Flow.Subscription): Unit = synchronized {
       assert(sn == null)
       sn = s
-      // notifyAll()
+      notifyAll()
       if (throwOnCall) throw new SPException()
       if (request) sn.request(1L)
     }
 
-    override def onNext(t: Integer): Unit = {
+    override def onNext(t: Integer): Unit = synchronized {
       nexts += 1
-      // notifyAll()
+      notifyAll()
       val current = t.intValue()
       assert(current >= last)
       last = current
@@ -54,65 +54,73 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       if (throwOnCall) throw new SPException()
     }
 
-    override def onError(t: Throwable): Unit = {
+    override def onError(t: Throwable): Unit = synchronized {
       assert(completes == 0)
       assert(errors == 0)
       lastError = t
       errors += 1
-      // notifyAll()
+      notifyAll()
     }
 
-    override def onComplete(): Unit = {
+    override def onComplete(): Unit = synchronized {
       assert(completes == 0)
       completes += 1
-      // notifyAll()
+      notifyAll()
     }
 
     def awaitSubscribe(): Unit =
       boundary {
         while (sn == null)
-          try
-            wait(1L)
-          catch {
-            case ex: Exception =>
-              threadUnexpectedException(ex)
-              break(())
+          synchronized {
+            try
+              wait(1L)
+            catch {
+              case ex: Exception =>
+                threadUnexpectedException(ex)
+                break(())
+            }
           }
       }
 
     def awaitNext(n: Int): Unit =
       boundary {
         while (nexts < n)
-          try
-            wait(1L)
-          catch {
-            case ex: Exception =>
-              threadUnexpectedException(ex)
-              break(())
+          synchronized {
+            try
+              wait(1L)
+            catch {
+              case ex: Exception =>
+                threadUnexpectedException(ex)
+                break(())
+            }
           }
       }
 
     def awaitComplete(): Unit =
       boundary {
         while (completes == 0 && errors == 0)
-          try
-            wait(1L)
-          catch {
-            case ex: Exception =>
-              threadUnexpectedException(ex)
-              break(())
+          synchronized {
+            try
+              wait(1L)
+            catch {
+              case ex: Exception =>
+                threadUnexpectedException(ex)
+                break(())
+            }
           }
       }
 
     def awaitError(): Unit =
       boundary {
         while (errors == 0)
-          try
-            wait(1L)
-          catch {
-            case ex: Exception =>
-              threadUnexpectedException(ex)
-              break(())
+          synchronized {
+            try
+              wait(1L)
+            catch {
+              case ex: Exception =>
+                threadUnexpectedException(ex)
+                break(())
+            }
           }
       }
   }
