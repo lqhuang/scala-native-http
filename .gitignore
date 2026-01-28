@@ -9,3 +9,4 @@ out/
 .mill/
 out/
 .scala-build
+.DS_Store
