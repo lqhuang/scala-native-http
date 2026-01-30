@@ -121,11 +121,10 @@ class InMemoryCookieStore extends CookieStore:
 
   /** Remove all expired cookies from the store. */
   private def removeExpired(): Unit =
-    val currentTime = System.currentTimeMillis()
     val uriIt = uriIndex.values().iterator()
     while uriIt.hasNext do
       val cookies = uriIt.next()
-      cookies.removeIf(c => c.hasExpired(currentTime)): Unit
+      cookies.removeIf(c => c.hasExpired()): Unit
 
   /**
    * Get an effective URI for storing a cookie. Normalizes the URI to just scheme + host.
