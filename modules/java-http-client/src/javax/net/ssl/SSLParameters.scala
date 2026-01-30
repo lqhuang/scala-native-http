@@ -1,6 +1,5 @@
 package javax.net.ssl
 
-import java.security.AlgorithmConstraints
 import java.util.List as JList
 import java.util.{Collection, Collections}
 import java.util.Objects.requireNonNull
@@ -48,7 +47,8 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
 
   // Endpoint identification algorithm (e.g., HTTPS)
   private var _identificationAlgorithm: String = null
-  private var _algorithmConstraints: AlgorithmConstraints = null
+  // NOTE: java.security.AlgorithmConstraints is not available in Scala Native
+  // private var _algorithmConstraints: AlgorithmConstraints = null
 
   private var _enableRetransmissions: Boolean = true
   private var _maximumPacketSize: Int = 0
@@ -111,12 +111,13 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
     _needClientAuth = needClientAuth
     _wantClientAuth = false
 
-  def getAlgorithmConstraints(): AlgorithmConstraints =
-    _algorithmConstraints
+  // NOTE: java.security.AlgorithmConstraints is not available in Scala Native
+  // def getAlgorithmConstraints(): AlgorithmConstraints =
+  //   _algorithmConstraints
 
-  def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit =
-    requireNonNull(constraints)
-    _algorithmConstraints = constraints
+  // def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit =
+  //   requireNonNull(constraints)
+  //   _algorithmConstraints = constraints
 
   def getEndpointIdentificationAlgorithm(): String =
     _identificationAlgorithm
