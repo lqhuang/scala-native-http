@@ -65,7 +65,7 @@ type CurlRecvBuffer = CStruct3[
  *   - For HTTP/1.1, multiple connections may be created
  *   - For HTTP/2, a connection corresponds to a multiplexed connection.
  */
-final private[http] class HttpConnection[T](
+private[http] final class HttpConnection[T](
     request: HttpRequest,
     responseBodyHandler: BodyHandler[T],
     client: HttpClientImpl,

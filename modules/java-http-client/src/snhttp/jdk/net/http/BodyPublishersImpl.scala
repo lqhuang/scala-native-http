@@ -18,13 +18,26 @@ import _root_.snhttp.jdk.net.http.internal.DelegatePublisher
 
 type BufferSubscriber = Subscriber[? >: ByteBuffer]
 
+private class OnErrorPublisher[T](error: Throwable) extends Publisher[T]:
+
+  override def subscribe(subscriber: Subscriber[? >: T]): Unit =
+    subscriber.onSubscribe(new Subscription {
+      override def request(n: Long): Unit = ()
+      override def cancel(): Unit = ()
+    })
+    subscriber.onError(error)
+
+end OnErrorPublisher
+
 class NoBodyPublisher() extends BodyPublisher:
 
   val delegate: Publisher[ByteBuffer] = DelegatePublisher(Seq(ByteBuffer.allocate(0)))
 
-  def contentLength() = 0
+  def contentLength() =
+    0
 
-  def subscribe(subscriber: BufferSubscriber) = delegate.subscribe(subscriber)
+  def subscribe(subscriber: BufferSubscriber) =
+    delegate.subscribe(subscriber)
 
 end NoBodyPublisher
 
@@ -97,7 +110,8 @@ end StringPublisher
 
 class ByteArraysPublisher(private val iter: Iterable[Array[Byte]]) extends BodyPublisher:
 
-  override def contentLength(): Long = -1
+  override def contentLength(): Long =
+    -1
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
     val delegate = DelegatePublisher(iter.map(ByteBuffer.wrap))
@@ -110,7 +124,8 @@ class InputStreamPublisher(
     bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
 ) extends BodyPublisher:
 
-  override def contentLength(): Long = -1
+  override def contentLength(): Long =
+    -1
 
   override def subscribe(subscriber: BufferSubscriber): Unit = {
     val is = supplier.get()
@@ -151,8 +166,8 @@ class FilePublisher(
   override def subscribe(subscriber: BufferSubscriber): Unit = {
     val publisher =
       if file.isFile()
-      then new InputStreamPublisher(() => Files.newInputStream(path))
-      else DelegatePublisher[ByteBuffer](new FileNotFoundException(s"File not found: $path"))
+      then InputStreamPublisher(() => Files.newInputStream(path))
+      else OnErrorPublisher[ByteBuffer](new FileNotFoundException(s"File not found: $path"))
     publisher.subscribe(subscriber)
   }
 
