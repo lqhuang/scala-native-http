@@ -48,25 +48,9 @@ abstract class CookieHandler:
   def put(uri: URI, responseHeaders: JMap[String, JList[String]]): Unit
 
 object CookieHandler:
-  @volatile private var defaultHandler: CookieHandler | Null = null
+  @volatile private var defaultHandler: CookieHandler = null
 
-  /**
-   * Gets the system-wide cookie handler.
-   *
-   * @return
-   *   the system-wide cookie handler; A null return means there is no system-wide cookie handler
-   *   currently set.
-   */
-  def getDefault(): CookieHandler | Null = defaultHandler
+  def getDefault(): CookieHandler = defaultHandler
 
-  /**
-   * Sets (or unsets) the system-wide cookie handler.
-   *
-   * Note: non-standard CookieHandler implementations may not work correctly with certain security
-   * manager implementations.
-   *
-   * @param cHandler
-   *   The HTTP cookie handler, or null to unset.
-   */
-  def setDefault(cHandler: CookieHandler | Null): Unit =
+  def setDefault(cHandler: CookieHandler): Unit =
     defaultHandler = cHandler

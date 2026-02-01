@@ -25,7 +25,7 @@ private[jdk] object CookieUtils:
    *   a map of headers including any Cookie headers from the cookie handler
    */
   def getCookiesForRequest(
-      cookieHandler: CookieHandler | Null,
+      cookieHandler: CookieHandler,
       request: HttpRequest,
   ): JMap[String, JList[String]] =
     val result = new TreeMap[String, JList[String]](String.CASE_INSENSITIVE_ORDER)
@@ -70,7 +70,7 @@ private[jdk] object CookieUtils:
    *   the response headers containing Set-Cookie headers
    */
   def storeCookiesFromResponse(
-      cookieHandler: CookieHandler | Null,
+      cookieHandler: CookieHandler,
       uri: URI,
       responseHeaders: HttpHeaders,
   ): Unit =
@@ -99,7 +99,7 @@ private[jdk] object CookieUtils:
    *   the response headers as a Map
    */
   def storeCookiesFromResponse(
-      cookieHandler: CookieHandler | Null,
+      cookieHandler: CookieHandler,
       uri: URI,
       responseHeaders: JMap[String, JList[String]],
   ): Unit =
@@ -118,7 +118,7 @@ private[jdk] object CookieUtils:
    * @return
    *   a single Cookie header value, or null if no cookies
    */
-  def buildCookieHeader(cookies: JList[String]): String | Null =
+  def buildCookieHeader(cookies: JList[String]): String =
     if cookies == null || cookies.isEmpty then null
     else
       val sb = new java.lang.StringBuilder()

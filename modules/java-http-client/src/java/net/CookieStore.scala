@@ -29,7 +29,7 @@ trait CookieStore:
    * @param cookie
    *   the cookie to store
    */
-  def add(uri: URI | Null, cookie: HttpCookie): Unit
+  def add(uri: URI, cookie: HttpCookie): Unit
 
   /**
    * Retrieve cookies associated with given URI, or whose domain matches the given URI. Only
@@ -71,7 +71,7 @@ trait CookieStore:
    * @return
    *   true if this store contained the specified cookie
    */
-  def remove(uri: URI | Null, cookie: HttpCookie): Boolean
+  def remove(uri: URI, cookie: HttpCookie): Boolean
 
   /**
    * Remove all cookies in this cookie store.

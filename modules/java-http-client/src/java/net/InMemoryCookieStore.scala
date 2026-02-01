@@ -27,7 +27,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
   // Lock for thread safety
   private val lock = new ReentrantLock()
 
-  override def add(uri: URI | Null, cookie: HttpCookie): Unit =
+  override def add(uri: URI, cookie: HttpCookie): Unit =
     Objects.requireNonNull(cookie, "cookie is null")
     lock.lock()
     try
@@ -99,7 +99,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
       Collections.unmodifiableList(result)
     finally lock.unlock()
 
-  override def remove(uri: URI | Null, cookie: HttpCookie): Boolean =
+  override def remove(uri: URI, cookie: HttpCookie): Boolean =
     Objects.requireNonNull(cookie, "cookie is null")
     lock.lock()
     try
@@ -128,7 +128,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
   /**
    * Get an effective URI for storing a cookie. Normalizes the URI to just scheme + host.
    */
-  private def getEffectiveURI(uri: URI | Null, cookie: HttpCookie): URI | Null =
+  private def getEffectiveURI(uri: URI, cookie: HttpCookie): URI =
     if uri != null then getEffectiveURIForRetrieval(uri)
     else
       // Use cookie's domain if URI is null

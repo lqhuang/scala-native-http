@@ -4,7 +4,7 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.{ArrayList, HashMap, List as JList, Locale, Map, Objects}
 
-final class HttpCookie private[net] (name: String, value: String | Null, rawHeader: String | Null, creationTime: Long)
+final class HttpCookie private[net] (name: String, value: String, rawHeader: String, creationTime: Long)
     extends Cloneable:
 
   private val cookieName: String =
@@ -14,24 +14,24 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
       throw IllegalArgumentException("Illegal cookie name")
     tmp
 
-  private var cookieValue: String | Null = value
-  private var comment: String | Null = null
-  private var commentURL: String | Null = null
+  private var cookieValue: String = value
+  private var comment: String = null
+  private var commentURL: String = null
   private var toDiscard: Boolean = false
-  private var domain: String | Null = null
+  private var domain: String = null
   private var maxAge: Long = HttpCookie.MAX_AGE_UNSPECIFIED
-  private var path: String | Null = null
-  private var portlist: String | Null = null
+  private var path: String = null
+  private var portlist: String = null
   private var secure: Boolean = false
   private var httpOnly: Boolean = false
   private var version: Int = 1
   private val whenCreated: Long = creationTime
-  private val originalHeader: String | Null = rawHeader
+  private val originalHeader: String = rawHeader
 
   def this(name: String, value: String) =
     this(name, value, null, System.currentTimeMillis())
 
-  private def this(name: String, value: String, header: String | Null) =
+  private def this(name: String, value: String, header: String) =
     this(name, value, header, System.currentTimeMillis())
 
   def hasExpired(): Boolean = hasExpired(System.currentTimeMillis())
@@ -46,12 +46,12 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
   def setComment(purpose: String): Unit =
     comment = purpose
 
-  def getComment(): String | Null = comment
+  def getComment(): String = comment
 
   def setCommentURL(purpose: String): Unit =
     commentURL = purpose
 
-  def getCommentURL(): String | Null = commentURL
+  def getCommentURL(): String = commentURL
 
   def setDiscard(discard: Boolean): Unit =
     toDiscard = discard
@@ -61,12 +61,12 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
   def setPortlist(ports: String): Unit =
     portlist = ports
 
-  def getPortlist(): String | Null = portlist
+  def getPortlist(): String = portlist
 
-  def setDomain(pattern: String | Null): Unit =
+  def setDomain(pattern: String): Unit =
     if pattern != null then domain = pattern.toLowerCase(Locale.ROOT) else domain = null
 
-  def getDomain(): String | Null = domain
+  def getDomain(): String = domain
 
   def setMaxAge(expiry: Long): Unit =
     maxAge = expiry
@@ -76,7 +76,7 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
   def setPath(uri: String): Unit =
     path = uri
 
-  def getPath(): String | Null = path
+  def getPath(): String = path
 
   def setSecure(flag: Boolean): Unit =
     secure = flag
@@ -88,7 +88,7 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
   def setValue(newValue: String): Unit =
     cookieValue = newValue
 
-  def getValue(): String | Null = cookieValue
+  def getValue(): String = cookieValue
 
   def getVersion(): Int = version
 
@@ -141,7 +141,7 @@ final class HttpCookie private[net] (name: String, value: String | Null, rawHead
     if getPortlist() != null then sb.append(";$Port=\"").append(getPortlist()).append('"'): Unit
     sb.toString
 
-  private def expiryDate2DeltaSeconds(dateString: String | Null): Long =
+  private def expiryDate2DeltaSeconds(dateString: String): Long =
     if dateString == null then return 0
     val trimmed = dateString.trim
     if trimmed.isEmpty then return 0
@@ -175,44 +175,44 @@ object HttpCookie:
   private val TSPECIALS = ",; " // deliberately includes space
 
   private trait CookieAttributeAssignor:
-    def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit
+    def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit
 
   private val ASSIGNORS: Map[String, CookieAttributeAssignor] =
     val map = new HashMap[String, CookieAttributeAssignor]()
     map.put("comment", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         if cookie.getComment() == null then cookie.setComment(attrValue)
     })
     map.put("commenturl", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         if cookie.getCommentURL() == null then cookie.setCommentURL(attrValue)
     })
     map.put("discard", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         cookie.setDiscard(true)
     })
     map.put("domain", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         if cookie.getDomain() == null then cookie.setDomain(attrValue)
     })
     map.put("path", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         if cookie.getPath() == null then cookie.setPath(attrValue)
     })
     map.put("port", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         if cookie.getPortlist() == null then cookie.setPortlist(if attrValue == null then "" else attrValue)
     })
     map.put("secure", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         cookie.setSecure(true)
     })
     map.put("httponly", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         cookie.setHttpOnly(true)
     })
     map.put("version", new CookieAttributeAssignor {
-      override def assign(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+      override def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
         safeParseInt(attrValue).foreach(cookie.setVersion)
     })
     map
@@ -222,7 +222,7 @@ object HttpCookie:
   def parse(header: String, retainHeader: Boolean): JList[HttpCookie] =
     parse(header, retainHeader, -1L)
 
-  def domainMatches(domain: String | Null, host: String | Null): Boolean =
+  def domainMatches(domain: String, host: String): Boolean =
     if domain == null || host == null then return false
 
     val isLocalDomain = ".local".equalsIgnoreCase(domain)
@@ -243,22 +243,9 @@ object HttpCookie:
     else false
 
   /**
-   * Check if the request path matches the cookie path.
-   *
-   * Per RFC 6265:
-   * - The cookie-path is a prefix of the request-path, and
-   * - Either the cookie-path equals the request-path, or
-   * - The cookie-path ends with "/", or
-   * - The first character of the request-path that is not included in the cookie-path is a "/"
-   *
-   * @param path
-   *   the request path (URI path)
-   * @param pathToMatchWith
-   *   the cookie path to match against
-   * @return
-   *   true if the path matches, false otherwise
+   * Per RFC 6265: cookie-path must be a prefix of request-path.
    */
-  def pathMatches(path: String | Null, pathToMatchWith: String | Null): Boolean =
+  def pathMatches(path: String, pathToMatchWith: String): Boolean =
     if path == null || pathToMatchWith == null then return false
     if path == pathToMatchWith then true
     else if path.startsWith(pathToMatchWith) then
@@ -305,8 +292,8 @@ object HttpCookie:
       if retainHeader then new HttpCookie(name, value, header, currentTimeMillis)
       else new HttpCookie(name, value, null, currentTimeMillis)
 
-    var expiresValue: String | Null = null
-    var maxAgeValue: String | Null = null
+    var expiresValue: String = null
+    var maxAgeValue: String = null
 
     var i = 1
     while i < segments.length do
@@ -322,12 +309,12 @@ object HttpCookie:
     assignMaxAgeAttribute(cookie, expiresValue, maxAgeValue)
     cookie
 
-  private def assignAttribute(cookie: HttpCookie, attrName: String, attrValue: String | Null): Unit =
+  private def assignAttribute(cookie: HttpCookie, attrName: String, attrValue: String): Unit =
     val stripped = stripOffSurroundingQuote(attrValue)
     val assignor = ASSIGNORS.get(attrName.toLowerCase(Locale.ROOT))
     if assignor != null then assignor.assign(cookie, attrName, stripped)
 
-  private def assignMaxAgeAttribute(cookie: HttpCookie, expiresValue: String | Null, maxAgeValue: String | Null): Unit =
+  private def assignMaxAgeAttribute(cookie: HttpCookie, expiresValue: String, maxAgeValue: String): Unit =
     if cookie.getMaxAge() != MAX_AGE_UNSPECIFIED then return
     val maxAgeCandidate = stripOffSurroundingQuote(maxAgeValue)
 
@@ -402,13 +389,13 @@ object HttpCookie:
     else if startsWithIgnoreCase(lowered, SET_COOKIE2) then 1
     else 0
 
-  private def stripOffSurroundingQuote(str: String | Null): String | Null =
+  private def stripOffSurroundingQuote(str: String): String =
     if str == null then null
     else if str.length >= 2 && str.charAt(0) == '"' && str.charAt(str.length - 1) == '"' then str.substring(1, str.length - 1)
     else if str.length >= 2 && str.charAt(0) == '\'' && str.charAt(str.length - 1) == '\'' then str.substring(1, str.length - 1)
     else str
 
-  private def startsWithIgnoreCase(s: String | Null, start: String): Boolean =
+  private def startsWithIgnoreCase(s: String, start: String): Boolean =
     if s == null || start == null then false
     else if s.length >= start.length && start.equalsIgnoreCase(s.substring(0, start.length)) then true
     else false
@@ -421,12 +408,12 @@ object HttpCookie:
       i += 1
     true
 
-  private def equalsIgnoreCase(s: String | Null, t: String | Null): Boolean =
+  private def equalsIgnoreCase(s: String, t: String): Boolean =
     if s eq t then true
     else if s != null && t != null then s.equalsIgnoreCase(t)
     else false
 
-  private def safeParseInt(value: String | Null): Option[Int] =
+  private def safeParseInt(value: String): Option[Int] =
     if value == null then None
     else
       val trimmed = value.trim
@@ -435,7 +422,7 @@ object HttpCookie:
         try Some(java.lang.Integer.parseInt(trimmed))
         catch case _: NumberFormatException => None
 
-  private def safeParseLong(value: String | Null): Option[Long] =
+  private def safeParseLong(value: String): Option[Long] =
     if value == null then None
     else
       val trimmed = value.trim

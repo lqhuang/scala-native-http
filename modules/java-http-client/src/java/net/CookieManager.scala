@@ -35,7 +35,7 @@ import snhttp.jdk.net.InMemoryCookieStore
  *
  * @since 1.6
  */
-class CookieManager(store: CookieStore | Null, policy: CookiePolicy | Null) extends CookieHandler:
+class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHandler:
 
   private val cookieStore: CookieStore =
     if store != null then store else new InMemoryCookieStore()
@@ -43,29 +43,11 @@ class CookieManager(store: CookieStore | Null, policy: CookiePolicy | Null) exte
   private var cookiePolicy: CookiePolicy =
     if policy != null then policy else CookiePolicy.ACCEPT_ORIGINAL_SERVER
 
-  /**
-   * Create a new cookie manager with default cookie store and accept policy.
-   */
   def this() = this(null, null)
 
-  /**
-   * To set the cookie policy of this cookie manager.
-   *
-   * A instance of CookieManager will have cookie policy ACCEPT_ORIGINAL_SERVER by default. Users
-   * always can call this method to set another cookie policy.
-   *
-   * @param cookiePolicy
-   *   the cookie policy. Can be null, in which case the current policy will not be changed.
-   */
-  def setCookiePolicy(cookiePolicy: CookiePolicy | Null): Unit =
+  def setCookiePolicy(cookiePolicy: CookiePolicy): Unit =
     if cookiePolicy != null then this.cookiePolicy = cookiePolicy
 
-  /**
-   * To retrieve current cookie store.
-   *
-   * @return
-   *   the cookie store currently used by cookie manager.
-   */
   def getCookieStore(): CookieStore = cookieStore
 
   override def get(uri: URI, requestHeaders: JMap[String, JList[String]]): JMap[String, JList[String]] =
