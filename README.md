@@ -146,9 +146,9 @@ are well supported, but we may try to implement them in the future. Currently su
 - [ ] `jdk.httpclient.maxLiteralWithIndexing`
 - [ ] `jdk.httpclient.maxNonFinalResponses`
 - [ ] `jdk.httpclient.maxstreams`
-- [ ] `jdk.httpclient.receiveBufferSize`
+- [x] `jdk.httpclient.receiveBufferSize`
 - [ ] `jdk.httpclient.redirects.retrylimit`
-- [ ] `jdk.httpclient.sendBufferSize`
+- [x] `jdk.httpclient.sendBufferSize`
 - [ ] `jdk.httpclient.websocket.writeBufferSize`
 - [ ] `jdk.httpclient.windowsize`
 - [ ] `jdk.internal.httpclient.disableHostnameVerification`

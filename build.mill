@@ -1,4 +1,4 @@
-//| mill-version: 1.0.6
+//| mill-version: 1.1.0
 //| mvnDeps:
 //|   - com.goyeau::mill-scalafix::0.6.0
 //|   - com.github.lolgab::mill-mima_mill1:0.2.0
@@ -24,8 +24,8 @@ import com.goyeau.mill.scalafix.ScalafixModule
 // import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule // not work yet
 
 val scalaNextVersion = Properties.propOrNone("scalaNextVersion")
-val scalaVersion = if scalaNextVersion.isEmpty then "3.3.6" else scalaNextVersion.get
-val scalaNativeVersion = "0.5.8"
+val scalaVersion = if scalaNextVersion.isEmpty then "3.3.7" else scalaNextVersion.get
+val scalaNativeVersion = "0.5.10"
 
 def format = ScalafmtModule
 
@@ -43,7 +43,7 @@ trait CommonPublishModule extends PublishModule {
 }
 
 trait UTestModule extends TestModule.Utest {
-  def utestVersion = "0.9.1"
+  def utestVersion = "0.9.5"
 
   def testParallelism = true
 

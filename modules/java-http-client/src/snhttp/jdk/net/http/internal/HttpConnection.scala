@@ -60,7 +60,7 @@ type CurlRecvBuffer = CStruct3[
 ]
 
 /**
- * Represents a (virtual) connection (pool) to a web server, majorly based on libcurl's easy handle.
+ * Represents a (virtual) connection to a web server, majorly based on libcurl's easy handle.
  *
  *   - For HTTP/1.1, multiple connections may be created
  *   - For HTTP/2, a connection corresponds to a multiplexed connection.
