@@ -48,7 +48,7 @@ import _root_.snhttp.experimental.libcurl.{
 }
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.internal.PropertyUtils
-import _root_.snhttp.utils.PointerFinalizer
+import _root_.snhttp.utils.PointerCleaner
 
 type CurlRecvBuffer = CStruct3[
   /** request nsize bytes */
@@ -74,7 +74,7 @@ private[http] final class HttpConnection[T](
   private[snhttp] var ptr = libcurl.easyInit()
   if (ptr == null)
     throw new CurlException("Failed to initialize CURL easy handle")
-  val _ = PointerFinalizer(
+  val _ = PointerCleaner.register(
     this,
     ptr,
     _ptr => libcurl.easyCleanup(_ptr),
@@ -88,7 +88,7 @@ private[http] final class HttpConnection[T](
    * transfer before you call `curl_slist_free_all` on the list.
    */
   private var slistPtr: Ptr[CurlSlist] = null
-  val _ = PointerFinalizer(
+  val _ = PointerCleaner.register(
     this,
     slistPtr,
     _slist => libcurl.slistFreeAll(_slist),

@@ -10,7 +10,7 @@ import scala.scalanative.posix
 import scala.scalanative.unsafe.{CChar, Ptr, alloc, fromCString, stackalloc}
 import scala.scalanative.unsigned.UInt
 
-import snhttp.utils.PointerFinalizer
+import snhttp.utils.PointerCleaner
 import snhttp.experimental.openssl.{ssl, bio}
 import snhttp.experimental.openssl.ssl_internal.enumerations.TLS_VERSION
 
@@ -28,7 +28,7 @@ class SSLSessionImpl(
 ) extends SSLSession:
 
   private[ssl] val ptr = ssl.SSL_SESSION_new()
-  PointerFinalizer(this, ptr, _ptr => ssl.SSL_SESSION_free(_ptr)): Unit
+  PointerCleaner.register(this, ptr, _ptr => ssl.SSL_SESSION_free(_ptr)): Unit
 
   def getId(): Array[Byte] = {
     val lenPtr = stackalloc[UInt]()
@@ -149,7 +149,7 @@ class SSLSessionImpl(
   def getTicketLifetimeHint(): Long =
     ssl.SSL_SESSION_get_ticket_lifetime_hint(ptr).toLong * 1000L
 
-final protected class SSLNullSessionImpl extends SSLSession:
+protected final class SSLNullSessionImpl extends SSLSession:
   private val INVALID_CIPHER_SUITE = "SSL_NULL_WITH_NULL_NULL"
   private val INVALID_PROTOCOL = "NONE"
   private val creationTime = System.currentTimeMillis()

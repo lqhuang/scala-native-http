@@ -13,7 +13,7 @@ import scala.scalanative.unsafe.Ptr
 import snhttp.jdk.internal.PropertyUtils
 import snhttp.experimental.openssl.ssl
 import snhttp.experimental.openssl.ssl_internal.enumerations.{SSL_CTRL, SSL_SESS_CACHE, SSL_VERIFY}
-import snhttp.utils.PointerFinalizer
+import snhttp.utils.PointerCleaner
 
 /**
  * Inspired from
@@ -80,7 +80,7 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
       "Failed to create SSL_CTX for ClientSessionContext",
     )
 
-  PointerFinalizer(this, ptr, _ptr => ssl.SSL_CTX_free(_ptr)): Unit
+  PointerCleaner.register(this, ptr, _ptr => ssl.SSL_CTX_free(_ptr)): Unit
 
   // ---- Debug mode now ---- //
   ssl.SSL_CTX_set_verify(
@@ -115,7 +115,8 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
 
   def getSession(host: String, port: Int): SSLSession = ???
 
-  def getSessionSize(): Int = ???
+  def getSessionSize(): Int =
+    ???
 
   def getCachedSession(host: String, port: Int, sslParams: SSLParametersImpl): SSLSession =
     ???

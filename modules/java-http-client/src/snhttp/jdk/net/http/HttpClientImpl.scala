@@ -37,7 +37,7 @@ import _root_.snhttp.experimental.libcurl.{
 import _root_.snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
 import _root_.snhttp.experimental.libcurl.CurlMultiCode.RichCurlMultiCode
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
-import _root_.snhttp.utils.PointerFinalizer
+import _root_.snhttp.utils.PointerCleaner
 
 class HttpClientBuilderImpl() extends Builder:
 
@@ -121,13 +121,13 @@ final class HttpClientImpl(
   private[http] val ptr: Ptr[CurlMulti] = libcurl.multiInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURLM pointer")
-  PointerFinalizer(
+  PointerCleaner.register(
     this,
     ptr,
     _ptr => {
       val ret = libcurl.multiCleanup(_ptr)
-      if (ret != 0)
-        throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
+      // if (ret != 0)
+      //   throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
     },
   ): Unit
 
