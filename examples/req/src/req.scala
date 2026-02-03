@@ -3,22 +3,23 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.http.HttpResponse.BodyHandlers
 import javax.net.ssl.SSLContext
 
-object Req {
+object Req:
 
-  def runReqBasic(): Unit =
+  def runReqBasic(): Unit = {
     val client = HttpClient.newBuilder().build()
 
     val request = HttpRequest
       .newBuilder()
-      .uri(URI.create("http://asdfadad-f0123sdf.com:8000"))
+      .uri(URI.create("http://baidu.com"))
       .GET()
       .build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
     println(s"Status: ${response.statusCode()}")
     println(s"Body: ${response.body()}")
+  }
 
-  def runCustomSSLContext(): Unit =
+  def runCustomSSLContext(): Unit = {
     val sslContext = SSLContext.getInstance("TLSv1.3")
 
     val sslParams = sslContext.getDefaultSSLParameters()
@@ -36,6 +37,7 @@ object Req {
 
     println(s"Status: ${response.statusCode()}")
     println(s"Body: ${response.body()}")
+  }
 
   // ------------------------------------------ //
   //   Main entry point                         //
@@ -44,5 +46,3 @@ object Req {
   def main(args: Array[String]): Unit =
     runReqBasic()
     // runCustomSSLContext()
-
-}

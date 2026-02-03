@@ -1,9 +1,29 @@
 package build.examples
 
-import mill.api.Cross
+import mill.api.{Cross, Module, Task}
 import mill.scalalib.DepSyntax
+import mill.scalalib.ScalaModule
+import mill.scalanativelib.ScalaNativeModule
 
-object `package` extends build.CommonModule:
-  def moduleDeps = Seq(
-    build.modules.`java-http-client`,
-  )
+trait SharedModule extends Module:
+
+  val realSources = moduleDir / "src"
+
+  object jvm extends ScalaModule:
+    def scalaVersion = build.scalaVersion
+    override def sources = Task.Sources(realSources)
+  end jvm
+
+  object sn extends ScalaNativeModule:
+    def scalaNativeVersion = build.scalaNativeVersion
+    def moduleDeps = Seq(build.modules.`java-http-client`)
+    def scalaVersion = build.scalaVersion
+    override def sources = Task.Sources(realSources)
+  end sn
+
+end SharedModule
+
+// Define all example modules here
+object post extends SharedModule
+object `req-async` extends SharedModule
+object req extends SharedModule
