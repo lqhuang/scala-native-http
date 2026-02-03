@@ -18,7 +18,7 @@ trait JSR166Test {
   /**
    * The first exception encountered if any threadAssertXXX method fails.
    */
-  final private val threadFailure: AtomicReference[Throwable] = new AtomicReference(null)
+  private final val threadFailure: AtomicReference[Throwable] = new AtomicReference(null)
 
   /**
    * Records an exception so that it can be rethrown later in the test harness thread, triggering a
@@ -71,7 +71,7 @@ trait JSR166Test {
   final val MEDIUM_DELAY_MS = SHORT_DELAY_MS * 10
   final val LONG_DELAY_MS = SHORT_DELAY_MS * 200
 
-  final private lazy val TIMEOUT_DELAY_MS =
+  private final lazy val TIMEOUT_DELAY_MS =
     (12.0 * Math.cbrt(delayFactor)).toLong
 
   /**

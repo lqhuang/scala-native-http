@@ -9,17 +9,17 @@ import java.lang._Enum
  */
 abstract class Authenticator:
 
-  final protected def getRequestingHost(): String = ???
+  protected final def getRequestingHost(): String = ???
 
-  final protected def getRequestingSite(): InetAddress = ???
+  protected final def getRequestingSite(): InetAddress = ???
 
-  final protected def getRequestingPort(): Int = ???
+  protected final def getRequestingPort(): Int = ???
 
-  final protected def getRequestingProtocol(): String = ???
+  protected final def getRequestingProtocol(): String = ???
 
-  final protected def getRequestingPrompt(): String = ???
+  protected final def getRequestingPrompt(): String = ???
 
-  final protected def getRequestingScheme(): String = ???
+  protected final def getRequestingScheme(): String = ???
 
   protected def getPasswordAuthentication(): PasswordAuthentication
 

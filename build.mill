@@ -27,7 +27,7 @@ val scalaNextVersion = Properties.propOrNone("scalaNextVersion")
 val scalaVersion = if scalaNextVersion.isEmpty then "3.3.7" else scalaNextVersion.get
 val scalaNativeVersion = "0.5.10"
 
-def format = ScalafmtModule
+// def format = ScalafmtModule
 
 trait CommonPublishModule extends PublishModule {
   def publishVersion = VcsVersion.vcsState().format()

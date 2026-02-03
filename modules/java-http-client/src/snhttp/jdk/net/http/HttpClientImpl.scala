@@ -320,7 +320,7 @@ final class HttpClientImpl(
     // register connection only after added to multi handle successfully
     _connections.put(conn.ptr, conn): Unit
 
-  private[http] def running: Boolean =
+  private[http] def isRunning: Boolean =
     !_runningCounter != 0
 
   private[http] def performAndPoll(timeoutMs: Int): Unit =
@@ -358,7 +358,7 @@ final class HttpClientImpl(
       val msgCount = stackalloc[Int]()
       msg = _multi.infoRead(msgCount)
       msg != null
-    do
+    do {
       val ptr = (!msg).easyHandle
       val conn = _connections.getOrElse(
         ptr,
@@ -367,6 +367,7 @@ final class HttpClientImpl(
         ),
       )
       conn.assignCurlMsg(msg)
+    }
 
   private def unregisterConnection(conn: HttpConnection[?]): Unit =
     conn.close()

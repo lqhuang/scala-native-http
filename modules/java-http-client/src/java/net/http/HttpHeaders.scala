@@ -26,12 +26,12 @@ final class HttpHeaders private (headers: JMap[String, JList[String]]):
     _headers
 
   /// Two HTTP headers are equal if each of their corresponding maps are equal.
-  final override def equals(obj: Any): Boolean = obj match {
+  override final def equals(obj: Any): Boolean = obj match {
     case other: HttpHeaders => _headers == other.map()
     case _                  => false
   }
 
-  final override def hashCode(): Int =
+  override final def hashCode(): Int =
     _headers
       .entrySet()
       .stream()

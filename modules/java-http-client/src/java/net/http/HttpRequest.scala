@@ -35,7 +35,7 @@ trait HttpRequest extends Closeable:
   def headers(): HttpHeaders
 
   /// Two HTTP requests are equal if their URI, method, and headers fields are all equal.
-  final override def equals(that: Any): Boolean = that match {
+  override final def equals(that: Any): Boolean = that match {
     case other: HttpRequest =>
       this.uri() == other.uri() &&
       this.method() == other.method() &&
@@ -44,7 +44,7 @@ trait HttpRequest extends Closeable:
   }
 
   /// The hash code is based upon the HTTP request's URI, method, and header components
-  final override def hashCode(): Int =
+  override final def hashCode(): Int =
     uri().hashCode + method().hashCode + headers().hashCode
 
 object HttpRequest:

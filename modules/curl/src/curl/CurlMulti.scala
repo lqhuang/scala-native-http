@@ -25,7 +25,7 @@ import _root_.snhttp.experimental.libcurl.{
 }
 import _root_.snhttp.experimental.libcurl
 
-class CurlMulti(ptr: Ptr[_CurlMulti]) extends AnyVal:
+class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
 
   def addCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
     libcurl.multiAddHandle(ptr, easyPtr)
@@ -96,6 +96,8 @@ object CurlMulti:
 
   def init(): CurlMulti =
     val ptr = libcurl.multiInit()
+    if (ptr == null)
+      throw new RuntimeException("Failed to initialize CurlMulti")
     new CurlMulti(libcurl.multiInit())
 
 end CurlMulti

@@ -8,5 +8,3 @@ metals.sbt
 out/
 .out/
 .mill/
-out/
-.scala-build
