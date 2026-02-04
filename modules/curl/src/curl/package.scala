@@ -9,8 +9,14 @@ package object curl:
     CurlHttpVersion,
     CurlWriteCallback,
     CurlData,
+    CurlUseSsl,
+    CurlFollow,
+    CurlMsgCode,
+    CurlMultiCode,
+    CurlMultiOption,
+    CurlDebugCallback,
+    CurlInfoType,
   }
-  export _root_.snhttp.experimental.libcurl.{CurlMultiCode, CurlMultiOption}
 
   object CurlUtils:
 

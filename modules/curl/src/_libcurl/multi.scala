@@ -41,7 +41,9 @@ object multi:
   // known as "CURLMcode"
   type CurlMultiCode = Int
   object CurlMultiCode extends _BindgenEnumCInt[CurlMultiCode]:
+
     given Tag[CurlMultiCode] = Tag.Int
+    given CanEqual[CurlMultiCode, CurlMultiCode] = CanEqual.derived
 
     private inline def define(inline a: Int): CurlMultiCode = a
 
@@ -90,6 +92,8 @@ object multi:
           case ABORTED_BY_CALLBACK   => "CURLM_ABORTED_BY_CALLBACK"
           case UNRECOVERABLE_POLL    => "CURLM_UNRECOVERABLE_POLL"
           case LAST                  => "CURLM_LAST"
+
+  end CurlMultiCode
 
   opaque type CurlPipe = CLong
   object CurlPipe extends _BindgenEnumCLong[CurlPipe]:

@@ -1050,16 +1050,23 @@ object curl:
   // 6. add func `curl_sshkeycallback`
   // 7. add func `curl_sshhostkeycallback`
 
-  opaque type CurlUseSsl = Int
-  object CurlUseSsl extends _BindgenEnumCInt[CurlUseSsl]:
+  /**
+   * known as `CURLUSESSL_*` symbols
+   *
+   * parameter for the `CURLOPT_USE_SSL` option
+   */
+  opaque type CurlUseSsl = CLong
+  object CurlUseSsl extends _BindgenEnumCLong[CurlUseSsl]:
+    given Tag[CurlUseSsl] = Tag.Size
 
-    private inline def define(inline a: Long): CurlUseSsl = a.toInt
+    private inline def define(inline a: Long): CurlUseSsl = a.toSize
 
-    val NONE = define(0) // do not attempt to use SSL
-    val TRY = define(1) // try using SSL, proceed anyway otherwise
-    val CONTROL = define(2) // SSL for the control connection or fail
-    val ALL = define(3) // SSL for all communication or fail
-    // val LAST = define(4) // not an option, never use
+    val NONE = define(0L) // do not attempt to use SSL
+    val TRY = define(1L) // try using SSL, proceed anyway otherwise
+    val CONTROL = define(2L) // SSL for the control connection or fail
+    val ALL = define(3L) // SSL for all communication or fail
+    val LAST = define(4L) // not an option, never use
+  end CurlUseSsl
 
   // TODO:
   //

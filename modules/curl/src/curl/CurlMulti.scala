@@ -4,26 +4,25 @@ import scala.util.Using.Releasable
 
 import scala.scalanative.unsafe.{Ptr, Size, CString, stackalloc, CVoidPtr, CLong}
 import scala.scalanative.unsigned.UInt
+import scala.scalanative.libc.stddef.NULL
 import scala.scalanative.posix.sys.select.fd_set
 
 import _root_.snhttp.experimental.libcurl.{
-  Curl as _Curl,
   CurlMulti as _CurlMulti,
   CurlWaitFd as _CurlWaitFd,
   CurlMultiOption,
   CurlMultiCode,
-  CurlMsg,
   CurlSocket,
 }
 import _root_.snhttp.experimental.libcurl
 
 class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
 
-  transparent inline def addCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
-    libcurl.multiAddHandle(ptr, easyPtr)
+  transparent inline def addCurlEasy(easy: CurlEasy): CurlMultiCode =
+    libcurl.multiAddHandle(ptr, easy.ptr)
 
-  transparent inline def removeCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
-    libcurl.multiRemoveHandle(ptr, easyPtr)
+  transparent inline def removeCurlEasy(easy: CurlEasy): CurlMultiCode =
+    libcurl.multiRemoveHandle(ptr, easy.ptr)
 
   transparent inline def fdset(
       readFdSet: Ptr[fd_set],
@@ -58,8 +57,10 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
   transparent inline def cleanup(): CurlMultiCode =
     libcurl.multiCleanup(ptr)
 
-  transparent inline def infoRead(msgsInQueue: Ptr[Int]): Ptr[CurlMsg] =
-    libcurl.multiInfoRead(ptr, msgsInQueue)
+  // Implementation restriction: cannot use private constructors in inline methods
+  def infoRead(msgsInQueue: Ptr[Int]): Option[CurlMsg] =
+    val msg = libcurl.multiInfoRead(ptr, msgsInQueue)
+    if msg == NULL then None else Some(CurlMsg(msg))
 
   transparent inline def socketAction(
       s: CurlSocket,

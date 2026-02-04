@@ -27,3 +27,13 @@ end SharedModule
 object post extends SharedModule
 object `req-async` extends SharedModule
 object req extends SharedModule
+
+trait CurlSharedModule extends ScalaNativeModule {
+  def scalaNativeVersion = build.scalaNativeVersion
+  def moduleDeps = Seq(build.modules.curl)
+  def scalaVersion = build.scalaVersion
+
+}
+
+object `curl-easy` extends CurlSharedModule
+object `curl-multi` extends CurlSharedModule
