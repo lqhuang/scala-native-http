@@ -1,9 +1,16 @@
 package snhttp.experimental
 
-import _root_.snhttp.experimental.libcurl.{CurlErrCode, CurlGlobalFlag, CurlMultiCode}
-import _root_.snhttp.experimental.libcurl
-
 package object curl:
+
+  export _root_.snhttp.experimental.libcurl.CurlGlobalFlag
+  export _root_.snhttp.experimental.libcurl.{
+    CurlOption,
+    CurlErrCode,
+    CurlHttpVersion,
+    CurlWriteCallback,
+    CurlData,
+  }
+  export _root_.snhttp.experimental.libcurl.{CurlMultiCode, CurlMultiOption}
 
   object CurlUtils:
 

@@ -1,6 +1,8 @@
 package snhttp.experimental.curl
 
-import scala.scalanative.unsafe.{Ptr, Size, CString, toCString, CInt, CLong, Zone, CFuncPtr}
+import scala.util.Using.Releasable
+
+import scala.scalanative.unsafe.{Ptr, Size, CString, CInt, CLong, CFuncPtr}
 import scala.scalanative.posix.stddef.size_t
 
 import _root_.snhttp.experimental.libcurl.{
@@ -14,65 +16,71 @@ import _root_.snhttp.experimental.libcurl.{
 }
 import _root_.snhttp.experimental.libcurl
 
-class CurlEasy(ptr: Ptr[_Curl]) extends AnyVal:
+class CurlEasy(val ptr: Ptr[_Curl]) extends AnyVal:
 
-  inline def info: CurlInfo =
+  transparent inline def info: CurlInfo =
     CurlInfo(ptr)
 
-  def setCIntOption(option: CurlOption, value: CInt): Unit =
+  transparent inline def setCIntOption(option: CurlOption, value: CInt): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def setCLongOption(option: CurlOption, value: CLong): Unit =
+  transparent inline def setCLongOption(option: CurlOption, value: CLong): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def setStringOption(option: CurlOption, value: String)(using zone: Zone): Unit =
-    val ret = libcurl.easySetopt(ptr, option, toCString(value))
-    if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
-
-  def setPtrOption(option: CurlOption, value: Ptr[?]): Unit =
+  transparent inline def setCStringOption(option: CurlOption, value: CString): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def setSlistOption(option: CurlOption, value: Ptr[_CurlSlist]): Unit =
+  transparent inline def setPtrOption(option: CurlOption, value: Ptr[?]): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def setBlobOption(option: CurlOption, value: Ptr[_CurlBlob]): Unit =
+  transparent inline def setSlistOption(option: CurlOption, value: Ptr[_CurlSlist]): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def setFuncPtrOption(option: CurlOption, value: CFuncPtr): Unit =
+  transparent inline def setBlobOption(option: CurlOption, value: Ptr[_CurlBlob]): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  def perform(): CurlErrCode =
+  transparent inline def setFuncPtrOption(option: CurlOption, value: CFuncPtr): Unit =
+    val ret = libcurl.easySetopt(ptr, option, value)
+    if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
+
+  transparent inline def perform(): CurlErrCode =
     libcurl.easyPerform(ptr)
 
-  def pause(bitmask: CurlPause): CurlErrCode =
+  transparent inline def pause(bitmask: CurlPause): CurlErrCode =
     libcurl.easyPause(ptr, bitmask)
 
-  def cleanup(): Unit =
+  transparent inline def cleanup(): Unit =
     libcurl.easyCleanup(ptr)
 
-  def reset(): Unit =
+  transparent inline def reset(): Unit =
     libcurl.easyReset(ptr)
 
-  def recv(buffer: Ptr[Byte], buflen: size_t, n: Ptr[size_t]): CurlErrCode =
+  transparent inline def recv(buffer: Ptr[Byte], buflen: size_t, n: Ptr[size_t]): CurlErrCode =
     libcurl.easyRecv(ptr, buffer, buflen, n)
 
-  def send(buffer: Ptr[Byte], buflen: size_t, n: Ptr[size_t]): CurlErrCode =
+  transparent inline def send(buffer: Ptr[Byte], buflen: size_t, n: Ptr[size_t]): CurlErrCode =
     libcurl.easySend(ptr, buffer, buflen, n)
 
-  def upkeep(): CurlErrCode =
+  transparent inline def upkeep(): CurlErrCode =
     libcurl.easyUpkeep(ptr)
 
 object CurlEasy:
 
+  given Releasable[CurlEasy] with
+    transparent inline def release(easy: CurlEasy): Unit =
+      easy.cleanup()
+
   def apply(): CurlEasy =
-    val cptr = libcurl.easyInit()
-    new CurlEasy(cptr)
+    val ptr = libcurl.easyInit()
+    if (ptr == null)
+      throw new RuntimeException("Failed to initialize CurlEasy")
+    new CurlEasy(ptr)
 
   def apply(ptr: Ptr[_Curl]): CurlEasy =
     new CurlEasy(ptr)

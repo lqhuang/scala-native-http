@@ -1,6 +1,16 @@
 import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.scalanative.unsafe.{CStruct3, CFuncPtr4, CSize, Ptr, stackalloc, alloc, Zone, CQuote}
+import scala.scalanative.unsafe.{
+  CStruct3,
+  CFuncPtr4,
+  CSize,
+  Ptr,
+  stackalloc,
+  alloc,
+  Zone,
+  CQuote,
+  sizeof,
+}
 import scala.scalanative.unsigned.UnsignedRichInt
 import scala.scalanative.libc.string.memcpy
 import scala.scalanative.libc.stddef.size_t
@@ -99,13 +109,15 @@ object LibcurlTest extends TestSuite:
 
       /** Used by CURLOPT_WRITEDATA and more */
       type CurlCustomData = CStruct3[
-        /** variables to track data */
+        /** variables */
         AtomicBoolean,
         /** function */
         Function0[Unit],
         /** function */
         Function0[Unit],
       ]
+
+      assert(sizeof[CurlCustomData] == (sizeof[Ptr[?]] * 3.toUInt))
 
       val flag1 = new AtomicBoolean(false)
 
@@ -116,7 +128,6 @@ object LibcurlTest extends TestSuite:
       def customFunction3(): Unit = flag3.getAndSet(true): Unit
 
       val writeData = stackalloc[CurlCustomData]()
-
       (!writeData)._1 = flag1
       (!writeData)._2 = customFunction2
       (!writeData)._3 = customFunction3

@@ -1,16 +1,8 @@
 package snhttp.experimental.curl
 
-import scala.scalanative.unsafe.{
-  Ptr,
-  Size,
-  CString,
-  toCString,
-  stackalloc,
-  UnsafeRichInt,
-  CVoidPtr,
-  Zone,
-  CLong,
-}
+import scala.util.Using.Releasable
+
+import scala.scalanative.unsafe.{Ptr, Size, CString, stackalloc, CVoidPtr, CLong}
 import scala.scalanative.unsigned.UInt
 import scala.scalanative.posix.sys.select.fd_set
 
@@ -27,13 +19,13 @@ import _root_.snhttp.experimental.libcurl
 
 class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
 
-  def addCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
+  transparent inline def addCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
     libcurl.multiAddHandle(ptr, easyPtr)
 
-  def removeCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
+  transparent inline def removeCurlEasy(easyPtr: Ptr[_Curl]): CurlMultiCode =
     libcurl.multiRemoveHandle(ptr, easyPtr)
 
-  def fdset(
+  transparent inline def fdset(
       readFdSet: Ptr[fd_set],
       writeFdSet: Ptr[fd_set],
       excFdSet: Ptr[fd_set],
@@ -41,7 +33,7 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
   ): CurlMultiCode =
     libcurl.multiFdSet(ptr, readFdSet, writeFdSet, excFdSet, maxFd)
 
-  def wait(
+  transparent inline def wait(
       extraFds: Ptr[_CurlWaitFd],
       extraNfds: UInt,
       timeoutMs: Int,
@@ -49,7 +41,7 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
   ): CurlMultiCode =
     libcurl.multiWait(ptr, extraFds, extraNfds, timeoutMs, ret)
 
-  def poll(
+  transparent inline def poll(
       extraFds: Ptr[_CurlWaitFd],
       extraNfds: UInt,
       timeoutMs: Int,
@@ -57,47 +49,58 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
   ): CurlMultiCode =
     libcurl.multiPoll(ptr, extraFds, extraNfds, timeoutMs, ret)
 
-  def wakeup(): CurlMultiCode =
+  transparent inline def wakeup(): CurlMultiCode =
     libcurl.multiWakeup(ptr)
 
-  def perform(runningHandles: Ptr[Int]): CurlMultiCode =
+  transparent inline def perform(runningHandles: Ptr[Int]): CurlMultiCode =
     libcurl.multiPerform(ptr, runningHandles)
 
-  def cleanup(): CurlMultiCode =
+  transparent inline def cleanup(): CurlMultiCode =
     libcurl.multiCleanup(ptr)
 
-  def infoRead(msgsInQueue: Ptr[Int]): Ptr[CurlMsg] =
+  transparent inline def infoRead(msgsInQueue: Ptr[Int]): Ptr[CurlMsg] =
     libcurl.multiInfoRead(ptr, msgsInQueue)
 
-  def socketAction(s: CurlSocket, evBitmask: Int, runningHandles: Ptr[Int]): CurlMultiCode =
+  transparent inline def socketAction(
+      s: CurlSocket,
+      evBitmask: Int,
+      runningHandles: Ptr[Int],
+  ): CurlMultiCode =
     libcurl.multiSocketAction(ptr, s, evBitmask, runningHandles)
 
-  def timeout(milliseconds: Int): Int =
+  transparent inline def timeout(milliseconds: Int): Int =
     val ms = stackalloc[Size]()
-    !ms = milliseconds.toSize
     libcurl.multiTimeout(ptr, ms)
 
-  def setCLongOption(option: CurlMultiOption, value: CLong): Unit =
+  transparent inline def setCLongOption(option: CurlMultiOption, value: CLong): Unit =
     val ret = libcurl.multiSetopt(ptr, option, value)
 
-  def setStringOption(using zone: Zone)(option: CurlMultiOption, value: String): Unit =
-    val ret = libcurl.multiSetopt(ptr, option, toCString(value))
-
-  def setPtrOption(option: CurlMultiOption, value: Ptr[?]): Unit =
+  transparent inline def setCStringOption(option: CurlMultiOption, value: CString): Unit =
     val ret = libcurl.multiSetopt(ptr, option, value)
 
-  def assign(sockfd: CurlSocket, sockp: CVoidPtr): CurlMultiCode =
+  transparent inline def setPtrOption(option: CurlMultiOption, value: Ptr[?]): Unit =
+    val ret = libcurl.multiSetopt(ptr, option, value)
+
+  transparent inline def assign(sockfd: CurlSocket, sockp: CVoidPtr): CurlMultiCode =
     libcurl.multiAssign(ptr, sockfd, sockp)
 
-  def getHandles(): Ptr[Ptr[_Curl]] =
-    libcurl.multiGetHandles(ptr)
+  // Should we expose this?
+  // transparent inline def getHandles(): Ptr[Ptr[_Curl]] =
+  //   libcurl.multiGetHandles(ptr)
 
 object CurlMulti:
 
-  def init(): CurlMulti =
+  given Releasable[CurlMulti] with
+    transparent inline def release(multi: CurlMulti): Unit =
+      val ret = multi.cleanup()
+
+  def apply(): CurlMulti =
     val ptr = libcurl.multiInit()
     if (ptr == null)
       throw new RuntimeException("Failed to initialize CurlMulti")
-    new CurlMulti(libcurl.multiInit())
+    new CurlMulti(ptr)
+
+  def apply(ptr: Ptr[_CurlMulti]): CurlMulti =
+    new CurlMulti(ptr)
 
 end CurlMulti
