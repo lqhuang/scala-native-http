@@ -75,7 +75,7 @@ object multi:
     val LAST = define(13)
 
     implicit class RichCurlMultiCode(value: CurlMultiCode) extends AnyVal:
-      def getname: String =
+      inline def getname: String =
         value match
           case CALL_MULTI_PERFORM    => "CURLM_CALL_MULTI_PERFORM"
           case OK                    => "CURLM_OK"
@@ -321,7 +321,7 @@ object multi:
     val LASTENTRY = define(17)
 
     implicit class RichCurlMultiOption(value: CurlMultiOption) extends AnyVal:
-      def getname(value: CurlMultiOption): String =
+      inline def getname(value: CurlMultiOption): String =
         value match
           case SOCKETFUNCTION              => "CURLMOPT_SOCKETFUNCTION"
           case SOCKETDATA                  => "CURLMOPT_SOCKETDATA"

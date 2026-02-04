@@ -118,7 +118,7 @@ private[http] final class HttpConnection[T](
   @volatile private var maybeRespBodySubscriber: Option[BodySubscriber[T]] = None
 
   val writeBufferSize = PropertyUtils.RECEIVE_BUFFER_SIZE // won't change after init
-  val writeData: Ptr[CurlRecvBuffer] = stackalloc[CurlRecvBuffer]()
+  val writeData: Ptr[CurlRecvBuffer] = alloc[CurlRecvBuffer]()
   if (writeData == null)
     throw new CurlException("Failed to allocate memory for CurlData")
   (!writeData)._1 = offerResponseBodyData
@@ -150,7 +150,7 @@ private[http] final class HttpConnection[T](
     curlMsg = Some(msg)
 
   def waitUntilDoneReceived(): Unit =
-    while !client.performAndPoll(50) do println("HttpConnection waiting for DONE message...")
+    while !client.runAndGetIsDone(500) do println("HttpConnection waiting for DONE message...")
     client.collectInfo()
 
   def buildResponse(): HttpResponse[T] =
@@ -330,6 +330,7 @@ private[http] final class HttpConnection[T](
    * necessary response info and initialize the `BodyHandler` to transform the response body.
    */
   private def callbackWhenReceivingBodyFirstTime(): Unit = {
+    println("!!!!! HttpConnection: receiving response body for the first time")
     val version = easy.info.version match
       case CurlHttpVersion.VERSION_1_1 => Version.HTTP_1_1
       case CurlHttpVersion.VERSION_2_0 => Version.HTTP_2
@@ -353,6 +354,7 @@ private[http] final class HttpConnection[T](
       contents: Ptr[Byte],
       size: CSize,
   ): CSize = {
+    println("!!!!! HttpConnection: offering response body data to BodySubscriber")
     val ssize = size.toInt
     val bb = ByteBuffer.allocate(ssize)
 

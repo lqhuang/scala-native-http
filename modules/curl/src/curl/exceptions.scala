@@ -1,7 +1,9 @@
 package snhttp.experimental.curl
 
-import _root_.snhttp.experimental.libcurl.{CurlOption, CurlErrCode, easyStrError}
+import _root_.snhttp.experimental.libcurl.{CurlOption, CurlErrCode, CurlMultiCode}
+import _root_.snhttp.experimental.libcurl.{easyStrError, multiStrError}
 import _root_.snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
+import _root_.snhttp.experimental.libcurl.CurlMultiCode.RichCurlMultiCode
 import scala.scalanative.unsafe.{CInt, CLong, Ptr, CFuncPtr, fromCString}
 
 class CurlException(message: String, exc: Throwable) extends RuntimeException(message, exc):
@@ -14,6 +16,15 @@ class CurlSetOptionException(
     val code: CurlErrCode,
 ) extends CurlException(
       s"Failed to set option: ${option} to value: ${value}, error code: ${code} (${code.getname})",
+    )
+
+class CurlMultiException(val code: CurlMultiCode, val detail: Boolean = true)
+    extends CurlException(
+      if !detail
+      then s"CURL multi operation failed with error code: ${code} (${code.getname})."
+      else
+        s"CURL multi operation failed with error code: ${code} (${code.getname}). " ++
+          s"Details: ${fromCString(multiStrError(code))}",
     )
 
 class CurlErrCodeException(val code: CurlErrCode, val detail: Boolean = true)
