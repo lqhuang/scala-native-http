@@ -10,8 +10,6 @@ import _root_.snhttp.experimental.libcurl.{
   CurlErrCode,
   Curl as _Curl,
   CurlPause,
-  CurlInfo as _CurlInfo,
-  CurlSlist as _CurlSlist,
   CurlBlob as _CurlBlob,
 }
 import _root_.snhttp.experimental.libcurl
@@ -37,9 +35,9 @@ class CurlEasy(val ptr: Ptr[_Curl]) extends AnyVal:
     val ret = libcurl.easySetopt(ptr, option, value)
     if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
 
-  transparent inline def setSlistOption(option: CurlOption, value: Ptr[_CurlSlist]): Unit =
+  transparent inline def setSlistOption(option: CurlOption, value: CurlSlist): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)
-    if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value, ret)
+    if ret != CurlErrCode.OK then throw new CurlSetOptionException(option, value.ptr, ret)
 
   transparent inline def setBlobOption(option: CurlOption, value: Ptr[_CurlBlob]): Unit =
     val ret = libcurl.easySetopt(ptr, option, value)

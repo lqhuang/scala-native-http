@@ -1,6 +1,6 @@
 package snhttp.experimental._libcurl
 
-import scala.scalanative.unsafe.{Tag, Size, CInt, CLong, UnsafeRichLong}
+import scala.scalanative.unsafe.{Tag, Size, CInt, CLong, UnsafeRichLong, CSize}
 import scala.scalanative.unsafe.name
 import scala.scalanative.unsigned.UInt
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
@@ -23,6 +23,12 @@ private[_libcurl] object internal:
     extension (inline t: T)
       inline def value: CLong = eq.apply(t)
       inline def int: Int = eq.apply(t).toInt
+
+  trait _BindgenEnumCSize[T](using eq: T =:= CSize):
+    extension (inline t: T)
+      inline def value: CSize = eq.apply(t)
+      inline def int: Int = eq.apply(t).toInt
+      inline def long: Long = eq.apply(t).toLong
 
   trait _BindgenEnumLong[T](using eq: T =:= Long):
     extension (inline t: T)

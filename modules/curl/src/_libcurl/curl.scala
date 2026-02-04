@@ -32,13 +32,17 @@ import scala.scalanative.unsafe.{
   UnsafeRichLong,
   Zone,
 }
-import scala.scalanative.unsigned.UInt
+import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
 import scala.scalanative.posix.time.time_t
 
 import _root_.snhttp.experimental._libcurl.easy.CurlData
-import _root_.snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumCLong}
+import _root_.snhttp.experimental._libcurl.internal.{
+  _BindgenEnumCInt,
+  _BindgenEnumCLong,
+  _BindgenEnumCSize,
+}
 import _root_.snhttp.experimental._libcurl.system.CurlOff
 
 object curl:
@@ -342,13 +346,22 @@ object curl:
   // val CURL_MAX_WRITE_SIZE = (16384).toUSize
   // val CURL_MAX_HTTP_HEADER = (100*1024).toUSize
 
-  /* This is a magic return code for the write callback that, when returned,
-   will signal libcurl to pause receiving on the current transfer. */
-  val CURL_WRITEFUNC_PAUSE = 0x10000001
+  /**
+   * known as "CURL_WRITEFUNC_*"
+   *
+   * This is a magic return code for the write callback
+   */
+  opaque type CurlWriteFuncRet = CSize
+  object CurlWriteFuncRet extends _BindgenEnumCSize[CurlWriteFuncRet]:
+    given Tag[CurlWriteFuncRet] = Tag.USize
 
-  /* This is a magic return code for the write callback that, when returned,
-   will signal an error from the callback. */
-  val CURL_WRITEFUNC_ERROR = 0xffffffff
+    inline def define(inline a: Long): CurlWriteFuncRet = a.toUSize
+
+    /* pause receiving on the current transfer. */
+    val PAUSE = define(0x10000001)
+    /* signal an error from the callback. */
+    val ERROR = define(0xffffffff)
+  end CurlWriteFuncRet
 
   /** known as "curl_write_callback" */
   type CurlWriteCallback = CFuncPtr4[
@@ -360,8 +373,17 @@ object curl:
     CSize,
     /** outstream */
     CVoidPtr,
-    CSize,
+    CSize | CurlWriteFuncRet,
   ]
+  object CurlWriteCallback:
+    given Tag[CurlWriteCallback] =
+      Tag.materializeCFuncPtr4[Ptr[Byte], CSize, CSize, CVoidPtr, CSize]
+
+    inline def fromScalaFunction(
+        inline f: (Ptr[Byte], CSize, CSize, CVoidPtr) => CSize | CurlWriteFuncRet,
+    ): CurlWriteCallback =
+      CFuncPtr4.fromScalaFunction(f)
+  end CurlWriteCallback
 
   /** This callback will be called when a new resolver request is made */
   type CurlResolverStartCallback = CFuncPtr3[

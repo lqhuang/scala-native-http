@@ -16,6 +16,7 @@ package object curl:
     CurlMultiOption,
     CurlDebugCallback,
     CurlInfoType,
+    CurlWriteFuncRet,
   }
 
   object CurlUtils:
