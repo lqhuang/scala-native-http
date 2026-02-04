@@ -20,22 +20,11 @@ import scala.scalanative.unsafe.{Ptr, stackalloc}
 import scala.scalanative.unsigned.UnsignedRichInt
 
 import _root_.snhttp.experimental.curl.CurlErrCodeException
-import _root_.snhttp.experimental.curl.CurlMulti as CurlMultiWrapper
+import _root_.snhttp.experimental.curl.{CurlMulti, CurlMsg, CurlEasy}
 import _root_.snhttp.experimental.libcurl
-import _root_.snhttp.experimental.libcurl.{
-  Curl,
-  CurlSlist,
-  CurlInfo,
-  CurlMsgCode,
-  CurlMsg,
-  CurlHeader,
-  CurlGlobalFlag,
-  CurlErrCode,
-  CurlMulti,
-  CurlMultiCode,
-}
-import _root_.snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
-import _root_.snhttp.experimental.libcurl.CurlMultiCode.RichCurlMultiCode
+import _root_.snhttp.experimental.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode}
+import _root_.snhttp.experimental.curl.CurlErrCode.RichCurlErrCode
+import _root_.snhttp.experimental.curl.CurlMultiCode.RichCurlMultiCode
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.utils.PointerCleaner
 
@@ -118,7 +107,7 @@ final class HttpClientImpl(
     private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
 
-  private[http] val ptr: Ptr[CurlMulti] = libcurl.multiInit()
+  private[http] val ptr: Ptr[_CurlMulti] = libcurl.multiInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURLM pointer")
   PointerCleaner.register(
@@ -131,7 +120,7 @@ final class HttpClientImpl(
     },
   ): Unit
 
-  private val _multi = CurlMultiWrapper(ptr)
+  private val _multi = CurlMulti(ptr)
   private val _runningCounter = stackalloc[Int]()
 
   // private val _started = new AtomicBoolean(false)
@@ -140,7 +129,7 @@ final class HttpClientImpl(
   private val _terminable = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
 
-  private val _connections = HashMap.empty[Ptr[Curl], HttpConnection[?]]
+  private val _connections = HashMap.empty[CurlEasy, HttpConnection[?]]
 
   private[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
@@ -192,10 +181,9 @@ final class HttpClientImpl(
 
     def _task() = {
       val conn = HttpConnection(request, responseBodyHandler, this)
-      _connections.put(conn.ptr, conn): Unit
+      _connections.put(conn.easy, conn): Unit
 
       try {
-        perform()
         conn.waitUntilDoneReceived()
         val response = conn.buildResponse()
         response
@@ -313,20 +301,37 @@ final class HttpClientImpl(
    */
 
   private[http] def registerConnection(conn: HttpConnection[?]): Unit =
-    val ret = _multi.addCurlEasy(conn.ptr)
+    val ret = _multi.addCurlEasy(conn.easy)
     if (ret != CurlMultiCode.OK)
       conn.close()
       throw new RuntimeException(s"CURLM add easy failed: error code ${ret} (${ret.getname})")
     // register connection only after added to multi handle successfully
-    _connections.put(conn.ptr, conn): Unit
+    _connections.put(conn.easy, conn): Unit
 
   private[http] def isRunning: Boolean =
     !_runningCounter != 0
 
-  private[http] def performAndPoll(timeoutMs: Int): Unit =
-    perform()
-    poll(timeoutMs)
-    collectInfo()
+  private[http] def performAndPoll(timeoutMs: Int): Boolean =
+    performAndGetIsDone() && !pollAndGetIsErr(timeoutMs)
+
+  private[http] def collectInfo(): Unit = synchronized {
+    var msg: Option[CurlMsg] = None
+    val msgCount = stackalloc[Int]()
+    while
+      msg = _multi.infoRead(msgCount)
+      msg != None
+    do
+      msg match
+        case Some(m) =>
+          val conn = _connections.getOrElse(
+            m.curl,
+            throw new IllegalStateException(
+              s"Failed to find HttpConnection for CURL easy handle pointer: ${m.curl}",
+            ),
+          )
+          conn.assignCurlMsg(m)
+        case None => ()
+  }
 
   /**
    * Private helpers
@@ -338,39 +343,22 @@ final class HttpClientImpl(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
 
-  private def perform(): Unit =
+  private def performAndGetIsDone(): Boolean =
     // /* set started flag for http client */
     // _started.compareAndExchange(false, true): Unit
     val ret = _multi.perform(_runningCounter)
     println(s"DEBUG: CURL multi perform result: ${ret.getname}")
     if (ret != CurlMultiCode.OK)
       throw new IOException(s"CURLM perform failed: error code ${ret} (${ret.getname})")
+    !_runningCounter == 0
 
-  private def poll(timeoutMs: Int): Unit =
+  private def pollAndGetIsErr(timeoutMs: Int): Boolean =
     val ret = _multi.poll(null, 0.toUInt, timeoutMs, null)
     println(s"DEBUG: CURL multi poll result: ${ret.getname}")
-    if (ret != CurlMultiCode.OK)
-      throw new IOException(s"CURLM poll failed: error code ${ret} (${ret.getname})")
-
-  private def collectInfo(): Unit =
-    var msg: Ptr[CurlMsg] = null
-    while
-      val msgCount = stackalloc[Int]()
-      msg = _multi.infoRead(msgCount)
-      msg != null
-    do {
-      val ptr = (!msg).easyHandle
-      val conn = _connections.getOrElse(
-        ptr,
-        throw new IllegalStateException(
-          s"Failed to find HttpConnection for CURL easy handle pointer: ${ptr}",
-        ),
-      )
-      conn.assignCurlMsg(msg)
-    }
+    ret != CurlMultiCode.OK
 
   private def unregisterConnection(conn: HttpConnection[?]): Unit =
+    _connections.remove(conn.easy): Unit
     conn.close()
-    _connections.remove(conn.ptr): Unit
 
 end HttpClientImpl
