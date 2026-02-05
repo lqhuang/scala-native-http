@@ -1,6 +1,7 @@
 package snhttp.experimental.curl
 
 import scala.scalanative.unsafe.{Ptr, CString}
+import scala.util.Using.Releasable
 
 import _root_.snhttp.experimental.libcurl.CurlSlist as _CurlSlist
 import _root_.snhttp.experimental.libcurl
