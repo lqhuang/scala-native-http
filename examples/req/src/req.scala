@@ -10,7 +10,7 @@ object Req:
 
     val request = HttpRequest
       .newBuilder()
-      .uri(URI.create("http://baidu.com"))
+      .uri(URI.create("http://localhost:8000/"))
       .GET()
       .build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())

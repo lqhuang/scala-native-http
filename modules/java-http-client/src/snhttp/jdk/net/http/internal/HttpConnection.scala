@@ -22,12 +22,11 @@ import scala.scalanative.unsafe.{
   sizeof,
   UnsafeRichLong,
   UnsafeRichInt,
-  CQuote,
+  Tag,
   stackalloc,
 }
 import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.NULL
-import scala.scalanative.libc.stdlib.{malloc, free}
 
 import _root_.snhttp.experimental.curl.{
   CurlErrCodeException,
@@ -46,20 +45,27 @@ import _root_.snhttp.experimental.curl.{
   CurlSlist,
   CurlWriteFuncRet,
 }
+import _root_.snhttp.experimental.libcurl
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.internal.PropertyUtils
 import _root_.snhttp.utils.PointerCleaner
 
 type CurlRecvBuffer = CStruct3[
-  Function2[Ptr[Byte], CSize, CSize], // request nsize bytes
   AtomicBoolean, // flag for resp body received
   Function0[Unit], // resp body received callback
+  SubmissionPublisher[JList[ByteBuffer]], // publisher for response body chunks
+]
+
+given Tag[CurlRecvBuffer] = Tag.materializeCStruct3Tag[
+  AtomicBoolean,
+  Function0[Unit],
+  SubmissionPublisher[JList[ByteBuffer]],
 ]
 
 extension (inline struct: CurlRecvBuffer)
-  inline def bufferReader: Function2[Ptr[Byte], CSize, CSize] = struct._1
-  inline def flag: AtomicBoolean = struct._2
-  inline def firstReceCallback: Function0[Unit] = struct._3
+  inline def flag: AtomicBoolean = struct._1
+  inline def writeNotify: Function0[Unit] = struct._2
+  inline def publisher: SubmissionPublisher[JList[ByteBuffer]] = struct._3
 
 /**
  * Represents a (virtual) connection to a web server, majorly based on libcurl's easy handle.
@@ -73,6 +79,8 @@ private[http] final class HttpConnection[T](
     client: HttpClientImpl,
 ) extends AutoCloseable:
 
+  given zone: Zone = Zone.open()
+
   private[snhttp] val easy = CurlEasy()
   private var curlMsg: Option[CurlMsg] = None
 
@@ -83,10 +91,8 @@ private[http] final class HttpConnection[T](
    */
   private var slist: Option[CurlSlist] = None
 
-  given zone: Zone = Zone.open()
-
   private val respBodyReceived = new AtomicBoolean(false)
-  private val respBodyPublisher = SubmissionPublisher[JList[ByteBuffer]]()
+  private val respBodyPublisher = new SubmissionPublisher[JList[ByteBuffer]]()
 
   @volatile private var maybeRespInfo: Option[ResponseInfoImpl] = None
   @volatile private var maybeRespBodySubscriber: Option[BodySubscriber[T]] = None
@@ -96,15 +102,10 @@ private[http] final class HttpConnection[T](
   val writeData = alloc[CurlRecvBuffer]()
   if (writeData == NULL)
     throw new CurlException("Failed to allocate memory for CurlData")
-  // (!writeData)._1 = offerResponseBodyData
-  // (!writeData)._2 = respBodyReceived
-  // (!writeData)._3 = callbackWhenReceivingBodyFirstTime
-
-  // val writeData: Ptr[CurlData] = alloc[CurlData]()
-  // if (writeData == NULL)
-  //   throw new OutOfMemoryError("Failed to allocate memory for CurlData")
-  // (!writeData)._1 = alloc[Byte](4096) // buffer
-  // (!writeData)._2 = 0.toUSize // size
+  assert(writeData.isInstanceOf[Ptr[?]] == true)
+  (!writeData)._1 = respBodyReceived
+  (!writeData)._2 = callbackWhenReceivingBodyFirstTime
+  (!writeData)._3 = respBodyPublisher
 
   private val shutdown = new AtomicBoolean(false)
 
@@ -200,9 +201,6 @@ private[http] final class HttpConnection[T](
      * Set data write callback and data pointer
      */
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
-    easy.setPtrOption(CurlOption.WRITEDATA, writeData)
-    easy.setPtrOption(CurlOption.WRITEDATA, writeData)
-    easy.setPtrOption(CurlOption.WRITEDATA, writeData) // wired bug ????
     easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
 
     /**
@@ -256,9 +254,6 @@ private[http] final class HttpConnection[T](
     println("INFO: Curl options initialized successfully")
   }
 
-  // private def isDone: Boolean =
-  //   (curlMsg.isDefined && curlMsg.get.msg == CurlMsgCode.DONE) || !client.isRunning
-
   private def requireNonShutdown(): Unit =
     if (shutdown.get())
       throw new IllegalStateException("HttpConnection has been shutdown")
@@ -288,7 +283,6 @@ private[http] final class HttpConnection[T](
    * necessary response info and initialize the `BodyHandler` to transform the response body.
    */
   private def callbackWhenReceivingBodyFirstTime(): Unit = {
-    println("!!!!! HttpConnection: receiving response body for the first time")
     val version = easy.info.version match
       case CurlHttpVersion.VERSION_1_1 => Version.HTTP_1_1
       case CurlHttpVersion.VERSION_2_0 => Version.HTTP_2
@@ -308,23 +302,6 @@ private[http] final class HttpConnection[T](
     }
   }
 
-  private def offerResponseBodyData(
-      payload: Ptr[Byte],
-      size: CSize,
-  ): CSize = {
-    println("!!!!! HttpConnection: offering response body data to BodySubscriber")
-    val ssize = size.toInt
-    val bb = ByteBuffer.allocate(ssize)
-
-    for i <- 0 until ssize do
-      val b = !(payload + i)
-      bb.put(i, b)
-    bb.flip()
-
-    val offered = respBodyPublisher.submit(JList.of(bb))
-    size
-  }
-
   /**
    * Callback function for writing response body data.
    *
@@ -339,15 +316,18 @@ private[http] final class HttpConnection[T](
    */
   private val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
     (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
-      // val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
+      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
 
-      // if (!(!userdata).flag.compareAndExchange(false, true))
-      //   (!userdata).firstReceCallback.apply()
+      if (!(!userdata).flag.compareAndExchange(false, true))
+        (!userdata).writeNotify.apply()
 
-      // val processed = (!userdata).bufferReader.apply(payload, size * nmemb)
-      // processed
-      println("!!!!! HttpConnection: writeDataCallback invoked")
-      size * nmemb
+      val ssize = size.toInt
+      val bb = ByteBuffer.allocate(ssize)
+      for i <- 0 until ssize do bb.put(i, !(payload + i))
+      bb.flip()
+
+      val offered = (!userdata).publisher.submit(JList.of(bb))
+      size
   }
 
 end HttpConnection
