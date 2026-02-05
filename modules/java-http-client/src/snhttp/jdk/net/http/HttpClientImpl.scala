@@ -131,7 +131,7 @@ final class HttpClientImpl(
   private val _terminable = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
 
-  private val _connections = HashMap.empty[CurlEasy, HttpConnection[?]]
+  private val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
 
   private[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
@@ -183,12 +183,17 @@ final class HttpClientImpl(
 
     def _task(): Try[HttpResponse[T]] =
       Using(HttpConnection(request, responseBodyHandler, this)) { conn =>
-        _connections.put(conn.easy, conn): Unit
+        connections.put(conn.easy, conn): Unit
+        val ret = multi.addCurlEasy(conn.easy)
+        if (ret != CurlMultiCode.OK)
+          throw new RuntimeException(s"CURLM add easy failed: error code ${ret} (${ret.getname})")
+
         conn.waitUntilDoneReceived()
+
         val response = conn.buildResponse()
         response
       } { conn =>
-        _connections.remove(conn.easy): Unit
+        connections.remove(conn.easy): Unit
         conn.close()
       }
 
@@ -312,14 +317,6 @@ final class HttpClientImpl(
    * Non-JDK public methods
    */
 
-  private[http] def registerConnection(conn: HttpConnection[?]): Unit =
-    val ret = multi.addCurlEasy(conn.easy)
-    if (ret != CurlMultiCode.OK)
-      conn.close()
-      throw new RuntimeException(s"CURLM add easy failed: error code ${ret} (${ret.getname})")
-    // register connection only after added to multi handle successfully
-    _connections.put(conn.easy, conn): Unit
-
   private[http] def isRunning: Boolean =
     !_runningCounter != 0
 
@@ -335,7 +332,7 @@ final class HttpClientImpl(
     do
       msg match
         case Some(m) =>
-          val conn = _connections.getOrElse(
+          val conn = connections.getOrElse(
             m.curl,
             throw new IllegalStateException(
               s"Failed to find HttpConnection for CURL easy handle pointer: ${m.curl}",

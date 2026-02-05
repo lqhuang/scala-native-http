@@ -4,6 +4,7 @@ import scala.util.Using.Releasable
 
 import scala.scalanative.unsafe.{Ptr, Size, CString, CInt, CLong, CFuncPtr}
 import scala.scalanative.posix.stddef.size_t
+import scala.scalanative.libc.stddef.NULL
 
 import _root_.snhttp.experimental.libcurl.{
   CurlOption,
@@ -76,7 +77,7 @@ object CurlEasy:
 
   def apply(): CurlEasy =
     val ptr = libcurl.easyInit()
-    if (ptr == null)
+    if (ptr == NULL)
       throw new RuntimeException("Failed to initialize CurlEasy")
     new CurlEasy(ptr)
 

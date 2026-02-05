@@ -3,17 +3,13 @@ package snhttp.jdk.net.http.internal
 import java.net.http.{HttpRequest, HttpHeaders, HttpResponse}
 import java.net.http.HttpClient.{Version, Redirect}
 import java.net.http.HttpResponse.{BodyHandler, BodySubscribers, ResponseInfo, BodySubscriber}
-import java.net.http.HttpRequest.BodyPublishers
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.Map as JMap
-import java.util.List as JList
+import java.util.{Map as JMap, List as JList}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.SubmissionPublisher
 
-import scala.scalanative.libc.stdio.printf
-
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.jdk.javaapi.CollectionConverters.asScala
 import scala.scalanative.unsafe.{
   Ptr,
   Zone,
@@ -29,17 +25,13 @@ import scala.scalanative.unsafe.{
   CQuote,
   stackalloc,
 }
-import scala.scalanative.libc.stdlib.{malloc, free, calloc}
-import scala.scalanative.libc.stdio.printf
-import scala.scalanative.libc.string.memcpy
 import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
+import scala.scalanative.libc.stddef.NULL
+import scala.scalanative.libc.stdlib.{malloc, free}
 
-import _root_.snhttp.experimental.curl.{CurlErrCodeException, CurlOSException, CurlException}
-import _root_.snhttp.experimental.curl.CurlInfo
-import _root_.snhttp.experimental.libcurl
-import _root_.snhttp.experimental.libcurl.CurlSlist
 import _root_.snhttp.experimental.curl.{
-  CurlInfo,
+  CurlErrCodeException,
+  CurlException,
   CurlFollow,
   CurlUseSsl,
   CurlEasy,
@@ -49,23 +41,19 @@ import _root_.snhttp.experimental.curl.{
   CurlMsg,
   CurlErrCode,
   CurlWriteCallback,
-  CurlDebugCallback,
   CurlInfoType,
   CurlData,
+  CurlSlist,
+  CurlWriteFuncRet,
 }
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.internal.PropertyUtils
 import _root_.snhttp.utils.PointerCleaner
-import scala.scalanative.unsafe.CChar
-import scala.scalanative.unsigned.USize
 
 type CurlRecvBuffer = CStruct3[
-  /** request nsize bytes */
-  Function2[Ptr[Byte], CSize, CSize],
-  /** flag for resp body received */
-  AtomicBoolean,
-  /** resp body received callback */
-  Function0[Unit],
+  Function2[Ptr[Byte], CSize, CSize], // request nsize bytes
+  AtomicBoolean, // flag for resp body received
+  Function0[Unit], // resp body received callback
 ]
 
 extension (inline struct: CurlRecvBuffer)
@@ -85,16 +73,7 @@ private[http] final class HttpConnection[T](
     client: HttpClientImpl,
 ) extends AutoCloseable:
 
-  private[snhttp] var ptr = libcurl.easyInit()
-  if (ptr == null)
-    throw new CurlException("Failed to initialize curl easy handle")
-  private[snhttp] val easy = CurlEasy(ptr)
-  val _ = PointerCleaner.register(
-    this,
-    easy.ptr,
-    _ptr => libcurl.easyCleanup(_ptr),
-  )
-
+  private[snhttp] val easy = CurlEasy()
   private var curlMsg: Option[CurlMsg] = None
 
   /**
@@ -102,12 +81,7 @@ private[http] final class HttpConnection[T](
    * copy the entire list so you **must** keep it around until you no longer use this _handle_ for a
    * transfer before you call `curl_slist_free_all` on the list.
    */
-  private var slistPtr: Ptr[CurlSlist] = null
-  val _ = PointerCleaner.register(
-    this,
-    slistPtr,
-    _slist => libcurl.slistFreeAll(_slist),
-  )
+  private var slist: Option[CurlSlist] = None
 
   given zone: Zone = Zone.open()
 
@@ -118,30 +92,29 @@ private[http] final class HttpConnection[T](
   @volatile private var maybeRespBodySubscriber: Option[BodySubscriber[T]] = None
 
   val writeBufferSize = PropertyUtils.RECEIVE_BUFFER_SIZE // won't change after init
-  val writeData: Ptr[CurlRecvBuffer] = alloc[CurlRecvBuffer]()
-  if (writeData == null)
+
+  val writeData = alloc[CurlRecvBuffer]()
+  if (writeData == NULL)
     throw new CurlException("Failed to allocate memory for CurlData")
-  (!writeData)._1 = offerResponseBodyData
-  (!writeData)._2 = respBodyReceived
-  (!writeData)._3 = callbackWhenReceivingBodyFirstTime
+  // (!writeData)._1 = offerResponseBodyData
+  // (!writeData)._2 = respBodyReceived
+  // (!writeData)._3 = callbackWhenReceivingBodyFirstTime
+
+  // val writeData: Ptr[CurlData] = alloc[CurlData]()
+  // if (writeData == NULL)
+  //   throw new OutOfMemoryError("Failed to allocate memory for CurlData")
+  // (!writeData)._1 = alloc[Byte](4096) // buffer
+  // (!writeData)._2 = 0.toUSize // size
 
   private val shutdown = new AtomicBoolean(false)
 
   init()
 
   def close(): Unit = {
-    if (ptr != null)
-      libcurl.easyCleanup(ptr)
-      ptr = null
-
-    if (slistPtr != null)
-      libcurl.slistFreeAll(slistPtr)
-      slistPtr = null
-
+    easy.cleanup()
+    slist.map(_.freeAll()): Unit
     zone.close()
-
-    if (shutdown.compareAndExchange(false, true) != false)
-      throw new IllegalStateException("HttpConnection has already been shutdown")
+    shutdown.compareAndExchange(false, true): Unit
   }
 
   def assignCurlMsg(msg: CurlMsg): Unit =
@@ -169,134 +142,119 @@ private[http] final class HttpConnection[T](
   /**
    * Setup options for this connection based on the `request` and `client` config.
    */
-  private def init(): Unit =
-    try {
-      easy.setCStringOption(CurlOption.URL, toCString(request.uri().toString()))
+  private def init(): Unit = {
+    easy.setCStringOption(CurlOption.URL, toCString(request.uri().toString()))
 
-      val httpVersion = request.version()
-      if (httpVersion.isPresent())
-        val version = httpVersion.get() match
-          case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
-          case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
-        easy.setCLongOption(CurlOption.HTTP_VERSION, version.value)
+    val httpVersion = request.version()
+    if (httpVersion.isPresent())
+      val version = httpVersion.get() match
+        case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
+        case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
+      easy.setCLongOption(CurlOption.HTTP_VERSION, version.value)
 
-      // default to 30 seconds
-      val timeoutMs = request.timeout().map(_.toMillis()).orElse(30 * 1000L)
-      easy.setCLongOption(
-        CurlOption.TIMEOUT_MS,
-        timeoutMs.toSize,
-      )
+    // default to 30 seconds
+    val timeoutMs = request.timeout().map(_.toMillis()).orElse(30 * 1000L)
+    easy.setCLongOption(
+      CurlOption.TIMEOUT_MS,
+      timeoutMs.toSize,
+    )
 
-      val connectTimeoutMs = client.builder._connectTimeout.map(_.toMillis).orElse(3 * 1000L)
-      easy.setCLongOption(CurlOption.CONNECTTIMEOUT_MS, connectTimeoutMs.toSize)
+    val connectTimeoutMs = client.builder._connectTimeout.map(_.toMillis).orElse(3 * 1000L)
+    easy.setCLongOption(CurlOption.CONNECTTIMEOUT_MS, connectTimeoutMs.toSize)
 
-      val followRedirects = client.builder._redirect match
-        case Redirect.NEVER  => CurlFollow.DISABLED
-        case Redirect.ALWAYS => CurlFollow.ALL
-        case Redirect.NORMAL => CurlFollow.OBEYCODE
-      easy.setCLongOption(CurlOption.FOLLOWLOCATION, followRedirects.value)
+    val followRedirects = client.builder._redirect match
+      case Redirect.NEVER  => CurlFollow.DISABLED
+      case Redirect.ALWAYS => CurlFollow.ALL
+      case Redirect.NORMAL => CurlFollow.OBEYCODE
+    easy.setCLongOption(CurlOption.FOLLOWLOCATION, followRedirects.value)
 
-      /**
-       * ref: https://curl.se/libcurl/c/curl_slist_append.html
-       *
-       * Notes from upstream libcurl documentation:
-       *
-       *   1. The existing list should be passed as the first argument and the new list is returned
-       *      from this function.
-       *   2. Pass in NULL in * the list argument to create a new list.
-       *   3. The specified string has been appended when this function returns.
-       *   4. curl_slist_append copies the string.
-       */
-      val headers = request.headers().map().entrySet().stream().forEach { entry =>
-        val key = entry.getKey()
-        val value = entry.getValue()
+    /**
+     * ref: https://curl.se/libcurl/c/curl_slist_append.html
+     *
+     * Notes from upstream libcurl documentation:
+     *
+     *   1. The existing list should be passed as the first argument and the new list is returned
+     *      from this function.
+     *   2. Pass in NULL in * the list argument to create a new list.
+     *   3. The specified string has been appended when this function returns.
+     *   4. curl_slist_append copies the string.
+     */
+    val headers = request.headers().map()
+    if (!headers.isEmpty()) {
+      val headerStrs = asScala(headers)
+        .map { (key, values) =>
+          asScala(values).map { v =>
+            s"${key}: ${v}"
+          }
+        }
+        .flatten
+        .toSeq
+        .map(toCString(_))
 
-        /**
-         * ref: https://curl.se/libcurl/c/CURLOPT_HTTPHEADER.html
-         *
-         * If you provide a header without content (no data on the right side of the colon) as in
-         * `Accept:`, the internally used header is removed. To forcibly add a header without
-         * content (nothing after the colon), use the form name `;` (using a trailing semicolon).
-         *
-         * Examples:
-         *
-         *   1. Add header with content => "Accept: application/json"
-         *   2. remove this header => "Accept:"
-         *   3. Add header with no content => "Accept;"
-         */
-        val header =
-          if value.isEmpty
-          then s"${key};"
-          else s"${key}: ${value}"
-
-        slistPtr = libcurl.slistAppend(slistPtr, toCString(header))
-      }
-      easy.setSlistOption(CurlOption.HTTPHEADER, slistPtr)
-
-      /**
-       * TLS options
-       */
-      val scheme = request.uri().getScheme().toLowerCase().strip()
-      if !scheme.endsWith("s")
-      then // no TLS
-        easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
-      else // with TLS
-        // TODO: Register SSL context ptr to set up custom SSL context
-        // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
-        easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
-
-      /**
-       * Set data write callback and data pointer
-       */
-      val _ = libcurl.easySetopt(ptr, CurlOption.WRITEDATA, writeData)
-      val _ = libcurl.easySetopt(ptr, CurlOption.WRITEFUNCTION, writeDataCallback)
-
-      /**
-       * set up request method and body for POST, PUT, etc.
-       */
-      if (request.bodyPublisher().isPresent()) {
-        val bodyPublisher = request.bodyPublisher().get()
-        val bodySubscriber = BodySubscribers.ofString(StandardCharsets.UTF_16)
-        val postfieldSubscriber = CurlBodySubscriber(bodySubscriber)
-
-        bodyPublisher.subscribe(postfieldSubscriber)
-        val data = postfieldSubscriber.getBody().toCompletableFuture().join()
-
-        easy.setCStringOption(CurlOption.POSTFIELDS, toCString(data))
-      }
-      // NOTES:
-      // `CURLOPT_POSTFIELDS` implied POST,
-      // so postpone setting method until here.
-      val _method_ret = request.method() match
-        case "GET" =>
-          easy.setCIntOption(CurlOption.HTTPGET, 1)
-        case "HEAD" =>
-          easy.setCIntOption(CurlOption.NOBODY, 1)
-        case "POST" =>
-          easy.setCIntOption(CurlOption.POST, 1)
-        case "CONNECT" =>
-          easy.setCIntOption(CurlOption.CONNECT_ONLY, 1)
-        case m @ ("PUT" | "DELETE" | "OPTIONS" | "TRACE" | "PATCH") =>
-          easy.setCStringOption(CurlOption.CUSTOMREQUEST, toCString(m))
-        case other =>
-          throw new UnsupportedOperationException(
-            s"HTTP method ${other} is not supported yet",
-          )
-
-      /**
-       * TODO: set error buffer? https://curl.se/libcurl/c/CURLOPT_ERRORBUFFER.html
-       */
-
-      /**
-       * Finally add easy handle to multi handle
-       */
-      client.registerConnection(this)
-      println("INFO: Curl options initialized successfully")
-    } catch {
-      case exc: Exception =>
-        close()
-        throw exc
+      val _slist = CurlSlist(headerStrs*)
+      slist = Some(_slist)
+      easy.setSlistOption(CurlOption.HTTPHEADER, _slist)
     }
+
+    /**
+     * Set data write callback and data pointer
+     */
+    easy.setPtrOption(CurlOption.WRITEDATA, writeData)
+    easy.setPtrOption(CurlOption.WRITEDATA, writeData)
+    easy.setPtrOption(CurlOption.WRITEDATA, writeData)
+    easy.setPtrOption(CurlOption.WRITEDATA, writeData) // wired bug ????
+    easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
+
+    /**
+     * TLS options
+     */
+    val scheme = request.uri().getScheme().toLowerCase().strip()
+    if !scheme.endsWith("s")
+    then // no TLS
+      easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
+    else // with TLS
+      // TODO: Register SSL context ptr to set up custom SSL context
+      // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
+      easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
+
+    /**
+     * set up request method and body for POST, PUT, etc.
+     */
+    if (request.bodyPublisher().isPresent()) {
+      val bodyPublisher = request.bodyPublisher().get()
+      val bodySubscriber = BodySubscribers.ofString(StandardCharsets.UTF_16)
+      val postfieldSubscriber = CurlBodySubscriber(bodySubscriber)
+
+      bodyPublisher.subscribe(postfieldSubscriber)
+      val data = postfieldSubscriber.getBody().toCompletableFuture().join()
+
+      easy.setCStringOption(CurlOption.POSTFIELDS, toCString(data))
+    }
+    // NOTES:
+    // `CURLOPT_POSTFIELDS` implied POST,
+    // so postpone setting method until here.
+    val _method_ret = request.method() match
+      case "GET" =>
+        easy.setCIntOption(CurlOption.HTTPGET, 1)
+      case "HEAD" =>
+        easy.setCIntOption(CurlOption.NOBODY, 1)
+      case "POST" =>
+        easy.setCIntOption(CurlOption.POST, 1)
+      case "CONNECT" =>
+        easy.setCIntOption(CurlOption.CONNECT_ONLY, 1)
+      case m @ ("PUT" | "DELETE" | "OPTIONS" | "TRACE" | "PATCH") =>
+        easy.setCStringOption(CurlOption.CUSTOMREQUEST, toCString(m))
+      case other =>
+        throw new UnsupportedOperationException(
+          s"HTTP method ${other} is not supported yet",
+        )
+
+    /**
+     * TODO: set error buffer? https://curl.se/libcurl/c/CURLOPT_ERRORBUFFER.html
+     */
+
+    println("INFO: Curl options initialized successfully")
+  }
 
   // private def isDone: Boolean =
   //   (curlMsg.isDefined && curlMsg.get.msg == CurlMsgCode.DONE) || !client.isRunning
@@ -351,7 +309,7 @@ private[http] final class HttpConnection[T](
   }
 
   private def offerResponseBodyData(
-      contents: Ptr[Byte],
+      payload: Ptr[Byte],
       size: CSize,
   ): CSize = {
     println("!!!!! HttpConnection: offering response body data to BodySubscriber")
@@ -359,7 +317,7 @@ private[http] final class HttpConnection[T](
     val bb = ByteBuffer.allocate(ssize)
 
     for i <- 0 until ssize do
-      val b = !(contents + i)
+      val b = !(payload + i)
       bb.put(i, b)
     bb.flip()
 
@@ -379,16 +337,17 @@ private[http] final class HttpConnection[T](
    *   1. [CURLOPT_WRITEFUNCTION](https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html)
    *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
    */
-  val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
-    (contents: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
-      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
+  private val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
+      // val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
 
-      if (!(!userdata).flag.compareAndExchange(false, true))
-        val _ = printf(c"!!!!! HttpConnection: first time receiving response body")
-        (!userdata).firstReceCallback.apply()
+      // if (!(!userdata).flag.compareAndExchange(false, true))
+      //   (!userdata).firstReceCallback.apply()
 
-      val processed = (!userdata).bufferReader.apply(contents, size * nmemb)
-      processed
+      // val processed = (!userdata).bufferReader.apply(payload, size * nmemb)
+      // processed
+      println("!!!!! HttpConnection: writeDataCallback invoked")
+      size * nmemb
   }
 
 end HttpConnection

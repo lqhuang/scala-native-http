@@ -1134,10 +1134,25 @@ object curl:
 
     private inline def define(inline a: Int): CurlOption = a
 
-    val WRITEDATA = define(10001)
-    val URL = define(10002)
-    val PORT = define(3)
-    val PROXY = define(10004)
+    // CurlOptType
+    private object cot {
+      val LONG = 0
+      val OBJECTPOINT = 10000
+      val FUNCTIONPOINT = 20000
+      val OFF_T = 30000
+      val BLOB = 40000
+
+      // alias
+      val STRINGPOINT = OBJECTPOINT
+      val SLISTPOINT = OBJECTPOINT
+      val CBPOINT = OBJECTPOINT
+      val VALUES = LONG
+    }
+
+    val WRITEDATA = define(cot.CBPOINT + 1)
+    val URL = define(cot.STRINGPOINT + 2)
+    val PORT = define(cot.LONG + 3)
+    val PROXY = define(cot.STRINGPOINT + 4)
     val USERPWD = define(10005)
     val PROXYUSERPWD = define(10006)
     val RANGE = define(10007)

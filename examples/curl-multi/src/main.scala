@@ -1,14 +1,4 @@
-import scala.scalanative.unsafe.{
-  CStruct2,
-  CFuncPtr2,
-  CFuncPtr4,
-  CSize,
-  Ptr,
-  stackalloc,
-  alloc,
-  Zone,
-  CQuote,
-}
+import scala.scalanative.unsafe.{CStruct2, CSize, Ptr, stackalloc, alloc, Zone, CQuote, sizeof}
 import scala.scalanative.unsigned.{USize, UnsignedRichInt}
 import scala.scalanative.libc.string.memcpy
 import scala.util.Using
@@ -24,7 +14,6 @@ import snhttp.experimental.curl.{
 }
 import snhttp.experimental.curl.CurlErrCode.RichCurlErrCode
 import snhttp.experimental.curl.CurlMultiCode.RichCurlMultiCode
-import scala.compiletime.ops.boolean
 
 object App:
 
@@ -38,19 +27,19 @@ object App:
 
   given zone: Zone = Zone.open()
 
-  val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
-    (contents: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
+  val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
       val userdata = outstream.asInstanceOf[Ptr[CurlCustomData]]
       val recvSize = size * nmemb
 
       val processed: CSize =
         if recvSize >= 8192.toUSize
         then
-          val _ = memcpy((!userdata)._1, contents, 8192.toUSize)
+          val _ = memcpy((!userdata)._1, payload, 8192.toUSize)
           (!userdata)._2 = 8192.toUSize
           8192.toUSize
         else
-          val _ = memcpy((!userdata)._1, contents, recvSize)
+          val _ = memcpy((!userdata)._1, payload, recvSize)
           (!userdata)._2 = recvSize
           recvSize
 
@@ -71,7 +60,7 @@ object App:
         timeoutMs: Int,
     ): Boolean =
       val ret = multi.poll(null, 0.toUInt, timeoutMs, null)
-      println(s" multi.poll ret = ${ret} (${ret.getname})")
+      println(s"multi.poll ret = ${ret} (${ret.getname})")
       ret != CurlMultiCode.OK
 
     Using.resource(CurlMulti()) { multi =>
@@ -80,7 +69,7 @@ object App:
         curl1.setPtrOption(CurlOption.WRITEDATA, writeData)
         curl1.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
 
-        curl2.setCStringOption(CurlOption.URL, c"https://httpbin.org/get")
+        curl2.setCStringOption(CurlOption.URL, c"https://example.com/")
 
         multi.addCurlEasy(curl1)
         multi.addCurlEasy(curl2)
@@ -88,7 +77,7 @@ object App:
         val _runningCounter = stackalloc[Int]()
         while {
           val _ = multi.perform(_runningCounter)
-          println(s" still running = ${!_runningCounter}")
+          println(s"still running = ${!_runningCounter}")
           !_runningCounter != 0 && !pollAndGetIsErr(multi, 500)
         }
         do {}
@@ -102,11 +91,11 @@ object App:
           msg match
             case Some(m) =>
               if (m.curl == curl1)
-                println(s" Message is for curl1")
+                println(s"Message is for curl1")
               else if (m.curl == curl2)
-                println(s" Message is for curl2")
+                println(s"Message is for curl2")
               else
-                println(s" Message is for unknown curl handle")
+                println(s"Message is for unknown curl handle")
               println(s" msg code: ${m.msg} (${m.msg.getname})")
             case None => println("Read Nothing")
 
