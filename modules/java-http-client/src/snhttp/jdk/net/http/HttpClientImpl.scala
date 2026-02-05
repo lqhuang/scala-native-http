@@ -18,17 +18,14 @@ import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
 import scala.scalanative.unsafe.{Ptr, stackalloc}
 import scala.scalanative.unsigned.UnsignedRichInt
-import scala.util.{Using, Try, Success, Failure}
 
-import _root_.snhttp.experimental.curl.CurlErrCodeException
+import _root_.snhttp.experimental.curl.{CurlErrCodeException, CurlMultiException}
 import _root_.snhttp.experimental.curl.{CurlMulti, CurlMsg, CurlEasy}
 import _root_.snhttp.experimental.libcurl
 import _root_.snhttp.experimental.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode}
-import _root_.snhttp.experimental.curl.CurlErrCode.RichCurlErrCode
 import _root_.snhttp.experimental.curl.CurlMultiCode.RichCurlMultiCode
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.utils.PointerCleaner
-import snhttp.experimental.curl.CurlMultiException
 
 class HttpClientBuilderImpl() extends Builder:
 
@@ -181,36 +178,35 @@ final class HttpClientImpl(
       throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
     requireNonShutdown()
 
-    def _task(): Try[HttpResponse[T]] =
-      Using(HttpConnection(request, responseBodyHandler, this)) { conn =>
-        connections.put(conn.easy, conn): Unit
-        val ret = multi.addCurlEasy(conn.easy)
-        if (ret != CurlMultiCode.OK)
-          throw new RuntimeException(s"CURLM add easy failed: error code ${ret} (${ret.getname})")
-
-        conn.waitUntilDoneReceived()
-
-        val response = conn.buildResponse()
-        response
-      } { conn =>
-        connections.remove(conn.easy): Unit
-        conn.close()
-      }
-
     CompletableFuture.supplyAsync(
-      () =>
-        _task() match
-          case Success(resp) => resp
-          case Failure(exc) =>
-            println(s"DEBUG: HttpClient sendAsync failed with exception: ${exc}")
-            if exc.isInstanceOf[CurlErrCodeException]
-            then
-              val e = exc.asInstanceOf[CurlErrCodeException]
-              if e.code.value.toInt == 5 || e.code.value.toInt == 6 || e.code.value.toInt == 7
-              then throw new ConnectException(s"HTTP request failed: ${e.getMessage()}")
-              else throw e
+      () => {
+        val conn = HttpConnection(request, responseBodyHandler, this)
+        connections.put(conn.easy, conn): Unit
+
+        try {
+          val ret = multi.addCurlEasy(conn.easy)
+          if (ret != CurlMultiCode.OK)
+            throw new RuntimeException(
+              s"CURLM add easy failed: error code ${ret} (${ret.getname})",
+            )
+
+          conn.waitUntilDoneReceived()
+          val response = conn.buildResponse()
+          response
+        } //
+        catch {
+          case exc: CurlErrCodeException =>
+            if Set(5, 6, 7).contains(exc.code.value.toInt)
+            then throw new ConnectException(s"HTTP request failed: ${exc.getMessage()}")
             else throw exc
-      ,
+          case exc: Throwable =>
+            throw exc
+        } //
+        finally {
+          connections.remove(conn.easy): Unit
+          conn.close()
+        }
+      },
       _executor,
     )
   }
@@ -320,7 +316,7 @@ final class HttpClientImpl(
   private[http] def isRunning: Boolean =
     !_runningCounter != 0
 
-  private[http] def runAndGetIsDone(timeoutMs: Int): Boolean =
+  private[http] inline def runAndGetIsDone(timeoutMs: Int): Boolean =
     !(performAndGetIsRuning() && !pollAndGetIsErr(timeoutMs))
 
   private[http] def collectInfo(): Unit = synchronized {

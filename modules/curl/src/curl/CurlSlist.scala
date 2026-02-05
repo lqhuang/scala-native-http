@@ -1,31 +1,9 @@
 package snhttp.experimental.curl
 
-import scala.scalanative.unsafe.{
-  Ptr,
-  Size,
-  CString,
-  toCString,
-  stackalloc,
-  UnsafeRichInt,
-  CVoidPtr,
-  Zone,
-  CLong,
-}
-import scala.scalanative.unsigned.UInt
-import scala.scalanative.posix.sys.select.fd_set
+import scala.scalanative.unsafe.{Ptr, CString}
 
-import _root_.snhttp.experimental.libcurl.{
-  Curl as _Curl,
-  CurlMulti as _CurlMulti,
-  CurlWaitFd as _CurlWaitFd,
-  CurlMultiOption,
-  CurlMultiCode,
-  CurlMsg,
-  CurlSocket,
-  CurlSlist as _CurlSlist,
-}
+import _root_.snhttp.experimental.libcurl.CurlSlist as _CurlSlist
 import _root_.snhttp.experimental.libcurl
-import scala.util.Using.Releasable
 
 class CurlSlist private (val ptr: Ptr[_CurlSlist]) extends Releasable[CurlSlist]:
 

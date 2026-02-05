@@ -4,7 +4,6 @@ import scala.scalanative.unsafe.{
   CFuncPtr4,
   CSize,
   Ptr,
-  stackalloc,
   alloc,
   Zone,
   CQuote,

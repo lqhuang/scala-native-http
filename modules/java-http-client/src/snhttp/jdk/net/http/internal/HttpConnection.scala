@@ -19,11 +19,9 @@ import scala.scalanative.unsafe.{
   CSize,
   CStruct3,
   CFuncPtr4,
-  sizeof,
   UnsafeRichLong,
   UnsafeRichInt,
   Tag,
-  stackalloc,
 }
 import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.NULL
@@ -40,15 +38,11 @@ import _root_.snhttp.experimental.curl.{
   CurlMsg,
   CurlErrCode,
   CurlWriteCallback,
-  CurlInfoType,
-  CurlData,
   CurlSlist,
   CurlWriteFuncRet,
 }
-import _root_.snhttp.experimental.libcurl
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.internal.PropertyUtils
-import _root_.snhttp.utils.PointerCleaner
 
 type CurlRecvBuffer = CStruct3[
   AtomicBoolean, // flag for resp body received
@@ -97,14 +91,41 @@ private[http] final class HttpConnection[T](
   @volatile private var maybeRespInfo: Option[ResponseInfoImpl] = None
   @volatile private var maybeRespBodySubscriber: Option[BodySubscriber[T]] = None
 
+  /**
+   * Callback function for writing response body data.
+   *
+   * Implementation notes:
+   *
+   * The main purpose of this function is to adapt the curl write data to our BodySubscriber.
+   *
+   * Refs:
+   *
+   *   1. [CURLOPT_WRITEFUNCTION](https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html)
+   *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
+   */
+  val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
+      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
+
+      if (!(!userdata).flag.compareAndExchange(false, true))
+        (!userdata).writeNotify.apply()
+
+      val ssize = size.toInt
+      val bb = ByteBuffer.allocate(ssize)
+      for i <- 0 until ssize do bb.put(i, !(payload + i))
+      bb.flip()
+
+      val offered = (!userdata).publisher.submit(JList.of(bb))
+      size
+  }
+
   val writeBufferSize = PropertyUtils.RECEIVE_BUFFER_SIZE // won't change after init
 
   val writeData = alloc[CurlRecvBuffer]()
   if (writeData == NULL)
     throw new CurlException("Failed to allocate memory for CurlData")
-  assert(writeData.isInstanceOf[Ptr[?]] == true)
   (!writeData)._1 = respBodyReceived
-  (!writeData)._2 = callbackWhenReceivingBodyFirstTime
+  (!writeData)._2 = triggerForFirstPacket
   (!writeData)._3 = respBodyPublisher
 
   private val shutdown = new AtomicBoolean(false)
@@ -123,7 +144,7 @@ private[http] final class HttpConnection[T](
       throw new IllegalStateException("CurlMsg has already been assigned/done")
     curlMsg = Some(msg)
 
-  def waitUntilDoneReceived(): Unit =
+  inline def waitUntilDoneReceived(): Unit =
     while !client.runAndGetIsDone(500) do println("HttpConnection waiting for DONE message...")
     client.collectInfo()
 
@@ -282,7 +303,7 @@ private[http] final class HttpConnection[T](
    * When receiving response body for the first time, this callback will be invoked to assemble
    * necessary response info and initialize the `BodyHandler` to transform the response body.
    */
-  private def callbackWhenReceivingBodyFirstTime(): Unit = {
+  private def triggerForFirstPacket(): Unit = {
     val version = easy.info.version match
       case CurlHttpVersion.VERSION_1_1 => Version.HTTP_1_1
       case CurlHttpVersion.VERSION_2_0 => Version.HTTP_2
@@ -300,34 +321,6 @@ private[http] final class HttpConnection[T](
       maybeRespBodySubscriber = Some(subscriber)
       respBodyPublisher.subscribe(subscriber)
     }
-  }
-
-  /**
-   * Callback function for writing response body data.
-   *
-   * Implementation notes:
-   *
-   * The main purpose of this function is to adapt the curl write data to our BodySubscriber.
-   *
-   * Refs:
-   *
-   *   1. [CURLOPT_WRITEFUNCTION](https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html)
-   *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
-   */
-  private val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
-    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
-      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
-
-      if (!(!userdata).flag.compareAndExchange(false, true))
-        (!userdata).writeNotify.apply()
-
-      val ssize = size.toInt
-      val bb = ByteBuffer.allocate(ssize)
-      for i <- 0 until ssize do bb.put(i, !(payload + i))
-      bb.flip()
-
-      val offered = (!userdata).publisher.submit(JList.of(bb))
-      size
   }
 
 end HttpConnection
