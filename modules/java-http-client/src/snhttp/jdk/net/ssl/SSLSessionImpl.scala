@@ -8,7 +8,7 @@ import javax.net.ssl.SSLPeerUnverifiedException
 
 import scala.scalanative.posix
 import scala.scalanative.unsafe.{CChar, Ptr, alloc, fromCString, stackalloc}
-import scala.scalanative.unsigned.UInt
+import scala.scalanative.unsigned.{UInt, UnsignedRichInt}
 
 import snhttp.utils.PointerCleaner
 import snhttp.experimental.openssl.{ssl, bio}
@@ -33,17 +33,17 @@ class SSLSessionImpl(
   def getId(): Array[Byte] = {
     val lenPtr = stackalloc[UInt]()
     val ubytePtr = ssl.SSL_SESSION_get_id(ptr, lenPtr)
-    val length = (!lenPtr).toInt
+    val length = !lenPtr
 
-    val buffer = ByteBuffer.allocate(length)
-    for i <- 0 until length do
-      val byte = !(ubytePtr + i)
-      buffer.put(i, byte.toByte)
+    assert(length <= Int.MaxValue.toUInt, s"SSL Session ID length ${length} exceeds Int.MaxValue")
+
+    val bufLen = length.toInt
+    val buffer = ByteBuffer.allocate(bufLen)
+    for i <- 0 until bufLen do buffer.put((!(ubytePtr + i)).toByte)
     buffer.flip()
 
-    val idArray = new Array[Byte](length)
+    val idArray = new Array[Byte](bufLen)
     buffer.get(idArray)
-    buffer.clear()
     idArray
   }
 

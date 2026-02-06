@@ -110,10 +110,12 @@ private[http] final class HttpConnection[T](
       if (!(!userdata).flag.compareAndExchange(false, true))
         (!userdata).writeNotify.apply()
 
+      // it's safe to cast UInt ot Int here
+      // Curl guarantees that MAX_WRITE_SIZE won't exceed Int.MaxValue
       val ssize = size.toInt
       val bb = ByteBuffer.allocate(ssize)
-      for i <- 0 until ssize do bb.put(i, !(payload + i))
-      // bb.flip()
+      for i <- 0 until ssize do bb.put(!(payload + i))
+      bb.flip()
 
       val offered = (!userdata).publisher.submit(JList.of(bb))
       size
