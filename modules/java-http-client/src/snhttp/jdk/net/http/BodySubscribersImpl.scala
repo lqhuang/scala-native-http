@@ -141,11 +141,8 @@ object BodySubscribersImpl:
       then subscription.cancel()
       else
         this.subscription = subscription
-        try
-          this.subscription.request(Long.MaxValue) // read all once
-          onComplete()
+        try subscription.request(1L)
         catch case t: Throwable => onError(t)
-        finally subscription.cancel()
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       requireNonNull(item)
@@ -157,6 +154,7 @@ object BodySubscribersImpl:
             if (!success) throw new IllegalStateException("Buffer addition failed")
           }
         }
+      this.subscription.request(1L)
 
     override def onComplete(): Unit =
       try
@@ -415,12 +413,18 @@ object BodySubscribersImpl:
   class NullSubscriber[T](other: Optional[T]) extends BodySubscriber[T] {
     private val cf = new CompletableFuture[T]()
     private val subscribed = new AtomicBoolean()
+    private var subscription: Subscription = null
 
     override def onSubscribe(subscription: Subscription): Unit =
       if (!subscribed.compareAndSet(false, true)) subscription.cancel()
-      else subscription.request(Long.MaxValue)
+      else
+        this.subscription = subscription
+        try subscription.request(1L)
+        catch case t: Throwable => onError(t)
 
-    override def onNext(item: JList[ByteBuffer]): Unit = ()
+    override def onNext(item: JList[ByteBuffer]): Unit =
+      try subscription.request(1L)
+      catch case t: Throwable => onError(t)
 
     override def onError(throwable: Throwable): Unit =
       cf.completeExceptionally(throwable): Unit

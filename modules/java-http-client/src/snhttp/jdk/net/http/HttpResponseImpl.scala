@@ -18,7 +18,7 @@ class HttpResponseImpl[T](
   def statusCode(): Int = _responseInfo.statusCode()
 
   /// @since 25
-  override def connectionLabel(): Optional[String] = _connectionLabel
+  def connectionLabel(): Optional[String] = _connectionLabel
 
   def request(): HttpRequest = _request
 

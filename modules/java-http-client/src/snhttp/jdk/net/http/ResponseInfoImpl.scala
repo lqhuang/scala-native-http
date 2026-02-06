@@ -18,6 +18,6 @@ final class ResponseInfoImpl(
 object ResponseInfoImpl:
 
   def from(response: HttpResponse[?]): ResponseInfo =
-    ResponseInfoImpl(response.statusCode(), response.version(), response.headers())
+    new ResponseInfoImpl(response.statusCode(), response.version(), response.headers())
 
 end ResponseInfoImpl

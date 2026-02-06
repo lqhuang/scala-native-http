@@ -45,4 +45,4 @@ object Req:
 
   def main(args: Array[String]): Unit =
     runReqBasic()
-    // runCustomSSLContext()
+    runCustomSSLContext()

@@ -104,7 +104,7 @@ private[http] final class HttpConnection[T](
    *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
    */
   val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
-    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
+    (payload: Ptr[Byte], nmemb: CSize, size: CSize, outstream: Ptr[?]) =>
       val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
 
       if (!(!userdata).flag.compareAndExchange(false, true))
@@ -113,7 +113,7 @@ private[http] final class HttpConnection[T](
       val ssize = size.toInt
       val bb = ByteBuffer.allocate(ssize)
       for i <- 0 until ssize do bb.put(i, !(payload + i))
-      bb.flip()
+      // bb.flip()
 
       val offered = (!userdata).publisher.submit(JList.of(bb))
       size
@@ -143,6 +143,8 @@ private[http] final class HttpConnection[T](
     if (curlMsg.isDefined)
       throw new IllegalStateException("CurlMsg has already been assigned/done")
     curlMsg = Some(msg)
+    // Connection is done, close the publisher to signal completion to subscribers.
+    respBodyPublisher.close()
 
   inline def waitUntilDoneReceived(): Unit =
     while !client.runAndGetIsDone(500) do println("HttpConnection waiting for DONE message...")

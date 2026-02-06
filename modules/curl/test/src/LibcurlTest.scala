@@ -71,7 +71,7 @@ object LibcurlTest extends TestSuite:
       (!writeData)._2 = 0.toUSize
 
       val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
-        (ptr: Ptr[Byte], size: CSize, nmemb: CSize, data: Ptr[?]) =>
+        (ptr: Ptr[Byte], nmemb: CSize, size: CSize, data: Ptr[?]) =>
           val userdata = data.asInstanceOf[Ptr[CurlData]]
           val total = size * nmemb
 
@@ -133,7 +133,7 @@ object LibcurlTest extends TestSuite:
       (!writeData)._3 = customFunction3
 
       val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
-        (ptr: Ptr[Byte], size: CSize, nmemb: CSize, data: Ptr[?]) =>
+        (ptr: Ptr[Byte], nmemb: CSize, size: CSize, data: Ptr[?]) =>
           val userdata = data.asInstanceOf[Ptr[CurlCustomData]]
           val total = size * nmemb
 
