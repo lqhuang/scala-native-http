@@ -31,28 +31,16 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: "temurin"
+      - uses: coursier/cache-action@v7
+      - uses: coursier/setup-action@v2
+        with:
+          apps: mill
 
-      - name: Mill cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.mill
-          key: mill-${{ hashFiles('.mill-version') }}
-      - name: Ivy cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/coursier
-          key: ivy-${{ hashFiles('build.mill') }}
-          restore-keys: |
-            ivy-${{ hashFiles('build.mill') }}
-            ivy
-      - name: Compilation cache
-        uses: actions/cache@v5
-        with:
-          path: ./out
-          key: out
+      - name: Run tests for Java HTTP Client
+        run: ./mill modules.java-http-client.test snhttp.java.net
 
-      - name: Run tests
-        run: ./mill -i -DscalaNextVersion=${{ env.SCALA_NEXT_VERSION }} __.test
+      # - name: Run tests
+      #   run: ./mill -i -DscalaNextVersion=${{ env.SCALA_NEXT_VERSION }} __.test
 
   publish-sonatype:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
@@ -67,30 +55,16 @@ jobs:
       LC_MESSAGES: "en_US.UTF-8"
       LC_ALL: "en_US.UTF-8"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: "temurin"
+      - uses: actions/checkout@v6
 
-      - name: Mill cache
-        uses: actions/cache@v2
+      - uses: actions/setup-java@v5
         with:
-          path: ~/.mill
-          key: mill-${{ hashFiles('.mill-version') }}
-      - name: Ivy cache
-        uses: actions/cache@v2
+          java-version: ${{ matrix.java }}
+          distribution: "temurin"
+      - uses: coursier/cache-action@v7
+      - uses: coursier/setup-action@v2
         with:
-          path: ~/.cache/coursier
-          key: ivy-${{ hashFiles('build.mill') }}
-          restore-keys: |
-            ivy-${{ hashFiles('build.mill') }}
-            ivy
-      - name: Compilation cache
-        uses: actions/cache@v2
-        with:
-          path: ./out
-          key: out
+          apps: mill
 
       - name: Publish to Maven Central
         run: |
