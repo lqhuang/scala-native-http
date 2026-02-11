@@ -3,9 +3,9 @@ import java.nio.ByteBuffer
 import java.net.http.{HttpClient, HttpHeaders, HttpRequest, HttpResponse}
 import java.util.List as JList
 
-import utest.{Tests, test, assert}
+import utest.{Tests, test, assert, TestSuite}
 
-class HttpResponseTest extends utest.TestSuite:
+class HttpResponseTest extends TestSuite:
 
-  val tests = Tests:
+  def tests = Tests:
     test("HttpResponse should return correct status code, body, and headers") {}

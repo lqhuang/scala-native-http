@@ -9,7 +9,7 @@ import snhttp.jdk.internal.Utils
 
 import utest.{TestSuite, Tests, test, assert}
 
-class UtilsTest extends TestSuite {
+class UtilsTest extends TestSuite:
 
   private val acceptAllFilter: BiPredicate[String, String] = (_, _) => true
   private def createHeaders(contentType: String): HttpHeaders = {
@@ -17,7 +17,7 @@ class UtilsTest extends TestSuite {
     HttpHeaders.of(headerMap, acceptAllFilter)
   }
 
-  val tests = Tests {
+  def tests = Tests:
 
     test("charsetFrom returns UTF-8 for missing Content-Type header") {
       Seq(
@@ -191,5 +191,3 @@ class UtilsTest extends TestSuite {
     //
     // - "hello \"world\""
     // - "line1\nline2"
-  }
-}

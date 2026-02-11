@@ -11,7 +11,7 @@ import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class HttpClientBuilderTest extends TestSuite:
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("HttpClient.newBuilder() should create a builder") {
       val builder = HttpClient.newBuilder()

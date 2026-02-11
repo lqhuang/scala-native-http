@@ -39,7 +39,7 @@ object LibcurlTest extends TestSuite:
 
   given Using.Releasable[Ptr[Curl]] = curlPtr => libcurl.easyCleanup(curlPtr)
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("Get Curl info after performing a request") {
       for (version <- Seq(stackalloc[CurlHttpVersion](), alloc[CurlHttpVersion]())) do {

@@ -4,9 +4,9 @@ import java.util.Map as JMap
 import java.util.TreeMap
 import java.util.function.BiPredicate
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{Tests, TestSuite, test, assert, assertThrows}
 
-class HttpHeadersTest extends utest.TestSuite {
+class HttpHeadersTest extends TestSuite:
 
   val accpetAllFilter: BiPredicate[String, String] = (_, _) => true
   val exampleHeaders: HttpHeaders = HttpHeaders.of(
@@ -21,7 +21,7 @@ class HttpHeadersTest extends utest.TestSuite {
     accpetAllFilter,
   )
 
-  val tests = Tests {
+  def tests = Tests:
 
     test("HttpHeaders.of returns NO_HEADERS for empty header map") {
       val headerMap: JMap[String, JList[String]] = JMap.of()
@@ -228,5 +228,3 @@ class HttpHeadersTest extends utest.TestSuite {
       val headers2 = HttpHeaders.of(headerMap2, accpetAllFilter)
       assert(headers1 != headers2)
     }
-  }
-}

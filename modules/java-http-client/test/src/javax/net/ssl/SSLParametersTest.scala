@@ -25,7 +25,7 @@ import utest.{Tests, test, assert, assertThrows, TestSuite}
 
 class SSLParametersTest extends TestSuite:
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("SSLParameters - empty constructor") {
       val p = new SSLParameters()

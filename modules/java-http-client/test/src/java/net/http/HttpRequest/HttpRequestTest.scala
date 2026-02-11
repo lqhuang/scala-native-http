@@ -7,14 +7,14 @@ import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.BiPredicate
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{Tests, test, assert, assertThrows, TestSuite}
 
-class HttpRequestTest extends utest.TestSuite {
+class HttpRequestTest extends TestSuite:
 
   val endpoint = "http://localhost"
   val acceptAllFilter: BiPredicate[String, String] = (_, _) => true
 
-  val tests = Tests {
+  def tests = Tests:
 
     test("newBuilder / construct by URI arg with default inner state") {
       val request = HttpRequest.newBuilder(new URI(endpoint)).build()
@@ -180,5 +180,3 @@ class HttpRequestTest extends utest.TestSuite {
     //       .uri(new URI("http://httpbin.org/put"))
     //       .build()
     // }
-  }
-}

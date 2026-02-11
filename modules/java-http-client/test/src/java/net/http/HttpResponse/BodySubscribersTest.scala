@@ -8,9 +8,9 @@ import java.util.concurrent.Flow.Subscription
 import java.util.function.{Consumer, Function}
 
 // import snhttp.testkits.MockSubscriber
-import utest.{Tests, test, assert, assertThrows}
+import utest.{TestSuite, Tests, test, assert, assertThrows}
 
-class BodySubscribersTest extends utest.TestSuite {
+class BodySubscribersTest extends TestSuite {
 
   val tests = Tests {
 

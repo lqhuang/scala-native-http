@@ -11,7 +11,7 @@ class ProxySelectorTest extends TestSuite:
     def select(uri: URI): JList[Proxy] = JList.of(Proxy.NO_PROXY)
     def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
 
-  val tests = Tests:
+  def tests = Tests:
     test("getDefault should return DIRECT when no system property is set"):
       val defaultSelector = ProxySelector.getDefault()
       val proxies = defaultSelector.select(URI.create("http://example.com"))

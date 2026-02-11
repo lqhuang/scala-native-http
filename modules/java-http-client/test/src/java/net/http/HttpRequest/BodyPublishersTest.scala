@@ -12,10 +12,11 @@ import scala.util.Random
 import snhttp.jdk.internal.PropertyUtils
 import snhttp.jdk.testkits.MockSubscriber
 
-import utest.{TestSuite, Tests, test, assert, assertThrows}
+import utest.{assert, assertThrows, TestSuite, Tests, test}
 
 class BodyPublishersTest extends TestSuite:
-  val tests = Tests:
+
+  def tests = Tests:
 
     test("noBody publisher is instance of BodyPublisher") {
       val publisher = BodyPublishers.noBody()

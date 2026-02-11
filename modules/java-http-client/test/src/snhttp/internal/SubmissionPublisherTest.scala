@@ -13,7 +13,7 @@ import java.util.concurrent.{
   Executors,
   Flow,
   ForkJoinPool,
-  SubmissionPublisher
+  SubmissionPublisher,
 }
 
 import scala.util.boundary
@@ -454,7 +454,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       val p = new SubmissionPublisher[Integer](
         basicExecutor,
         8,
-        (s: Flow.Subscriber[_ >: Integer], e: Throwable) => calls.getAndIncrement(): Unit
+        (s: Flow.Subscriber[_ >: Integer], e: Throwable) => calls.getAndIncrement(): Unit,
       )
       val s1 = new TestSubscriber()
       val s2 = new TestSubscriber()
@@ -728,25 +728,25 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
         assert(
           p.offer(
             i,
-            (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
-          ) >= 0
+            (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
+          ) >= 0,
         )
       p.offer(
         4,
-        (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
+        (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
       )
       assert(
         p.offer(
           6,
-          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
-        ) < 0
+          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
+        ) < 0,
       )
       s1.sn.request(64)
       assert(
         p.offer(
           7,
-          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
-        ) < 0
+          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
+        ) < 0,
       )
       s2.sn.request(64)
       p.close()
@@ -773,7 +773,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
       for (i <- 1 to 8) {
         val d = p.offer(
           i,
-          (s: Flow.Subscriber[_ >: Integer], x: Integer) => reqHandle(calls, s)
+          (s: Flow.Subscriber[_ >: Integer], x: Integer) => reqHandle(calls, s),
         )
         n = n + 2 + (if (d < 0) d else 0)
       }
@@ -889,8 +889,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
             i,
             delay,
             MILLISECONDS,
-            (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
-          ) >= 0
+            (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
+          ) >= 0,
         )
       val startTime = System.nanoTime()
       assert(
@@ -898,8 +898,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
           5,
           delay,
           MILLISECONDS,
-          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
-        ) < 0
+          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
+        ) < 0,
       )
       s1.sn.request(64)
       assert(
@@ -907,8 +907,8 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
           6,
           delay,
           MILLISECONDS,
-          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls)
-        ) < 0
+          (s: Flow.Subscriber[_ >: Integer], x: Integer) => noopHandle(calls),
+        ) < 0,
       )
       assert(millisElapsedSince(startTime) >= delay)
       s2.sn.request(64)
@@ -940,7 +940,7 @@ class SubmissionPublisherTest extends TestSuite with JSR166Test:
           i,
           delay,
           MILLISECONDS,
-          (s: Flow.Subscriber[_ >: Integer], x: Integer) => reqHandle(calls, s)
+          (s: Flow.Subscriber[_ >: Integer], x: Integer) => reqHandle(calls, s),
         )
         n = n + 2 + (if (d < 0) d else 0)
       }

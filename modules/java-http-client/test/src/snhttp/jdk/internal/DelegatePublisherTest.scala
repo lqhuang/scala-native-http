@@ -66,7 +66,7 @@ class DelegatePublisherTest extends TestSuite:
 
   end TestSubscriber
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("Construction with empty iterable should not throw and complete immediately") {
       val publisher = DelegatePublisher(Iterable.empty[String])

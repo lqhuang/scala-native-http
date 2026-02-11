@@ -5,7 +5,7 @@ import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class ProxyTest extends TestSuite:
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("NO_PROXY should be of type DIRECT"):
       assert(Proxy.NO_PROXY.`type`() == Proxy.Type.DIRECT)

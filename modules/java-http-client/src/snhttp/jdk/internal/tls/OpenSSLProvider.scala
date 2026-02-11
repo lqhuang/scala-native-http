@@ -14,8 +14,6 @@ class OpenSSLProvider(
     private val info: String = "Java Cryptography Provider for Scala Native using OpenSSL",
 ) extends Provider(name, versionStr, info):
 
-  println(s"DEBUG: Initializing OpenSSLProvider with name=${name}, version=${versionStr}")
-
   private val initialized: AtomicBoolean = new AtomicBoolean(false)
 
   // private var _entrySet: JSet[JMap.Entry[Object, Object]] = ???

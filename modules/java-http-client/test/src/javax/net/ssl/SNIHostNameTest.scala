@@ -24,7 +24,7 @@ import utest.{Tests, test, assert, assertThrows, TestSuite}
 
 class SNIHostNameTest extends TestSuite:
 
-  val tests = Tests:
+  def tests = Tests:
 
     def test_byteArray_Constructor(): Unit = {
       val idnEncoded: Array[Byte] = Array[Int](

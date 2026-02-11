@@ -4,11 +4,11 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.{CompletableFuture, ConcurrentHashMap}
 import java.util.function.Function
 
-import utest.{Tests, test, assert}
+import utest.{Tests, TestSuite, test, assert}
 
-class PushPromiseHandlerTest extends utest.TestSuite {
+class PushPromiseHandlerTest extends TestSuite:
 
-  val tests = Tests {
+  def tests = Tests:
 
     test("PushPromiseHandler should handle push promises") {
       val pushPromisesMap = new ConcurrentHashMap[
@@ -44,6 +44,3 @@ class PushPromiseHandlerTest extends utest.TestSuite {
       // Verify the push promise was recorded
       assert(pushPromisesMap.containsKey(pushPromiseRequest))
     }
-
-  }
-}

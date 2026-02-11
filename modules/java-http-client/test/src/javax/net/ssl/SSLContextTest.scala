@@ -220,7 +220,7 @@ object SSLContextTest {
 
 class SSLContextTest extends TestSuite:
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("SSLContext_getDefault") {
       val sslContext = SSLContext.getDefault()

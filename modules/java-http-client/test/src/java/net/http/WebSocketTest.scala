@@ -1,10 +1,10 @@
 import java.net.http.HttpClient
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{Tests, TestSuite, test, assert, assertThrows}
 
-class WebSocketTest extends utest.TestSuite {
+class WebSocketTest extends TestSuite:
 
-  val tests = Tests {
+  def tests = Tests:
 
     test("HttpClient should create WebSocket builder") {
       val client = HttpClient.newHttpClient()
@@ -20,6 +20,7 @@ class WebSocketTest extends utest.TestSuite {
         client.newWebSocketBuilder(): Unit
       }
     }
+
     test("HttpClient should handle WebSocket builder creation") {
       val client = HttpClient.newHttpClient()
 
@@ -33,6 +34,3 @@ class WebSocketTest extends utest.TestSuite {
       // Should be different instances
       assert(wsBuilder1 ne wsBuilder2)
     }
-
-  }
-}

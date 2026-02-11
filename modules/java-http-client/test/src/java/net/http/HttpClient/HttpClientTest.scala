@@ -24,7 +24,7 @@ class HttpClientTest extends TestSuite:
 
   val emptyBodyHandler = HttpResponse.BodyHandlers.ofString()
 
-  val tests = Tests:
+  def tests = Tests:
 
     test("HttpClient send() should reject null parameters") {
       val client = HttpClient.newHttpClient()

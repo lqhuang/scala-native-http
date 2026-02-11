@@ -46,8 +46,6 @@ trait UTestModule extends TestModule.Utest {
   def utestVersion = "0.9.5"
 
   def testParallelism = true
-
-  def test() = testForked()
 }
 
 trait CommonModule extends ScalaNativeModule with CommonPublishModule with ScalafixModule {

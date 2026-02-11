@@ -26,6 +26,8 @@ class DelegatePublisher[T] private (
 ) extends Publisher[T]
     with AutoCloseable:
 
+  ??? // NOT finised yet
+
   import DelegatePublisher.DelegateSubscription
 
   private val bufferedIter = iterable.iterator.buffered

@@ -28,7 +28,7 @@ class BodyHandlersTest extends TestSuite:
       createHeaders(map),
     )
 
-  val tests = Tests:
+  def tests = Tests:
 
     // ================================== //
     // Test BodyHandlers.fromSubscriber() //
