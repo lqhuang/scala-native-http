@@ -11,8 +11,8 @@ on:
       - main
   workflow_dispatch: # be able to manually trigger a workflow run
 
-env:
-  SCALA_NEXT_VERSION: "3.8.2"
+# env:
+#   SCALA_NEXT_VERSION: "3.8.2"
 
 jobs:
   test:
