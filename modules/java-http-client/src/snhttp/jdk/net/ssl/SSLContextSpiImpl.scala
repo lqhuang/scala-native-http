@@ -2,6 +2,7 @@ package snhttp.jdk.net.ssl
 
 import java.security.{SecureRandom, Provider}
 import javax.net.ssl.{
+  SSLContext,
   SSLContextSpi,
   SSLParameters,
   KeyManager,
@@ -12,7 +13,12 @@ import javax.net.ssl.{
   SSLServerSocketFactory,
 }
 
-class SSLContextSpiImpl() extends SSLContextSpi():
+private[snhttp] class SSLContextImpl(
+    private val provider: Provider,
+    private val protocol: String,
+) extends SSLContext(new SSLContextSpiImpl(), provider, protocol)
+
+private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
 
   // Client session context bind to current SSLContext
   // only has one ClientSessionContext instance per SSLContext instance

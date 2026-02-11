@@ -21,10 +21,10 @@ import java.util.{ArrayList, Collections, List as JList}
 import scala.util.boundary
 import scala.util.boundary.break
 
-// Reference:
-//
-// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/SubmissionPublisher.html
-//
+/** Reference:
+ *
+ *    - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/SubmissionPublisher.html
+ */
 // @since JDK 9
 class SubmissionPublisher[T](
     private val executor: Executor,
@@ -35,10 +35,7 @@ class SubmissionPublisher[T](
 ) extends Flow.Publisher[T]
     with AutoCloseable {
 
-  import SubmissionPublisher.{
-    BUFFER_CAPACITY_LIMIT, BufferedSubscription, ConsumerSubscriber,
-    INITIAL_CAPACITY
-  }
+  import SubmissionPublisher.*
 
   def this() =
     this(

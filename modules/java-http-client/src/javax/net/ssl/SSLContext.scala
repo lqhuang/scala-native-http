@@ -3,7 +3,8 @@ package javax.net.ssl
 import java.security.{SecureRandom, Provider}
 import java.security.NoSuchAlgorithmException
 import java.util.Objects.requireNonNull
-import java.util.concurrent.atomic.AtomicBoolean
+
+import snhttp.jdk.internal.tls.OpenSSLProvider
 
 /// ## Refs
 ///
@@ -60,10 +61,10 @@ object SSLContext:
 
   import snhttp.jdk.internal.tls.DefaultParams
 
-  @volatile private var defaultContext: SSLContext = SSLContext.getInstance("TLSv1.3")
+  @volatile private var defaultContext: SSLContext =
+    SSLContext.getInstance("TLSv1.3")
 
   def getDefault(): SSLContext =
-    // println("DEBUG: SSLContext.getDefault() called")
     defaultContext
 
   def setDefault(context: SSLContext): Unit =
@@ -74,7 +75,7 @@ object SSLContext:
     requireNonNull(protocol)
     if (!DefaultParams.SupportedProtocols.map(_.toLowerCase()).contains(protocol.toLowerCase()))
       throw new NoSuchAlgorithmException(s"Protocol ${protocol} not supported")
-    SSLContext.getInstance(protocol)
+    getInstance(protocol, OpenSSLProvider.defaultInstance)
 
   def getInstance(protocol: String, provider: String): SSLContext =
     throw new UnsupportedOperationException("Not supported in Scala Native yet")
@@ -82,7 +83,18 @@ object SSLContext:
   def getInstance(protocol: String, provider: Provider): SSLContext =
     requireNonNull(protocol)
     requireNonNull(provider)
-    // require(protocol.nonEmpty)
-    ???
+    require(protocol.nonEmpty)
+    provider.getService("SSLContext", protocol) match
+      case null =>
+        throw new NoSuchAlgorithmException(
+          s"Protocol ${protocol} for SSLContext service is not found in provider ${provider.getName()}",
+        )
+      case service =>
+        service.newInstance(null) match
+          case sslContext: SSLContext => sslContext
+          case _ =>
+            throw new NoSuchAlgorithmException(
+              s"Service provider ${service.getClassName()} returned an object that is not an instance of SSLContext",
+            )
 
 end SSLContext

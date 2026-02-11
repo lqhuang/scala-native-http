@@ -5,7 +5,7 @@ import _root_.scala.scalanative.unsigned.*
 import _root_.scala.scalanative.libc.*
 import _root_.scala.scalanative.*
 
-@link("openssl/ssl")
+@link("ssl")
 @extern
 object functions:
 

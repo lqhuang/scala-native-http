@@ -24,24 +24,9 @@ import scala.jdk.javaapi.CollectionConverters.asScala
 import utest.assert
 
 /**
- * This class defines expected string names for protocols, key types, client and server auth types,
- * cipher suites.
+ * Reference
  *
- * Initially based on "Appendix A: Standard Names" of <a
- * href="http://java.sun.com/j2se/1.5.0/docs/guide/security/jsse/JSSERefGuide.html#AppA"> Java
- * &trade; Secure Socket Extension (JSSE) Reference Guide for the Java &trade; 2 Platform Standard
- * Edition 5 </a>.
- *
- * Updated based on the <a
- * href="http://download.java.net/jdk8/docs/technotes/guides/security/SunProviders.html"> Java
- * &trade; Cryptography Architecture Oracle Providers Documentation for Java &trade; Platform
- * Standard Edition 7 </a>. See also the <a
- * href="http://download.java.net/jdk8/docs/technotes/guides/security/StandardNames.html"> Java
- * &trade; Cryptography Architecture Standard Algorithm Name Documentation </a>.
- *
- * Further updates based on the <a
- * href=http://java.sun.com/javase/6/docs/technotes/guides/security/p11guide.html"> Java &trade;
- * PKCS#11 Reference Guide </a>.
+ *   1. https://docs.oracle.com/en/java/javase/25/docs/specs/security/standard-names.html
  */
 object StandardNames {
   val IS_RI: Boolean = !("Dalvik Core Library" == System.getProperty("java.specification.name"))

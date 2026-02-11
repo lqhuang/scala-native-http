@@ -149,7 +149,7 @@ class SSLSessionImpl(
   def getTicketLifetimeHint(): Long =
     ssl.SSL_SESSION_get_ticket_lifetime_hint(ptr).toLong * 1000L
 
-protected final class SSLNullSessionImpl extends SSLSession:
+protected final class SSLNullSessionImpl() extends SSLSession:
   private val INVALID_CIPHER_SUITE = "SSL_NULL_WITH_NULL_NULL"
   private val INVALID_PROTOCOL = "NONE"
   private val creationTime = System.currentTimeMillis()
