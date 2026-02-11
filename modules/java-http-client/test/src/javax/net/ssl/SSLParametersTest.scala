@@ -16,6 +16,8 @@
 
 // Ported from https://github.com/google/conscrypt/blob/5b46bc69b6ee129b79c719cd8130a5fb4823a75a/common/src/test/java/org/conscrypt/javax/net/ssl/SSLParametersTest.java
 
+package snhttp.javax.net.ssl
+
 import java.util.Collections
 import java.util.List as JList
 import java.util.ArrayList

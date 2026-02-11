@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.http.HttpResponse.BodySubscribers
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets

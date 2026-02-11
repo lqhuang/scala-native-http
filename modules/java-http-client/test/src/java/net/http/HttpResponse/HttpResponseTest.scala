@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.URI
 import java.nio.ByteBuffer
 import java.net.http.{HttpClient, HttpHeaders, HttpRequest, HttpResponse}

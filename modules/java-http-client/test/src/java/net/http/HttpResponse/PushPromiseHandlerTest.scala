@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.URI
 import java.net.http.{HttpRequest, HttpResponse}
 import java.net.http.HttpResponse.BodyHandlers

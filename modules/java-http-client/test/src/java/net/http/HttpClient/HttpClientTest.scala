@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.lang.Thread
 import java.net.{URI, InetAddress, InetSocketAddress, Proxy, ProxySelector}
 import java.net.ConnectException

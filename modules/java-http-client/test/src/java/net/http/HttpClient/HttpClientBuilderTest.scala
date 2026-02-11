@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.{Proxy, ProxySelector, URI, InetAddress}
 import java.net.http.HttpClient
 import java.net.http.HttpClient.{Redirect, Version}

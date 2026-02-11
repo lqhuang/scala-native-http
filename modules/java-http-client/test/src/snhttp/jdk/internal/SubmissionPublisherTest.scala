@@ -1,3 +1,5 @@
+package snhttp.jdk.internal
+
 /*
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
@@ -20,8 +22,6 @@ import scala.util.boundary
 import scala.util.boundary.break
 
 import utest.{assert, assertThrows, TestSuite, Tests, test}
-
-import snhttp.internal.JSR166Test
 
 class SubmissionPublisherTest extends TestSuite with JSR166Test:
 

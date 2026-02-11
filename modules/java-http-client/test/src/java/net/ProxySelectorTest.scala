@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.{Proxy, ProxySelector}
 import java.net.{URI, InetSocketAddress, SocketAddress}
 import java.io.IOException

@@ -6,7 +6,7 @@
  * Other contributors include Andrew Wright, Jeffrey Hayes,
  * Pat Fisher, Mike Judd.
  */
-package snhttp.internal
+package snhttp.jdk.internal
 
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}

@@ -1,3 +1,5 @@
+package snhttp.jdk.internal
+
 import java.net.http.HttpResponse.BodySubscribers
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.concurrent.{CountDownLatch, TimeUnit, Flow}

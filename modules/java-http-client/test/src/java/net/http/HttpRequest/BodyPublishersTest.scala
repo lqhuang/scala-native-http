@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.net.http.HttpRequest.BodyPublishers

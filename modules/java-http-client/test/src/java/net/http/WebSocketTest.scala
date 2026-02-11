@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.http.HttpClient
 
 import utest.{Tests, TestSuite, test, assert, assertThrows}

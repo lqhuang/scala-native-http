@@ -1,3 +1,5 @@
+package snhttp.jdk.internal
+
 import java.net.http.HttpHeaders
 import java.nio.charset.{Charset, StandardCharsets}
 import java.util.Collections
@@ -5,7 +7,7 @@ import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.BiPredicate
 
-import snhttp.jdk.internal.Utils
+import _root_.snhttp.jdk.internal.Utils
 
 import utest.{TestSuite, Tests, test, assert}
 

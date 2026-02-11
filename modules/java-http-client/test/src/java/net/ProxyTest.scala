@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.InetSocketAddress
 import java.net.Proxy
 

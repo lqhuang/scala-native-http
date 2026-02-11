@@ -1,3 +1,5 @@
+package snhttp.java.net.http
+
 import java.net.http.HttpHeaders
 import java.util.List as JList
 import java.util.Map as JMap
