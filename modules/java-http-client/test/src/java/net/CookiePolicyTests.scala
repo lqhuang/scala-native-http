@@ -1,4 +1,4 @@
-package snhttp.cookie
+package snhttp.java.net
 
 import java.net.{CookiePolicy, HttpCookie, URI}
 

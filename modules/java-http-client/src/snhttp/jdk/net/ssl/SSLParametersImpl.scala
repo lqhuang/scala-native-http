@@ -65,10 +65,10 @@ class SSLParametersImpl protected[ssl] (
     _needClientAuth = needClientAuth
     _wantClientAuth = false
 
-  def getAlgorithmConstraints(): AlgorithmConstraints =
+  override def getAlgorithmConstraints(): AlgorithmConstraints =
     _algorithmConstraints
 
-  def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit =
+  override def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit =
     requireNonNull(constraints)
     _algorithmConstraints = constraints
 

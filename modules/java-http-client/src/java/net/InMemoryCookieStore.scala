@@ -150,7 +150,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
   /**
    * Check if a cookie matches a given URI based on domain and path.
    */
-  private def matchesCookie(uri: URI, cookie: HttpCookie): Boolean =
+  private def matchesCookie(uri: URI, cookie: HttpCookie): Boolean = {
     val host = uri.getHost()
     if host == null then return false
 
@@ -177,6 +177,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
       if scheme == null || !scheme.equalsIgnoreCase("https") then return false
 
     true
+  }
 
   /**
    * Check if the request path matches the cookie path.
