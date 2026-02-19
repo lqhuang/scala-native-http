@@ -1,11 +1,8 @@
-import mill.scalalib.{DepSyntax, TestModule}
-import mill.scalanativelib._
+package build.modules.`java-http-client`
 
-object `package` extends build.CommonHttpModule {
+import mill.scalalib.DepSyntax
 
-  object test extends ScalaNativeTests with TestModule.Munit {
-    override def munitVersion = "1.0.4"
-  }
+object `package` extends build.CommonModule {
 
   def moduleDeps = Seq(
     build.modules.core,
