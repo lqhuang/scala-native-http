@@ -56,11 +56,12 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: "temurin"
+      - uses: actions/checkout@v6
       - uses: lukka/run-vcpkg@v11.5
         with:
           runVcpkgInstall: true
 
-      - uses: actions/checkout@v6
+
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
         with:
