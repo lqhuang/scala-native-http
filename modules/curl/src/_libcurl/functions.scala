@@ -1,5 +1,6 @@
 package snhttp.experimental._libcurl
 
+import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.{Ptr, CString, CVoidPtr, CLong}
 import scala.scalanative.unsafe.{alloc, extern, name, link, define}
 import scala.scalanative.unsigned.UInt
@@ -33,10 +34,22 @@ import snhttp.experimental._libcurl.multi.{
 import snhttp.experimental._libcurl.websockets.{CurlWsFrame, CurlWsSendFlag}
 import snhttp.experimental._libcurl.system.CurlOff
 
-@link("curl")
-@extern
-@define("CURL_NO_OLDIES") // deprecate all outdated
 object functions:
+
+  @extern @link("libcurl") @link("crypt32") @define("CURL_NO_OLDIES")
+  private object CurlFunctionsWindows extends functions
+
+  @extern @link("curl") @define("CURL_NO_OLDIES") // deprecate all outdated
+  private object CurlFunctionsUnix extends functions
+
+  val _functions = if isWindows then CurlFunctionsWindows else CurlFunctionsUnix
+
+  export _functions.*
+
+end functions
+
+@extern
+trait functions:
 
   /**
    * <curl/curl.h>
