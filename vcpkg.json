@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    {
+      "name": "curl",
+      "features": ["brotli", "http2", "http3", "openssl", "websockets", "zstd"]
+    }
+  ]
+}

@@ -15,36 +15,38 @@ on:
 #   SCALA_NEXT_VERSION: "3.8.2"
 
 jobs:
-  # test:
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       java: ["11", "17", "21", "25"]
-  #   steps:
-  #     - name: Install Dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y libcurl4-openssl-dev
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      # fail-fast: false
+      matrix:
+        java: ["11", "17", "21", "25"]
+    steps:
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
 
-  #     - uses: actions/checkout@v6
-  #     - uses: actions/setup-java@v5
-  #       with:
-  #         java-version: ${{ matrix.java }}
-  #         distribution: "temurin"
-  #     - uses: coursier/cache-action@v7
-  #     - uses: coursier/setup-action@v2
-  #       with:
-  #         apps: mill
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: "temurin"
+      - uses: coursier/cache-action@v7
+      - uses: coursier/setup-action@v2
+        with:
+          apps: mill
 
-  #     - name: Run tests for Java HTTP Client
-  #       run: ./mill modules.java-http-client.test snhttp.java.net
+      - name: Run tests for Java HTTP Client
+        run: ./mill modules.java-http-client.test snhttp.java.net
 
-  #     # - name: Run tests
-  #     #   run: ./mill -i -DscalaNextVersion=${{ env.SCALA_NEXT_VERSION }} __.test
+      # - name: Run tests
+      #   run: ./mill -i -DscalaNextVersion=${{ env.SCALA_NEXT_VERSION }} __.test
 
   test-windows:
     runs-on: windows-latest
     strategy:
+      # fail-fast: false
       matrix:
         java: ["11", "17", "21", "25"]
     steps:
@@ -69,7 +71,9 @@ jobs:
 
   publish-sonatype:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
-    # needs: test
+    needs:
+      - test-linux
+      - test-windows
     runs-on: ubuntu-latest
     env:
       SONATYPE_PGP_PRIVATE_KEY: ${{ secrets.SONATYPE_PGP_PRIVATE_KEY }}
