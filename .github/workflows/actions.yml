@@ -49,8 +49,8 @@ jobs:
     runs-on: windows-latest
     env:
       VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
-      VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
-      VCPKG_INSTALLED_DIR: "${{ github.workspace }}/vcpkg/installed"
+      VCPKG_ROOT: "${{ github.workspace }}\\vcpkg"
+      VCPKG_INSTALLED_DIR: "${{ github.workspace }}\\vcpkg\\installed"
       VCPKG_COMMIT_ID: "66c0373dc7fca549e5803087b9487edfe3aca0a1" # vcpkg 2026.01.16 Release
     strategy:
       # fail-fast: false
@@ -78,8 +78,8 @@ jobs:
 
       - name: Run tests for Java HTTP Client
         env:
-          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\\\include"
-          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\\\lib"
+          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
+          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
         run: |
           ./mill show modules.curl.nativeLinkingOptions
           ./mill modules.java-http-client.test snhttp.java.net
