@@ -69,11 +69,8 @@ jobs:
         id: cache-vcpkg-artifacts
         uses: actions/cache/restore@v5
         with:
-          path: ${{ env.VCPKG_ROOT }}/installed/x64-windows-static
-          # key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          # restore-keys: |
-          #   vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-
-          key: vcpkg
+          path: ${{ env.VCPKG_INSTALLED_DIR }}/x64-windows-static
+          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
       
       - name: List repository caches (debug)
         env:
@@ -117,9 +114,9 @@ jobs:
         if: steps.run-vcpkg.outcome == 'success'
         uses: actions/cache/save@v5
         with:
-          path: ${{ env.VCPKG_ROOT }}/installed/x64-windows-static
-          # key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          key: vcpkg
+          path: ${{ env.VCPKG_INSTALLED_DIR }} /x64-windows-static
+          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+
 
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
