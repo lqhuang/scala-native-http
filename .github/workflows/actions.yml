@@ -63,7 +63,16 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: "temurin"
 
+
       - uses: actions/checkout@v6
+
+      - name: Debug vcpkg cache key
+        run: |
+          Write-Host "hashFiles: ${{ hashFiles('vcpkg.json') }}"
+          Write-Host "computed cache key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}"
+          Write-Host "cwd: $(Get-Location)"
+          if (Test-Path vcpkg.json) { Write-Host "vcpkg.json exists" } else { Write-Host "vcpkg.json NOT found" }
+        shell: pwsh
 
       - name: Restore cached vcpkg artifacts
         id: cache-vcpkg-artifacts
@@ -71,6 +80,8 @@ jobs:
         with:
           path: ${{ env.VCPKG_ROOT }}/installed/x64-windows-static
           key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-
 
       - id: run-vcpkg
         uses: lukka/run-vcpkg@v11.5
