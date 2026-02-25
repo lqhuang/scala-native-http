@@ -36,10 +36,10 @@ import snhttp.experimental._libcurl.system.CurlOff
 
 object functions:
 
-  @extern @link("libcurl") @link("crypt32") @define("CURL_NO_OLDIES")
+  @extern @link("curl") @link("crypt32")
   private object CurlFunctionsWindows extends functions
 
-  @extern @link("curl") @define("CURL_NO_OLDIES") // deprecate all outdated
+  @extern @link("curl")
   private object CurlFunctionsUnix extends functions
 
   val _functions = if isWindows then CurlFunctionsWindows else CurlFunctionsUnix
@@ -49,6 +49,7 @@ object functions:
 end functions
 
 @extern
+@define("CURL_NO_OLDIES") // deprecate all outdated
 trait functions:
 
   /**
