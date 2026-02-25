@@ -47,26 +47,55 @@ jobs:
 
   test-windows:
     runs-on: windows-latest
+    env:
+      VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
+      VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
+      VCPKG_INSTALLED_DIR: "${{ github.workspace }}/vcpkg/installed"
     strategy:
       # fail-fast: false
       matrix:
         java: ["11", "17", "21", "25"]
+        vcpkgCommitId: ["66c0373dc7fca549e5803087b9487edfe3aca0a1"] # vcpkg 2026.01.16 Release
     steps:
+
       - uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
           distribution: "temurin"
-      - uses: lukka/run-vcpkg@v11.5
-        with:
-          runVcpkgInstall: true
 
       - uses: actions/checkout@v6
+
+      - name: Restore cached vcpkg artifacts
+        id: cache-vcpkg-artifacts
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.VCPKG_INSTALLED_DIR }}/x64-windows-static
+          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+      
+      - id: run-vcpkg
+        uses: lukka/run-vcpkg@v11.5
+        if: steps.cache-vcpkg-artifacts.outputs.cache-hit != 'true'
+        with:
+          vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
+          runVcpkgInstall: true
+
+      - name: Save vcpkg cache
+        if: steps.run-vcpkg.outcome == 'success'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.VCPKG_INSTALLED_DIR }}/x64-windows-static
+          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+
+
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
         with:
           apps: mill
 
       - name: Run tests for Java HTTP Client
+        env:
+          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_ROOT }}/installed/x64-windows-static/include"
+          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_ROOT }}/installed/x64-windows-static/lib"
         run: ./mill modules.java-http-client.test snhttp.java.net
 
   publish-sonatype:
