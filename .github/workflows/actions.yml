@@ -49,7 +49,8 @@ jobs:
     runs-on: windows-latest
     env:
       VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
-      VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
+      VCPKG_ROOT: &vcpkgroot "${{ github.workspace }}/vcpkg"
+      VCPKG_INSTALLED_DIR: *vcpkgroot
     strategy:
       # fail-fast: false
       matrix:
@@ -58,7 +59,7 @@ jobs:
     steps:
       - name: print environment variables
         run: env
-        
+
       - uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
