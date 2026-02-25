@@ -72,7 +72,7 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
 
   def nativeIncrementalCompilation = true
 
-  // def nativeLinkingOptions = Seq("-L" + millSourcePath.toString + "/target")
+  def nativeLinkingOptions = super.nativeLinkingOptions() ++ Seq("-v")
 
   // // Set nativeWorkdir directory to `newDir`
   // def nativeWorkdir = Task { Task.dest  }
