@@ -69,6 +69,7 @@ jobs:
         with:
           vcpkgGitCommitId: "${{ env.VCPKG_COMMIT_ID }}"
           runVcpkgInstall: true
+          doNotCache: false
 
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
