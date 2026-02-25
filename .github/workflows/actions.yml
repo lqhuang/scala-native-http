@@ -63,18 +63,26 @@ jobs:
 
       - uses: actions/checkout@v6
 
-      - name: Cache vcpkg artifacts
+      - name: Restore cached vcpkg artifacts
         id: cache-vcpkg-artifacts
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ${{ env.VCPKG_ROOT }}/installed/x64-windows-static
-          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}
+          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('**/vcpkg.json') }}
 
-      - uses: lukka/run-vcpkg@v11.5
+      - id: run-vcpkg
+        uses: lukka/run-vcpkg@v11.5
         if: steps.cache-vcpkg-artifacts.outputs.cache-hit != 'true'
         with:
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
           runVcpkgInstall: true
+
+      - name: Save vcpkg cache
+        if: steps.run-vcpkg.outcome == 'success'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.VCPKG_ROOT }}/installed/x64-windows-static
+          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('**/vcpkg.json') }}
 
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
