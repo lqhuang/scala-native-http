@@ -74,6 +74,38 @@ jobs:
           restore-keys: |
             vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-
 
+      
+      - name: List repository caches (debug)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = $env:GITHUB_REPOSITORY
+          $keyToFind = "vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}"
+          Write-Host "Repository: $repo"
+          Write-Host "Searching caches for key: '$keyToFind'"
+          $url = "https://api.github.com/repos/$repo/actions/caches?per_page=100"
+
+          $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN"; Accept = "application/vnd.github+json" }
+          try {
+            $resp = Invoke-RestMethod -Uri $url -Headers $headers -ErrorAction Stop
+            $found = $false
+            foreach ($c in $resp.actions_caches) {
+              # Only print safe fields from the API response
+              Write-Host "cache key: '$($c.key)' created_at: $($c.created_at) id: $($c.id)"
+              if ($c.key -eq $keyToFind) { $found = $true; Write-Host 'FOUND exact match' }
+            }
+            if (-not $found) { Write-Host 'No exact match found' }
+          } catch {
+            # Avoid printing response body or headers which may contain sensitive data
+            $status = 'unknown'
+            if ($_.Exception.Response -ne $null) {
+              try { $status = $_.Exception.Response.StatusCode.value__ } catch { $status = 'unknown' }
+            }
+            Write-Host "GitHub API request failed. HTTP status: $status"
+          }
+        shell: pwsh
+
+
       - id: run-vcpkg
         uses: lukka/run-vcpkg@v11.5
         if: steps.cache-vcpkg-artifacts.outputs.cache-hit != 'true'
