@@ -49,8 +49,8 @@ jobs:
     runs-on: windows-latest
     env:
       VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
-      VCPKG_ROOT: &vcpkgroot "${{ github.workspace }}/vcpkg"
-      VCPKG_INSTALLED_DIR: *vcpkgroot
+      VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
+      VCPKG_INSTALLED_DIR: "${{ github.workspace }}/vcpkg/installed"
     strategy:
       # fail-fast: false
       matrix:
