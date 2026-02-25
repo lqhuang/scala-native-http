@@ -61,19 +61,13 @@ jobs:
           distribution: "temurin"
 
       - uses: actions/checkout@v6
+
       - uses: lukka/run-vcpkg@v11.5
         with:
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
           runVcpkgInstall: true
 
-      - name: Cache vcpkg artifacts
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.VCPKG_ROOT }}/installed
-            ${{ env.VCPKG_ROOT }}/packages
-          key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ env.VCPKG_DEFAULT_TRIPLET }}
-
+     
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
         with:
