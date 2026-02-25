@@ -73,7 +73,7 @@ jobs:
           # key: vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           # restore-keys: |
           #   vcpkg-${{ matrix.vcpkgCommitId }}-${{ runner.os }}-
-          key: vcpkg-66c0373dc7fca549e5803087b9487edfe3aca0a1-Windows-6017134785ca92ea8fbf1c9f4da6656004c352842568ad694dabd5f3fa83607b
+          key: "vcpkg-66c0373dc7fca549e5803087b9487edfe3aca0a1-Windows-6017134785ca92ea8fbf1c9f4da6656004c352842568ad694dabd5f3fa83607b"
       
       - name: List repository caches (debug)
         env:
