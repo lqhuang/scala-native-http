@@ -56,6 +56,9 @@ jobs:
         java: ["11", "17", "21", "25"]
         vcpkgCommitId: ["66c0373dc7fca549e5803087b9487edfe3aca0a1"] # vcpkg 2026.01.16 Release
     steps:
+      - name: print environment variables
+        run: env
+        
       - uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
