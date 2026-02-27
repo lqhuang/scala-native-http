@@ -1,8 +1,5 @@
 package build.modules.openssl
 
-object `package` extends build.CommonModule {
+object `package` extends build.CommonModule:
 
   def artifactName = "scala-native-openssl"
-
-  // def sources = Task { Seq(PathRef("core/src")) }
-}

@@ -36,13 +36,21 @@ import snhttp.experimental._libcurl.system.CurlOff
 
 object functions:
 
-  @extern @link("curl") @link("crypt32")
+  @extern
+  @link("curl")
+  @link("Crypt32")
+  @link("Secur32") // required after curl 8.15.0
+  @link("Iphlpapi") // required after curl 8.15.0
+  @link("zlib")
+  @link("libcrypto")
+  @link("libssl")
   private object CurlFunctionsWindows extends functions
 
-  @extern @link("curl")
+  @extern
+  @link("curl")
   private object CurlFunctionsUnix extends functions
 
-  val _functions = if isWindows then CurlFunctionsWindows else CurlFunctionsUnix
+  private val _functions = if isWindows then CurlFunctionsWindows else CurlFunctionsUnix
 
   export _functions.*
 
