@@ -17,33 +17,46 @@ env:
   VCPKG_FEATURE_FLAGS: dependencygraph
 
 jobs:
-  # test-linux:
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     # fail-fast: false
-  #     matrix:
-  #       java: ["11", "17", "21", "25"]
-  #   steps:
-  #     - uses: actions/setup-java@v5
-  #       with:
-  #         java-version: ${{ matrix.java }}
-  #         distribution: "temurin"
-  #     - name: Install Dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y libcurl4-openssl-dev
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      # fail-fast: false
+      matrix:
+        java:
+          - "11"
+          - "17"
+          - "21"
+          - "25"
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: "temurin"
+      - uses: actions/checkout@v6
 
-  #     - uses: actions/checkout@v6
-  #     - uses: coursier/cache-action@v7
-  #     - uses: coursier/setup-action@v2
-  #       with:
-  #         apps: mill
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
 
-  #     - name: Run tests for Java HTTP Client
-  #       run: ./mill modules.java-http-client.test snhttp.java.net
+      - uses: coursier/cache-action@v7
+      - uses: coursier/setup-action@v2
+        with:
+          apps: mill
 
-  #     # - name: Run tests
-  #     #   run: ./mill -i -DscalaNextVersion=${{ env.SCALA_NEXT_VERSION }} __.test
+      - name: Run tests for curl bindings
+        run: |
+          ./mill show modules.curl.nativeLinkingOptions
+          ./mill modules.curl.test
+
+      - name: Run tests for openssl bindings
+        run: |
+          ./mill show modules.openssl.nativeLinkingOptions
+          ./mill modules.openssl.test
+
+      - name: Run tests for Java HTTP Client
+        run: |
+          ./mill modules.java-http-client.test snhttp.java.net
 
   test-windows:
     runs-on: windows-latest
@@ -56,16 +69,15 @@ jobs:
       fail-fast: false
       matrix:
         java:
-          # - "11"
-          # - "17"
-          # - "21"
+          - "11"
+          - "17"
+          - "21"
           - "25"
     steps:
       - uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java }}
           distribution: "temurin"
-
       - uses: actions/checkout@v6
 
       - id: run-vcpkg
@@ -106,7 +118,7 @@ jobs:
   publish-sonatype:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
     needs:
-      # - test-linux
+      - test-linux
       - test-windows
     runs-on: ubuntu-latest
     env:
