@@ -20,7 +20,7 @@ jobs:
   test-linux:
     runs-on: ubuntu-latest
     strategy:
-      # fail-fast: false
+      fail-fast: false
       matrix:
         java:
           - "11"
@@ -60,6 +60,8 @@ jobs:
 
   test-windows:
     runs-on: windows-latest
+    needs:
+      - test-linux
     env:
       VCPKG_DEFAULT_TRIPLET: x64-windows # x64-windows-static
       VCPKG_ROOT: "${{ github.workspace }}\\vcpkg"
@@ -68,10 +70,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java:
-          - "11"
-          - "17"
-          - "21"
+        java: # only test one JVM version before we have caching for vcpkg
+          # - "11"
+          # - "17"
+          # - "21"
           - "25"
     steps:
       - uses: actions/setup-java@v5
