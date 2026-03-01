@@ -1,18 +1,31 @@
 package snhttp.experimental.openssl.bio_internal
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.meta.LinktimeInfo.isWindows
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.*
+import scala.scalanative.*
 
-@link("openssl/bio")
-@extern
+import _root_.snhttp.experimental.openssl.bio_internal.aliases.*
+import _root_.snhttp.experimental.openssl.bio_internal.structs.*
+import _root_.snhttp.experimental.openssl.bio_internal.enumerations.*
+import _root_.snhttp.experimental.openssl.bio_internal.unions.*
+
 object functions:
 
-  import _root_.snhttp.experimental.openssl.bio_internal.aliases.*
-  import _root_.snhttp.experimental.openssl.bio_internal.structs.*
-  import _root_.snhttp.experimental.openssl.bio_internal.enumerations.*
-  import _root_.snhttp.experimental.openssl.bio_internal.unions.*
+  @link("libssl")
+  @extern
+  private object SSLBIOFunctionsWindows extends functions
+
+  @link("ssl")
+  @extern
+  private object SSLBIOFunctionsUnix extends functions
+
+  private val _functions = if isWindows then SSLBIOFunctionsWindows else SSLBIOFunctionsUnix
+  export _functions.*
+
+@extern
+trait functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -1102,3 +1115,5 @@ object functions:
    */
   @extern def BIO_write_ex(b: Ptr[BIO], data: Ptr[Byte], dlen: size_t, written: Ptr[size_t]): CInt =
     extern
+
+end functions
