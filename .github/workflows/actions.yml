@@ -48,7 +48,7 @@ jobs:
   test-windows:
     runs-on: windows-latest
     env:
-      VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
+      VCPKG_DEFAULT_TRIPLET: x64-windows # x64-windows-static
       VCPKG_ROOT: "${{ github.workspace }}\\vcpkg"
       VCPKG_INSTALLED_DIR: "${{ github.workspace }}\\vcpkg\\installed"
       VCPKG_COMMIT_ID: "66c0373dc7fca549e5803087b9487edfe3aca0a1" # vcpkg 2026.01.16 Release
@@ -76,13 +76,20 @@ jobs:
         with:
           apps: mill
 
+      - name: Run tests for curl bindings
+        env:
+          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
+          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
+        run: |
+          .\mill show modules.curl.nativeLinkingOptions
+          .\mill modules.curl.test
+
       - name: Run tests for Java HTTP Client
         env:
           SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
           SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
         run: |
-          ./mill show modules.curl.nativeLinkingOptions
-          ./mill modules.java-http-client.test snhttp.java.net
+          .\mill modules.java-http-client.test snhttp.java.net
 
   publish-sonatype:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
