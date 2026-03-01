@@ -37,7 +37,7 @@ import snhttp.experimental._libcurl.system.CurlOff
 object functions:
 
   @extern
-  @link("curl")
+  @link("libcurl")
   @link("Crypt32")
   @link("Secur32") // required after curl 8.15.0
   @link("Iphlpapi") // required after curl 8.15.0
