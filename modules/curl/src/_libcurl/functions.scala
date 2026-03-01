@@ -36,7 +36,6 @@ import snhttp.experimental._libcurl.system.CurlOff
 
 object functions:
 
-  @extern
   @link("libcurl")
   @link("Crypt32")
   @link("Secur32") // required after curl 8.15.0
@@ -44,20 +43,18 @@ object functions:
   @link("zlib")
   @link("libcrypto")
   @link("libssl")
+  @extern
   private object CurlFunctionsWindows extends functions
 
-  @extern
   @link("curl")
+  @extern
   private object CurlFunctionsUnix extends functions
 
   private val _functions = if isWindows then CurlFunctionsWindows else CurlFunctionsUnix
-
   export _functions.*
 
-end functions
-
-@extern
 @define("CURL_NO_OLDIES") // deprecate all outdated
+@extern
 trait functions:
 
   /**
@@ -617,3 +614,5 @@ trait functions:
 
   @name("curl_ws_meta")
   def wsMeta(curl: Ptr[Curl]): Ptr[CurlWsFrame] = extern
+
+end functions

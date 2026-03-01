@@ -1,20 +1,34 @@
 package snhttp.experimental.openssl.ssl_internal
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.meta.LinktimeInfo.isWindows
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.*
+import scala.scalanative.*
 
-@link("ssl")
-@extern
+import _root_.snhttp.experimental.openssl.ssl_internal.aliases.*
+import _root_.snhttp.experimental.openssl.ssl_internal.structs.*
+import _root_.snhttp.experimental.openssl.ssl_internal.enumerations.*
+import _root_.snhttp.experimental.openssl.ssl_internal.unions.*
+
+import _root_.snhttp.experimental.openssl.bio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
+
 object functions:
 
-  import _root_.snhttp.experimental.openssl.ssl_internal.aliases.*
-  import _root_.snhttp.experimental.openssl.ssl_internal.structs.*
-  import _root_.snhttp.experimental.openssl.ssl_internal.enumerations.*
-  import _root_.snhttp.experimental.openssl.ssl_internal.unions.*
+  @link("libcrypto")
+  @link("libssl")
+  @extern
+  private object SSLFunctionsWindows extends functions
 
-  import _root_.snhttp.experimental.openssl.bio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
+  @extern
+  @link("ssl")
+  private object SSLFunctionsUnix extends functions
+
+  private val _functions = if isWindows then SSLFunctionsWindows else SSLFunctionsUnix
+  export _functions.*
+
+@extern
+trait functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -3529,3 +3543,5 @@ object functions:
   //  */
   // def SSL_as_poll_descriptor(s: Ptr[SSL])(__return: Ptr[BIO_POLL_DESCRIPTOR]): Unit =
   // __sn_wrap_snhttp_experimental_openssl_ssl_SSL_as_poll_descriptor(s, __return)
+
+end functions

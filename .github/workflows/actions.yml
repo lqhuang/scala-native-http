@@ -53,9 +53,13 @@ jobs:
       VCPKG_INSTALLED_DIR: "${{ github.workspace }}\\vcpkg\\installed"
       VCPKG_COMMIT_ID: "66c0373dc7fca549e5803087b9487edfe3aca0a1" # vcpkg 2026.01.16 Release
     strategy:
-      # fail-fast: false
+      fail-fast: false
       matrix:
-        java: ["11", "17", "21", "25"]
+        java:
+          # - "11"
+          # - "17"
+          # - "21"
+          - "25"
     steps:
       - uses: actions/setup-java@v5
         with:
@@ -83,6 +87,14 @@ jobs:
         run: |
           .\mill show modules.curl.nativeLinkingOptions
           .\mill modules.curl.test
+
+      - name: Run tests for openssl bindings
+        env:
+          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
+          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
+        run: |
+          .\mill show modules.openssl.nativeLinkingOptions
+          .\mill modules.openssl.test
 
       - name: Run tests for Java HTTP Client
         env:
