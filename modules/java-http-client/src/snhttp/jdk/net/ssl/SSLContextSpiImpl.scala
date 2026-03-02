@@ -1,6 +1,7 @@
 package snhttp.jdk.net.ssl
 
 import java.security.{SecureRandom, Provider}
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{
   SSLContext,
   SSLContextSpi,
@@ -25,28 +26,31 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
   protected[ssl] val clientSessionContext = ClientSessionContextImpl(this)
   protected[ssl] val sslSocketFactory = SSLSocketFactoryImpl(this)
 
+  private val inited: AtomicBoolean = new AtomicBoolean(false)
+
   def engineInit(
       km: Array[KeyManager],
       tm: Array[TrustManager],
       sr: SecureRandom,
   ): Unit =
-    // ...
-    ???
+    if (!inited.compareAndExchange(false, true)) {
+      // Do nothing now
+      ()
+    } else {
+      throw new IllegalStateException("SSLContext already initialized")
+    }
 
-  /// server side feature is not supported yet
   def engineCreateSSLEngine(): SSLEngine =
-    ???
+    throw new NotImplementedError("server side feature is not supported yet")
 
   def engineCreateSSLEngine(host: String, port: Int): SSLEngine =
     ClientSSLEngineImpl(this, host, port)
 
-  /// server side feature is not supported yet
   def engineGetServerSocketFactory(): SSLServerSocketFactory =
-    ???
+    throw new NotImplementedError("server side feature is not supported yet")
 
-  /// server side feature is not supported yet
   def engineGetServerSessionContext(): SSLSessionContext =
-    ???
+    throw new NotImplementedError("server side feature is not supported yet")
 
   def engineGetSocketFactory(): SSLSocketFactory =
     sslSocketFactory
@@ -54,10 +58,10 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
   def engineGetClientSessionContext(): SSLSessionContext =
     clientSessionContext
 
-  /// Since JDK 1.6
+  // @since JDK 1.6
   override def engineGetDefaultSSLParameters(): SSLParameters =
     SSLParametersImpl.getDefault()
 
-  /// Since JDK 1.6
+  // @since JDK 1.6
   override def engineGetSupportedSSLParameters(): SSLParameters =
     SSLParametersImpl.getSupported()

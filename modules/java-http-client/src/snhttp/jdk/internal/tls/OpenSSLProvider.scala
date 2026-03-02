@@ -4,9 +4,7 @@ import java.security.Provider
 import java.util.Objects.requireNonNull
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.List as JList
-import java.util.Map as JMap
-import java.util.Set as JSet
+import java.util.{List as JList, Map as JMap, Set as JSet}
 
 class OpenSSLProvider(
     private val name: String = "scala-native-ssl",
@@ -16,7 +14,6 @@ class OpenSSLProvider(
 
   private val initialized: AtomicBoolean = new AtomicBoolean(false)
 
-  // private var _entrySet: JSet[JMap.Entry[Object, Object]] = ???
   private val services: JMap[OpenSSLProvider.ServiceKey, Provider.Service] =
     new ConcurrentHashMap()
 
@@ -27,13 +24,17 @@ class OpenSSLProvider(
       "Dynamic configuration is not supported yet",
     )
 
-  override def isConfigured(): Boolean = initialized.getOpaque()
+  override def isConfigured(): Boolean =
+    initialized.getAcquire()
 
-  override def getName(): String = name
+  override def getName(): String =
+    name
 
-  override def getVersionStr(): String = versionStr
+  override def getVersionStr(): String =
+    versionStr
 
-  override def getInfo(): String = info
+  override def getInfo(): String =
+    info
 
   override def getService(
       svc: String,
@@ -74,8 +75,9 @@ class OpenSSLProvider(
 
   private def setup(): Unit =
     if (!initialized.compareAndExchange(false, true)) {
-
-      // putService
+      putService(TLSService(this, "TLS", JList.of("TLSv1.3"), JMap.of()))
+      putService(TLSService(this, "TLSv1.3", JList.of(), JMap.of()))
+      putService(TLSService(this, "TLSv1.2", JList.of(), JMap.of()))
     }
 
 object OpenSSLProvider:

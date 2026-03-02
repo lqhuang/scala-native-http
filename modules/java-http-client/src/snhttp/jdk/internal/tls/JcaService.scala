@@ -5,6 +5,9 @@ package snhttp.jdk.internal.tls
 case class JcaService(val name: String) extends AnyVal
 
 object JcaService:
+
   val SSLContext = JcaService("SSLContext")
 
   val names: Set[String] = Set(SSLContext.name).map(_.toUpperCase())
+
+end JcaService

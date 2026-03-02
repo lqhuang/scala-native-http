@@ -59,8 +59,6 @@ class SSLContext protected (
 
 object SSLContext:
 
-  import snhttp.jdk.internal.tls.DefaultParams
-
   @volatile private var defaultContext: SSLContext =
     SSLContext.getInstance("TLSv1.3")
 
@@ -73,8 +71,6 @@ object SSLContext:
 
   def getInstance(protocol: String): SSLContext =
     requireNonNull(protocol)
-    if (!DefaultParams.SupportedProtocols.map(_.toLowerCase()).contains(protocol.toLowerCase()))
-      throw new NoSuchAlgorithmException(s"Protocol ${protocol} not supported")
     getInstance(protocol, OpenSSLProvider.defaultInstance)
 
   def getInstance(protocol: String, provider: String): SSLContext =

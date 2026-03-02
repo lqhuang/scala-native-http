@@ -1,11 +1,10 @@
 package snhttp.jdk.internal.tls
 
 import java.security.Provider
-import java.util.List as JList
-import java.util.Map as JMap
+import java.util.{List as JList, Map as JMap}
 import javax.net.ssl.SSLContext
 
-import _root_.snhttp.jdk.net.ssl.SSLContextImpl
+import snhttp.jdk.net.ssl.SSLContextImpl
 
 class TLSService private (
     provider: Provider,
