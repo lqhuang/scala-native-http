@@ -1,6 +1,7 @@
 package snhttp.jdk.net.ssl
 
 import java.security.{SecureRandom, Provider}
+import java.security.KeyManagementException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{
   SSLContext,
@@ -28,6 +29,17 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
 
   private val inited: AtomicBoolean = new AtomicBoolean(false)
 
+  /**
+   * Notes from JDK docs:
+   *
+   *   1. Either of the first two parameters may be null in which case the installed security
+   *      providers will be searched for the highest priority implementation of the appropriate
+   *      factory.
+   *   2. Likewise, the secure random parameter may be null in which case the default implementation
+   *      will be used.
+   *   3. Only the first instance of a particular key and/or trust manager implementation type in
+   *      the array is used.
+   */
   def engineInit(
       km: Array[KeyManager],
       tm: Array[TrustManager],
@@ -37,7 +49,7 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
       // Do nothing now
       ()
     } else {
-      throw new IllegalStateException("SSLContext already initialized")
+      throw new KeyManagementException("SSLContext already initialized")
     }
 
   def engineCreateSSLEngine(): SSLEngine =

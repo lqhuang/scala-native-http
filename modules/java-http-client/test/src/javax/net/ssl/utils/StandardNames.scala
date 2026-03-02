@@ -101,22 +101,31 @@ object StandardNames {
     SSL_CONTEXT_PROTOCOLS_ENABLED.put(algorithm, versionNames): Unit
   }
 
-  val SSL_CONTEXT_PROTOCOLS_DEFAULT = "Default"
+  val SSL_CONTEXT_PROTOCOLS_DEFAULT: "Default" = "Default"
   val SSL_CONTEXT_PROTOCOLS =
-    Set[String](
+    Set["Default" | "TLS" | "TLSv1.2" | "TLSv1.3"](
       SSL_CONTEXT_PROTOCOLS_DEFAULT,
       "TLS",
-      "TLSv1",
-      "TLSv1.1",
+      // "TLSv1",
+      // "TLSv1.1",
       "TLSv1.2",
       "TLSv1.3",
     )
   val SSL_CONTEXT_PROTOCOLS_WITH_DEFAULT_CONFIG =
-    Set[String](SSL_CONTEXT_PROTOCOLS_DEFAULT, "TLS", "TLSv1.3")
+    Set["Default" | "TLS" | "TLSv1.3"](
+      SSL_CONTEXT_PROTOCOLS_DEFAULT,
+      "TLS",
+      "TLSv1.3",
+    )
   // Deprecated TLS protocols... May or may not be present or enabled.
   val SSL_CONTEXT_PROTOCOLS_DEPRECATED = Set[String]()
   val KEY_TYPES = Set[String]("RSA", "DSA", "DH_RSA", "DH_DSA", "EC", "EC_EC", "EC_RSA")
-  val SSL_SOCKET_PROTOCOLS = Set[String]("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3")
+  val SSL_SOCKET_PROTOCOLS = Set[String](
+    // "TLSv1",
+    // "TLSv1.1",
+    "TLSv1.2",
+    "TLSv1.3",
+  )
 
   private enum TLSVersion(val name: String) {
     case SSLv3 extends TLSVersion("SSLv3")

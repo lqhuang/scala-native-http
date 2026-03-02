@@ -40,9 +40,9 @@ class OpenSSLProvider(
       svc: String,
       algorithm: String,
   ): Provider.Service = {
-    if (!JcaService.names.contains(svc.toUpperCase()))
+    if (!JcaService.names.contains(svc))
       throw new IllegalArgumentException(
-        s"Unknown service: $svc, use one of ${JcaService.names.mkString(", ")}",
+        s"Unknown service: ${svc}, use one of ${JcaService.names.toArray.mkString(", ")}",
       )
 
     services.get(
@@ -61,12 +61,12 @@ class OpenSSLProvider(
       svc,
     ): Unit
 
-  private def putAliasService(svc: Provider.Service, alias: String): Unit =
-    services.put(
-      OpenSSLProvider
-        .ServiceKey(svc.getType(), alias, Some(svc.getAlgorithm())),
-      svc,
-    ): Unit
+  // private def putAliasService(svc: Provider.Service, alias: String): Unit =
+  //   services.put(
+  //     OpenSSLProvider
+  //       .ServiceKey(svc.getType(), alias, Some(svc.getAlgorithm())),
+  //     svc,
+  //   ): Unit
 
   override protected def removeService(s: Provider.Service): Unit =
     services.remove(
@@ -75,7 +75,8 @@ class OpenSSLProvider(
 
   private def setup(): Unit =
     if (!initialized.compareAndExchange(false, true)) {
-      putService(TLSService(this, "TLS", JList.of("TLSv1.3"), JMap.of()))
+      putService(TLSService(this, "Default", JList.of(), JMap.of()))
+      putService(TLSService(this, "TLS", JList.of(), JMap.of()))
       putService(TLSService(this, "TLSv1.3", JList.of(), JMap.of()))
       putService(TLSService(this, "TLSv1.2", JList.of(), JMap.of()))
     }
@@ -103,7 +104,6 @@ object OpenSSLProvider:
       31 * svc.toUpperCase().hashCode() + algorithm.toUpperCase().hashCode()
 
     override def equals(obj: Any): Boolean = {
-      if (this eq obj.asInstanceOf[AnyRef]) return true
       if (!obj.isInstanceOf[ServiceKey]) return false
 
       val other = obj.asInstanceOf[ServiceKey]

@@ -35,7 +35,7 @@ object PropertyUtils {
 
   val restrictedHeaders = getRestrictedHeaders()
   def allowedHeadersPredicate(name: String, value: String): Boolean =
-    !restrictedHeaders.contains(name.toLowerCase())
+    !restrictedHeaders.contains(name)
 
     /**
      * default buffer size to use for HTTP requests and responses.

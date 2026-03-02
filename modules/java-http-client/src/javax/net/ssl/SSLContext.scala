@@ -59,8 +59,11 @@ class SSLContext protected (
 
 object SSLContext:
 
-  @volatile private var defaultContext: SSLContext =
-    SSLContext.getInstance("TLSv1.3")
+  @volatile private var defaultContext: SSLContext = {
+    val ssl = SSLContext.getInstance("TLS")
+    ssl.init(null, null, null)
+    ssl
+  }
 
   def getDefault(): SSLContext =
     defaultContext
@@ -76,10 +79,11 @@ object SSLContext:
   def getInstance(protocol: String, provider: String): SSLContext =
     throw new UnsupportedOperationException("Not supported in Scala Native yet")
 
-  def getInstance(protocol: String, provider: Provider): SSLContext =
+  def getInstance(protocol: String, provider: Provider): SSLContext = {
     requireNonNull(protocol)
     requireNonNull(provider)
     require(protocol.nonEmpty)
+
     provider.getService("SSLContext", protocol) match
       case null =>
         throw new NoSuchAlgorithmException(
@@ -92,5 +96,6 @@ object SSLContext:
             throw new NoSuchAlgorithmException(
               s"Service provider ${service.getClassName()} returned an object that is not an instance of SSLContext",
             )
+  }
 
 end SSLContext
