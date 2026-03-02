@@ -1,4 +1,4 @@
-import scala.scalanative.unsafe.{Zone, CQuote, toCString, fromCString}
+import scala.scalanative.unsafe.{Zone, CQuote, fromCString}
 
 import snhttp.experimental.openssl.ssl
 
