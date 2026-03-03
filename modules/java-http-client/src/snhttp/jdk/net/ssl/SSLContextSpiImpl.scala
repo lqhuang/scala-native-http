@@ -77,3 +77,5 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
   // @since JDK 1.6
   override def engineGetSupportedSSLParameters(): SSLParameters =
     SSLParametersImpl.getSupported()
+
+end SSLContextSpiImpl

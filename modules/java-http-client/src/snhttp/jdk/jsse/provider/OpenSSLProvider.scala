@@ -9,12 +9,15 @@ import java.util.{List as JList, Map as JMap, Set as JSet}
 class OpenSSLProvider(
     private val name: String = "scala-native-ssl",
     private val versionStr: String = "0.1",
-    private val info: String = "Java Cryptography Provider for Scala Native using OpenSSL",
+    private val info: String =
+      "Java Secure Socket Extension Provider for Scala Native using OpenSSL",
 ) extends Provider(name, versionStr, info):
+
+  import OpenSSLProvider.ServiceKey
 
   private val initialized: AtomicBoolean = new AtomicBoolean(false)
 
-  private val services: JMap[OpenSSLProvider.ServiceKey, Provider.Service] =
+  private val services: JMap[ServiceKey, ProvService] =
     new ConcurrentHashMap()
 
   setup()
@@ -40,14 +43,12 @@ class OpenSSLProvider(
       svc: String,
       algorithm: String,
   ): Provider.Service = {
-    if (!JSSEServiceType.contains(svc))
+    if (!JSSEServiceType.names.contains(svc))
       throw new IllegalArgumentException(
-        s"Unknown service: ${svc}, use one of ${JSSEServiceType.values.mkString(", ")}",
+        s"Unknown service: ${svc}, use one of ${JSSEServiceType.names.toArray.mkString(", ")}",
       )
 
-    services.get(
-      OpenSSLProvider.ServiceKey(svc, algorithm),
-    )
+    services.get(ServiceKey(svc, algorithm))
   }
 
   override def getServices(): JSet[Provider.Service] =
@@ -56,84 +57,54 @@ class OpenSSLProvider(
     )
 
   override protected def putService(svc: Provider.Service): Unit =
-    services.put(
-      OpenSSLProvider.ServiceKey(svc.getType(), svc.getAlgorithm()),
-      svc,
-    ): Unit
-
-  // private def putAliasService(svc: Provider.Service, alias: String): Unit =
-  //   services.put(
-  //     OpenSSLProvider
-  //       .ServiceKey(svc.getType(), alias, Some(svc.getAlgorithm())),
-  //     svc,
-  //   ): Unit
+    throw new UnsupportedOperationException(
+      "Please use putProvService instead of putService to add services to the provider",
+    )
 
   override protected def removeService(s: Provider.Service): Unit =
-    services.remove(
-      OpenSSLProvider.ServiceKey(s.getType(), s.getAlgorithm()),
-    ): Unit
+    ???
+
+  private def putProvService(provSvc: ProvService): Unit =
+    services.put(ServiceKey(provSvc.getType(), provSvc.getAlgorithm()), provSvc): Unit
+    provSvc.getAliases().forEach { alias =>
+      services.put(
+        ServiceKey(provSvc.getType(), alias),
+        provSvc,
+      ): Unit
+    }
 
   private def setup(): Unit =
     if (!initialized.compareAndExchange(false, true)) {
-      putService(
+      putProvService(
         ProvService(
           this,
-          JSSEServiceType.SSLContext,
-          "Default",
-          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
-          JList.of(),
-          JMap.of(),
-        ),
-      )
-      putService(
-        ProvService(
-          this,
-          JSSEServiceType.SSLContext,
+          "SSLContext",
           "TLSv1.3",
-          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
-          JList.of(),
+          "snhttp.jdk.net.ssl.SSLContextImpl",
+          JList.of("DEFAULT", "TLS"),
           JMap.of(),
         ),
       )
-      putService(
+      putProvService(
         ProvService(
           this,
-          JSSEServiceType.SSLContext,
+          "SSLContext",
           "TLSv1.2",
-          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
+          "snhttp.jdk.net.ssl.SSLContextImpl",
           JList.of(),
           JMap.of(),
         ),
       )
-      putService(
-        ProvService(
-          this,
-          JSSEServiceType.SSLContext,
-          "TLS",
-          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
-          JList.of(),
-          JMap.of(),
-        ),
-      )
-
     }
 
 object OpenSSLProvider:
 
   lazy val defaultInstance = new OpenSSLProvider()
 
-  private case class ServiceKey(
-      svc: String,
-      algorithm: String,
-      origAlgorithm: Option[String] = None,
-  ) {
+  private case class ServiceKey(svc: String, algorithm: String) {
     requireNonNull(svc)
     requireNonNull(algorithm)
     require(svc.nonEmpty && algorithm.nonEmpty)
-    require(
-      origAlgorithm.isEmpty || origAlgorithm.get.nonEmpty,
-      "origAlgorithm name for an aliases, if provided, must be non-empty",
-    )
 
     override def toString(): String = s"${svc}.${algorithm}"
 
