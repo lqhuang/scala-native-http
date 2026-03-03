@@ -1,13 +1,28 @@
 package snhttp.experimental.openssl._libssl
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.stdio
+import scala.scalanative.libc.stddef.size_t
+import scala.scalanative.posix.sys.types.{off_t, ssize_t}
+import scala.scalanative.posix.sys.types.time_t
+import scala.scalanative.posix.sys.time.timeval
 
 object aliases:
 
-  import _root_.snhttp.experimental.openssl._libssl.structs.*
+  import _root_.snhttp.experimental.openssl._libssl.structs.{
+    ssl_st,
+    EVP_MD,
+    SSL,
+    SSL_CIPHER,
+    SSL_CTX,
+    SSL_SESSION,
+    X509,
+    X509_STORE_CTX,
+    CT_POLICY_EVAL_CTX,
+    stack_st_SCT,
+    stack_st_SSL_CIPHER,
+  }
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -22,11 +37,11 @@ object aliases:
       inline def value: CFuncPtr2[Ptr[SSL], CUnsignedInt, CUnsignedInt] = v
       inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
 
-  type FILE = libc.stdio.FILE
+  type FILE = stdio.FILE
   object FILE:
-    val _tag: Tag[FILE] = summon[Tag[libc.stdio.FILE]]
-    inline def apply(inline o: libc.stdio.FILE): FILE = o
-    extension (v: FILE) inline def value: libc.stdio.FILE = v
+    val _tag: Tag[FILE] = summon[Tag[stdio.FILE]]
+    inline def apply(inline o: stdio.FILE): FILE = o
+    extension (v: FILE) inline def value: stdio.FILE = v
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -470,12 +485,6 @@ object aliases:
           ], CInt] = v
       inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
 
-  type off_t = posix.unistd.off_t
-  object off_t:
-    val _tag: Tag[off_t] = summon[Tag[posix.unistd.off_t]]
-    inline def apply(inline o: posix.unistd.off_t): off_t = o
-    extension (v: off_t) inline def value: posix.unistd.off_t = v
-
   /**
    * [bindgen] header: /usr/include/openssl/types.h
    */
@@ -486,18 +495,6 @@ object aliases:
     inline def apply(inline o: CFuncPtr4[CString, CInt, CInt, Ptr[Byte], CInt]): pem_password_cb = o
     extension (v: pem_password_cb)
       inline def value: CFuncPtr4[CString, CInt, CInt, Ptr[Byte], CInt] = v
-
-  type size_t = libc.stddef.size_t
-  object size_t:
-    val _tag: Tag[size_t] = summon[Tag[libc.stddef.size_t]]
-    inline def apply(inline o: libc.stddef.size_t): size_t = o
-    extension (v: size_t) inline def value: libc.stddef.size_t = v
-
-  type ssize_t = posix.sys.types.ssize_t
-  object ssize_t:
-    val _tag: Tag[ssize_t] = summon[Tag[posix.sys.types.ssize_t]]
-    inline def apply(inline o: posix.sys.types.ssize_t): ssize_t = o
-    extension (v: ssize_t) inline def value: posix.sys.types.ssize_t = v
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -524,18 +521,6 @@ object aliases:
     extension (v: ssl_ct_validation_cb)
       inline def value: CFuncPtr3[Ptr[CT_POLICY_EVAL_CTX], Ptr[stack_st_SCT], Ptr[Byte], CInt] = v
       inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
-
-  type time_t = posix.sys.types.time_t
-  object time_t:
-    val _tag: Tag[time_t] = summon[Tag[posix.sys.types.time_t]]
-    inline def apply(inline o: posix.sys.types.time_t): time_t = o
-    extension (v: time_t) inline def value: posix.sys.types.time_t = v
-
-  type timeval = posix.sys.time.timeval
-  object timeval:
-    val _tag: Tag[timeval] = summon[Tag[posix.sys.time.timeval]]
-    inline def apply(inline o: posix.sys.time.timeval): timeval = o
-    extension (v: timeval) inline def value: posix.sys.time.timeval = v
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

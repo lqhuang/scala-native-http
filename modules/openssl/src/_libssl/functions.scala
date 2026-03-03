@@ -3,14 +3,8 @@ package snhttp.experimental.openssl._libssl
 import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
-import scala.scalanative.libc.*
-import scala.scalanative.*
-
-import _root_.snhttp.experimental.openssl._libssl.aliases.*
-import _root_.snhttp.experimental.openssl._libssl.structs.*
-import _root_.snhttp.experimental.openssl._libssl.enumerations.*
-import _root_.snhttp.experimental.openssl._libssl.unions.*
-import _root_.snhttp.experimental.openssl.libbio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
+import scala.scalanative.posix.sys.types.time_t
+import scala.scalanative.posix.sys.time.timeval
 
 object functions:
 
@@ -28,6 +22,16 @@ object functions:
 
 @extern
 trait functions:
+
+  import _root_.snhttp.experimental.openssl._libssl.aliases.*
+  import _root_.snhttp.experimental.openssl._libssl.structs.*
+  import _root_.snhttp.experimental.openssl._libssl.enumerations.{
+    OSSL_HANDSHAKE_STATE,
+    SSL_CTRL,
+    SSL_VERIFY,
+    SSL_ERROR,
+  }
+  import _root_.snhttp.experimental.openssl.libbio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -3498,10 +3502,10 @@ trait functions:
    */
   def TLSv1_server_method(): Ptr[SSL_METHOD] = extern
 
-//   private[_libssl] def __sn_wrap_snhttp_experimental_openssl_ssl_SSL_as_poll_descriptor(
-//       s: Ptr[SSL],
-//       __return: Ptr[BIO_POLL_DESCRIPTOR],
-//   ): Unit = extern
+  // private[_libssl] def __sn_wrap_snhttp_experimental_openssl_ssl_SSL_as_poll_descriptor(
+  //     s: Ptr[SSL],
+  //     __return: Ptr[BIO_POLL_DESCRIPTOR],
+  // ): Unit = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

@@ -3,8 +3,6 @@ package snhttp.experimental.openssl._libssl
 import scala.annotation.targetName
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
-import scala.scalanative.libc.*
-import scala.scalanative.*
 
 import _root_.snhttp.experimental.openssl.libbio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
 

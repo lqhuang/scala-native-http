@@ -1,9 +1,6 @@
 package snhttp.experimental.openssl._libbio
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.unsafe.*
 
 object unions:
 
@@ -22,15 +19,15 @@ object unions:
     given _tag: Tag[BIO_sock_info_u] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
     def apply()(using Zone): Ptr[BIO_sock_info_u] =
-      val ___ptr = _root_.scala.scalanative.unsafe.alloc[BIO_sock_info_u](1)
-      ___ptr
+      val ptr = _root_.scala.scalanative.unsafe.alloc[BIO_sock_info_u](1)
+      ptr
 
     @scala.annotation.targetName("apply_addr")
     def apply(addr: Ptr[BIO_ADDR])(using Zone): Ptr[BIO_sock_info_u] =
-      val ___ptr = _root_.scala.scalanative.unsafe.alloc[BIO_sock_info_u](1)
-      val un = !___ptr
+      val ptr = _root_.scala.scalanative.unsafe.alloc[BIO_sock_info_u](1)
+      val un = !ptr
       un.at(0).asInstanceOf[Ptr[Ptr[BIO_ADDR]]].update(0, addr)
-      ___ptr
+      ptr
 
     extension (struct: BIO_sock_info_u)
       def addr: Ptr[BIO_ADDR] = !struct.at(0).asInstanceOf[Ptr[Ptr[BIO_ADDR]]]

@@ -3,8 +3,6 @@ package snhttp.experimental.openssl._libssl
 
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
-import scala.scalanative.libc.*
-import scala.scalanative.*
 
 object enumerations:
   private[enumerations] trait _BindgenEnumCUnsignedInt[T](using eq: T =:= CUnsignedInt):

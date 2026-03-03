@@ -1,14 +1,12 @@
 package snhttp.experimental.openssl._libbio
 
 import scala.scalanative.unsafe.*
-import scala.scalanative.unsigned.*
-import scala.scalanative.libc.*
-import scala.scalanative.*
+import scala.scalanative.libc.stddef.size_t
 
 object structs:
 
-  import _root_.snhttp.experimental.openssl._libbio.aliases.*
-  import _root_.snhttp.experimental.openssl._libbio.unions.*
+  import _root_.snhttp.experimental.openssl._libbio.aliases.{uint32_t, uint64_t, uintptr_t}
+  import _root_.snhttp.experimental.openssl._libbio.unions.BIO_ADDR
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

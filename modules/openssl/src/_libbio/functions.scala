@@ -2,14 +2,27 @@ package snhttp.experimental.openssl._libbio
 
 import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.*
-import scala.scalanative.unsigned.*
-import scala.scalanative.libc.*
-import scala.scalanative.*
+import scala.scalanative.libc.stddef.size_t
+import scala.scalanative.posix.sys.types.time_t
 
 import _root_.snhttp.experimental.openssl._libbio.aliases.*
-import _root_.snhttp.experimental.openssl._libbio.structs.*
-import _root_.snhttp.experimental.openssl._libbio.enumerations.*
-import _root_.snhttp.experimental.openssl._libbio.unions.*
+import _root_.snhttp.experimental.openssl._libbio.structs.{
+  BIO_POLL_DESCRIPTOR,
+  BIO_ADDRINFO,
+  BIO_METHOD,
+  BIO,
+  BIO_MSG,
+  OSSL_LIB_CTX,
+  OSSL_CORE_BIO,
+  hostent,
+}
+import _root_.snhttp.experimental.openssl._libbio.enumerations.{
+  BIO_sock_info_type,
+  BIO_CTRL,
+  BIO_hostserv_priorities,
+  BIO_lookup_type,
+}
+import _root_.snhttp.experimental.openssl._libbio.unions.{BIO_ADDR, BIO_sock_info_u}
 
 object functions:
 

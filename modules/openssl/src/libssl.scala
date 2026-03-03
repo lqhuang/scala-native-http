@@ -14,5 +14,6 @@ object libssl:
   export enumerations.*
   export functions.*
   export func_aliases.*
+  export macro_functions.*
   export structs.*
   export unions.*

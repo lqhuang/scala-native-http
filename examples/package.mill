@@ -33,8 +33,15 @@ trait CurlSharedModule extends ScalaNativeModule {
   def scalaNativeVersion = build.scalaNativeVersion
   def moduleDeps = Seq(build.modules.curl)
   def scalaVersion = build.scalaVersion
-
 }
 
 object `curl-easy` extends CurlSharedModule
 object `curl-multi` extends CurlSharedModule
+
+trait OpenSSLSharedModule extends ScalaNativeModule {
+  def scalaNativeVersion = build.scalaNativeVersion
+  def moduleDeps = Seq(build.modules.openssl)
+  def scalaVersion = build.scalaVersion
+}
+
+object openssl extends OpenSSLSharedModule
