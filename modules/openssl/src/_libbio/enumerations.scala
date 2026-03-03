@@ -1,5 +1,5 @@
 // scalafmt: { maxColumn = 200, align.preset = most }
-package snhttp.experimental.openssl.bio_internal
+package snhttp.experimental.openssl._libbio
 
 import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*

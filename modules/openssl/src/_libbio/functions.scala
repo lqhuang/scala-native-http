@@ -1,4 +1,4 @@
-package snhttp.experimental.openssl.bio_internal
+package snhttp.experimental.openssl._libbio
 
 import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.*
@@ -6,10 +6,10 @@ import scala.scalanative.unsigned.*
 import scala.scalanative.libc.*
 import scala.scalanative.*
 
-import _root_.snhttp.experimental.openssl.bio_internal.aliases.*
-import _root_.snhttp.experimental.openssl.bio_internal.structs.*
-import _root_.snhttp.experimental.openssl.bio_internal.enumerations.*
-import _root_.snhttp.experimental.openssl.bio_internal.unions.*
+import _root_.snhttp.experimental.openssl._libbio.aliases.*
+import _root_.snhttp.experimental.openssl._libbio.structs.*
+import _root_.snhttp.experimental.openssl._libbio.enumerations.*
+import _root_.snhttp.experimental.openssl._libbio.unions.*
 
 object functions:
 

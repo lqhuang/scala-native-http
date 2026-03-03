@@ -1,15 +1,15 @@
-package snhttp.experimental.openssl.ssl_internal
+package snhttp.experimental.openssl._libssl
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.*
+import scala.scalanative.*
 
 object func_aliases:
 
-  import _root_.snhttp.experimental.openssl.ssl_internal.functions.*
-  import _root_.snhttp.experimental.openssl.ssl_internal.enumerations.*
-  import _root_.snhttp.experimental.openssl.ssl_internal.structs.*
+  import _root_.snhttp.experimental.openssl._libssl.functions.*
+  import _root_.snhttp.experimental.openssl._libssl.enumerations.*
+  import _root_.snhttp.experimental.openssl._libssl.structs.*
 
   def SSL_CTX_set_min_proto_version(ctx: Ptr[SSL_CTX], version: TLS_VERSION): Size =
     SSL_CTX_ctrl(ctx, SSL_CTRL.SET_MIN_PROTO_VERSION, version.value, null)

@@ -5,9 +5,9 @@ package snhttp.experimental.openssl
 /// References:
 ///
 /// 1. https://github.com/openssl/openssl/blob/master/include/bio.h.in
-object bio:
+object libbio:
 
-  import _root_.snhttp.experimental.openssl.bio_internal.*
+  import _root_.snhttp.experimental.openssl._libbio.*
 
   export aliases.*
   export enumerations.*

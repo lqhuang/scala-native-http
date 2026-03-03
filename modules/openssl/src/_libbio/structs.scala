@@ -1,14 +1,14 @@
-package snhttp.experimental.openssl.bio_internal
+package snhttp.experimental.openssl._libbio
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.*
+import scala.scalanative.*
 
 object structs:
 
-  import _root_.snhttp.experimental.openssl.bio_internal.aliases.*
-  import _root_.snhttp.experimental.openssl.bio_internal.unions.*
+  import _root_.snhttp.experimental.openssl._libbio.aliases.*
+  import _root_.snhttp.experimental.openssl._libbio.unions.*
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

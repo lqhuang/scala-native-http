@@ -1,10 +1,10 @@
 // scalafmt: { maxColumn = 200, align.preset = most }
-package snhttp.experimental.openssl.ssl_internal
+package snhttp.experimental.openssl._libssl
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
-import _root_.scala.scalanative.libc.*
-import _root_.scala.scalanative.*
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
+import scala.scalanative.libc.*
+import scala.scalanative.*
 
 object enumerations:
   private[enumerations] trait _BindgenEnumCUnsignedInt[T](using eq: T =:= CUnsignedInt):

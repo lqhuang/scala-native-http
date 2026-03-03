@@ -5,9 +5,9 @@ package snhttp.experimental.openssl
 /// References:
 ///
 /// 1. https://github.com/openssl/openssl/blob/master/include/openssl/ssl.h.in
-object ssl:
+object libssl:
 
-  import _root_.snhttp.experimental.openssl.ssl_internal.*
+  import _root_.snhttp.experimental.openssl._libssl.*
 
   export aliases.*
   export constants.*
