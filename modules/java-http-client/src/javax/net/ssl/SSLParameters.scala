@@ -5,7 +5,7 @@ import java.util.List as JList
 import java.util.{Collection, Collections}
 import java.util.Objects.requireNonNull
 
-import snhttp.jdk.internal.tls.DefaultParams
+import snhttp.jdk.jsse.provider.DefaultParams
 
 /**
  * Refs

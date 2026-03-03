@@ -1,4 +1,4 @@
-package snhttp.jdk.internal.tls
+package snhttp.jdk.jsse.provider
 
 import java.security.Provider
 import java.util.{List as JList, Map as JMap}
@@ -6,16 +6,19 @@ import javax.net.ssl.SSLContext
 
 import snhttp.jdk.net.ssl.SSLContextImpl
 
-class TLSService private (
+/* OpenSSLProviderService */
+private class ProvService private[provider] (
     provider: Provider,
+    svcType: String,
     algorithm: String,
+    className: String,
     aliases: JList[String],
     attributes: JMap[String, String],
 ) extends Provider.Service(
       provider,
-      JcaService.SSLContext.name,
+      svcType,
       algorithm,
-      "snhttp.jdk.internal.tls.TLSService",
+      className,
       aliases,
       attributes,
     ):
@@ -23,21 +26,22 @@ class TLSService private (
   override def supportsParameter(parameter: Object): Boolean =
     if parameter == null then true else false
 
-  override def newInstance(constructorParameter: Object): SSLContext =
-    new SSLContextImpl(provider, algorithm)
-
-object TLSService:
+object ProvService:
 
   def apply(
       provider: Provider,
+      svcType: JSSEServiceType,
       algorithm: String,
+      className: String,
       aliases: JList[String],
       attributes: JMap[String, String],
-  ): TLSService = new TLSService(
+  ): ProvService = new ProvService(
     provider,
+    svcType.name,
     algorithm,
+    className,
     aliases,
     attributes,
   )
 
-end TLSService
+end ProvService

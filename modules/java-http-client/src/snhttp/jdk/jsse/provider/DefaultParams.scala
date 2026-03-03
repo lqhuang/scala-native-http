@@ -1,4 +1,4 @@
-package snhttp.jdk.internal.tls
+package snhttp.jdk.jsse.provider
 
 import snhttp.experimental.tls.extensions.ALPNProtocol
 import snhttp.experimental.tls.params.{CipherSuite, ProtocolVersion, SignatureScheme}

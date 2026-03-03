@@ -11,7 +11,7 @@ import javax.net.ssl.{
   SSLSessionContext,
 }
 
-import snhttp.jdk.internal.tls.DefaultParams
+import snhttp.jdk.jsse.provider.DefaultParams
 
 /// Inspired from <https://github.com/google/conscrypt/blob/master/common/src/main/java/org/conscrypt/SSLParametersImpl.java>
 class SSLParametersImpl protected[ssl] (

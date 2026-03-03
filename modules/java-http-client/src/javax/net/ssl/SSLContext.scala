@@ -4,7 +4,7 @@ import java.security.{SecureRandom, Provider}
 import java.security.NoSuchAlgorithmException
 import java.util.Objects.requireNonNull
 
-import snhttp.jdk.internal.tls.OpenSSLProvider
+import snhttp.jdk.jsse.provider.OpenSSLProvider
 
 /// ## Refs
 ///

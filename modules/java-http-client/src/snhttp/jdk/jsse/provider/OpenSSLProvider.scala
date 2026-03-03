@@ -1,4 +1,4 @@
-package snhttp.jdk.internal.tls
+package snhttp.jdk.jsse.provider
 
 import java.security.Provider
 import java.util.Objects.requireNonNull
@@ -40,9 +40,9 @@ class OpenSSLProvider(
       svc: String,
       algorithm: String,
   ): Provider.Service = {
-    if (!JcaService.names.contains(svc))
+    if (!JSSEServiceType.contains(svc))
       throw new IllegalArgumentException(
-        s"Unknown service: ${svc}, use one of ${JcaService.names.toArray.mkString(", ")}",
+        s"Unknown service: ${svc}, use one of ${JSSEServiceType.values.mkString(", ")}",
       )
 
     services.get(
@@ -75,10 +75,47 @@ class OpenSSLProvider(
 
   private def setup(): Unit =
     if (!initialized.compareAndExchange(false, true)) {
-      putService(TLSService(this, "Default", JList.of(), JMap.of()))
-      putService(TLSService(this, "TLS", JList.of(), JMap.of()))
-      putService(TLSService(this, "TLSv1.3", JList.of(), JMap.of()))
-      putService(TLSService(this, "TLSv1.2", JList.of(), JMap.of()))
+      putService(
+        ProvService(
+          this,
+          JSSEServiceType.SSLContext,
+          "Default",
+          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
+          JList.of(),
+          JMap.of(),
+        ),
+      )
+      putService(
+        ProvService(
+          this,
+          JSSEServiceType.SSLContext,
+          "TLSv1.3",
+          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
+          JList.of(),
+          JMap.of(),
+        ),
+      )
+      putService(
+        ProvService(
+          this,
+          JSSEServiceType.SSLContext,
+          "TLSv1.2",
+          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
+          JList.of(),
+          JMap.of(),
+        ),
+      )
+      putService(
+        ProvService(
+          this,
+          JSSEServiceType.SSLContext,
+          "TLS",
+          "snhttp.jdk.net.ssl.SSLContextSpiImpl",
+          JList.of(),
+          JMap.of(),
+        ),
+      )
+
     }
 
 object OpenSSLProvider:
