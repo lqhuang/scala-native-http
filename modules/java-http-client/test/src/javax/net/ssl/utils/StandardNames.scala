@@ -128,9 +128,9 @@ object StandardNames {
   )
 
   private enum TLSVersion(val name: String) {
-    case SSLv3 extends TLSVersion("SSLv3")
-    case TLSv1 extends TLSVersion("TLSv1")
-    case TLSv11 extends TLSVersion("TLSv1.1")
+    // case SSLv3 extends TLSVersion("SSLv3")
+    // case TLSv1 extends TLSVersion("TLSv1")
+    // case TLSv11 extends TLSVersion("TLSv1.1")
     case TLSv12 extends TLSVersion("TLSv1.2")
     case TLSv13 extends TLSVersion("TLSv1.3")
   }
@@ -365,7 +365,7 @@ object StandardNames {
     // on Platform.isTlsV1Deprecated().
     expected.subtractAll(SSL_CONTEXT_PROTOCOLS_DEPRECATED)
     actual.subtractAll(SSL_CONTEXT_PROTOCOLS_DEPRECATED)
-    assert(expected == actual)
+    assert(expected.iterator.sameElements(actual))
   }
 
   /**
@@ -387,12 +387,13 @@ object StandardNames {
   provideCipherPaddings("RSA", Array[String]("NoPadding", "PKCS1Padding"))
   // Fixups for dalvik
   if (!IS_RI) provideCipherPaddings("AES", Array[String]("PKCS7Padding"))
-  provideSslContextEnabledProtocols("TLS", TLSVersion.TLSv1, TLSVersion.TLSv13)
-  provideSslContextEnabledProtocols("TLSv1", TLSVersion.TLSv1, TLSVersion.TLSv12)
-  provideSslContextEnabledProtocols("TLSv1.1", TLSVersion.TLSv1, TLSVersion.TLSv12)
-  provideSslContextEnabledProtocols("TLSv1.2", TLSVersion.TLSv1, TLSVersion.TLSv12)
-  provideSslContextEnabledProtocols("TLSv1.3", TLSVersion.TLSv1, TLSVersion.TLSv13)
-  provideSslContextEnabledProtocols("Default", TLSVersion.TLSv1, TLSVersion.TLSv13)
+
+  provideSslContextEnabledProtocols("TLS", TLSVersion.TLSv12, TLSVersion.TLSv13)
+  // provideSslContextEnabledProtocols("TLSv1", TLSVersion.TLSv1, TLSVersion.TLSv12)
+  // provideSslContextEnabledProtocols("TLSv1.1", TLSVersion.TLSv1, TLSVersion.TLSv12)
+  provideSslContextEnabledProtocols("TLSv1.2", TLSVersion.TLSv12, TLSVersion.TLSv12)
+  provideSslContextEnabledProtocols("TLSv1.3", TLSVersion.TLSv12, TLSVersion.TLSv13)
+  provideSslContextEnabledProtocols("Default", TLSVersion.TLSv12, TLSVersion.TLSv13)
 
   // if (TestUtils.isTlsV1Deprecated) {
   //   SSL_CONTEXT_PROTOCOLS_DEPRECATED.add("TLSv1")

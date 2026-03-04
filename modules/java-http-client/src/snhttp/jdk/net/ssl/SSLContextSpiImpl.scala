@@ -1,7 +1,8 @@
+/** SPDX-License-Identifier: Apache-2.0 */
 package snhttp.jdk.net.ssl
 
 import java.security.{SecureRandom, Provider}
-import java.security.KeyManagementException
+import java.security.{KeyManagementException, NoSuchAlgorithmException}
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{
   SSLContext,
@@ -15,12 +16,42 @@ import javax.net.ssl.{
   SSLServerSocketFactory,
 }
 
+import scala.scalanative.unsafe.{Ptr, fromCString}
+
+import snhttp.experimental.openssl.libssl
+import snhttp.experimental.openssl._libssl.enumerations.{SSL_CTRL, SSL_VERIFY, TLS_VERSION}
+import snhttp.utils.PointerCleaner
+
 private[snhttp] class SSLContextImpl(
     private val provider: Provider,
     private val protocol: String,
-) extends SSLContext(new SSLContextSpiImpl(), provider, protocol)
+) extends SSLContext(new SSLContextSpiImpl(protocol), provider, protocol)
 
-private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
+private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi():
+
+  private val supportedProtocols = Array("TLSv1.2", "TLSv1.3")
+
+  private val tlsVersionPtr =
+    if (protocol.equalsIgnoreCase("TLSv1.2")) {
+      libssl.TLSv1_2_method()
+    } else if (protocol.equalsIgnoreCase("TLSv1.3")) {
+      libssl.TLS_method()
+    } else
+      throw new NoSuchAlgorithmException(
+        s"Unsupported protocol: ${protocol}. Only TLSv1.2 and TLSv1.3 are supported.",
+      )
+  private[ssl] val ptr: Ptr[libssl.SSL_CTX] = libssl.SSL_CTX_new(tlsVersionPtr)
+  if (ptr == null)
+    throw new RuntimeException("Failed to create SSL_CTX for SSLContextSpiImpl")
+  PointerCleaner.register(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
+
+  if (protocol.equalsIgnoreCase("TLSv1.3")) {
+    val ret = libssl.SSL_CTX_set_min_proto_version(ptr, TLS_VERSION.TLS1_3)
+    if (ret != 1)
+      throw new RuntimeException(
+        "Failed to set minimum protocol version to TLSv1.3 for SSLContextSpiImpl when protocol is TLSv1.3",
+      )
+  }
 
   // Client session context bind to current SSLContext
   // only has one ClientSessionContext instance per SSLContext instance
@@ -46,7 +77,7 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
       sr: SecureRandom,
   ): Unit =
     if (!inited.compareAndExchange(false, true)) {
-      // Do nothing now
+      // FIXME: Do nothing now
       ()
     } else {
       throw new KeyManagementException("SSLContext already initialized")
@@ -71,11 +102,62 @@ private[snhttp] class SSLContextSpiImpl() extends SSLContextSpi():
     clientSessionContext
 
   // @since JDK 1.6
-  override def engineGetDefaultSSLParameters(): SSLParameters =
-    SSLParametersImpl.getDefault()
+  override def engineGetDefaultSSLParameters(): SSLParameters = {
+    // Mimic a SSL to get the default SSL parameters via `SSL_get1_supported_ciphers`.
+    // https://docs.openssl.org/3.3/man3/SSL_get_ciphers/
+    //
+    // Don't forget also:
+    //
+    // The stack returned by `SSL_get1_supported_ciphers()` should be freed using `sk_SSL_CIPHER_free()`.
+
+    val ssl = libssl.SSL_new(ptr)
+    if (ssl == null)
+      throw new RuntimeException(
+        "Failed to create SSL for SSLContextSpiImpl when getting default SSL parameters",
+      )
+
+    val stackOfCiphers = libssl.SSL_get1_supported_ciphers(ssl)
+    if (stackOfCiphers == null)
+      throw new RuntimeException(
+        "Failed to get default SSL parameters for SSLContextSpiImpl: `SSL_get1_supported_ciphers` returned null",
+      )
+    val numCiphers = libssl.snhttp_ossl_sk_SSL_CIPHER_num(stackOfCiphers)
+
+    var sslParameters: SSLParameters = null
+    try {
+      val cipherSuites = Array(
+        (0 until numCiphers).map { i =>
+          val cipher = libssl.snhttp_ossl_sk_SSL_CIPHER_value(stackOfCiphers, i)
+          fromCString(libssl.SSL_CIPHER_standard_name(cipher))
+        }*,
+      )
+
+      sslParameters = new SSLParametersImpl(cipherSuites, supportedProtocols)
+    } finally {
+      libssl.snhttp_ossl_sk_SSL_CIPHER_free(stackOfCiphers)
+      libssl.SSL_free(ssl)
+    }
+
+    sslParameters
+  }
 
   // @since JDK 1.6
-  override def engineGetSupportedSSLParameters(): SSLParameters =
-    SSLParametersImpl.getSupported()
+  override def engineGetSupportedSSLParameters(): SSLParameters = {
+    val stackOfCiphers = libssl.SSL_CTX_get_ciphers(ptr)
+    if (stackOfCiphers == null)
+      throw new RuntimeException(
+        "Failed to get supported SSL parameters for SSLContextSpiImpl: `SSL_CTX_get_ciphers` returned null",
+      )
+    val numCiphers = libssl.snhttp_ossl_sk_SSL_CIPHER_num(stackOfCiphers)
+
+    val cipherSuites = Array(
+      (0 until numCiphers).map { i =>
+        val cipher = libssl.snhttp_ossl_sk_SSL_CIPHER_value(stackOfCiphers, i)
+        fromCString(libssl.SSL_CIPHER_standard_name(cipher))
+      }*,
+    )
+
+    new SSLParametersImpl(cipherSuites, supportedProtocols)
+  }
 
 end SSLContextSpiImpl

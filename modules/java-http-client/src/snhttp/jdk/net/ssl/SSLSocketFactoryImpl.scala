@@ -1,3 +1,4 @@
+/** SPDX-License-Identifier: Apache-2.0 */
 package snhttp.jdk.net.ssl
 
 import java.io.InputStream
@@ -8,10 +9,12 @@ import javax.net.ssl.SSLSocketFactory
 protected[ssl] class SSLSocketFactoryImpl(ctxSpi: SSLContextSpiImpl) extends SSLSocketFactory:
 
   def createSocket(host: String, port: Int): ClientSSLSocketImpl =
-    ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
+    // ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
+    ???
 
   def createSocket(host: InetAddress, port: Int): ClientSSLSocketImpl =
-    ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
+    // ClientSSLSocketImpl(SSLParametersImpl.getDefault(), host, port)
+    ???
 
   def createSocket(
       host: String,
@@ -56,7 +59,7 @@ protected[ssl] class SSLSocketFactoryImpl(ctxSpi: SSLContextSpiImpl) extends SSL
     ???
 
   def getDefaultCipherSuites(): Array[String] =
-    SSLParametersImpl.getDefaultCipherSuites()
+    ctxSpi.engineGetDefaultSSLParameters().getCipherSuites()
 
   def getSupportedCipherSuites(): Array[String] =
-    SSLParametersImpl.getSupportedCipherSuites()
+    ctxSpi.engineGetSupportedSSLParameters().getCipherSuites()

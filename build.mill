@@ -42,7 +42,7 @@ trait CommonPublishModule extends PublishModule {
 }
 
 trait UTestModule extends TestModule.Utest {
-  def utestVersion = "0.9.5"
+  def utestVersion = "0.10.0-RC1"
 
   def testParallelism = true
 }

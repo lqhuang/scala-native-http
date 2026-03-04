@@ -1,3 +1,4 @@
+/** SPDX-License-Identifier: Apache-2.0 */
 package snhttp.jdk.jsse.provider
 
 import java.security.Provider
@@ -81,7 +82,7 @@ class OpenSSLProvider(
           "SSLContext",
           "TLSv1.3",
           "snhttp.jdk.net.ssl.SSLContextImpl",
-          JList.of("DEFAULT", "TLS"),
+          JList.of("Default", "TLS"),
           JMap.of(),
         ),
       )

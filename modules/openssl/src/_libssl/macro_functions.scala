@@ -50,4 +50,7 @@ trait macro_functions:
   def snhttp_ossl_sk_SSL_CIPHER_value(sk: Ptr[stack_st_SSL_CIPHER], idx: CInt): Ptr[SSL_CIPHER] =
     extern
 
+  def snhttp_ossl_sk_SSL_CIPHER_free(sk: Ptr[stack_st_SSL_CIPHER]): Unit =
+    extern
+
 end macro_functions

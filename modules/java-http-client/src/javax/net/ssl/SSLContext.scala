@@ -6,9 +6,11 @@ import java.util.Objects.requireNonNull
 
 import snhttp.jdk.jsse.provider.OpenSSLProvider
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
+/*
+ * Refs
+ *
+ *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
+ */
 class SSLContext protected (
     private val spi: SSLContextSpi,
     private val provider: Provider,

@@ -1,3 +1,4 @@
+/** SPDX-License-Identifier: Apache-2.0 */
 package snhttp.jdk.jsse.provider
 
 import java.security.NoSuchAlgorithmException
@@ -34,7 +35,7 @@ private[snhttp] class ProvService private[provider] (
     svcType match
       case "SSLContext" =>
         val ins = new SSLContextImpl(provider, algorithm)
-        if algorithm.equalsIgnoreCase("DEFAULT") then ins.init(null, null, null)
+        if algorithm.equalsIgnoreCase("Default") then ins.init(null, null, null)
         ins
       case _ =>
         throw new NoSuchAlgorithmException(

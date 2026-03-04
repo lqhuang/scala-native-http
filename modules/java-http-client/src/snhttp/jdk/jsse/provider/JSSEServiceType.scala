@@ -1,3 +1,4 @@
+/** SPDX-License-Identifier: Apache-2.0 */
 package snhttp.jdk.jsse.provider
 
 import java.util.TreeSet

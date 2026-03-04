@@ -10,3 +10,7 @@ const SSL_CIPHER* snhttp_ossl_sk_SSL_CIPHER_value(
 ) {
   return sk_SSL_CIPHER_value(stack, i);
 }
+
+void snhttp_ossl_sk_SSL_CIPHER_free(struct stack_st_SSL_CIPHER* stack) {
+  return sk_SSL_CIPHER_free(stack);
+}

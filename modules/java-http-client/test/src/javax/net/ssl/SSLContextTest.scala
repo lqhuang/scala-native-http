@@ -19,36 +19,38 @@
 package snhttp.javax.net.ssl
 
 import java.io.IOException
-import java.security.AccessController
-import java.security.InvalidAlgorithmParameterException
-import java.security.KeyManagementException
-import java.security.KeyStore
-import java.security.KeyStoreException
-import java.security.NoSuchAlgorithmException
-import java.security.PrivilegedAction
-import java.security.Provider
-import java.security.Security
-import java.security.UnrecoverableKeyException
+import java.security.{
+  AccessController,
+  InvalidAlgorithmParameterException,
+  KeyManagementException,
+  KeyStore,
+  KeyStoreException,
+  NoSuchAlgorithmException,
+  PrivilegedAction,
+  Provider,
+  Security,
+  UnrecoverableKeyException,
+}
 import java.util.List as JList
 import java.util.ArrayList
 import java.util.concurrent.Callable
-import javax.net.ServerSocketFactory
 import javax.net.SocketFactory
-import javax.net.ssl.KeyManager
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.KeyManagerFactorySpi
-import javax.net.ssl.ManagerFactoryParameters
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLEngine
-import javax.net.ssl.SSLServerSocket
-import javax.net.ssl.SSLServerSocketFactory
-import javax.net.ssl.SSLSessionContext
-import javax.net.ssl.SSLSocket
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.TrustManager
-import javax.net.ssl.TrustManagerFactory
-import javax.net.ssl.TrustManagerFactorySpi
-import javax.net.ssl.X509KeyManager
+import javax.net.ssl.{
+  KeyManager,
+  KeyManagerFactory,
+  KeyManagerFactorySpi,
+  ManagerFactoryParameters,
+  SSLContext,
+  SSLEngine,
+  SSLSessionContext,
+  // SSLServerSocket,
+  // SSLSocket,
+  // SSLSocketFactory,
+  TrustManager,
+  TrustManagerFactory,
+  TrustManagerFactorySpi,
+  X509KeyManager,
+}
 
 import org.conscrypt.javax.net.ssl.{StandardNames, SSLConfigurationAsserts}
 
@@ -78,25 +80,29 @@ object SSLContextTest {
       expectedCipherSuites,
       sslContext.getServerSocketFactory.getDefaultCipherSuites,
     )
-    val sslSocket = sslContext.getSocketFactory.createSocket.asInstanceOf[SSLSocket]
-    try {
-      assertContentsInOrder(expectedCipherSuites, sslSocket.getEnabledCipherSuites())
-      assertContentsInOrder(expectedCipherSuites, sslSocket.getSSLParameters().getCipherSuites())
-    } finally
-      try sslSocket.close()
-      catch {
-        case ignored: IOException =>
 
-      }
-    val sslServerSocket =
-      sslContext.getServerSocketFactory.createServerSocket.asInstanceOf[SSLServerSocket]
-    try assertContentsInOrder(expectedCipherSuites, sslServerSocket.getEnabledCipherSuites())
-    finally
-      try sslSocket.close()
-      catch {
-        case ignored: IOException =>
+    // FIXME: SSLSocket isn't implemented yet
+    // val sslSocket = sslContext.getSocketFactory.createSocket.asInstanceOf[SSLSocket]
+    // try {
+    //   assertContentsInOrder(expectedCipherSuites, sslSocket.getEnabledCipherSuites())
+    //   assertContentsInOrder(expectedCipherSuites, sslSocket.getSSLParameters().getCipherSuites())
+    // } finally
+    //   try sslSocket.close()
+    //   catch {
+    //     case ignored: IOException =>
 
-      }
+    //   }
+
+    // TODO: Server features are not supported yet
+    // val sslServerSocket =
+    //   sslContext.getServerSocketFactory.createServerSocket.asInstanceOf[SSLServerSocket]
+    // try
+    //   assertContentsInOrder(expectedCipherSuites, sslServerSocket.getEnabledCipherSuites())
+    // finally
+    //   try sslSocket.close()
+    //   catch {
+    //     case ignored: IOException =>
+    //   }
   }
 
   class ThrowExceptionKeyAndTrustManagerFactoryProvider
@@ -224,14 +230,16 @@ class SSLContextTest extends TestSuite:
 
   def tests = Tests:
 
-    test("SSLContext_getDefault") {
+    test("SSLContext.getDefault") {
       val sslContext = SSLContext.getDefault()
       assert(sslContext != null)
+      // Users shouldn't be able to initialize the default SSLContext (again),
+      // since it's supposed to be initialized
       assertThrows[KeyManagementException]:
         sslContext.init(null, null, null)
     }
 
-    test("SSLContext_setDefault") {
+    test("SSLContext.setDefault") {
       val _ = assertThrows[NullPointerException] {
         SSLContext.setDefault(null)
       }
@@ -247,10 +255,11 @@ class SSLContextTest extends TestSuite:
         SSLContext.setDefault(newContext)
         assert(newContext.equals(SSLContext.getDefault()))
       }
+
       SSLContext.setDefault(defaultContext)
     }
 
-    test("SSLContext_defaultConfiguration") {
+    test("SSLContext.defaultConfiguration") {
       SSLConfigurationAsserts.assertSSLContextDefaultConfiguration(SSLContext.getDefault())
       for (protocol <- StandardNames.SSL_CONTEXT_PROTOCOLS_WITH_DEFAULT_CONFIG) {
         val sslContext = SSLContext.getInstance(protocol)
@@ -260,8 +269,7 @@ class SSLContextTest extends TestSuite:
       }
     }
 
-    test("SSLContext_allProtocols") {
-      SSLConfigurationAsserts.assertSSLContextDefaultConfiguration(SSLContext.getDefault())
+    test("SSLContext.allProtocols") {
       for (protocol <- StandardNames.SSL_CONTEXT_PROTOCOLS) {
         val sslContext = SSLContext.getInstance(protocol)
         if (!(protocol == StandardNames.SSL_CONTEXT_PROTOCOLS_DEFAULT))
