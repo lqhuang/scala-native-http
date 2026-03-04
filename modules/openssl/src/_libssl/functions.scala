@@ -8,13 +8,14 @@ import scala.scalanative.posix.sys.time.timeval
 
 object functions:
 
-  @link("libcrypto")
   @link("libssl")
+  @link("libcrypto")
   @extern
   private object SSLFunctionsWindows extends functions
 
   @extern
   @link("ssl")
+  @link("crypto")
   private object SSLFunctionsUnix extends functions
 
   private val _functions = if isWindows then SSLFunctionsWindows else SSLFunctionsUnix
