@@ -1,6 +1,6 @@
 package javax.net.ssl
 
-import java.security.{SecureRandom, Provider}
+import java.security.{SecureRandom, Provider, Security}
 import java.security.NoSuchAlgorithmException
 import java.util.Objects.requireNonNull
 
@@ -79,7 +79,10 @@ object SSLContext:
     getInstance(protocol, OpenSSLProvider.defaultInstance)
 
   def getInstance(protocol: String, provider: String): SSLContext =
-    throw new UnsupportedOperationException("Not supported in Scala Native yet")
+    requireNonNull(protocol)
+    require(provider != null && provider.nonEmpty)
+    require(protocol.nonEmpty)
+    throw new NotImplementedError("get via string provider is not supported yet")
 
   def getInstance(protocol: String, provider: Provider): SSLContext = {
     requireNonNull(protocol)

@@ -30,9 +30,9 @@ object `req-async` extends SharedModule
 object req extends SharedModule
 
 trait CurlSharedModule extends ScalaNativeModule {
+  def scalaVersion = build.scalaVersion
   def scalaNativeVersion = build.scalaNativeVersion
   def moduleDeps = Seq(build.modules.curl)
-  def scalaVersion = build.scalaVersion
 }
 
 object `curl-easy` extends CurlSharedModule
@@ -40,8 +40,8 @@ object `curl-multi` extends CurlSharedModule
 
 trait OpenSSLSharedModule extends ScalaNativeModule {
   def scalaNativeVersion = build.scalaNativeVersion
-  def moduleDeps = Seq(build.modules.openssl)
   def scalaVersion = build.scalaVersion
+  def moduleDeps = Seq(build.modules.openssl)
 }
 
 object openssl extends OpenSSLSharedModule

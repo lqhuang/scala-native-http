@@ -15,8 +15,14 @@ object func_aliases:
   def SSL_CTX_set_min_proto_version(ctx: Ptr[SSL_CTX], version: TLS_VERSION): Size =
     SSL_CTX_ctrl(ctx, SSL_CTRL.SET_MIN_PROTO_VERSION, version.value, null)
 
+  def SSL_CTX_get_min_proto_version(ctx: Ptr[SSL_CTX]): Size =
+    SSL_CTX_ctrl(ctx, SSL_CTRL.GET_MIN_PROTO_VERSION, 0, null)
+
   def SSL_CTX_set_max_proto_version(ctx: Ptr[SSL_CTX], version: TLS_VERSION): Size =
     SSL_CTX_ctrl(ctx, SSL_CTRL.SET_MAX_PROTO_VERSION, version.value, null)
+
+  def SSL_CTX_get_max_proto_version(ctx: Ptr[SSL_CTX]): Size =
+    SSL_CTX_ctrl(ctx, SSL_CTRL.GET_MAX_PROTO_VERSION, 0, null)
 
   def SSL_CTX_set_session_cache_mode(ctx: Ptr[SSL_CTX], mode: SSL_SESS_CACHE): Size =
     SSL_CTX_ctrl(ctx, SSL_CTRL.SET_SESS_CACHE_MODE, mode.value, null)

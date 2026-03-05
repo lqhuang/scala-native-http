@@ -22,7 +22,7 @@ object functions:
   export _functions.*
 
 @extern
-trait functions:
+trait functions extends macro_functions:
 
   import _root_.snhttp.experimental.openssl._libssl.aliases.*
   import _root_.snhttp.experimental.openssl._libssl.structs.*
@@ -31,6 +31,7 @@ trait functions:
     SSL_CTRL,
     SSL_VERIFY,
     SSL_ERROR,
+    SSL_OP,
   }
   import _root_.snhttp.experimental.openssl.libbio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
 
@@ -381,7 +382,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_callback_ctrl(_0: Ptr[SSL_CTX], _1: CInt, _2: CFuncPtr0[Unit]): CLongInt =
+  def SSL_CTX_callback_ctrl(_0: Ptr[SSL_CTX], _1: CInt, _2: CFuncPtr0[Unit]): CLong =
     extern
 
   /**
@@ -392,7 +393,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_clear_options(ctx: Ptr[SSL_CTX], op: ULong): ULong = extern
+  def SSL_CTX_clear_options(ctx: Ptr[SSL_CTX], op: SSL_OP): SSL_OP = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -415,9 +416,9 @@ trait functions:
   def SSL_CTX_ctrl(
       ctx: Ptr[SSL_CTX],
       cmd: SSL_CTRL,
-      larg: CLongInt,
+      larg: CLong,
       parg: Ptr[Byte],
-  ): CLongInt =
+  ): CLong =
     extern
 
   /**
@@ -458,7 +459,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_flush_sessions(ctx: Ptr[SSL_CTX], tm: CLongInt): Unit = extern
+  def SSL_CTX_flush_sessions(ctx: Ptr[SSL_CTX], tm: CLong): Unit = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -595,7 +596,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_get_options(ctx: Ptr[SSL_CTX]): ULong = extern
+  def SSL_CTX_get_options(ctx: Ptr[SSL_CTX]): SSL_OP = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -632,7 +633,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_get_timeout(ctx: Ptr[SSL_CTX]): CLongInt = extern
+  def SSL_CTX_get_timeout(ctx: Ptr[SSL_CTX]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1088,7 +1089,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_set_options(ctx: Ptr[SSL_CTX], op: ULong): ULong = extern
+  def SSL_CTX_set_options(ctx: Ptr[SSL_CTX], op: SSL_OP): SSL_OP = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1255,7 +1256,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_CTX_set_timeout(ctx: Ptr[SSL_CTX], t: CLongInt): CLongInt = extern
+  def SSL_CTX_set_timeout(ctx: Ptr[SSL_CTX], t: CLong): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1298,7 +1299,7 @@ trait functions:
       pk: CInt,
       ctx: Ptr[SSL_CTX],
       d: Ptr[CUnsignedChar],
-      len: CLongInt,
+      len: CLong,
   ): CInt = extern
 
   /**
@@ -1318,7 +1319,7 @@ trait functions:
   def SSL_CTX_use_RSAPrivateKey_ASN1(
       ctx: Ptr[SSL_CTX],
       d: Ptr[CUnsignedChar],
-      len: CLongInt,
+      len: CLong,
   ): CInt = extern
 
   /**
@@ -1506,7 +1507,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_SESSION_get_time(s: Ptr[SSL_SESSION]): CLongInt = extern
+  def SSL_SESSION_get_time(s: Ptr[SSL_SESSION]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1516,7 +1517,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_SESSION_get_timeout(s: Ptr[SSL_SESSION]): CLongInt = extern
+  def SSL_SESSION_get_timeout(s: Ptr[SSL_SESSION]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1623,7 +1624,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_SESSION_set_time(s: Ptr[SSL_SESSION], t: CLongInt): CLongInt = extern
+  def SSL_SESSION_set_time(s: Ptr[SSL_SESSION], t: CLong): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1633,7 +1634,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_SESSION_set_timeout(s: Ptr[SSL_SESSION], t: CLongInt): CLongInt = extern
+  def SSL_SESSION_set_timeout(s: Ptr[SSL_SESSION], t: CLong): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1754,7 +1755,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_callback_ctrl(_0: Ptr[SSL], _1: CInt, _2: CFuncPtr0[Unit]): CLongInt = extern
+  def SSL_callback_ctrl(_0: Ptr[SSL], _1: CInt, _2: CFuncPtr0[Unit]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1774,7 +1775,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_clear_options(s: Ptr[SSL], op: ULong): ULong = extern
+  def SSL_clear_options(s: Ptr[SSL], op: SSL_OP): SSL_OP = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -1873,7 +1874,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_ctrl(ssl: Ptr[SSL], cmd: SSL_CTRL, larg: CLongInt, parg: Ptr[Byte]): CLongInt = extern
+  def SSL_ctrl(ssl: Ptr[SSL], cmd: SSL_CTRL, larg: CLong, parg: Ptr[Byte]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -2203,7 +2204,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_get_default_timeout(s: Ptr[SSL]): CLongInt = extern
+  def SSL_get_default_timeout(s: Ptr[SSL]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -2284,7 +2285,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_get_options(s: Ptr[SSL]): ULong = extern
+  def SSL_get_options(s: Ptr[SSL]): SSL_OP = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -2478,7 +2479,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_get_verify_result(ssl: Ptr[SSL]): CLongInt = extern
+  def SSL_get_verify_result(ssl: Ptr[SSL]): CLong = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -3030,7 +3031,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_set_options(s: Ptr[SSL], op: ULong): ULong = extern
+  def SSL_set_options(s: Ptr[SSL], op: SSL_OP): SSL_OP = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -3235,7 +3236,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
-  def SSL_set_verify_result(ssl: Ptr[SSL], v: CLongInt): Unit = extern
+  def SSL_set_verify_result(ssl: Ptr[SSL], v: CLong): Unit = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -3326,7 +3327,7 @@ trait functions:
       pk: CInt,
       ssl: Ptr[SSL],
       d: Ptr[CUnsignedChar],
-      len: CLongInt,
+      len: CLong,
   ): CInt = extern
 
   /**
@@ -3345,7 +3346,7 @@ trait functions:
   def SSL_use_RSAPrivateKey_ASN1(
       ssl: Ptr[SSL],
       d: Ptr[CUnsignedChar],
-      len: CLongInt,
+      len: CLong,
   ): CInt =
     extern
 
@@ -3514,7 +3515,7 @@ trait functions:
   def d2i_SSL_SESSION(
       a: Ptr[Ptr[SSL_SESSION]],
       pp: Ptr[Ptr[CUnsignedChar]],
-      length: CLongInt,
+      length: CLong,
   ): Ptr[SSL_SESSION] = extern
 
   /**
@@ -3523,7 +3524,7 @@ trait functions:
   def d2i_SSL_SESSION_ex(
       a: Ptr[Ptr[SSL_SESSION]],
       pp: Ptr[Ptr[CUnsignedChar]],
-      length: CLongInt,
+      length: CLong,
       libctx: Ptr[OSSL_LIB_CTX],
       propq: CString,
   ): Ptr[SSL_SESSION] = extern

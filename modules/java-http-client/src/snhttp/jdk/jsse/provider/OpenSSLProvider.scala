@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.{List as JList, Map as JMap, Set as JSet}
 
 class OpenSSLProvider(
-    private val name: String = "scala-native-ssl",
+    private val name: String = "scala-native-openssl",
     private val versionStr: String = "0.1",
     private val info: String =
       "Java Secure Socket Extension Provider for Scala Native using OpenSSL",
@@ -76,26 +76,18 @@ class OpenSSLProvider(
 
   private def setup(): Unit =
     if (!initialized.compareAndExchange(false, true)) {
-      putProvService(
-        ProvService(
-          this,
-          "SSLContext",
-          "TLSv1.3",
-          "snhttp.jdk.net.ssl.SSLContextImpl",
-          JList.of("Default", "TLS"),
-          JMap.of(),
-        ),
-      )
-      putProvService(
-        ProvService(
-          this,
-          "SSLContext",
-          "TLSv1.2",
-          "snhttp.jdk.net.ssl.SSLContextImpl",
-          JList.of(),
-          JMap.of(),
-        ),
-      )
+      for (algorithm <- Set("TLSv1.3", "TLSv1.2", "TLS", "Default"))
+        putProvService(
+          ProvService(
+            this,
+            "SSLContext",
+            algorithm,
+            "snhttp.jdk.net.ssl.SSLContextImpl",
+            JList.of(),
+            JMap.of(),
+          ),
+        )
+
     }
 
 object OpenSSLProvider:

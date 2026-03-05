@@ -55,7 +55,10 @@ object SSLConfigurationAsserts {
     val supportedParameters = sslContext.getSupportedSSLParameters()
     // TODO: Revisit the assertion. It's hard to be exactly the same with conscrypt's default cipher suites.
     // StandardNames.assertSupportedCipherSuites(supportedParameters.getCipherSuites())
-    StandardNames.assertSupportedProtocols(supportedParameters.getProtocols())
+    StandardNames.assertSupportedProtocols(
+      StandardNames.SSL_CONTEXT_SUPPORTED_PROTOCOLS,
+      supportedParameters.getProtocols(),
+    )
     assert(supportedParameters.getWantClientAuth() == false)
     assert(supportedParameters.getNeedClientAuth() == false)
     assertContainsAll(supportedParameters.getCipherSuites(), defaultParameters.getCipherSuites())

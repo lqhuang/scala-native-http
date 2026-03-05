@@ -24,6 +24,150 @@ object enumerations:
       inline def value: Size = eq.apply(t)
       inline def long: Long  = eq.apply(t).toLong
 
+  private[enumerations] trait _BindgenEnumULong[T](using eq: T =:= ULong):
+    given Tag[T]                                    = Tag.ULong.asInstanceOf[Tag[T]]
+    extension (inline t: T) inline def value: ULong = eq.apply(t)
+
+  /**
+   * [bindgen] header: /usr/include/openssl/ssl.h
+   */
+  opaque type SSL_OP = ULong
+  object SSL_OP extends _BindgenEnumULong[SSL_OP]:
+    given _tag: Tag[SSL_OP] = Tag.ULong
+
+    inline def defineBit(inline a: Int): SSL_OP = 1.toULong << a
+    inline def define(inline a: Int): SSL_OP    = a.toULong
+
+    /*
+     * SSL/TLS connection options.
+     */
+    /* Disable Extended master secret */
+    val NO_EXTENDED_MASTER_SECRET = defineBit(0)
+    /* Cleanse plaintext copies of data delivered to the application */
+    val CLEANSE_PLAINTEXT = defineBit(1)
+    /* Allow initial connection to servers that don't support RI */
+    val LEGACY_SERVER_CONNECT = defineBit(2)
+    /* Enable support for Kernel TLS */
+    val ENABLE_KTLS                = defineBit(3)
+    val TLSEXT_PADDING             = defineBit(4)
+    val SAFARI_ECDHE_ECDSA_BUG     = defineBit(6)
+    val IGNORE_UNEXPECTED_EOF      = defineBit(7)
+    val ALLOW_CLIENT_RENEGOTIATION = defineBit(8)
+    val DISABLE_TLSEXT_CA_NAMES    = defineBit(9)
+    /* In TLSv1.3 allow a non-(ec)dhe based kex_mode */
+    val ALLOW_NO_DHE_KEX = defineBit(10)
+    /*
+     * Disable SSL 3.0/TLS 1.0 CBC vulnerability workaround that was added
+     * in OpenSSL 0.9.6d.  Usually (depending on the application protocol)
+     * the workaround is not needed.  Unfortunately some broken SSL/TLS
+     * implementations cannot handle it at all, which is why we include it
+     * in SSL_OP_ALL. Added in 0.9.6e
+     */
+    val DONT_INSERT_EMPTY_FRAGMENTS = defineBit(11)
+    /* DTLS options */
+    val NO_QUERY_MTU = defineBit(12)
+    /* Turn on Cookie Exchange (on relevant for servers) */
+    val COOKIE_EXCHANGE = defineBit(13)
+    /* Don't use RFC4507 ticket extension */
+    val NO_TICKET = defineBit(14)
+    // #ifndef OPENSSL_NO_DTLS1_METHOD
+    //     /*
+    //     * Use Cisco's version identifier of DTLS_BAD_VER
+    //     * (only with deprecated DTLSv1_client_method())
+    //     */
+    // val CISCO_ANYCONNECT                       = defineBit(15)
+    // #endif
+    /* As server, disallow session resumption on renegotiation */
+    val NO_SESSION_RESUMPTION_ON_RENEGOTIATION = defineBit(16)
+    /* Don't use compression even if supported */
+    val NO_COMPRESSION = defineBit(17)
+    /* Permit unsafe legacy renegotiation */
+    val ALLOW_UNSAFE_LEGACY_RENEGOTIATION = defineBit(18)
+    /* Disable encrypt-then-mac */
+    val NO_ENCRYPT_THEN_MAC = defineBit(19)
+    /*
+     * Enable TLSv1.3 Compatibility mode. This is on by default. A future
+     * version of OpenSSL may have this disabled by default.
+     */
+    val ENABLE_MIDDLEBOX_COMPAT = defineBit(20)
+    /*
+     * Prioritize Chacha20Poly1305 when client does.
+     * Modifies SSL_OP_CIPHER_SERVER_PREFERENCE
+     */
+    val PRIORITIZE_CHACHA = defineBit(21)
+    /*
+     * Set on servers to choose the cipher according to server's preferences.
+     */
+    val CIPHER_SERVER_PREFERENCE = defineBit(22)
+    /*
+     * If set, a server will allow a client to issue a SSLv3.0 version
+     * number as latest version supported in the premaster secret, even when
+     * TLSv1.0 (version 3.1) was announced in the client hello. Normally
+     * this is forbidden to prevent version rollback attacks.
+     */
+    val TLS_ROLLBACK_BUG = defineBit(23)
+    /*
+     * Switches off automatic TLSv1.3 anti-replay protection for early data.
+     * This is a server-side option only (no effect on the client).
+     */
+    val NO_ANTI_REPLAY = defineBit(24)
+    val NO_SSLv3       = defineBit(25)
+    val NO_TLSv1       = defineBit(26)
+    val NO_TLSv1_2     = defineBit(27)
+    val NO_TLSv1_1     = defineBit(28)
+    val NO_TLSv1_3     = defineBit(29)
+    val NO_DTLSv1      = defineBit(26)
+    val NO_DTLSv1_2    = defineBit(27)
+    /* Disallow all renegotiation */
+    val NO_RENEGOTIATION = defineBit(30)
+    /*
+     * Make server add server-hello extension from early version of
+     * cryptopro draft, when GOST ciphersuite is negotiated. Required for
+     * interoperability with CryptoPro CSP 3.x
+     */
+    val CRYPTOPRO_TLSEXT_BUG = defineBit(31)
+
+    /*
+     * Option "collections."
+     */
+    val NO_SSL_MASK =
+      NO_SSLv3
+        | NO_TLSv1
+        | NO_TLSv1_1
+        | NO_TLSv1_2
+        | NO_TLSv1_3
+
+    val NO_DTLS_MASK = NO_DTLSv1 | NO_DTLSv1_2
+
+    /* Various bug workarounds that should be rather harmless. */
+    val ALL =
+      CRYPTOPRO_TLSEXT_BUG
+        | DONT_INSERT_EMPTY_FRAGMENTS
+        | TLSEXT_PADDING
+        | SAFARI_ECDHE_ECDSA_BUG
+
+    /*
+     * OBSOLETE OPTIONS retained for compatibility
+     */
+    val MICROSOFT_SESS_ID_BUG            = define(0x0)
+    val NETSCAPE_CHALLENGE_BUG           = define(0x0)
+    val NETSCAPE_REUSE_CIPHER_CHANGE_BUG = define(0x0)
+    val SSLREF2_REUSE_CERT_TYPE_BUG      = define(0x0)
+    val MICROSOFT_BIG_SSLV3_BUFFER       = define(0x0)
+    val MSIE_SSLV2_RSA_PADDING           = define(0x0)
+    val SSLEAY_080_CLIENT_DH_BUG         = define(0x0)
+    val TLS_D5_BUG                       = define(0x0)
+    val TLS_BLOCK_PADDING_BUG            = define(0x0)
+    val SINGLE_ECDH_USE                  = define(0x0)
+    val SINGLE_DH_USE                    = define(0x0)
+    val EPHEMERAL_RSA                    = define(0x0)
+    val NO_SSLv2                         = define(0x0)
+    val PKCS1_CHECK_1                    = define(0x0)
+    val PKCS1_CHECK_2                    = define(0x0)
+    val NETSCAPE_CA_DN_BUG               = define(0x0)
+    val NETSCAPE_DEMO_CIPHER_CHANGE_BUG  = define(0x0)
+  end SSL_OP
+
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
@@ -186,7 +330,7 @@ object enumerations:
   /**
    * header: /usr/include/openssl/ssl.h
    */
-  opaque type SSL_SESS_CACHE = CLongInt // larg: CLongInt
+  opaque type SSL_SESS_CACHE = CLong // larg: CLongInt
   object SSL_SESS_CACHE extends _BindgenEnumSize[SSL_SESS_CACHE]:
     given _tag: Tag[SSL_SESS_CACHE] = Tag.Size
 
@@ -457,32 +601,42 @@ object enumerations:
   /**
    * header: /usr/include/openssl/ssl.h
    */
-  opaque type TLS_VERSION = CInt
-  object TLS_VERSION extends _BindgenEnumCInt[TLS_VERSION]:
-    given _tag: Tag[TLS_VERSION] = Tag.Int
+  opaque type TLS_VERSION = CLong
+  object TLS_VERSION extends _BindgenEnumSize[TLS_VERSION]:
+    given _tag: Tag[TLS_VERSION] = Tag.Size
 
-    inline def define(inline a: Int): TLS_VERSION = a.toInt
+    inline def define(inline a: Int): TLS_VERSION = a
 
-    val SSL3          = define(0x0300)
-    val TLS1          = define(0x0301)
-    val TLS1_1        = define(0x0302)
-    val TLS1_2        = define(0x0303)
-    val TLS1_3        = define(0x0304)
+    val SSL3   = define(0x0300)
+    val TLS1   = define(0x0301)
+    val TLS1_1 = define(0x0302)
+    val TLS1_2 = define(0x0303)
+    val TLS1_3 = define(0x0304)
+
     val DTLS1         = define(0xfeff)
     val DTLS1_2       = define(0xfefd)
     val DTLS1_BAD_VER = define(0x0100)
 
-    def getName(value: TLS_VERSION): Option[String] =
+    def getName(value: TLS_VERSION): String =
       value match
-        case SSL3          => Some("SSL3_VERSION")
-        case TLS1          => Some("TLS1_VERSION")
-        case TLS1_1        => Some("TLS1_1_VERSION")
-        case TLS1_2        => Some("TLS1_2_VERSION")
-        case TLS1_3        => Some("TLS1_3_VERSION")
-        case DTLS1         => Some("DTLS1_VERSION")
-        case DTLS1_2       => Some("DTLS1_2_VERSION")
-        case DTLS1_BAD_VER => Some("DTLS1_BAD_VER")
-        case _             => _root_.scala.None
+        case SSL3          => "SSL3_VERSION"
+        case TLS1          => "TLS1_VERSION"
+        case TLS1_1        => "TLS1_1_VERSION"
+        case TLS1_2        => "TLS1_2_VERSION"
+        case TLS1_3        => "TLS1_3_VERSION"
+        case DTLS1         => "DTLS1_VERSION"
+        case DTLS1_2       => "DTLS1_2_VERSION"
+        case DTLS1_BAD_VER => "DTLS1_BAD_VER"
+
+    def getJavaStandardName(value: TLS_VERSION): String =
+      value match
+        case SSL3    => "SSLv3"
+        case TLS1    => "TLSv1"
+        case TLS1_1  => "TLSv1.1"
+        case TLS1_2  => "TLSv1.2"
+        case TLS1_3  => "TLSv1.3"
+        case DTLS1   => "DTLSv1"
+        case DTLS1_2 => "DTLSv1.2"
 
   /**
    * header: /usr/include/openssl/ssl.h

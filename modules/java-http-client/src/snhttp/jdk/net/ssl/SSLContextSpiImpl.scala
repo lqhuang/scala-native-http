@@ -16,10 +16,12 @@ import javax.net.ssl.{
   SSLServerSocketFactory,
 }
 
+import scala.collection.immutable.TreeSet
+import scala.math.Ordering.comparatorToOrdering
 import scala.scalanative.unsafe.{Ptr, fromCString}
 
 import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl._libssl.enumerations.{SSL_CTRL, SSL_VERIFY, TLS_VERSION}
+import snhttp.experimental.openssl._libssl.enumerations.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
 import snhttp.utils.PointerCleaner
 
 private[snhttp] class SSLContextImpl(
@@ -29,12 +31,14 @@ private[snhttp] class SSLContextImpl(
 
 private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi():
 
-  private val supportedProtocols = Array("TLSv1.2", "TLSv1.3")
+  import SSLContextSpiImpl.{
+    SUPPORTED_PROTOCOLS,
+    ALL_SSL_CONTEXT_PROTOCOLS,
+    SSL_OP_PROTOCOL_MASK_MAP,
+  }
 
   private val tlsVersionPtr =
-    if (protocol.equalsIgnoreCase("TLSv1.2")) {
-      libssl.TLSv1_2_method()
-    } else if (protocol.equalsIgnoreCase("TLSv1.3")) {
+    if (SUPPORTED_PROTOCOLS.contains(protocol)) {
       libssl.TLS_method()
     } else
       throw new NoSuchAlgorithmException(
@@ -45,13 +49,26 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
     throw new RuntimeException("Failed to create SSL_CTX for SSLContextSpiImpl")
   PointerCleaner.register(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
 
-  if (protocol.equalsIgnoreCase("TLSv1.3")) {
-    val ret = libssl.SSL_CTX_set_min_proto_version(ptr, TLS_VERSION.TLS1_3)
+  val minProtoRet = libssl.SSL_CTX_set_min_proto_version(ptr, TLS_VERSION.TLS1_2)
+  if (minProtoRet != 1)
+    throw new RuntimeException(
+      "Failed to set minimul protocol version to TLSv1.2 for SSLContextSpiImpl when required protocol is TLSv1.2",
+    )
+  if (protocol.equalsIgnoreCase("TLSv1.2")) {
+    val ret = libssl.SSL_CTX_set_max_proto_version(ptr, TLS_VERSION.TLS1_2)
     if (ret != 1)
       throw new RuntimeException(
-        "Failed to set minimum protocol version to TLSv1.3 for SSLContextSpiImpl when protocol is TLSv1.3",
+        "Failed to set maximum protocol version to TLSv1.2 for SSLContextSpiImpl when required protocol is TLSv1.2",
       )
   }
+
+  /**
+   * Security level set to 192 bits of security. As a result RSA, DSA and DH keys shorter than 7680
+   * bits and ECC keys shorter than 384 bits are prohibited. Cipher suites using SHA1 for the MAC
+   * are prohibited.
+   */
+  if (libssl.SSL_CTX_get_security_level(ptr) < 4)
+    libssl.SSL_CTX_set_security_level(ptr, 4)
 
   // Client session context bind to current SSLContext
   // only has one ClientSessionContext instance per SSLContext instance
@@ -109,7 +126,6 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
     // Don't forget also:
     //
     // The stack returned by `SSL_get1_supported_ciphers()` should be freed using `sk_SSL_CIPHER_free()`.
-
     val ssl = libssl.SSL_new(ptr)
     if (ssl == null)
       throw new RuntimeException(
@@ -132,7 +148,7 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
         }*,
       )
 
-      sslParameters = new SSLParametersImpl(cipherSuites, supportedProtocols)
+      sslParameters = new SSLParametersImpl(cipherSuites, getDefaultProtocols())
     } finally {
       libssl.snhttp_ossl_sk_SSL_CIPHER_free(stackOfCiphers)
       libssl.SSL_free(ssl)
@@ -157,7 +173,58 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
       }*,
     )
 
-    new SSLParametersImpl(cipherSuites, supportedProtocols)
+    new SSLParametersImpl(cipherSuites, getSupportedProtocols())
   }
+
+  private def getDefaultProtocols(): Array[String] = {
+    val _min = libssl.SSL_CTX_get_min_proto_version(ptr).toInt
+    val _max = libssl.SSL_CTX_get_max_proto_version(ptr).toInt
+    val min = if _min == 0 then 0x0300 else _min
+    val max = if _max == 0 then 0x0400 else _max
+
+    val supported = ALL_SSL_CONTEXT_PROTOCOLS
+      .filter(v => v.value >= min && v.value <= max)
+      .map(TLS_VERSION.getJavaStandardName(_))
+      .toArray
+
+    supported
+  }
+
+  private def getSupportedProtocols(): Array[String] =
+    getEnabledProtocols()
+      .map(TLS_VERSION.getJavaStandardName(_))
+      .toArray
+
+  private def getEnabledProtocols(): Seq[TLS_VERSION] = {
+    val mask = libssl.SSL_CTX_get_options(ptr)
+    val enabled =
+      ALL_SSL_CONTEXT_PROTOCOLS
+        .filter(v => (mask.value & SSL_OP_PROTOCOL_MASK_MAP(v).value) == 0)
+    enabled
+  }
+
+object SSLContextSpiImpl:
+
+  final val SUPPORTED_PROTOCOLS = TreeSet(
+    "TLSv1.2",
+    "TLSv1.3",
+    "TLS",
+    "Default",
+  )(using comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
+
+  final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
+    TLS_VERSION.SSL3,
+    TLS_VERSION.TLS1,
+    TLS_VERSION.TLS1_1,
+    TLS_VERSION.TLS1_2,
+    TLS_VERSION.TLS1_3,
+  )
+  final val SSL_OP_PROTOCOL_MASK_MAP = Map(
+    TLS_VERSION.SSL3 -> SSL_OP.NO_SSLv3,
+    TLS_VERSION.TLS1 -> SSL_OP.NO_TLSv1,
+    TLS_VERSION.TLS1_1 -> SSL_OP.NO_TLSv1_1,
+    TLS_VERSION.TLS1_2 -> SSL_OP.NO_TLSv1_2,
+    TLS_VERSION.TLS1_3 -> SSL_OP.NO_TLSv1_3,
+  )
 
 end SSLContextSpiImpl
