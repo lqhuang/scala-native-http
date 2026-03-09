@@ -12,9 +12,9 @@ import snhttp.jdk.jsse.provider.OpenSSLProvider
  *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
  */
 class SSLContext protected (
-    private val spi: SSLContextSpi,
-    private val provider: Provider,
-    private val protocol: String,
+    val spi: SSLContextSpi,
+    val provider: Provider,
+    val protocol: String,
 ):
 
   requireNonNull(spi)

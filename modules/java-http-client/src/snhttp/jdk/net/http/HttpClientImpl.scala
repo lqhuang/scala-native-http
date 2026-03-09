@@ -25,6 +25,7 @@ import _root_.snhttp.experimental.libcurl
 import _root_.snhttp.experimental.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode}
 import _root_.snhttp.experimental.curl.CurlMultiCode.RichCurlMultiCode
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
+import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
 
 class HttpClientBuilderImpl() extends Builder:

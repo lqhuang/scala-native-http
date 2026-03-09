@@ -25,9 +25,12 @@ import snhttp.experimental.openssl._libssl.enumerations.{SSL_CTRL, SSL_VERIFY, T
 import snhttp.utils.PointerCleaner
 
 private[snhttp] class SSLContextImpl(
-    private val provider: Provider,
-    private val protocol: String,
-) extends SSLContext(new SSLContextSpiImpl(protocol), provider, protocol)
+    spi: SSLContextSpiImpl,
+    provider: Provider,
+    protocol: String,
+) extends SSLContext(spi, provider, protocol):
+  private[snhttp] val ptr = spi.ptr
+end SSLContextImpl
 
 private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi():
 

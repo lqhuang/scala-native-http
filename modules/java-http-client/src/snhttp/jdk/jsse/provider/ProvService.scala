@@ -6,7 +6,7 @@ import java.security.Provider
 import java.util.{List as JList, Map as JMap}
 import javax.net.ssl.SSLContext
 
-import snhttp.jdk.net.ssl.SSLContextImpl
+import snhttp.jdk.net.ssl.{SSLContextImpl, SSLContextSpiImpl}
 
 /* OpenSSLProviderService */
 private[snhttp] class ProvService private[provider] (
@@ -34,7 +34,7 @@ private[snhttp] class ProvService private[provider] (
   override def newInstance(constructorParameter: Object): Object =
     svcType match
       case "SSLContext" =>
-        val ins = new SSLContextImpl(provider, algorithm)
+        val ins = new SSLContextImpl(new SSLContextSpiImpl(algorithm), provider, algorithm)
         if algorithm.equalsIgnoreCase("Default") then ins.init(null, null, null)
         ins
       case _ =>

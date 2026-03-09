@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import javax.net.ssl.SSLContext
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
-import scala.concurrent.ExecutionException
 
 class HttpClientTest extends TestSuite:
 
