@@ -32,8 +32,8 @@ object StandardNames {
   val IS_SCALA_NATIVE: Boolean =
     System.getProperty("java.specification.name") != "Java Platform API Specification"
   val JSSE_PROVIDER_NAME: String =
-    if (IS_SCALA_NATIVE) "SunJSSE"
-    else "scala-native-openssl"
+    if (IS_SCALA_NATIVE) "scala-native-openssl"
+    else "SunJSSE"
 
   /**
    * RFC 5746's Signaling Cipher Suite Value to indicate a request for secure renegotiation

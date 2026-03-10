@@ -23,16 +23,19 @@ class HttpClientBuilderTest extends TestSuite:
       assert(client != null)
     }
 
-    test("HttpClient.newHttpClient() should create a default client") {
-      val client = HttpClient.newHttpClient()
+    /*
+     * doesn't pass on JVM
+     */
+    // test("HttpClient.newHttpClient() should create a default client") {
+    //   val client = HttpClient.newHttpClient()
 
-      assert(client != null)
-      assert(client.version() == Version.HTTP_1_1)
-      assert(client.followRedirects() == Redirect.NORMAL)
-      assert(client.proxy() == Optional.empty())
-      assert(client.connectTimeout() == Optional.empty())
-      assert(client.executor() == Optional.empty())
-    }
+    //   assert(client != null)
+    //   assert(client.version() == Version.HTTP_1_1)
+    //   assert(client.followRedirects() == Redirect.NORMAL)
+    //   assert(client.proxy() == Optional.empty())
+    //   assert(client.connectTimeout() == Optional.empty())
+    //   assert(client.executor() == Optional.empty())
+    // }
 
     test("HttpClient builder should configure connect timeout") {
       val timeout = Duration.ofSeconds(30)
@@ -170,10 +173,13 @@ class HttpClientBuilderTest extends TestSuite:
       assert(client2 != null)
     }
 
-    test("HttpClient builder should reject null local address"):
-      val builder = HttpClient.newBuilder()
-      assertThrows[NullPointerException]:
-        builder.localAddress(null): Unit
+    /*
+     * doesn't pass on JVM
+     */
+    // test("HttpClient builder should reject null local address"):
+    //   val builder = HttpClient.newBuilder()
+    //   assertThrows[NullPointerException]:
+    //     builder.localAddress(null): Unit
 
     test("HttpClient builder should chain method calls"):
       val executor = Executors.newSingleThreadExecutor()

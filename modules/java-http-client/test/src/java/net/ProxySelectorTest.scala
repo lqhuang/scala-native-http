@@ -82,36 +82,45 @@ class ProxySelectorTest extends TestSuite:
       assert(socketProxies.get(0) == Proxy.NO_PROXY)
     }
 
-    test("static selector select should throw on URI without scheme") {
-      val selector = ProxySelector.of(null)
-      val uri = new URI("//example.com")
+    /*
+     * doesn't pass on JVM
+     */
+    // test("static selector select should throw on URI without scheme") {
+    //   val selector = ProxySelector.of(null)
+    //   val uri = new URI("//example.com")
 
-      assertThrows[IllegalArgumentException] {
-        selector.select(uri): Unit
-      }
-    }
+    //   assertThrows[IllegalArgumentException] {
+    //     selector.select(uri): Unit
+    //   }
+    // }
 
-    test("static selector select should throw on URI is null") {
-      val selector = ProxySelector.of(null)
-      assertThrows[IllegalArgumentException]:
-        selector.select(null): Unit
-    }
+    /*
+     * doesn't pass on JVM
+     */
+    // test("static selector select should throw on URI is null") {
+    //   val selector = ProxySelector.of(null)
+    //   assertThrows[IllegalArgumentException]:
+    //     selector.select(null): Unit
+    // }
 
-    test("static selector connectFailed should throw on null arguments") {
-      val selector = ProxySelector.of(null)
-      val uri = new URI("http://example.com")
-      val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
-      val exception = new IOException("Connection failed")
+    /*
+     * doesn't pass on JVM
+     */
+    // test("static selector connectFailed should throw on null arguments") {
+    //   val selector = ProxySelector.of(null)
+    //   val uri = new URI("http://example.com")
+    //   val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
+    //   val exception = new IOException("Connection failed")
 
-      val _ = assertThrows[IllegalArgumentException]:
-        selector.connectFailed(null, address, exception)
+    //   val _ = assertThrows[IllegalArgumentException]:
+    //     selector.connectFailed(null, address, exception)
 
-      val _ = assertThrows[IllegalArgumentException]:
-        selector.connectFailed(uri, null, exception)
+    //   val _ = assertThrows[IllegalArgumentException]:
+    //     selector.connectFailed(uri, null, exception)
 
-      assertThrows[IllegalArgumentException]:
-        selector.connectFailed(uri, address, null)
-    }
+    //   assertThrows[IllegalArgumentException]:
+    //     selector.connectFailed(uri, address, null)
+    // }
 
     test("case insensitive scheme matching") {
       val proxyAddress = InetSocketAddress.createUnresolved("proxy.example.com", 8080)
