@@ -1,9 +1,11 @@
 package build.modules.`java-http-client`
 
 import mill.api.Cross
-import mill.scalalib.DepSyntax
+import mill.scalalib.{DepSyntax, ScalaModule}
 
 object `package` extends build.CommonModule:
+  upper =>
+
   def artifactName = "scala-native-java-http-client"
 
   def moduleDeps = Seq(
@@ -18,3 +20,13 @@ object `package` extends build.CommonModule:
     mvn"io.github.cquiroz::scala-java-time::2.6.0",
     mvn"com.github.lolgab::scala-native-crypto::0.3.0",
   )
+
+  object jvm extends ScalaModule:
+
+    def scalaVersion = build.scalaVersion
+
+    def sources = Seq() // no sources for JVM
+
+    object test extends ScalaTests with build.UTestModule:
+
+      def sources = upper.test.sources
