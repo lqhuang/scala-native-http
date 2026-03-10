@@ -12,10 +12,14 @@ import java.util.function.{Consumer, Function}
 
 import scala.collection.mutable.ListBuffer
 
-import snhttp.jdk.testkits.{MockBodySubscriber, MockSubscription, MockStringSubscriber}
+import _root_.snhttp.java.net.http.utils.{
+  MockBodySubscriber,
+  MockSubscription,
+  MockStringSubscriber,
+  MockByteBufSubscriber,
+}
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
-import snhttp.jdk.testkits.MockByteBufSubscriber
 
 class BodySubscribersTest extends TestSuite:
 

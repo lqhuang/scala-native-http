@@ -1,4 +1,4 @@
-package snhttp.jdk.testkits
+package snhttp.java.net.http.utils
 
 import java.net.http.HttpResponse.BodySubscriber
 import java.nio.ByteBuffer

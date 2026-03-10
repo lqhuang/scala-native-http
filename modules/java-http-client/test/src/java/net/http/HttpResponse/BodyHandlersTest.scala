@@ -12,12 +12,19 @@ import java.util.{List as JList, Map as JMap}
 import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.function.{Consumer, Function}
 
-import snhttp.jdk.net.http.ResponseInfoImpl
-import snhttp.jdk.testkits.{MockBodySubscriber, MockByteBufSubscriber, MockSubscription}
-import snhttp.jdk.testkits.HttpResponseUtils.{createHeaders, createResponseInfo}
+import _root_.snhttp.java.net.http.utils.{
+  MockBodySubscriber,
+  MockByteBufSubscriber,
+  MockSubscription,
+  MockStringSubscriber,
+}
+import _root_.snhttp.java.net.http.utils.HttpClientTestUtils.{
+  ResponseInfoImpl,
+  createHeaders,
+  createResponseInfo,
+}
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
-import snhttp.jdk.testkits.MockStringSubscriber
 
 class BodyHandlersTest extends TestSuite:
 

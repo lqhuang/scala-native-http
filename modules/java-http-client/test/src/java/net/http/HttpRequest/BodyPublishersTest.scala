@@ -12,7 +12,7 @@ import java.util.List as JList
 import scala.util.Random
 
 // import snhttp.jdk.internal.PropertyUtils
-import snhttp.jdk.testkits.{MockByteBufSubscriber, MockBodySubscriber}
+import _root_.snhttp.java.net.http.utils.{MockByteBufSubscriber, MockBodySubscriber}
 
 import utest.{assert, assertThrows, TestSuite, Tests, test}
 
