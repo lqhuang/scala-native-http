@@ -7,8 +7,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, OpenOption, Path, Paths}
 import java.nio.file.StandardOpenOption.{READ, DELETE_ON_CLOSE, CREATE, WRITE}
-import java.util.List as JList
-import java.util.Optional
+import java.util.{List as JList, Optional}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, CompletionStage, ConcurrentMap}
 import java.util.concurrent.Flow.{Subscriber, Publisher, Subscription}
@@ -19,11 +18,12 @@ import javax.net.ssl.SSLSession
 import snhttp.jdk.internal.Utils.charsetFrom
 import snhttp.jdk.net.http.{BodyHandlersImpl, BodySubscribersImpl}
 
-/// @since 11
-trait HttpResponse[T] {
+// @since 11
+trait HttpResponse[T]:
+
   def statusCode(): Int
 
-  /// @since 25
+  // @since 25
   def connectionLabel(): Optional[String]
 
   def request(): HttpRequest
@@ -39,9 +39,8 @@ trait HttpResponse[T] {
   def uri(): URI
 
   def version(): HttpClient.Version
-}
 
-object HttpResponse {
+object HttpResponse:
 
   trait ResponseInfo {
     def statusCode(): Int
@@ -51,13 +50,13 @@ object HttpResponse {
     def version(): HttpClient.Version
   }
 
-  /// @since 11
+  // @since 11
   @FunctionalInterface
   trait BodyHandler[T] {
     def apply(responseInfo: ResponseInfo): BodySubscriber[T]
   }
 
-  /// @since 11
+  // @since 11
   abstract class BodyHandlers {}
   object BodyHandlers {
 
@@ -73,7 +72,7 @@ object HttpResponse {
       requireNonNull(finisher)
       _ => BodySubscribers.fromSubscriber(subscriber, finisher)
 
-    def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] =
+    def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] = {
       requireNonNull(subscriber)
       ri =>
         BodySubscribers.fromLineSubscriber(
@@ -82,63 +81,65 @@ object HttpResponse {
           charsetFrom(ri.headers()),
           null,
         )
+    }
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
         lineSeparator: String,
-    ): BodyHandler[T] =
+    ): BodyHandler[T] = {
       requireNonNull(subscriber)
       requireNonNull(finisher)
-      require(
-        lineSeparator != null && !lineSeparator.nonEmpty,
-        "line separator cannot be null or empty",
-      )
-      return ri =>
+      if (lineSeparator != null && lineSeparator.isEmpty)
+        throw new IllegalArgumentException("line separator cannot be empty")
+      ri =>
         BodySubscribers.fromLineSubscriber(
           subscriber,
           finisher,
           charsetFrom(ri.headers()),
           lineSeparator,
         )
+    }
 
     def discarding(): BodyHandler[Void] =
       _ => BodySubscribers.discarding()
 
     def replacing[U](value: U): BodyHandler[U] =
-      requireNonNull(value)
       _ => BodySubscribers.replacing(value)
 
     def ofString(charset: Charset): BodyHandler[String] =
       requireNonNull(charset)
       _ => BodySubscribers.ofString(charset)
 
-    def ofFile(file: Path, openOptions: OpenOption*): BodyHandler[Path] =
+    def ofFile(file: Path, openOptions: Array[OpenOption]): BodyHandler[Path] =
       requireNonNull(file)
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
         s"invalid openOptions: $openOptions",
       )
-      BodyHandlersImpl.ofFile(file, openOptions)
+      BodyHandlersImpl.ofFile(file, openOptions*)
 
     def ofFile(file: Path): BodyHandler[Path] =
-      ofFile(file, CREATE, WRITE)
+      ofFile(file, Array(CREATE, WRITE))
 
-    def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] = {
+    def ofFileDownload(directory: Path, openOptions: Array[OpenOption]): BodyHandler[Path] = {
       requireNonNull(directory)
       try
         directory.toFile.getPath()
       catch {
-        case uoe: UnsupportedOperationException =>
-          throw new IllegalArgumentException(s"invalid path: $directory", uoe)
+        case exc: UnsupportedOperationException =>
+          throw new IllegalArgumentException(s"invalid path: ${directory}", exc)
       }
       require(!Files.notExists(directory), s"non-existent directory: $directory")
       require(Files.isDirectory(directory), s"not a directory: $directory")
       require(Files.isWritable(directory), s"non-writable directory: $directory")
 
-      require(!openOptions.contains(DELETE_ON_CLOSE), s"invalid openOptions: ${openOptions}")
+      require(
+        !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
+        s"invalid openOptions: ${openOptions}",
+      )
 
-      return BodyHandlersImpl.ofFileDownload(directory, openOptions*)
+      BodyHandlersImpl.ofFileDownload(directory, openOptions: _*)
     }
 
     def ofInputStream(): BodyHandler[InputStream] =
@@ -161,6 +162,12 @@ object HttpResponse {
       require(bufferSize > 0, "must be greater than 0")
       ri => BodySubscribers.buffering(downstreamHandler(ri), bufferSize)
 
+    // @since 25
+    def limiting[T](downstreamHandler: BodyHandler[T], capacity: Long): BodyHandler[T] =
+      if (capacity < 0)
+        throw new IllegalArgumentException("capacity must not be negative")
+      ri => BodySubscribers.limiting(downstreamHandler(ri), capacity)
+
   }
 
   trait PushPromiseHandler[T] {
@@ -178,12 +185,12 @@ object HttpResponse {
       BodyHandlersImpl.PushPromisesHandlerWithMap(pushPromiseHandler, pushPromisesMap)
   }
 
-  /// @since 11
+  // @since 11
   trait BodySubscriber[T] extends Subscriber[JList[ByteBuffer]]:
     def getBody(): CompletionStage[T]
 
   abstract class BodySubscribers
-  object BodySubscribers:
+  object BodySubscribers {
 
     def fromSubscriber(
         subscriber: Subscriber[? >: JList[ByteBuffer]],
@@ -217,11 +224,11 @@ object HttpResponse {
     def ofByteArray(): BodySubscriber[Array[Byte]] =
       BodySubscribersImpl.ofByteArray(identity)
 
-    def ofFile(file: Path, openOptions: OpenOption*): BodySubscriber[Path] =
+    def ofFile(file: Path, openOptions: Array[OpenOption]): BodySubscriber[Path] =
       BodySubscribersImpl.ofFile(file, openOptions)
 
     def ofFile(file: Path): BodySubscriber[Path] =
-      ofFile(file, CREATE, WRITE)
+      ofFile(file, Array(CREATE, WRITE))
 
     def ofByteArrayConsumer(consumer: Consumer[Optional[Array[Byte]]]): BodySubscriber[Void] =
       BodySubscribersImpl.ofByteArrayConsumer(consumer)
@@ -251,6 +258,11 @@ object HttpResponse {
     ): BodySubscriber[U] =
       BodySubscribersImpl.MappingSubscriber(upstream, mapper)
 
-  end BodySubscribers
+    // @since 25
+    def limiting[T](downstream: BodySubscriber[T], capacity: Long): BodySubscriber[T] =
+      require(capacity >= 0, "capacity must not be negative")
+      BodySubscribersImpl.LimitingSubscriber(downstream, capacity)
 
-}
+  }
+
+end HttpResponse
