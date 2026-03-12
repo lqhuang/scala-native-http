@@ -6,12 +6,16 @@ import java.util.Collections
 import java.util.List as JList
 import java.util.Map as JMap
 import java.util.function.BiPredicate
+import javax.net.ssl.SSLContext
 
 import _root_.snhttp.jdk.internal.Utils
 
 import utest.{TestSuite, Tests, test, assert}
 
 class UtilsTest extends TestSuite:
+
+  // Simply enforce compiler to link with libssl to avoid linker errors in tests
+  private val sslContext: SSLContext = SSLContext.getDefault()
 
   private val acceptAllFilter: BiPredicate[String, String] = (_, _) => true
   private def createHeaders(contentType: String): HttpHeaders = {

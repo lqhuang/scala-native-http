@@ -11,7 +11,7 @@ import mill.{scalalib, scalanativelib}
 import mill.util.VcsVersion
 
 import scalalib.DepSyntax // for `mvn` string interpolator
-import scalalib.{CrossScalaModule, TestModule, PublishModule}
+import scalalib.{ScalaModule, TestModule, PublishModule}
 import scalalib.publish.{Developer, License, PomSettings, VersionControl}
 import scalalib.scalafmt.ScalafmtModule
 import scalanativelib.ScalaNativeModule
@@ -42,7 +42,7 @@ trait CommonPublishModule extends PublishModule {
 }
 
 trait UTestModule extends TestModule.Utest {
-  def utestVersion = "0.10.0-RC1"
+  def utestVersion = "0.9.5"
 
   def testParallelism = true
 }

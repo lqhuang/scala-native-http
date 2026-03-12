@@ -57,6 +57,7 @@ jobs:
       - name: Run tests for Java HTTP Client
         run: |
           ./mill modules.java-http-client.test
+          ./mill modules.java-http-client.test-internal
 
       - name: Run tests for Java HTTP Client on JVM
         run: |
@@ -120,6 +121,7 @@ jobs:
           SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
         run: |
           .\mill modules.java-http-client.test
+          .\mill modules.java-http-client.test-internal
 
       - name: Run tests for Java HTTP Client on JVM
         env:
