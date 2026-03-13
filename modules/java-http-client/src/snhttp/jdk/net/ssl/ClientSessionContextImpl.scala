@@ -11,9 +11,8 @@ import scala.collection.JavaConverters.asJavaCollection
 import scala.scalanative.unsafe.Ptr
 
 import snhttp.jdk.internal.PropertyUtils
-import snhttp.experimental.openssl.ssl
-import snhttp.experimental.openssl.ssl_internal.enumerations.{SSL_CTRL, SSL_SESS_CACHE, SSL_VERIFY}
-import snhttp.utils.PointerCleaner
+import snhttp.experimental.openssl.libssl
+import snhttp.experimental.openssl._libssl.enumerations.SSL_SESS_CACHE
 
 /**
  * Inspired from
@@ -72,48 +71,25 @@ end ClientSessionContext
 /// Default Context for Client Session Context (auto select between TLSv1.2 and TLSv1.3)
 class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionContext:
 
-  protected[ssl] val tlsVersionPtr = ssl.TLS_client_method()
-  protected[ssl] val ptr: Ptr[ssl.SSL_CTX] = ssl.SSL_CTX_new(tlsVersionPtr)
+  private[ssl] val ptr: Ptr[libssl.SSL_CTX] = spi.ptr
 
-  if (ptr == null)
-    throw new RuntimeException(
-      "Failed to create SSL_CTX for ClientSessionContext",
-    )
-
-  PointerCleaner.register(this, ptr, _ptr => ssl.SSL_CTX_free(_ptr)): Unit
-
-  // ---- Debug mode now ---- //
-  ssl.SSL_CTX_set_verify(
-    ptr,
-    SSL_VERIFY.NONE,
-    null.asInstanceOf[ssl.SSL_verify_cb],
-  )
-  // must remove in the future release //
-
-  val setMinProtoVersionRet = ssl.SSL_CTX_set_min_proto_version(
-    ptr,
-    ssl.TLS_VERSION.TLS1_2,
-  )
-  if (setMinProtoVersionRet != 1)
-    throw new RuntimeException(
-      "Failed to set minimum protocol version to TLS1.2 for ClientSessionContext",
-    )
-
-  val currCacheMode = ssl.SSL_CTX_set_session_cache_mode(ptr, SSL_SESS_CACHE.CLIENT)
-  val currCacheSize = ssl.SSL_CTX_sess_set_cache_size(ptr, getSessionCacheSize())
+  val currCacheMode = libssl.SSL_CTX_set_session_cache_mode(ptr, SSL_SESS_CACHE.CLIENT)
+  val currCacheSize = libssl.SSL_CTX_sess_set_cache_size(ptr, getSessionCacheSize())
 
   def newSession(host: String, port: Int) =
     ???
-    // SSLSessionImpl(this)
 
   def putSession(session: SSLSession): Unit =
     ???
 
-  def getSession(sessionId: Array[Byte]): SSLSession = ???
+  def getSession(sessionId: Array[Byte]): SSLSession =
+    ???
 
-  def getIds(): Enumeration[Array[Byte]] = ???
+  def getIds(): Enumeration[Array[Byte]] =
+    ???
 
-  def getSession(host: String, port: Int): SSLSession = ???
+  def getSession(host: String, port: Int): SSLSession =
+    ???
 
   def getSessionSize(): Int =
     ???
@@ -121,6 +97,7 @@ class ClientSessionContextImpl(spi: SSLContextSpiImpl) extends ClientSessionCont
   def getCachedSession(host: String, port: Int, sslParams: SSLParametersImpl): SSLSession =
     ???
 
-  def putCachedSession(session: SSLSession): Unit = ???
+  def putCachedSession(session: SSLSession): Unit =
+    ???
 
 end ClientSessionContextImpl

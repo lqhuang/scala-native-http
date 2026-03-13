@@ -9,8 +9,8 @@ import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedLi
 
 import scala.scalanative.posix.sys.socket
 
-import snhttp.experimental.openssl.{ssl, bio}
-import snhttp.experimental.openssl.ssl_internal.constants
+import snhttp.experimental.openssl.{libssl, libbio}
+import snhttp.experimental.openssl._libssl.constants
 
 /**
  * SSL Socket Implementation
@@ -38,19 +38,19 @@ class ClientSSLSocketImpl protected (
     throw new RuntimeException("Failed to create socket")
   // TODO: Test socket can connect to the host:port else we need to recreate the socket
 
-  protected[ssl] val ptr = bio.BIO_new_socket(sock, if autoClose then 1 else 0)
+  protected[ssl] val ptr = libbio.BIO_new_socket(sock, if autoClose then 1 else 0)
   if (ptr == null)
     throw new RuntimeException("Failed to create new BIO object")
 
   // Setting the socket to be nonblocking
-  val _set_nbio_ret = bio.BIO_socket_nbio(sock, 1)
+  val _set_nbio_ret = libbio.BIO_socket_nbio(sock, 1)
   if (_set_nbio_ret != 1)
     throw new RuntimeException("Failed to set socket to non-blocking mode")
 
   // little tunings on the socket options can be done here
-  val _ = bio.BIO_set_conn_mode(ptr, bio.BIO_SOCK.REUSEADDR)
-  val _ = bio.BIO_set_conn_mode(ptr, bio.BIO_SOCK.KEEPALIVE)
-  val _ = bio.BIO_set_conn_mode(ptr, bio.BIO_SOCK.NONBLOCK)
+  val _ = libbio.BIO_set_conn_mode(ptr, libbio.BIO_SOCK.REUSEADDR)
+  val _ = libbio.BIO_set_conn_mode(ptr, libbio.BIO_SOCK.KEEPALIVE)
+  val _ = libbio.BIO_set_conn_mode(ptr, libbio.BIO_SOCK.NONBLOCK)
 
   /// This method will initiate the initial handshake if necessary and then
   /// block until the handshake has been established.
@@ -87,16 +87,16 @@ class ClientSSLSocketImpl protected (
    */
 
   protected[ssl] def pendingReadableBytes: Long =
-    bio.BIO_ctrl_pending(ptr).toLong
+    libbio.BIO_ctrl_pending(ptr).toLong
 
   protected[ssl] def pendingWrittenBytes: Long =
-    bio.BIO_ctrl_wpending(ptr).toLong
+    libbio.BIO_ctrl_wpending(ptr).toLong
 
   protected[ssl] def requestReadBufferSize: Long =
-    bio.BIO_ctrl_get_read_request(ptr).toLong
+    libbio.BIO_ctrl_get_read_request(ptr).toLong
 
   protected[ssl] def guaranteeWriteBufferSize: Long =
-    bio.BIO_ctrl_get_write_guarantee(ptr).toLong
+    libbio.BIO_ctrl_get_write_guarantee(ptr).toLong
 
   /**
    * Helpers

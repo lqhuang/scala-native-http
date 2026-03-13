@@ -16,31 +16,37 @@ object BodyHandlersImpl:
 
   class PathBodyHandler(
       private val file: Path,
-      private val openOptions: Seq[OpenOption],
+      private val openOptions: OpenOption*,
   ) extends BodyHandler[Path]:
 
     override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
-      BodySubscribers.ofFile(file, openOptions*)
+      BodySubscribers.ofFile(file, openOptions.toArray)
 
   end PathBodyHandler
 
-  def ofFile(file: Path, openOptions: Seq[OpenOption]): PathBodyHandler =
-    new PathBodyHandler(file, openOptions)
+  def ofFile(file: Path, openOptions: OpenOption*): PathBodyHandler =
+    new PathBodyHandler(file, openOptions*)
 
   class FileDownloadBodyHandler(
       private val directory: Path,
-      private val openOptions: Seq[OpenOption],
+      private val openOptions: OpenOption*,
   ) extends BodyHandler[Path]:
 
+    /**
+     * Notes from JDK docs:
+     *
+     * The Content-Disposition header must specify the attachment type and must also contain a
+     * filename parameter.
+     */
     override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
       val filename = filenameFrom(responseInfo.headers())
       val targetFile = directory.resolve(filename)
-      BodySubscribers.ofFile(targetFile, openOptions*)
+      BodySubscribers.ofFile(targetFile, openOptions.toArray)
 
   end FileDownloadBodyHandler
 
   def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] =
-    new FileDownloadBodyHandler(directory, openOptions)
+    new FileDownloadBodyHandler(directory, openOptions*)
 
   /// Implements the `PushPromiseHandler` interface from `HttpResponse`
   case class PushPromisesHandlerWithMap[T](

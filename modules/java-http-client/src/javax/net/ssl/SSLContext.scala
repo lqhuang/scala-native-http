@@ -1,18 +1,20 @@
 package javax.net.ssl
 
-import java.security.{SecureRandom, Provider}
+import java.security.{SecureRandom, Provider, Security}
 import java.security.NoSuchAlgorithmException
 import java.util.Objects.requireNonNull
 
-import snhttp.jdk.internal.tls.OpenSSLProvider
+import snhttp.jdk.jsse.provider.OpenSSLProvider
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
+/*
+ * Refs
+ *
+ *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
+ */
 class SSLContext protected (
-    private val spi: SSLContextSpi,
-    private val provider: Provider,
-    private val protocol: String,
+    val spi: SSLContextSpi,
+    val provider: Provider,
+    val protocol: String,
 ):
 
   requireNonNull(spi)
@@ -59,10 +61,11 @@ class SSLContext protected (
 
 object SSLContext:
 
-  import snhttp.jdk.internal.tls.DefaultParams
-
-  @volatile private var defaultContext: SSLContext =
-    SSLContext.getInstance("TLSv1.3")
+  @volatile private var defaultContext: SSLContext = {
+    val ssl = SSLContext.getInstance("TLS")
+    ssl.init(null, null, null)
+    ssl
+  }
 
   def getDefault(): SSLContext =
     defaultContext
@@ -73,17 +76,19 @@ object SSLContext:
 
   def getInstance(protocol: String): SSLContext =
     requireNonNull(protocol)
-    if (!DefaultParams.SupportedProtocols.map(_.toLowerCase()).contains(protocol.toLowerCase()))
-      throw new NoSuchAlgorithmException(s"Protocol ${protocol} not supported")
     getInstance(protocol, OpenSSLProvider.defaultInstance)
 
   def getInstance(protocol: String, provider: String): SSLContext =
-    throw new UnsupportedOperationException("Not supported in Scala Native yet")
+    requireNonNull(protocol)
+    require(provider != null && provider.nonEmpty)
+    require(protocol.nonEmpty)
+    throw new NotImplementedError("get via string provider is not supported yet")
 
-  def getInstance(protocol: String, provider: Provider): SSLContext =
+  def getInstance(protocol: String, provider: Provider): SSLContext = {
     requireNonNull(protocol)
     requireNonNull(provider)
     require(protocol.nonEmpty)
+
     provider.getService("SSLContext", protocol) match
       case null =>
         throw new NoSuchAlgorithmException(
@@ -96,5 +101,6 @@ object SSLContext:
             throw new NoSuchAlgorithmException(
               s"Service provider ${service.getClassName()} returned an object that is not an instance of SSLContext",
             )
+  }
 
 end SSLContext

@@ -1,6 +1,7 @@
 import java.net.URI
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.http.HttpResponse.BodyHandlers
+import java.security.SecureRandom
 import javax.net.ssl.SSLContext
 
 object Req:
@@ -20,7 +21,8 @@ object Req:
   }
 
   def runCustomSSLContext(): Unit = {
-    val sslContext = SSLContext.getInstance("TLSv1.3")
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(null, null, new SecureRandom())
 
     val sslParams = sslContext.getDefaultSSLParameters()
     sslParams.setProtocols(Array("TLSv1.3"))

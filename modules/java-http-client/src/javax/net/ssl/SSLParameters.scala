@@ -4,9 +4,7 @@ import java.util.List as JList
 import java.util.{Collection, Collections}
 import java.util.Objects.requireNonNull
 
-import snhttp.jdk.internal.tls.DefaultParams
-
-/**
+/*
  * Refs
  *
  *   - <https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLParameters.html>
@@ -51,8 +49,7 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
 
   private var _enableRetransmissions: Boolean = true
   private var _maximumPacketSize: Int = 0
-  private var _applicationProtocols: Array[String] =
-    DefaultParams.DefaultApplicationProtocols.toArray
+  // private var _applicationProtocols: Array[String] = ???
   private var _signatureSchemes: Array[String] = null
   private var _namedGroups: Array[String] = null
 
@@ -194,19 +191,21 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
   /// Note from JDK docs:
   /// This method will return a new array each time it is invoked.
   def getApplicationProtocols(): Array[String] =
-    if _applicationProtocols == null
-    then null
-    else _applicationProtocols.clone()
+    // if _applicationProtocols == null
+    // then null
+    // else _applicationProtocols.clone()
+    ???
 
   /// Implementation Requirements
   /// This method will make a copy of the protocols array.
   def setApplicationProtocols(protocols: Array[String]): Unit =
-    requireNonNull(protocols)
-    require(
-      protocols.forall(p => p != null && !p.isEmpty()),
-      "Any element of non-empty array must not be null or empty string",
-    )
-    _applicationProtocols = protocols.clone()
+    // requireNonNull(protocols)
+    // require(
+    //   protocols.forall(p => p != null && !p.isEmpty()),
+    //   "Any element of non-empty array must not be null or empty string",
+    // )
+    // _applicationProtocols = protocols.clone()
+    ???
 
   /// API Note:
   ///
@@ -221,7 +220,7 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
   /// and/or `jdk.tls.server.SignatureSchemes` system properties with the
   /// SunJSSE provider to the provider-specific default signature schemes.
   ///
-  /// since JDK 19
+  /// @since JDK 19
   def getSignatureSchemes(): Array[String] =
     if _signatureSchemes == null
     then null
@@ -249,7 +248,7 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
   /// the `jdk.tls.namedGroups` system property with the SunJSSE provider to
   /// the provider-specific default named groups.
   ///
-  /// since JDK 20
+  /// @since JDK 20
   def getNamedGroups(): Array[String] =
     if _namedGroups == null
     then null

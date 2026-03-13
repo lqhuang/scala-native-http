@@ -88,26 +88,35 @@ class HttpHeadersTest extends TestSuite:
       }
     }
 
-    test("HttpHeaders.of throws exception for empty header values list") {
-      val headerMap = JMap.of("Host", JList.of[String]())
-      assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter): Unit
-      }
-    }
+    /*
+     * doesn't pass on JVM
+     */
+    // test("HttpHeaders.of throws exception for empty header values list") {
+    //   val headerMap = JMap.of("Host", JList.of[String]())
+    //   assertThrows[IllegalArgumentException] {
+    //     HttpHeaders.of(headerMap, accpetAllFilter): Unit
+    //   }
+    // }
 
-    test("HttpHeaders.of throws exception for header values list with empty value") {
-      val headerMap = JMap.of("Host", JList.of[String]("   "))
-      assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter): Unit
-      }
-    }
+    /*
+     * doesn't pass on JVM
+     */
+    // test("HttpHeaders.of throws exception for header values list with empty value") {
+    //   val headerMap = JMap.of("Host", JList.of[String]("   "))
+    //   assertThrows[IllegalArgumentException] {
+    //     HttpHeaders.of(headerMap, accpetAllFilter): Unit
+    //   }
+    // }
 
-    test("HttpHeaders.of throws exception for header values list with any empty value") {
-      val headerMap = JMap.of("Host", JList.of[String]("localhost", "   "))
-      assertThrows[IllegalArgumentException] {
-        HttpHeaders.of(headerMap, accpetAllFilter): Unit
-      }
-    }
+    /*
+     * doesn't pass on JVM
+     */
+    // test("HttpHeaders.of throws exception for header values list with any empty value") {
+    //   val headerMap = JMap.of("Host", JList.of[String]("localhost", "   "))
+    //   assertThrows[IllegalArgumentException] {
+    //     HttpHeaders.of(headerMap, accpetAllFilter): Unit
+    //   }
+    // }
 
     test("HttpHeaders.of trims header keys and values and") {
       val headerMap = JMap.of("  Host  ", JList.of("  example.com  "))

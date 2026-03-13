@@ -15,9 +15,9 @@ import scala.scalanative.runtime.Intrinsics
 import scala.scalanative.unsafe.{Ptr, Zone, toCString, alloc, stackalloc}
 import scala.scalanative.unsigned.USize
 
-import snhttp.experimental.openssl.{ssl, bio}
-import snhttp.experimental.openssl.ssl_internal.enumerations.OSSL_HANDSHAKE_STATE
-import snhttp.experimental.openssl.ssl_internal.constants.{
+import snhttp.experimental.openssl.libssl
+import snhttp.experimental.openssl._libssl.enumerations.OSSL_HANDSHAKE_STATE
+import snhttp.experimental.openssl._libssl.constants.{
   SSL3_RT_MAX_PACKET_SIZE,
   SSL3_RT_MAX_PLAIN_LENGTH,
 }
@@ -59,8 +59,8 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
   @volatile protected[ssl] var _useClientMode: Option[Boolean] = None
 
   // SSL Object
-  @volatile protected[ssl] var maybeSSLPtr: Option[Ptr[ssl.SSL]] = None
-  private def _sslptr: Ptr[ssl.SSL] =
+  @volatile protected[ssl] var maybeSSLPtr: Option[Ptr[libssl.SSL]] = None
+  private def _sslptr: Ptr[libssl.SSL] =
     if (maybeSSLPtr.isEmpty) throw new IllegalStateException("SSL object is not initialized yet")
     maybeSSLPtr.get
 
@@ -135,7 +135,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
 
     // Perform wrap operation
     val bufRawPtr = fromRawPtr[Byte](Intrinsics.castObjectToRawPtr(totalSrcBuf))
-    val _ret = ssl.SSL_write(_sslptr, bufRawPtr, totalSrcRemaining)
+    val _ret = libssl.SSL_write(_sslptr, bufRawPtr, totalSrcRemaining)
 
     /**
      * For SSL_write() the following return values can occur:
@@ -149,13 +149,13 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
     if _ret > 0
     then SSLEngineResult(Status.OK, getHandshakeStatus(), totalSrcRemaining, _ret)
     else {
-      val _err = ssl.SSL_get_error(_sslptr, _ret)
+      val _err = libssl.SSL_get_error(_sslptr, _ret)
       _err match
-        case ssl.SSL_ERROR.WANT_READ =>
+        case libssl.SSL_ERROR.WANT_READ =>
           SSLEngineResult(Status.OK, HandshakeStatus.NEED_UNWRAP, 0, 0)
-        case ssl.SSL_ERROR.WANT_WRITE =>
+        case libssl.SSL_ERROR.WANT_WRITE =>
           SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, 0, 0)
-        case ssl.SSL_ERROR.ZERO_RETURN =>
+        case libssl.SSL_ERROR.ZERO_RETURN =>
           SSLEngineResult(Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, 0)
         case _ =>
           throw new SSLException(
@@ -223,7 +223,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       && _ssl_socket.pendingReadableBytes == 0
 
   /**
-   * Calling `ssl.SSL_shutdown` to close outbound with notices:
+   * Calling `libssl.SSL_shutdown` to close outbound with notices:
    *
    *   1. A close_notify shutdown alert message is sent/received
    *   2. Closes the write direction of the connection; the read direction is closed by the peer
@@ -255,8 +255,8 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
 
   def getSession(): SSLSession =
     state match
-      case _ if state.code < STATE_HANDSHAKE_COMPLETED.code => SSLNullSessionImpl()
-      case STATE_CLOSED                                     => SSLNullSessionImpl()
+      case _ if state.code < STATE_HANDSHAKE_COMPLETED.code => new SSLNullSessionImpl()
+      case STATE_CLOSED                                     => new SSLNullSessionImpl()
       case _                                                => maybeSession
 
   override def getHandshakeSession(): SSLSession =
@@ -338,19 +338,19 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       case _ => ()
 
     // Query libssl SSL object state to determine current handshake status
-    val _ret = ssl.SSL_do_handshake(_sslptr)
-    val _err_code = ssl.SSL_get_error(_sslptr, _ret)
+    val _ret = libssl.SSL_do_handshake(_sslptr)
+    val _err_code = libssl.SSL_get_error(_sslptr, _ret)
 
     _err_code match
-      case ssl.SSL_ERROR.WANT_READ   => HandshakeStatus.NEED_UNWRAP
-      case ssl.SSL_ERROR.WANT_WRITE  => HandshakeStatus.NEED_WRAP
-      case ssl.SSL_ERROR.NONE        => HandshakeStatus.FINISHED
-      case ssl.SSL_ERROR.ZERO_RETURN => HandshakeStatus.NOT_HANDSHAKING // ??? not sure
-      case _                         => HandshakeStatus.NEED_TASK // ??? not sure
+      case libssl.SSL_ERROR.WANT_READ   => HandshakeStatus.NEED_UNWRAP
+      case libssl.SSL_ERROR.WANT_WRITE  => HandshakeStatus.NEED_WRAP
+      case libssl.SSL_ERROR.NONE        => HandshakeStatus.FINISHED
+      case libssl.SSL_ERROR.ZERO_RETURN => HandshakeStatus.NOT_HANDSHAKING // ??? not sure
+      case _                            => HandshakeStatus.NEED_TASK // ??? not sure
   }
 
   def getSupportedCipherSuites(): Array[String] =
-    SSLParametersImpl.getSupportedCipherSuites()
+    ???
 
   def getEnabledCipherSuites(): Array[String] =
     ???
@@ -365,7 +365,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
     // sslParams.setEnabledCipherSuites(suites)
 
   def getSupportedProtocols(): Array[String] =
-    SSLParametersImpl.getSupportedProtocols()
+    ???
 
   def getEnabledProtocols(): Array[String] =
     ???
@@ -429,7 +429,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
         "SSL object has already been initialized, cannot initialize again",
       )
 
-    val ptr = ssl.SSL_new(sslContextSession.ptr)
+    val ptr = libssl.SSL_new(sslContextSession.ptr)
     if (ptr == null)
       throw new Error("SSL_new returned null pointer, failed to create the SSL object")
     maybeSSLPtr = Some(ptr)
@@ -438,12 +438,12 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
     if (host != null && host.nonEmpty)
       Zone {
         val hostPtr = toCString(host)
-        val setHostRet = ssl.SSL_set1_host(ptr, hostPtr)
+        val setHostRet = libssl.SSL_set1_host(ptr, hostPtr)
         if (setHostRet != 1)
           throw new RuntimeException(
             s"Failed to set hostname to ${host}, SSL_set1_host returned ${setHostRet}",
           )
-        val setSNIRet = ssl.SSL_set_tlsext_host_name(ptr, hostPtr)
+        val setSNIRet = libssl.SSL_set_tlsext_host_name(ptr, hostPtr)
         if (setSNIRet != 1)
           throw new RuntimeException(
             s"Failed to set SNI hostname to ${host}, SSL_set_tlsext_host_name returned ${setSNIRet}",
@@ -451,11 +451,11 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
       }
 
     // Set the SSL to Client mode
-    if (getUseClientMode()) ssl.SSL_set_connect_state(ptr)
+    if (getUseClientMode()) libssl.SSL_set_connect_state(ptr)
 
     // Create SSLSocket and attach to SSL object
     val sslSocket = sslSocketFactory.createSocket(host, port)
-    ssl.SSL_set_bio(ptr, sslSocket.ptr, sslSocket.ptr)
+    libssl.SSL_set_bio(ptr, sslSocket.ptr, sslSocket.ptr)
     maybeSocket = Some(sslSocket)
   }
 
@@ -471,7 +471,7 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
 
     if maybeSSLPtr.isDefined
     then
-      ssl.SSL_free(_sslptr)
+      libssl.SSL_free(_sslptr)
       maybeSSLPtr = None
     else
       throw new IllegalStateException(
@@ -487,11 +487,11 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
   }
 
   private def doHandshake(): Unit =
-    val _ret = ssl.SSL_connect(_sslptr)
+    val _ret = libssl.SSL_connect(_sslptr)
     // in non-blocking mode, so we will get return immediately
     // here, we handle fatal error only
     if (_ret < 0)
-      val _err = ssl.SSL_get_error(_sslptr, _ret)
+      val _err = libssl.SSL_get_error(_sslptr, _ret)
       // TODO:
       // fatal error codes can be also retrieved from ERR_get_error library call as well
       // https://docs.openssl.org/master/man3/ERR_GET_LIB/
@@ -511,11 +511,11 @@ class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: Strin
 
   private def shutdownSent: Boolean =
     throwIfHandshakeNotStarted()
-    ssl.SSL_get_shutdown(_sslptr) == ssl.SSL_SHUTDOWN.SENT.value
+    libssl.SSL_get_shutdown(_sslptr) == libssl.SSL_SHUTDOWN.SENT.value
 
   private def shutdownReceived: Boolean =
     throwIfHandshakeNotStarted()
-    ssl.SSL_get_shutdown(_sslptr) == ssl.SSL_SHUTDOWN.RECEIVED.value
+    libssl.SSL_get_shutdown(_sslptr) == libssl.SSL_SHUTDOWN.RECEIVED.value
 
   /**
    * Preconditions / contracts / validations

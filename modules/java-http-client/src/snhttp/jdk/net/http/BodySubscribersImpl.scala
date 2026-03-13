@@ -25,16 +25,19 @@ object BodySubscribersImpl:
       finisher: Function[? >: S, ? <: R],
   ) extends BodySubscriber[R] {
     private val cf = new CompletableFuture[R]()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else {
         this.subscription = subscription
         subscriber.onSubscribe(this.subscription)
       }
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       try subscriber.onNext(item)
@@ -68,18 +71,21 @@ object BodySubscribersImpl:
       eol: String,
   ) extends BodySubscriber[R] {
     private val cf = new CompletableFuture[R]()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
     private val sbuilder = new StringBuilder()
     private val lineSeparator = if (eol == null) System.lineSeparator() else eol
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else {
         this.subscription = subscription
         subscriber.onSubscribe(this.subscription)
       }
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       try {
@@ -130,19 +136,22 @@ object BodySubscribersImpl:
 
   class ByteArraySubscriber[T](finisher: Array[Byte] => T) extends BodySubscriber[T] {
     private val cf = new CompletableFuture[T]()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
     private val result = new ArrayList[Byte]()
     private val received = new ArrayList[ByteBuffer]()
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else
         this.subscription = subscription
         try subscription.request(1L)
         catch case t: Throwable => onError(t)
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       requireNonNull(item)
@@ -158,20 +167,20 @@ object BodySubscribersImpl:
 
     override def onComplete(): Unit =
       try
-        cf.complete(finisher(concatAll(received))): Unit
+        cf.complete(finisher(merge(received))): Unit
       catch {
         case t: Throwable => cf.completeExceptionally(t): Unit
       } finally
         received.clear()
 
     override def onError(throwable: Throwable): Unit =
-      received.clear()
       cf.completeExceptionally(throwable): Unit
+      received.clear()
 
     override def getBody(): CompletionStage[T] =
       cf
 
-    private def concatAll(item: JList[ByteBuffer]): Array[Byte] = {
+    private def merge(item: JList[ByteBuffer]): Array[Byte] = {
       val size = item.stream().mapToInt(_.remaining()).sum()
       val bytes = new Array[Byte](size)
       var offset = 0
@@ -191,12 +200,14 @@ object BodySubscribersImpl:
 
   class PathSubscriber(file: Path, openOptions: Seq[OpenOption]) extends BodySubscriber[Path] {
     private val cf = new CompletableFuture[Path]()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
     @volatile private var fh: FileChannel = null
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else {
@@ -211,6 +222,7 @@ object BodySubscribersImpl:
         }
         this.subscription.request(1)
       }
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       try
@@ -252,17 +264,20 @@ object BodySubscribersImpl:
   class ConsumerSubscriber(consumer: Consumer[Optional[Array[Byte]]]) extends BodySubscriber[Void]:
 
     private val cf = new CompletableFuture[Void]()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean()
 
     override def getBody(): CompletionStage[Void] = cf
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else
         this.subscription = subscription
         this.subscription.request(1)
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       requireNonNull(item)
@@ -304,35 +319,52 @@ object BodySubscribersImpl:
   class InputStreamSubscriber extends InputStream with BodySubscriber[InputStream]:
 
     private val cf = new CompletableFuture[InputStream]()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
     private val subscribed = new AtomicBoolean(false)
-
+    // TODO: Improvable by using RingBuffer or ArrayBlockingQueue
     private val buffer = new ArrayList[ByteBuffer]()
     private var current: ByteBuffer = null
-    private var closed = new AtomicBoolean(false)
+    private val streamClosed = new AtomicBoolean(false)
 
-    override def onSubscribe(subscription: Subscription): Unit =
-      if !subscribed.compareAndSet(false, true)
-      then subscription.cancel()
-      else
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
+      if !subscribed.compareAndSet(false, true) || streamClosed.get()
+      then {
+        subscription.cancel()
+        cf.complete(this): Unit
+      } else {
         this.subscription = subscription
-        this.subscription.request(1)
+        try {
+          this.subscription.request(1)
+          cf.complete(this): Unit
+        } catch
+          case exc: Throwable =>
+            try close()
+            catch case _: IOException => ()
+            finally {
+              onError(exc)
+              subscription.cancel()
+            }
+      }
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
-      if (!closed.get()) {
+      if (!streamClosed.get()) {
         buffer.addAll(item)
         subscription.request(1)
       }
 
     override def onComplete(): Unit =
-      closed.compareAndExchange(false, true): Unit
+      streamClosed.compareAndExchange(false, true): Unit
+      cf.complete(this): Unit
 
     override def onError(throwable: Throwable): Unit =
-      closed.compareAndExchange(false, true)
+      streamClosed.compareAndExchange(false, true)
       cf.completeExceptionally(throwable): Unit
 
     override def read(): Int = {
-      if (closed.get()) return -1
+      if (streamClosed.get()) return -1
 
       if (current == null || !current.hasRemaining()) {
         current =
@@ -348,7 +380,7 @@ object BodySubscribersImpl:
     override def getBody(): CompletionStage[InputStream] = cf
 
     override def close(): Unit =
-      closed.compareAndExchange(false, true)
+      streamClosed.compareAndExchange(false, true)
       if (subscribed.get())
         subscription.cancel()
 
@@ -373,12 +405,14 @@ object BodySubscribersImpl:
   class PublishingBodySubscriber extends BodySubscriber[Publisher[JList[ByteBuffer]]] {
     private val cf = new CompletableFuture[Publisher[JList[ByteBuffer]]]()
     private val subscribed = new AtomicBoolean()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
 
     private var publisher: Publisher[JList[ByteBuffer]] = null
     private var subscriber: Subscriber[? >: JList[ByteBuffer]] = null
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else {
@@ -391,6 +425,7 @@ object BodySubscribersImpl:
         }
         cf.complete(publisher): Unit
       }
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       if (subscriber != null) subscriber.onNext(item)
@@ -413,14 +448,17 @@ object BodySubscribersImpl:
   class NullSubscriber[T](other: Optional[T]) extends BodySubscriber[T] {
     private val cf = new CompletableFuture[T]()
     private val subscribed = new AtomicBoolean()
-    private var subscription: Subscription = null
+    @volatile private var subscription: Subscription = null
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if (!subscribed.compareAndSet(false, true)) subscription.cancel()
       else
         this.subscription = subscription
         try subscription.request(1L)
         catch case t: Throwable => onError(t)
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       try subscription.request(1L)
@@ -444,15 +482,19 @@ object BodySubscribersImpl:
     private[this] var subscription: Subscription = null
     private[this] val subscribed = new AtomicBoolean()
 
+    // TODO: Improvable by using RingBuffer or ArrayBlockingQueue
     private[this] val buffer = new ArrayList[ByteBuffer]()
     private[this] var bufferedBytes = 0
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
       if !subscribed.compareAndSet(false, true)
       then subscription.cancel()
       else
         this.subscription = subscription
         downstream.onSubscribe(subscription)
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       writeBuffer(item)
@@ -491,8 +533,10 @@ object BodySubscribersImpl:
       mapper: Function[? >: T, ? <: U],
   ) extends BodySubscriber[U]:
 
-    override def onSubscribe(subscription: Subscription): Unit =
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
       upstream.onSubscribe(subscription)
+    }
 
     override def onNext(item: JList[ByteBuffer]): Unit =
       upstream.onNext(item)
@@ -523,3 +567,44 @@ object BodySubscribersImpl:
       mapper: Function[? >: T, ? <: U],
   ): BodySubscriber[U] =
     new MappingSubscriber(upstream, mapper)
+
+  class LimitingSubscriber[T](
+      downstream: BodySubscriber[T],
+      capacity: Long,
+  ) extends BodySubscriber[T]:
+    @volatile private var subscription: Subscription = null
+    private val subscribed = new AtomicBoolean()
+    private var bytesReceived: Long = 0L
+
+    override def onSubscribe(subscription: Subscription): Unit = {
+      requireNonNull(subscription)
+
+      if !subscribed.compareAndSet(false, true)
+      then subscription.cancel()
+      else
+        this.subscription = subscription
+        downstream.onSubscribe(subscription)
+    }
+
+    override def onNext(item: JList[ByteBuffer]): Unit =
+      var itemBytes = 0L
+      item.forEach(buf => itemBytes += buf.remaining())
+      bytesReceived += itemBytes
+      if bytesReceived > capacity
+      then
+        subscription.cancel()
+        downstream.onError(
+          new IOException(s"Body exceeds capacity limit of $capacity bytes"),
+        )
+      else downstream.onNext(item)
+
+    override def onComplete(): Unit =
+      downstream.onComplete()
+
+    override def onError(throwable: Throwable): Unit =
+      downstream.onError(throwable)
+
+    override def getBody(): CompletionStage[T] =
+      downstream.getBody()
+
+  end LimitingSubscriber

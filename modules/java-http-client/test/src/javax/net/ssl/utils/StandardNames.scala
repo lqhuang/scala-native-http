@@ -29,36 +29,11 @@ import utest.assert
  *   1. https://docs.oracle.com/en/java/javase/25/docs/specs/security/standard-names.html
  */
 object StandardNames {
-  val IS_RI: Boolean = !("Dalvik Core Library" == System.getProperty("java.specification.name"))
+  val IS_SCALA_NATIVE: Boolean =
+    System.getProperty("java.specification.name") != "Java Platform API Specification"
   val JSSE_PROVIDER_NAME: String =
-    if (IS_RI) "Conscrypt"
-    else "AndroidOpenSSL"
-  val KEY_MANAGER_FACTORY_DEFAULT: String =
-    if (IS_RI) "SunX509"
-    else "PKIX"
-  val TRUST_MANAGER_FACTORY_DEFAULT = "PKIX"
-  val KEY_STORE_ALGORITHM: String =
-    if (IS_RI) "JKS"
-    else "BKS"
-  val IS_15_OR_UP: Boolean = majorVersionFromJavaSpecificationVersion >= 15
-
-  private def majorVersionFromJavaSpecificationVersion = majorVersion(
-    System.getProperty("java.specification.version", "1.6"),
-  )
-
-  private def majorVersion(javaSpecVersion: String) = {
-    val components = javaSpecVersion.split("\\.", -1)
-
-    val version = new Array[Int](components.length)
-    for (i <- 0 until components.length)
-      version(i) = components(i).toInt
-
-    if version(0) == 1
-    then {
-      assert(version(1) >= 6)
-      version(1)
-    } else version(0)
-  }
+    if (IS_SCALA_NATIVE) "scala-native-openssl"
+    else "SunJSSE"
 
   /**
    * RFC 5746's Signaling Cipher Suite Value to indicate a request for secure renegotiation
@@ -85,7 +60,6 @@ object StandardNames {
       case None           => CIPHER_PADDINGS.put(algorithm, HashSet[String](newPaddings*)): Unit
       case Some(paddings) => paddings.addAll(Seq(newPaddings*))
 
-  @SuppressWarnings(Array("EnumOrdinal"))
   private def provideSslContextEnabledProtocols(
       algorithm: String,
       minimum: StandardNames.TLSVersion,
@@ -101,22 +75,25 @@ object StandardNames {
     SSL_CONTEXT_PROTOCOLS_ENABLED.put(algorithm, versionNames): Unit
   }
 
-  val SSL_CONTEXT_PROTOCOLS_DEFAULT = "Default"
-  val SSL_CONTEXT_PROTOCOLS =
-    Set[String](
-      SSL_CONTEXT_PROTOCOLS_DEFAULT,
+  val SSL_CONTEXT_GET_PROTOCOLS_DEFAULT: "Default" = "Default"
+  val SSL_CONTEXT_GET_PROTOCOLS =
+    Set["Default" | "TLS" | "TLSv1.2" | "TLSv1.3"](
+      SSL_CONTEXT_GET_PROTOCOLS_DEFAULT,
       "TLS",
-      "TLSv1",
-      "TLSv1.1",
       "TLSv1.2",
       "TLSv1.3",
     )
-  val SSL_CONTEXT_PROTOCOLS_WITH_DEFAULT_CONFIG =
-    Set[String](SSL_CONTEXT_PROTOCOLS_DEFAULT, "TLS", "TLSv1.3")
-  // Deprecated TLS protocols... May or may not be present or enabled.
-  val SSL_CONTEXT_PROTOCOLS_DEPRECATED = Set[String]()
+  val SSL_CONTEXT_DEFAULT_PROTOCOLS =
+    Set["TLSv1.2" | "TLSv1.3"]("TLSv1.2", "TLSv1.3")
+  val SSL_CONTEXT_SUPPORTED_PROTOCOLS = Set[String](
+    "SSLv3",
+    "TLSv1",
+    "TLSv1.1",
+    "TLSv1.2",
+    "TLSv1.3",
+  )
+  val SSL_CONTEXT_PROTOCOLS_DEPRECATED = Set[String]("SSLv2Hello")
   val KEY_TYPES = Set[String]("RSA", "DSA", "DH_RSA", "DH_DSA", "EC", "EC_EC", "EC_RSA")
-  val SSL_SOCKET_PROTOCOLS = Set[String]("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3")
 
   private enum TLSVersion(val name: String) {
     case SSLv3 extends TLSVersion("SSLv3")
@@ -298,7 +275,10 @@ object StandardNames {
     val unknownProtocols = HashSet[String]()
 
     for (protocol <- protocols) do
-      if (!remainingProtocols.remove(protocol))
+      if (
+        !remainingProtocols.remove(protocol)
+        && !SSL_CONTEXT_PROTOCOLS_DEPRECATED.contains(protocol)
+      )
         unknownProtocols.add(protocol): Unit
 
     assert(unknownProtocols.isEmpty)
@@ -309,18 +289,10 @@ object StandardNames {
    * After using assertValidProtocols on protocols, assertSupportedProtocols additionally verifies
    * that all supported protocols where in the input array.
    */
-  private def assertSupportedProtocols(valid: Set[String], protocols: Array[String]): Unit = {
+  def assertSupportedProtocols(valid: Set[String], protocols: Array[String]): Unit = {
     val remainingProtocols: HashSet[String] = assertValidProtocols(valid, protocols)
-    // TODO(prb) Temporarily ignore TLSv1.x: See comment for assertSSLContextEnabledProtocols()
-    remainingProtocols.subtractAll(SSL_CONTEXT_PROTOCOLS_DEPRECATED)
     assert(remainingProtocols.isEmpty)
   }
-
-  /**
-   * Asserts that the provided list of protocols matches the supported list of protocols.
-   */
-  def assertSupportedProtocols(protocols: Array[String]): Unit =
-    assertSupportedProtocols(SSL_SOCKET_PROTOCOLS, protocols)
 
   /**
    * Assert that the provided list of cipher suites contains only the supported cipher suites.
@@ -342,7 +314,7 @@ object StandardNames {
     assertValidCipherSuites(cipherSuites)
     val expected = TreeSet[String](CIPHER_SUITES_DEFAULT*)
     val actual = TreeSet[String](cipherSuites*)
-    assert(expected == actual)
+    assert(expected.iterator.sameElements(actual))
   }
 
   def assertDefaultEllipticCurves(curves: Array[String]): Unit =
@@ -350,13 +322,11 @@ object StandardNames {
 
   def assertSSLContextEnabledProtocols(version: String, protocols: Array[String]): Unit = {
     val expected =
-      HashSet[String](SSL_CONTEXT_PROTOCOLS_ENABLED.getOrElse(version, Array[String]())*)
+      HashSet[String](SSL_CONTEXT_PROTOCOLS_ENABLED.getOrElse(version, Array())*)
     val actual = HashSet[String](protocols*)
-    // Ignore deprecated protocols, which are set earlier based
-    // on Platform.isTlsV1Deprecated().
     expected.subtractAll(SSL_CONTEXT_PROTOCOLS_DEPRECATED)
     actual.subtractAll(SSL_CONTEXT_PROTOCOLS_DEPRECATED)
-    assert(expected == actual)
+    assert(expected.iterator.sameElements(actual))
   }
 
   /**
@@ -376,36 +346,21 @@ object StandardNames {
   provideCipherModes("RSA", Array[String]("ECB"))
   // TODO: OAEPPadding
   provideCipherPaddings("RSA", Array[String]("NoPadding", "PKCS1Padding"))
-  // Fixups for dalvik
-  if (!IS_RI) provideCipherPaddings("AES", Array[String]("PKCS7Padding"))
-  provideSslContextEnabledProtocols("TLS", TLSVersion.TLSv1, TLSVersion.TLSv13)
+
+  provideSslContextEnabledProtocols("TLS", TLSVersion.TLSv12, TLSVersion.TLSv13)
   provideSslContextEnabledProtocols("TLSv1", TLSVersion.TLSv1, TLSVersion.TLSv12)
   provideSslContextEnabledProtocols("TLSv1.1", TLSVersion.TLSv1, TLSVersion.TLSv12)
-  provideSslContextEnabledProtocols("TLSv1.2", TLSVersion.TLSv1, TLSVersion.TLSv12)
-  provideSslContextEnabledProtocols("TLSv1.3", TLSVersion.TLSv1, TLSVersion.TLSv13)
-  provideSslContextEnabledProtocols("Default", TLSVersion.TLSv1, TLSVersion.TLSv13)
+  provideSslContextEnabledProtocols("TLSv1.2", TLSVersion.TLSv12, TLSVersion.TLSv12)
+  provideSslContextEnabledProtocols("TLSv1.3", TLSVersion.TLSv12, TLSVersion.TLSv13)
+  provideSslContextEnabledProtocols("Default", TLSVersion.TLSv12, TLSVersion.TLSv13)
 
-  // if (TestUtils.isTlsV1Deprecated) {
-  //   SSL_CONTEXT_PROTOCOLS_DEPRECATED.add("TLSv1")
-  //   SSL_CONTEXT_PROTOCOLS_DEPRECATED.add("TLSv1.1")
-  // }
-  // if (!TestUtils.isTlsV1Supported) {
-  //   assert(TestUtils.isTlsV1Deprecated)
-  //   SSL_CONTEXT_PROTOCOLS.removeAll(SSL_CONTEXT_PROTOCOLS_DEPRECATED)
-  // }
-
-  // if (IS_RI) {
-  //   // DH_* are specified by standard names, but do not seem to be supported by RI
-  //   KEY_TYPES.remove("DH_RSA")
-  //   KEY_TYPES.remove("DH_DSA")
-  // }
-
-  addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA")
-  addOpenSsl("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA")
-  addOpenSsl("TLS_RSA_WITH_AES_256_CBC_SHA")
-  addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA")
-  addOpenSsl("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA")
-  addOpenSsl("TLS_RSA_WITH_AES_128_CBC_SHA")
+  // TLSv1.0 and TLSv1.1 are deprecated
+  // addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA")
+  // addOpenSsl("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA")
+  // addOpenSsl("TLS_RSA_WITH_AES_256_CBC_SHA")
+  // addOpenSsl("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA")
+  // addOpenSsl("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA")
+  // addOpenSsl("TLS_RSA_WITH_AES_128_CBC_SHA")
   // TLSv1.2 cipher suites
   addOpenSsl("TLS_RSA_WITH_AES_128_GCM_SHA256")
   addOpenSsl("TLS_RSA_WITH_AES_256_GCM_SHA384")

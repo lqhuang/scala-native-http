@@ -1,0 +1,2 @@
+BasedOnStyle: chromium
+# BreakBeforeCloseBracketFunction: true # only after clang-format 22

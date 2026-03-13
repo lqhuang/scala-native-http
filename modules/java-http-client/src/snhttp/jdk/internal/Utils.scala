@@ -6,7 +6,7 @@ import java.net.http.HttpHeaders
 import java.util.regex.Pattern
 import java.util.regex.Pattern.CASE_INSENSITIVE
 
-object Utils {
+object Utils:
   private val CHARSET_PATTERN = Pattern.compile(
     "(?:^|;)\\s*\\bcharset\\s*=\\s*([^\\s;]+)\\s*",
     Pattern.CASE_INSENSITIVE,
@@ -73,8 +73,7 @@ object Utils {
    *
    * TODO: current only supports `attachment; filename="file name.jpg"` like format.
    */
-  def filenameFrom(headers: HttpHeaders, fallbackFilename: String = "downloaded-file"): String =
-
+  def filenameFrom(headers: HttpHeaders, fallbackFilename: String = "downloaded-file"): String = {
     val contentDisposition = headers
       .firstValue("Content-Disposition")
       .orElse(s"aattachment; filename=\"${fallbackFilename}\"")
@@ -88,12 +87,15 @@ object Utils {
       case Some(unfilename) =>
         val matcher = QUOTED_FILENAME_PATTERN.matcher(unfilename)
         if matcher.matches() then {
-          val valid = matcher.group(1).replaceAll("^\"|\"$", "").trim().translateEscapes()
-          if valid.forall(isAllowedInFilename)
-          then valid
+          val raw = matcher.group(1).replaceAll("^\"|\"$", "").trim().translateEscapes()
+          // spec: if filename has multiple path components, use only the final one
+          val lastComponent =
+            val idx = math.max(raw.lastIndexOf('/'), raw.lastIndexOf('\\'))
+            if idx >= 0 then raw.substring(idx + 1) else raw
+          if lastComponent.nonEmpty && lastComponent.forall(isAllowedInFilename)
+          then lastComponent
           else fallbackFilename
         } // qualified filename not matches, return fallback
         else fallbackFilename
       case None => fallbackFilename
-
-}
+  }
