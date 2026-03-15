@@ -8,6 +8,7 @@ package build
 import scala.util.Properties
 
 import mill.{scalalib, scalanativelib}
+import mill.api.{Module, Task, PathRef}
 import mill.util.VcsVersion
 
 import scalalib.DepSyntax // for `mvn` string interpolator
@@ -90,3 +91,72 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
   }
 
 }
+
+/**
+ * Integration tests for Scala Native HTTP Client
+ *
+ * We clone the source code of `requests-scala` and run tests on it to ensure the compatibility of
+ * our java shim with the `requests-scala` library.
+ */
+
+object `integration-test-requests` extends Module:
+
+  def `requests-repo` = Task {
+    val dest = Task.dest
+
+    if (!os.exists(dest) || !os.exists(dest / ".git")) {
+      os.proc(
+        "git",
+        "clone",
+        "--branch",
+        "0.9.3",
+        "--depth",
+        "1",
+        "https://github.com/com-lihaoyi/requests-scala.git",
+        dest,
+      ).call()
+    }
+
+    PathRef(dest)
+  }
+
+  trait RequestsModule extends ScalaModule {
+    def scalaVersion = build.scalaVersion
+
+    override def sources = Task {
+      Seq(PathRef(`requests-repo`().path / "requests" / "src"))
+    }
+
+    def mvnDeps = Seq(mvn"com.lihaoyi::geny::1.1.1")
+
+    trait RequestsTestModule extends ScalaTests with UTestModule {
+      def resources = Task {
+        Seq(PathRef(`requests-repo`().path / "requests" / "test" / "resources"))
+      }
+
+      def sources = Task {
+        Seq(PathRef(`requests-repo`().path / "requests" / "test" / "src"))
+      }
+
+      def mvnDeps = Seq(
+        mvn"com.lihaoyi::utest::0.9.5",
+        mvn"com.lihaoyi::ujson::4.4.3",
+        mvn"com.dimafeng::testcontainers-scala-core:0.43.0",
+      )
+
+      def forkArgs = Seq(
+        "--add-opens",
+        "java.net.http/jdk.internal.net.http=ALL-UNNAMED",
+      )
+    }
+  }
+
+  object jvm extends JVM
+  trait JVM extends RequestsModule:
+    object test extends ScalaTests with RequestsTestModule
+
+  object native extends Native
+  trait Native extends RequestsModule with ScalaNativeModule:
+    def scalaNativeVersion = build.scalaNativeVersion
+    def moduleDeps = super.moduleDeps ++ Seq(build.modules.`java-http-client`)
+    object test extends ScalaNativeTests with RequestsTestModule
