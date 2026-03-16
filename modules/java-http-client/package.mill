@@ -1,5 +1,6 @@
 package build.modules.`java-http-client`
 
+import mill.api.Task
 import mill.scalalib.{DepSyntax, ScalaModule}
 
 object `package` extends build.CommonModule:
@@ -25,8 +26,18 @@ object `package` extends build.CommonModule:
   object jvm extends ScalaModule {
     def scalaVersion = build.scalaVersion
 
-    def sources = Seq() // no sources for JVM
+    override def sources = Task.Sources(
+      upper.moduleDir / "src" / "java" / "net" / "CookieManager.scala",
+      upper.moduleDir / "src" / "java" / "net" / "CookiePolicy.scala",
+      upper.moduleDir / "src" / "java" / "net" / "InMemoryCookieStore.scala",
+      upper.moduleDir / "src" / "snhttp" / "jdk" / "net" / "InMemoryCookieStore.scala",
+    )
 
     object test extends ScalaTests with build.UTestModule:
       def sources = upper.test.sources
+
+      override def forkArgs =
+        super.forkArgs() ++ Seq(
+          s"--patch-module=java.base=${jvm.compile().classes.path}",
+        )
   }

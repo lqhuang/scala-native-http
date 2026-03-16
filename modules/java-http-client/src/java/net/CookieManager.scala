@@ -59,31 +59,25 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
 
     // Build the Cookie header value
     if cookies != null && !cookies.isEmpty then
-      val cookieHeader = new ArrayList[String]()
-      val sb = new java.lang.StringBuilder()
-      var first = true
+      val cookiePairs = new ArrayList[String]()
 
       val it = cookies.iterator()
       while it.hasNext do
         val cookie = it.next()
-        // Skip expired cookies
         if !cookie.hasExpired() then
-          // Skip HttpOnly cookies for non-HTTP requests (though URI doesn't indicate this)
-          // Skip Secure cookies for non-HTTPS
           val scheme = uri.getScheme()
           val isSecure = scheme != null && scheme.equalsIgnoreCase("https")
-          if cookie.getSecure() && !isSecure then
-            // Skip secure cookies for non-secure requests
-            ()
-          else
-            if !first then sb.append("; "): Unit
-            first = false
-            sb.append(cookie.getName())
+          if !cookie.getSecure() || isSecure then
             val value = cookie.getValue()
-            if value != null then sb.append("=").append(value): Unit
+            val pair =
+              if value != null then cookie.getName() + "=" + value
+              else cookie.getName()
+            cookiePairs.add(pair): Unit
 
-      if sb.length > 0 then
-        cookieHeader.add(sb.toString())
+      if !cookiePairs.isEmpty then
+        val headerValue = String.join("; ", cookiePairs)
+        val cookieHeader = new ArrayList[String]()
+        cookieHeader.add(headerValue)
         result.put("Cookie", Collections.unmodifiableList(cookieHeader)): Unit
 
     Collections.unmodifiableMap(result)
@@ -116,7 +110,7 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
                   if cookie.getDomain() == null then cookie.setDomain(uri.getHost())
 
                   // Apply default path if not set
-                  if cookie.getPath() == null then
+                  if cookie.getPath() == null || cookie.getPath().isEmpty then
                     val path = uri.getPath()
                     val defaultPath =
                       if path == null || path.isEmpty then "/"

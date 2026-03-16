@@ -189,9 +189,14 @@ class InMemoryCookieStore extends CookieStore:
    * - The first character of the request-path that is not included in the cookie-path is a "/"
    */
   private def pathMatches(requestPath: String, cookiePath: String): Boolean =
-    if requestPath == cookiePath then true
-    else if requestPath.startsWith(cookiePath) then
-      if cookiePath.endsWith("/") then true
-      else if requestPath.length > cookiePath.length && requestPath.charAt(cookiePath.length) == '/' then true
+    val normalizedRequestPath = if requestPath == null || requestPath.isEmpty then "/" else requestPath
+    val normalizedCookiePath = if cookiePath == null || cookiePath.isEmpty then "/" else cookiePath
+
+    if normalizedRequestPath == normalizedCookiePath then true
+    else if normalizedRequestPath.startsWith(normalizedCookiePath) then
+      if normalizedCookiePath.endsWith("/") then true
+      else if normalizedRequestPath.length > normalizedCookiePath.length && normalizedRequestPath
+          .charAt(normalizedCookiePath.length) == '/'
+      then true
       else false
     else false
