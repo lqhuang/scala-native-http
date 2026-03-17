@@ -141,7 +141,6 @@ object `integration-test-requests` extends Module:
       def mvnDeps = Seq(
         mvn"com.lihaoyi::utest::0.9.5",
         mvn"com.lihaoyi::ujson::4.4.3",
-        mvn"com.dimafeng::testcontainers-scala-core:0.43.0",
       )
 
       def forkArgs = Seq(
