@@ -101,6 +101,8 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
     - [x] SSLEngineResult
     - [x] SSLException
     - [x] SSLParameters
+    - [x] SSLSession
+    - [x] SSLSessionContext
     - [ ] TrustManager
     - [ ] X509TrustManager
     - exceptions

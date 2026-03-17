@@ -13,7 +13,7 @@ import snhttp.jdk.net.URLStreamHandlerFactoryImpl
 final class URL private (
     uri: URI,
     handler: Option[URLStreamHandler],
-) extends Serializable {
+) extends Serializable:
 
   @deprecated(
     "Use URI.toURL() to construct an instance of URL.",
@@ -197,9 +197,8 @@ final class URL private (
   /// The string is created by calling the toExternalForm method of
   /// the stream protocol handler for this object.
   override def toString(): String = toExternalForm()
-}
 
-object URL {
+object URL:
 
   def of(uri: URI, handler: URLStreamHandler): URL = {
     requireNonNull(uri, "URI cannot be null")
@@ -219,4 +218,4 @@ object URL {
   def setURLStreamHandlerFactory(factory: URLStreamHandlerFactory): Unit =
     throw new Error("factory already defined")
 
-}
+end URL

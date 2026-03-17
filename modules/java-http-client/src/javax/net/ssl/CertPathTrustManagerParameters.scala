@@ -6,6 +6,7 @@ import java.util.Objects.requireNonNull
 class CertPathTrustManagerParameters(parameters: CertPathParameters)
     extends ManagerFactoryParameters:
 
+  requireNonNull(parameters)
+
   def getParameters(): CertPathParameters =
-    requireNonNull(parameters)
     parameters

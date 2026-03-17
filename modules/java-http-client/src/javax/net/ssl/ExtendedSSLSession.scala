@@ -5,7 +5,8 @@ import javax.crypto.SecretKey
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/ExtendedSSLSession.html
-abstract class ExtendedSSLSession extends SSLSession {
+abstract class ExtendedSSLSession extends SSLSession:
+
   def exportKeyingMaterialData(
       label: String,
       context: Array[Byte],
@@ -26,4 +27,3 @@ abstract class ExtendedSSLSession extends SSLSession {
   def getRequestedServerNames(): java.util.List[SNIServerName]
 
   def getStatusResponses(): Array[Array[Byte]]
-}

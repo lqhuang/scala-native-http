@@ -5,6 +5,7 @@ import java.security.cert.X509Certificate
 import java.security.{Principal, PrivateKey}
 
 trait X509KeyManager extends KeyManager:
+
   def getClientAliases(keyType: String, issuers: Array[Principal]): Array[String]
 
   def chooseClientAlias(

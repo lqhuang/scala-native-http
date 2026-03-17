@@ -327,8 +327,6 @@ private[http] final class HttpConnection[T](
     }
   }
 
-end HttpConnection
-
 object HttpConnection:
 
   def apply[T](

@@ -5,7 +5,8 @@ import java.security.Principal
 import java.security.cert.Certificate
 import java.util.Optional
 
-abstract class HttpsURLConnection(url: URL) extends HttpURLConnection(url) {
+abstract class HttpsURLConnection(url: URL) extends HttpURLConnection(url):
+
   def getCipherSuite(): String
 
   def getLocalCertificates(): Array[Certificate]
@@ -26,9 +27,9 @@ abstract class HttpsURLConnection(url: URL) extends HttpURLConnection(url) {
 
   // Since JDK 12
   def getSSLSession(): Optional[SSLSession]
-}
 
-object HttpsURLConnection {
+object HttpsURLConnection:
+
   private var defaultHostnameVerifier: HostnameVerifier = ???
   private var defaultSSLSocketFactory: SSLSocketFactory = ???
 
@@ -39,4 +40,5 @@ object HttpsURLConnection {
   def getDefaultSSLSocketFactory(): SSLSocketFactory = ???
 
   def setDefaultSSLSocketFactory(factor: SSLSocketFactory): Unit = ???
-}
+
+end HttpsURLConnection

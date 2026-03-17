@@ -5,11 +5,11 @@ import java.io.{IOException, InputStream}
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/HttpURLConnection.html
-abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
+abstract class HttpURLConnection(url: URL) extends URLConnection(url):
 
   def setAuthenticator(auth: Authenticator): Unit
 
-  // override def getHeaderFieldKey(x: Int): String
+  override def getHeaderFieldKey(x: Int): String = ???
 
   def setFixedLengthStreamingMode(contentLength: Int): Unit
 
@@ -17,7 +17,7 @@ abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
 
   def setChunkedStreamingMode(chunkLength: Int): Unit
 
-  // override def getHeaderField(n: Int): String
+  override def getHeaderField(n: Int): String = ???
 
   def setInstanceFollowRedirects(followRedirects: Boolean): Unit
 
@@ -36,9 +36,9 @@ abstract class HttpURLConnection(url: URL) extends URLConnection(url) {
   def usingProxy(): Boolean
 
   def getErrorStream(): InputStream
-}
 
-object HttpURLConnection {
+object HttpURLConnection:
+
   // Magic numbers from
   // https://docs.oracle.com/en/java/javase/25/docs/api/constant-values.html#java.net
   final val HTTP_OK: Int = 200
@@ -87,4 +87,5 @@ object HttpURLConnection {
     followRedirects = set
 
   def getFollowRedirects(): Boolean = followRedirects
-}
+
+end HttpURLConnection

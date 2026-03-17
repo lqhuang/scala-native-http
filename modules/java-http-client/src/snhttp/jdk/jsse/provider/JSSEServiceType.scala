@@ -7,7 +7,6 @@ import java.util.TreeSet
 // https://docs.oracle.com/en/java/javase/25/security/java-secure-socket-extension-jsse-reference-guide.html
 type JSSEServiceType = "KeyStore" | "KeyManagerFactory" | "TrustManagerFactory" | "SSLContext"
 object JSSEServiceType:
-
   lazy val names: TreeSet[String] = {
     val set = new TreeSet(String.CASE_INSENSITIVE_ORDER)
     set.add("KeyStore")

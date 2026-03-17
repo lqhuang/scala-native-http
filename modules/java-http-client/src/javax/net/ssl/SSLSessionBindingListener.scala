@@ -1,9 +1,15 @@
-package javax.net.ssl
+/**
+ * No java.util.EventObject shim available
+ *
+ * Commenting out for now
+ */
 
-import java.util.EventListener
+// package javax.net.ssl
 
-trait SSLSessionBindingListener extends EventListener:
+// import java.util.EventListener
 
-  def valueBound(event: SSLSessionBindingEvent): Unit
+// trait SSLSessionBindingListener extends EventListener:
 
-  def valueUnbound(event: SSLSessionBindingEvent): Unit
+//   def valueBound(event: SSLSessionBindingEvent): Unit
+
+//   def valueUnbound(event: SSLSessionBindingEvent): Unit

@@ -42,23 +42,24 @@ trait HttpResponse[T]:
 
 object HttpResponse:
 
-  trait ResponseInfo {
+  trait ResponseInfo:
+
     def statusCode(): Int
 
     def headers(): HttpHeaders
 
     def version(): HttpClient.Version
-  }
+
+  end ResponseInfo
 
   // @since 11
   @FunctionalInterface
-  trait BodyHandler[T] {
+  trait BodyHandler[T]:
     def apply(responseInfo: ResponseInfo): BodySubscriber[T]
-  }
 
   // @since 11
   abstract class BodyHandlers {}
-  object BodyHandlers {
+  object BodyHandlers:
 
     def fromSubscriber(subscriber: Subscriber[? >: JList[ByteBuffer]]): BodyHandler[Void] =
       requireNonNull(subscriber)
@@ -168,29 +169,32 @@ object HttpResponse:
         throw new IllegalArgumentException("capacity must not be negative")
       ri => BodySubscribers.limiting(downstreamHandler(ri), capacity)
 
-  }
+  end BodyHandlers
 
-  trait PushPromiseHandler[T] {
+  trait PushPromiseHandler[T]:
+
     def applyPushPromise(
         initiatingRequest: HttpRequest,
         pushPromiseRequest: HttpRequest,
         acceptor: Function[BodyHandler[T], CompletableFuture[HttpResponse[T]]],
     ): Unit
-  }
-  object PushPromiseHandler {
+
+  object PushPromiseHandler:
+
     def of[T](
         pushPromiseHandler: Function[HttpRequest, BodyHandler[T]],
         pushPromisesMap: ConcurrentMap[HttpRequest, CompletableFuture[HttpResponse[T]]],
     ): PushPromiseHandler[T] =
       BodyHandlersImpl.PushPromisesHandlerWithMap(pushPromiseHandler, pushPromisesMap)
-  }
+
+  end PushPromiseHandler
 
   // @since 11
   trait BodySubscriber[T] extends Subscriber[JList[ByteBuffer]]:
     def getBody(): CompletionStage[T]
 
   abstract class BodySubscribers
-  object BodySubscribers {
+  object BodySubscribers:
 
     def fromSubscriber(
         subscriber: Subscriber[? >: JList[ByteBuffer]],
@@ -263,6 +267,6 @@ object HttpResponse:
       require(capacity >= 0, "capacity must not be negative")
       BodySubscribersImpl.LimitingSubscriber(downstream, capacity)
 
-  }
+  end BodySubscribers
 
 end HttpResponse

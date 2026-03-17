@@ -77,6 +77,7 @@ object HttpClient:
 
   sealed class Version private (name: String, ordinal: Int) extends _Enum[Version](name, ordinal)
   object Version:
+
     final val HTTP_1_1 = new Version("HTTP_1_1", 0)
     final val HTTP_2 = new Version("HTTP_2", 1)
     final val HTTP_3 = new Version("HTTP_3", 2)
@@ -89,10 +90,12 @@ object HttpClient:
         case "HTTP_2"   => HTTP_2
         case "HTTP_3"   => HTTP_3
         case _ => throw new IllegalArgumentException(s"No enum constant HttpClient.Version.$name")
+
   end Version
 
   sealed class Redirect private (name: String, ordinal: Int) extends _Enum[Redirect](name, ordinal)
   object Redirect:
+
     final val NEVER = new Redirect("NEVER", 0)
     final val ALWAYS = new Redirect("ALWAYS", 1)
     final val NORMAL = new Redirect("NORMAL", 2)
@@ -105,6 +108,7 @@ object HttpClient:
         case "ALWAYS" => ALWAYS
         case "NORMAL" => NORMAL
         case _ => throw new IllegalArgumentException(s"No enum constant HttpClient.Redirect.$name")
+
   end Redirect
 
   /// @since 11

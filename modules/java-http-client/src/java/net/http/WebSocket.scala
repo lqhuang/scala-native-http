@@ -5,7 +5,8 @@ import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.{CompletableFuture, CompletionStage}
 
-trait WebSocket {
+trait WebSocket:
+
   def sendText(message: String, last: Boolean): CompletableFuture[WebSocket]
 
   def sendBinary(data: ByteBuffer, last: Boolean): CompletableFuture[WebSocket]
@@ -25,14 +26,14 @@ trait WebSocket {
   def isInputClosed(): Boolean
 
   def abort(): Unit
-}
 
-object WebSocket {
+object WebSocket:
 
   /** Message status code for normal closure */
   val NORMAL_CLOSURE = 1000
 
-  trait Builder {
+  trait Builder:
+
     def header(name: String, value: String): Builder
 
     def connectTimeout(timeout: Duration): Builder
@@ -40,9 +41,11 @@ object WebSocket {
     def subprotocols(mostPreferred: String, lesserPreferred: String*): Builder
 
     def buildAsync(uri: URI, listener: Listener): CompletableFuture[WebSocket]
-  }
 
-  trait Listener {
+  end Builder
+
+  trait Listener:
+
     def onOpen(webSocket: WebSocket): Unit
 
     def onText(webSocket: WebSocket, data: CharSequence, last: Boolean): CompletionStage[?]
@@ -56,6 +59,7 @@ object WebSocket {
     def onClose(webSocket: WebSocket, statusCode: Int, reason: String): CompletionStage[?]
 
     def onError(webSocket: WebSocket, error: Throwable): Unit
-  }
 
-}
+  end Listener
+
+end WebSocket
