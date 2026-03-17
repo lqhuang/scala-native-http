@@ -74,9 +74,6 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
 
   def nativeLinkingOptions = super.nativeLinkingOptions() ++ Seq("-v")
 
-  // // Set nativeWorkdir directory to `newDir`
-  // def nativeWorkdir = Task { Task.dest  }
-
   def scalafixIvyDeps = Seq(
     mvn"com.github.xuwei-k::scalafix-rules:0.6.17",
   )
@@ -150,9 +147,9 @@ object `integration-test-requests` extends Module:
     }
   }
 
-  object jvm extends JVM
-  trait JVM extends RequestsModule:
-    object test extends ScalaTests with RequestsTestModule
+  // object jvm extends JVM
+  // trait JVM extends RequestsModule:
+  //   object test extends ScalaTests with RequestsTestModule
 
   object native extends Native
   trait Native extends RequestsModule with ScalaNativeModule:

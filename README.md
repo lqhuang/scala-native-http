@@ -51,19 +51,24 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
   - [x] FileNameMap
   - [ ] HttpCookie
   - [x] HttpURLConnection
-  - [ ] JarURLConnection
+  - JarURLConnection
   - [ ] PasswordAuthentication
   - [x] Proxy
   - [x] ProxySelector
-  - [ ] ResponseCache
-  - [ ] SecureCacheResponse
+  - ResponseCache
+  - SecureCacheResponse
   - URI
+    - included in Scala Native already
   - [x] URL
+  - URIEncoderDecoder
+    - included in Scala Native already
   - URLDecoder
+    - included in Scala Native already
   - URLEncoder
-  - [x] URLConnection
-  - [x] URLStreamHandler
-  - [x] URLStreamHandlerFactory
+    - included in Scala Native already
+  - [ ] URLConnection
+  - [ ] URLStreamHandler
+  - [ ] URLStreamHandlerFactory
   - Exceptions
     - [x] HttpRetryException
     - URISyntaxException (included in Scala Native, others in similar level are the same)
@@ -71,9 +76,6 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
     - ProtocolException
     - UnknownHostException
     - UnknownServiceException
-  - ssl
-    - [x] SSLContext
-    - [x] SSLParameters
 - java.net.http
   - [x] HttpClient
   - [x] HttpHeaders
@@ -84,6 +86,24 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
     - [x] HttpConnectTimeoutException
     - [x] HttpTimeoutException
     - [x] WebSocketHandshakeException
+- javax.net
+  - [ ] ServerSocketFactory
+  - [x] SocketFactory
+  - ssl
+    - [x] CertPathTrustManagerParameters
+    - [x] KeyManagerFactory
+    - [x] SNIHostName
+    - [x] SNIMatcher
+    - [x] SNIServerName
+    - [x] SSLContext
+    - [x] SSLEngine
+      - partially implemented, only client side is supported
+    - [x] SSLEngineResult
+    - [x] SSLException
+    - [x] SSLParameters
+    - [ ] TrustManager
+    - [ ] X509TrustManager
+    - exceptions
 
 ## Dev guides
 
