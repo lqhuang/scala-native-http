@@ -20,7 +20,9 @@ object `package` extends build.CommonModule:
     mvn"com.github.lolgab::scala-native-crypto::0.3.0",
   )
 
-  object `test-internal` extends ScalaNativeTests with build.UTestModule
+  object `test-internal` extends ScalaNativeTests with build.UTestModule {
+    def sources = super.sources() ++ upper.test.sources()
+  }
 
   object jvm extends ScalaModule {
     def scalaVersion = build.scalaVersion

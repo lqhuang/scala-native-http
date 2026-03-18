@@ -1,3 +1,6 @@
+// Ported from
+// https://github.com/google/conscrypt/blob/7cbb302ebea3f96f848eda83e0cf19e03ec1c6f5/testing/src/main/java/org/conscrypt/java/security/StandardNames.java
+
 /*
  * Copyright (C) 2010 The Android Open Source Project
  *
@@ -14,8 +17,6 @@
  * limitations under the License.
  */
 
-// Ported from https://github.com/google/conscrypt/blob/7cbb302ebea3f96f848eda83e0cf19e03ec1c6f5/testing/src/main/java/org/conscrypt/java/security/StandardNames.java
-
 package org.conscrypt.javax.net.ssl
 
 import scala.collection.mutable.{HashSet, HashMap, TreeSet, LinkedHashSet}
@@ -28,12 +29,17 @@ import utest.assert
  *
  *   1. https://docs.oracle.com/en/java/javase/25/docs/specs/security/standard-names.html
  */
-object StandardNames {
+object StandardNames:
+
   val IS_SCALA_NATIVE: Boolean =
     System.getProperty("java.specification.name") != "Java Platform API Specification"
   val JSSE_PROVIDER_NAME: String =
     if (IS_SCALA_NATIVE) "scala-native-openssl"
     else "SunJSSE"
+
+  final val KEY_MANAGER_FACTORY_DEFAULT = "PKIX"
+  final val TRUST_MANAGER_FACTORY_DEFAULT = "PKIX"
+  final val KEY_STORE_ALGORITHM = "PKCS12"
 
   /**
    * RFC 5746's Signaling Cipher Suite Value to indicate a request for secure renegotiation
@@ -385,5 +391,3 @@ object StandardNames {
   // From https://tools.ietf.org/html/draft-ietf-tls-downgrade-scsv-00 to indicate
   // TLS fallback request
   addOpenSsl(CIPHER_SUITE_FALLBACK)
-
-}

@@ -1,3 +1,6 @@
+// Ported from
+// https://github.com/google/conscrypt/blob/5b46bc69b6ee129b79c719cd8130a5fb4823a75a/common/src/test/java/org/conscrypt/javax/net/ssl/SNIHostNameTest.java
+
 /*
  * Copyright (C) 2010 The Android Open Source Project
  *
@@ -13,8 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// Ported from https://github.com/google/conscrypt/blob/5b46bc69b6ee129b79c719cd8130a5fb4823a75a/common/src/test/java/org/conscrypt/javax/net/ssl/SNIHostNameTest.java
 
 package snhttp.javax.net.ssl
 
