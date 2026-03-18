@@ -5,7 +5,8 @@ import java.net.SocketException
 import java.util.List as JList
 import java.util.function.BiFunction
 import java.util.Objects.requireNonNull
-import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedListener}
+import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket}
+// import javax.net.ssl.HandshakeCompletedListener
 
 import scala.scalanative.posix.sys.socket
 
@@ -31,9 +32,7 @@ class ClientSSLSocketImpl protected (
     case 16 => socket.AF_INET6
     case _  => throw new IllegalArgumentException("Invalid IP address length")
   private val sock = socket.socket(af_inet, socket.SOCK_STREAM, 0)
-  // socket.bind(
-  //   sock,
-  // )
+  // socket.bind(sock)
   if (sock < 0)
     throw new RuntimeException("Failed to create socket")
   // TODO: Test socket can connect to the host:port else we need to recreate the socket
@@ -64,11 +63,11 @@ class ClientSSLSocketImpl protected (
   override def getHandshakeSession(): SSLSession =
     ???
 
-  def addHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit =
-    ???
+  // def addHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit =
+  //   ???
 
-  def removeHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit =
-    ???
+  // def removeHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit =
+  //   ???
 
   def startHandshake(): Unit =
     ???
