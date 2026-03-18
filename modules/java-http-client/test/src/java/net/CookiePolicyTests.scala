@@ -31,11 +31,11 @@ class CookiePolicyTests extends utest.TestSuite:
       assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == true)
     }
 
-    test("ACCEPT_ORIGINAL_SERVER accepts cookie with no domain") {
+    test("ACCEPT_ORIGINAL_SERVER rejects cookie with no domain") {
       val uri = new URI("http://example.com/path")
       val cookie = new HttpCookie("test", "value")
 
-      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == true)
+      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == false)
     }
 
     test("ACCEPT_ORIGINAL_SERVER rejects cookie with non-matching domain") {

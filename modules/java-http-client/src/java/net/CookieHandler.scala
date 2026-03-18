@@ -1,6 +1,6 @@
 package java.net
 
-import java.util.{Collections, List as JList, Map as JMap}
+import java.util.{List as JList, Map as JMap}
 
 // @since 1.5
 abstract class CookieHandler:

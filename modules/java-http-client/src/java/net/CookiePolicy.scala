@@ -48,5 +48,5 @@ object CookiePolicy:
       val host = uri.getHost()
       if host == null then return false
       val domain = cookie.getDomain()
-      if domain == null || domain.isEmpty then true
+      if domain == null || domain.isEmpty then false
       else HttpCookie.domainMatches(domain, host)

@@ -7,7 +7,6 @@ import java.util.{
   List as JList,
   Locale,
   Map as JMap,
-  Objects,
 }
 import snhttp.jdk.net.InMemoryCookieStore
 
@@ -51,16 +50,14 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
   def getCookieStore(): CookieStore = cookieStore
 
   override def get(uri: URI, requestHeaders: JMap[String, JList[String]]): JMap[String, JList[String]] =
-    Objects.requireNonNull(uri, "uri is null")
-    Objects.requireNonNull(requestHeaders, "requestHeaders is null")
+    if uri == null || requestHeaders == null then
+      throw new IllegalArgumentException("uri and requestHeaders must not be null")
 
     val cookies = cookieStore.get(uri)
     val result = new HashMap[String, JList[String]]()
+    val cookieHeader = new ArrayList[String]()
 
-    // Build the Cookie header value
     if cookies != null && !cookies.isEmpty then
-      val cookiePairs = new ArrayList[String]()
-
       val it = cookies.iterator()
       while it.hasNext do
         val cookie = it.next()
@@ -72,19 +69,14 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
             val pair =
               if value != null then cookie.getName() + "=" + value
               else cookie.getName()
-            cookiePairs.add(pair): Unit
+            cookieHeader.add(pair): Unit
 
-      if !cookiePairs.isEmpty then
-        val headerValue = String.join("; ", cookiePairs)
-        val cookieHeader = new ArrayList[String]()
-        cookieHeader.add(headerValue)
-        result.put("Cookie", Collections.unmodifiableList(cookieHeader)): Unit
-
+    result.put("Cookie", Collections.unmodifiableList(cookieHeader)): Unit
     Collections.unmodifiableMap(result)
 
   override def put(uri: URI, responseHeaders: JMap[String, JList[String]]): Unit =
-    Objects.requireNonNull(uri, "uri is null")
-    Objects.requireNonNull(responseHeaders, "responseHeaders is null")
+    if uri == null || responseHeaders == null then
+      throw new IllegalArgumentException("uri and responseHeaders must not be null")
 
     // Process Set-Cookie and Set-Cookie2 headers
     val it = responseHeaders.entrySet().iterator()
@@ -117,7 +109,7 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
                       else
                         val lastSlash = path.lastIndexOf('/')
                         if lastSlash <= 0 then "/"
-                        else path.substring(0, lastSlash)
+                        else path.substring(0, lastSlash + 1)
                     cookie.setPath(defaultPath)
 
                   // Check policy

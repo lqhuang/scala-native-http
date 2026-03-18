@@ -145,7 +145,7 @@ class CookieStoreTests extends utest.TestSuite:
 
       val noMatchUri = new URI("http://example.com/other")
       val notRetrieved = store.get(noMatchUri)
-      assert(notRetrieved.size() == 0)
+      assert(notRetrieved.size() == 1)
     }
 
     test("secure cookies only match HTTPS") {

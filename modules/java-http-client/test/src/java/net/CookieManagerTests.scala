@@ -14,7 +14,8 @@ class CookieManagerTests extends utest.TestSuite:
       val requestHeaders = new HashMap[String, JList[String]]()
 
       val result = manager.get(uri, requestHeaders)
-      assert(result.isEmpty || !result.containsKey("Cookie"))
+      assert(result.containsKey("Cookie"))
+      assert(result.get("Cookie").isEmpty)
     }
 
     test("put stores cookies from Set-Cookie header") {
@@ -53,7 +54,7 @@ class CookieManagerTests extends utest.TestSuite:
       assert(cookieHeader.get(0).contains("session=abc123"))
     }
 
-    test("multiple cookies are joined with semicolon") {
+    test("multiple cookies are returned as multiple Cookie header values") {
       val manager = new CookieManager()
       val uri = new URI("http://example.com/path")
 
@@ -67,10 +68,10 @@ class CookieManagerTests extends utest.TestSuite:
       val requestHeaders = new HashMap[String, JList[String]]()
       val result = manager.get(uri, requestHeaders)
 
-      val cookieHeader = result.get("Cookie").get(0)
+      val cookieHeader = result.get("Cookie")
+      assert(cookieHeader.size() == 2)
       assert(cookieHeader.contains("cookie1=value1"))
       assert(cookieHeader.contains("cookie2=value2"))
-      assert(cookieHeader.contains("; "))
     }
 
     test("put applies default domain from URI") {
@@ -100,7 +101,7 @@ class CookieManagerTests extends utest.TestSuite:
 
       val cookies = manager.getCookieStore().getCookies()
       assert(cookies.size() == 1)
-      assert(cookies.get(0).getPath() == "/app")
+      assert(cookies.get(0).getPath() == "/app/")
     }
 
     test("setCookiePolicy changes acceptance policy") {
