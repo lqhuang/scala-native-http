@@ -20,7 +20,7 @@ import javax.net.ssl.{KeyManager, KeyManagerFactory, X509KeyManager}
 
 import utest.{TestSuite, Tests, test}
 
-import org.conscrypt.javax.net.ssl.KeyStoreUtils
+import org.conscrypt.utils.KeyStoreUtils
 
 class X509KeyManagerTest extends TestSuite:
 

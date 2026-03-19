@@ -29,7 +29,7 @@ import javax.net.ssl.SSLPeerUnverifiedException
 import javax.net.ssl.SSLSession
 import javax.security.auth.x500.X500Principal
 
-import org.conscrypt.javax.net.ssl.{FakeSSLSession => FFakeSSLSession, OkHostnameVerifier}
+import org.conscrypt.utils.{FakeSSLSession => FFakeSSLSession, OkHostnameVerifier}
 
 import utest.{Tests, test, assert, assertThrows, TestSuite}
 
@@ -50,7 +50,7 @@ class HostnameVerifierTest extends TestSuite:
     new FakeSSLSession(Array(makeCertificate(cert)))
 
   final class FakeSSLSession(certificates: Array[Certificate]) extends FFakeSSLSession("FakeHost") {
-    def getPeerCertificates(): Array[Certificate] = {
+    override def getPeerCertificates(): Array[Certificate] = {
       if (certificates.length == 0) {
         throw new SSLPeerUnverifiedException("peer not authenticated")
       }
@@ -66,8 +66,10 @@ class HostnameVerifierTest extends TestSuite:
   // Both verifiers should behave the same in all tests except for
   // subjectAltNameWithToplevelWildcard(), and that test is not parameterized for
   // clarity.
-  val verifiers: Seq[OkHostnameVerifier] =
-    Seq(OkHostnameVerifier.INSTANCE, OkHostnameVerifier.STRICT_INSTANCE)
+  val verifiers: Seq[OkHostnameVerifier] = Seq(
+    OkHostnameVerifier.INSTANCE,
+    OkHostnameVerifier.STRICT_INSTANCE,
+  )
   // END Android-changed: Run tests for both default and strict verifiers.
   // http://b/144694112
 

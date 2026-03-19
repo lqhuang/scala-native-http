@@ -52,7 +52,7 @@ import javax.net.ssl.{
   X509KeyManager,
 }
 
-import org.conscrypt.javax.net.ssl.{StandardNames, SSLConfigurationAsserts}
+import org.conscrypt.utils.{StandardNames, SSLConfigurationAsserts}
 
 import utest.{TestSuite, test, assert, Tests, assertThrows}
 

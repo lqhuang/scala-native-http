@@ -78,14 +78,8 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
     mvn"com.github.xuwei-k::scalafix-rules:0.6.17",
   )
 
-  /// Define testing
-  object test extends ScalaNativeTests with UTestModule {
-
-    // def toolsmvnDeps = Seq(
-    //   mvn"com.dimafeng::testcontainers-scala-munit:0.43.0",
-    // )
-
-  }
+  /// Define common trait for test module
+  trait CommonTestModule extends ScalaNativeTests with UTestModule
 
 }
 

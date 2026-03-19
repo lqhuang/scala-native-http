@@ -7,3 +7,5 @@ object `package` extends build.CommonModule:
   )
 
   def artifactName = "scala-native-http-core"
+
+  object test extends CommonTestModule

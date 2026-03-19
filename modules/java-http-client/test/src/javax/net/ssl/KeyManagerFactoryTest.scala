@@ -46,16 +46,22 @@ import javax.net.ssl.{
 
 import utest.{TestSuite, Tests, test, assert}
 
-import org.conscrypt.javax.net.ssl.{StandardNames, KeyStoreUtils}
+import org.conscrypt.utils.{StandardNames, KeyStoreUtils}
 
 class KeyManagerFactoryTest extends TestSuite:
 
   // note the rare usage of DSA keys here in addition to RSA
-  private val keyAlgorithms: Array[String] =
-    Array("RSA", "DH_RSA", "DSA", "DH_DSA", "EC", "EC_RSA")
+  private val keyAlgorithms: Array[String] = Array(
+    "RSA",
+    "DH_RSA",
+    "DSA",
+    "DH_DSA",
+    "EC",
+    "EC_RSA",
+  )
 
   private val testKeyStore: KeyStoreUtils = new KeyStoreUtils.Builder()
-    .keyAlgorithms(keyAlgorithms)
+    .keyAlgorithms(keyAlgorithms*)
     .aliasPrefix("rsa-dsa-ec-dh")
     .build()
 

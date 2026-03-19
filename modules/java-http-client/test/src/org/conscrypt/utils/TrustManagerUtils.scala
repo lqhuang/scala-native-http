@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import java.io.PrintStream
 import java.net.Socket
@@ -30,7 +29,7 @@ import utest.assert
 object TrustManagerUtils:
   private val LOG = false
   private val out: PrintStream = if (LOG) System.out else new NullPrintStream()
-  private val EXTENDED_TRUST_MANAGER_CLASS: Class[?] = X509ExtendedTrustManager.getClass
+  private val EXTENDED_TRUST_MANAGER_CLASS: Class[?] = classOf[X509ExtendedTrustManager]
 
   def wrap(trustManagers: Array[TrustManager]): Array[TrustManager] = {
     val result = trustManagers.clone()

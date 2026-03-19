@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import java.security.cert.CertificateParsingException
 import java.security.cert.X509Certificate

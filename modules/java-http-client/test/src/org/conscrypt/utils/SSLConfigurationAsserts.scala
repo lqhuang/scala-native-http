@@ -1,3 +1,6 @@
+// Ported from
+// https://github.com/google/conscrypt/blob/7cbb302ebea3f96f848eda83e0cf19e03ec1c6f5/testing/src/main/java/org/conscrypt/javax/net/ssl/SSLConfigurationAsserts.java
+
 /*
  * Copyright (C) 2013 The Android Open Source Project
  *
@@ -14,9 +17,7 @@
  * limitations under the License.
  */
 
-// Ported from https://github.com/google/conscrypt/blob/7cbb302ebea3f96f848eda83e0cf19e03ec1c6f5/testing/src/main/java/org/conscrypt/javax/net/ssl/SSLConfigurationAsserts.java
-
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import java.io.IOException
 import java.util.List as JList

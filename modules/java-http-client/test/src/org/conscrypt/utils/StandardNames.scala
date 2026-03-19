@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import scala.collection.mutable.{HashSet, HashMap, TreeSet, LinkedHashSet}
 import scala.jdk.javaapi.CollectionConverters.asScala
@@ -30,6 +30,8 @@ import utest.assert
  *   1. https://docs.oracle.com/en/java/javase/25/docs/specs/security/standard-names.html
  */
 object StandardNames:
+
+  val IS_RI: Boolean = false // Not an Android runtime or platform
 
   val IS_SCALA_NATIVE: Boolean =
     System.getProperty("java.specification.name") != "Java Platform API Specification"

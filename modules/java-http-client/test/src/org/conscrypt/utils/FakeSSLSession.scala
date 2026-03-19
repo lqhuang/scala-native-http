@@ -15,12 +15,12 @@
  * the License.
  */
 
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import java.security.cert.{Certificate, X509Certificate}
 import java.security.Principal
 import javax.net.ssl.{SSLSession, SSLSocket, SSLParameters, SSLSessionContext}
-import javax.net.ssl.SSLPeerUnverifiedException
+import javax.net.ssl.{SSLPeerUnverifiedException, HandshakeCompletedListener}
 
 class FakeSSLSession(val hostname: String, val peerCerts: Array[X509Certificate])
     extends SSLSession {
@@ -92,10 +92,10 @@ class FakeSSLSocket(session: SSLSession, parameters: SSLParameters) extends SSLS
     session
   override def getHandshakeSession(): SSLSession =
     session
-  // override def addHandshakeCompletedListener(l: HandshakeCompletedListener): Unit =
-  //   throw new UnsupportedOperationException()
-  // override def removeHandshakeCompletedListener(l: HandshakeCompletedListener): Unit =
-  //   throw new UnsupportedOperationException()
+  override def addHandshakeCompletedListener(l: HandshakeCompletedListener): Unit =
+    throw new UnsupportedOperationException()
+  override def removeHandshakeCompletedListener(l: HandshakeCompletedListener): Unit =
+    throw new UnsupportedOperationException()
   override def startHandshake(): Unit =
     throw new UnsupportedOperationException()
   override def setUseClientMode(b: Boolean): Unit =

@@ -8,3 +8,4 @@ object `package` extends build.CommonModule:
 
   def artifactName = "scala-native-curl"
 
+  object test extends CommonTestModule

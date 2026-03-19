@@ -42,7 +42,7 @@ import utest.{Tests, test, assert, assertThrows, TestSuite}
 
 // import org.bouncycastle.asn1.x509.KeyPurposeId
 // import org.conscrypt.Spake2PlusTrustManager
-import org.conscrypt.javax.net.ssl.{StandardNames, KeyStoreUtils}
+import org.conscrypt.utils.{StandardNames, KeyStoreUtils}
 
 class TrustManagerFactoryTest extends TestSuite:
 
@@ -53,7 +53,7 @@ class TrustManagerFactoryTest extends TestSuite:
   private def getTestKeyStore(): KeyStoreUtils = {
     if TEST_KEY_STORE == null then
       TEST_KEY_STORE = new KeyStoreUtils.Builder()
-        .keyAlgorithms(KEY_TYPES)
+        .keyAlgorithms(KEY_TYPES*)
         .aliasPrefix("rsa-dsa-ec")
         .build()
     TEST_KEY_STORE
@@ -158,8 +158,8 @@ class TrustManagerFactoryTest extends TestSuite:
       assert(issuers ne tm.getAcceptedIssuers())
       val defaultTrustManager =
         // RI de-duplicates certs from TrustedCertificateEntry and PrivateKeyEntry
-        issuers.length > (if StandardNames.IS_RI && !Conscrypt.isConscrypt(p) then 1
-                          else 2) * KEY_TYPES.length
+        // `&& !Conscrypt.isConscrypt(p)` is removed here
+        issuers.length > (if StandardNames.IS_RI then 1 else 2) * KEY_TYPES.length
 
       val keyAlgName = KeyStoreUtils.keyAlgorithm(keyType)
       val sigAlgName = KeyStoreUtils.signatureAlgorithm(keyType)

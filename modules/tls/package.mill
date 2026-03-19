@@ -3,3 +3,5 @@ package build.modules.tls
 object `package` extends build.CommonModule:
 
   def artifactName = "scala-native-http-tls"
+
+  object test extends CommonTestModule

@@ -16,14 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package snhttp.jdk.internal
-
-import org.conscrypt.javax.net.ssl.KeyStoreUtils
-import org.conscrypt.javax.net.ssl.MockHostnameVerifier
+package snhttp.jdk.net.ssl
 
 import java.io.IOException
-import java.security.KeyStore
-import java.security.Principal
+import java.security.{KeyStore, Principal}
 import java.security.cert.{Certificate, CertificateException, X509Certificate}
 import java.util.{Arrays, List as JList}
 
@@ -38,8 +34,9 @@ import javax.net.ssl.{
 
 import utest.{TestSuite, Tests, test}
 
-import snhttp.jdk.net.ssl.TrustManagerImpl
-import org.conscrypt.javax.net.ssl.{FakeSSLSession, FakeSSLSocket}
+import org.conscrypt.utils.{FakeSSLSession, FakeSSLSocket, MockHostnameVerifier, KeyStoreUtils}
+
+import _root_.snhttp.jdk.net.ssl.TrustManagerImpl
 
 class TrustManagerImplTest extends TestSuite:
 

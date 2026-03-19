@@ -1,4 +1,4 @@
-package snhttp.jdk.internal
+package snhttp.jdk.net.http.internal
 
 import java.net.http.HttpResponse.BodySubscribers
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
@@ -8,7 +8,7 @@ import java.util.function.Consumer
 import scala.util.boundary
 import scala.util.boundary.break
 
-import snhttp.jdk.net.http.internal.DelegatePublisher
+import _root_.snhttp.jdk.net.http.internal.DelegatePublisher
 
 import utest.{Tests, TestSuite, test, assert}
 

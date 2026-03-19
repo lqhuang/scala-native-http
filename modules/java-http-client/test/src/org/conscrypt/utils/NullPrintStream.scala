@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import java.io.{ByteArrayOutputStream, OutputStream, PrintStream}
 import java.util.Locale

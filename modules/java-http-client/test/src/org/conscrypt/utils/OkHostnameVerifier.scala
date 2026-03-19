@@ -17,8 +17,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package org.conscrypt.javax.net.ssl
+package org.conscrypt.utils
 
 import java.security.cert.CertificateParsingException
 import java.security.cert.X509Certificate
@@ -28,6 +27,7 @@ import java.util.regex.Pattern
 import javax.net.ssl.SSLException
 import javax.net.ssl.SSLSession
 
+import scala.util.boundary
 import scala.collection.JavaConverters.*
 
 /**
@@ -73,14 +73,14 @@ final class OkHostnameVerifier private (strictWildcardMode: Boolean)
   /**
    * Returns true if {@code certificate} matches {@code ipAddress}.
    */
-  private def verifyIpAddress(ipAddress: String, certificate: X509Certificate): Boolean = {
-    for (each <- getSubjectAltNames(certificate, ALT_IPA_NAME).asScala)
-      if (ipAddress.equalsIgnoreCase(each)) {
-        return true
-      }
-
-    false
-  }
+  private def verifyIpAddress(ipAddress: String, certificate: X509Certificate): Boolean =
+    boundary {
+      for (each <- getSubjectAltNames(certificate, ALT_IPA_NAME).asScala)
+        if (ipAddress.equalsIgnoreCase(each)) {
+          boundary.break(true)
+        }
+      false
+    }
 
   /**
    * Returns true if {@code certificate} matches {@code hostName}.
@@ -88,12 +88,14 @@ final class OkHostnameVerifier private (strictWildcardMode: Boolean)
   private def verifyHostName(hostNameParam: String, certificate: X509Certificate): Boolean = {
     val hostName = hostNameParam.toLowerCase(Locale.US)
 
-    for (each <- getSubjectAltNames(certificate, ALT_DNS_NAME).asScala)
-      if (verifyHostName(hostName, each)) {
-        return true
-      }
+    boundary {
+      for (each <- getSubjectAltNames(certificate, ALT_DNS_NAME).asScala)
+        if (verifyHostName(hostName, each)) {
+          boundary.break(true)
+        }
 
-    false
+      false
+    }
   }
 
   /**
