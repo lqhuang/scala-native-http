@@ -62,7 +62,7 @@ class MockHostnameVerifier extends HostnameVerifier:
           // altNames are returned as effectively Pair<Integer, String> instances,
           // where the first member is the type of altName and the second is the name.
           if (altNamePair.get(0).equals(DNS_NAME_TYPE)) {
-            result.add(altNamePair.get(1).asInstanceOf[String])
+            result.add(altNamePair.get(1).asInstanceOf[String]): Unit
           }
       }
       return result

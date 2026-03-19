@@ -274,7 +274,7 @@ object OkHostnameVerifier:
             if (altNameType == typeId) {
               val altName = entry.get(1).asInstanceOf[String]
               if (altName != null) {
-                result.add(altName)
+                result.add(altName): Unit
               }
             }
           }

@@ -21,6 +21,8 @@ package org.conscrypt.javax.net.ssl
 
 import java.security.KeyStore
 
+// class MockKeyStore extends KeyStore()
+
 object KeyStoreUtils:
 
   private final val CERT_HOSTNAME: String = "example.com"
@@ -37,6 +39,9 @@ object KeyStoreUtils:
   val rootCa2 = ???
   val INTERMEDIATE_CA_2 = ???
   val CLIENT_2 = ???
+
+  class Builder:
+    private var keyAlgorithms: String = "RSA"
 
   /**
    * Create an empty KeyStore
