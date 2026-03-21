@@ -44,6 +44,10 @@ jobs:
         with:
           apps: mill
 
+      - name: Run tests for Java HTTP Client on JVM
+        run: |
+          ./mill modules.java-http-client.jvm.test
+
       - name: Run tests for curl bindings
         run: |
           ./mill show modules.curl.nativeLinkingOptions
@@ -58,10 +62,6 @@ jobs:
         run: |
           ./mill modules.java-http-client.test
           ./mill modules.java-http-client.test-internal
-
-      - name: Run tests for Java HTTP Client on JVM
-        run: |
-          ./mill modules.java-http-client.jvm.test
 
   test-windows:
     runs-on: windows-latest
@@ -99,6 +99,13 @@ jobs:
         with:
           apps: mill
 
+      - name: Run tests for Java HTTP Client on JVM
+        env:
+          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
+          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
+        run: |
+          .\mill modules.java-http-client.jvm.test
+
       - name: Run tests for curl bindings
         env:
           SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
@@ -122,13 +129,6 @@ jobs:
         run: |
           .\mill modules.java-http-client.test
           .\mill modules.java-http-client.test-internal
-
-      - name: Run tests for Java HTTP Client on JVM
-        env:
-          SCALANATIVE_INCLUDE_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\include"
-          SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
-        run: |
-          .\mill modules.java-http-client.jvm.test
 
   publish-sonatype:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
