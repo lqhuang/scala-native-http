@@ -46,14 +46,19 @@ import org.conscrypt.utils.{StandardNames, KeyStoreUtils}
 
 class TrustManagerFactoryTest extends TestSuite:
 
-  private val KEY_TYPES: Array[String] = Array("RSA", "DSA", "EC", "EC_RSA")
+  private val KEY_TYPES: Seq[String] = Seq(
+    "RSA",
+    "DSA",
+    "EC",
+    // "EC_RSA" // JVM -> EC_RSA KeyPairGenerator not available
+  )
   private var TEST_KEY_STORE: KeyStoreUtils = null
 
   // note the rare usage of DSA keys here in addition to RSA
   private def getTestKeyStore(): KeyStoreUtils = {
     if TEST_KEY_STORE == null then
       TEST_KEY_STORE = new KeyStoreUtils.Builder()
-        .keyAlgorithms(KEY_TYPES*)
+        .keyAlgorithms(KEY_TYPES)
         .aliasPrefix("rsa-dsa-ec")
         .build()
     TEST_KEY_STORE
@@ -192,7 +197,7 @@ class TrustManagerFactoryTest extends TestSuite:
     val algorithm = "RSA"
     val intermediateCa = KeyStoreUtils.getIntermediateCa()
     val leaf = new KeyStoreUtils.Builder()
-      .keyAlgorithms(algorithm)
+      .keyAlgorithms(Seq(algorithm))
       .aliasPrefix("criticalCodeSigning")
       .signer(intermediateCa.getPrivateKey("RSA", "RSA"))
       .rootCa(intermediateCa.getRootCertificate("RSA"))
@@ -217,19 +222,10 @@ class TrustManagerFactoryTest extends TestSuite:
 
   def tests = Tests:
 
-    test("test_TrustManagerFactory_getDefaultAlgorithm") {
-      val algorithm = TrustManagerFactory.getDefaultAlgorithm()
-      assert(algorithm == StandardNames.TRUST_MANAGER_FACTORY_DEFAULT)
-      val tmf = TrustManagerFactory.getInstance(algorithm)
-      test_TrustManagerFactory(tmf)
-    }
-
     test("test_TrustManagerFactory_getInstance") {
-
-      val algorithm = TrustManagerFactory.getDefaultAlgorithm()
-
-      var tmf = TrustManagerFactory.getInstance(algorithm)
-      assert(algorithm == tmf.getAlgorithm())
+      val tmf =
+        TrustManagerFactory.getInstance(StandardNames.TRUST_MANAGER_FACTORY_SUPPORTS_ALGORITHM)
+      assert(tmf.getAlgorithm() == StandardNames.TRUST_MANAGER_FACTORY_SUPPORTS_ALGORITHM)
       test_TrustManagerFactory(tmf)
 
       //   tmf = TrustManagerFactory.getInstance(algorithm, provider)

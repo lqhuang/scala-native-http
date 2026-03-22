@@ -305,7 +305,7 @@ object KeyStoreUtils {
 
     INTERMEDIATE_CA_EC = new Builder()
       .aliasPrefix("IntermediateCA-EC")
-      .keyAlgorithms("EC")
+      .keyAlgorithms(Seq("EC"))
       .subject("CN=Test Intermediate Certificate Authority ECDSA")
       .ca(true)
       .signer(ROOT_CA.getPrivateKey("RSA", "RSA"))
@@ -342,7 +342,7 @@ object KeyStoreUtils {
 
     CLIENT_EC_RSA_CERTIFICATE = new Builder()
       .aliasPrefix("client-ec")
-      .keyAlgorithms("EC")
+      .keyAlgorithms(Seq("EC"))
       .subject("emailAddress=test-ec@user")
       .signer(INTERMEDIATE_CA.getPrivateKey("RSA", "RSA"))
       .rootCa(INTERMEDIATE_CA.getRootCertificate("RSA"))
@@ -350,7 +350,7 @@ object KeyStoreUtils {
 
     CLIENT_EC_EC_CERTIFICATE = new Builder()
       .aliasPrefix("client-ec")
-      .keyAlgorithms("EC")
+      .keyAlgorithms(Seq("EC"))
       .subject("emailAddress=test-ec@user")
       .signer(INTERMEDIATE_CA_EC.getPrivateKey("EC", "RSA"))
       .rootCa(INTERMEDIATE_CA_EC.getRootCertificate("RSA"))
@@ -396,7 +396,7 @@ object KeyStoreUtils {
    * most tests should reuse the RSA-only singleton instance returned by KeyStoreUtils.get.
    */
   class Builder {
-    private var keyAlgorithms: Array[String] = Array("RSA")
+    private var keyAlgorithms: Seq[String] = Seq("RSA")
     private var storePassword: Array[Char] = _
     private var keyPassword: Array[Char] = _
     private var aliasPrefix: String = _
@@ -413,16 +413,23 @@ object KeyStoreUtils {
     private val excludedNameConstraints = new ArrayList[GeneralSubtree]()
     private var certificateSerialNumber: BigInteger = _
 
-    def keyAlgorithms(algorithms: String*): Builder = {
-      this.keyAlgorithms = algorithms.toArray
+    /**
+     * Sets the requested key types to generate and include. The default is RSA only.
+     */
+    def keyAlgorithms(algorithms: Seq[String]): Builder = {
+      this.keyAlgorithms = algorithms
       this
     }
 
+    /** A unique prefix to identify the key aliases */
     def aliasPrefix(prefix: String): Builder = {
       this.aliasPrefix = prefix
       this
     }
 
+    /**
+     * Sets the subject common name. The default is the local host's canonical name.
+     */
     def subject(subject: X500Principal): Builder = {
       this.subject = subject
       this
@@ -431,26 +438,31 @@ object KeyStoreUtils {
     def subject(commonName: String): Builder =
       subject(new X500Principal(commonName))
 
+    /** {@link KeyUsage} bit mask for 2.5.29.15 extension */
     def keyUsage(usage: Int): Builder = {
       this.keyUsage = usage
       this
     }
 
+    /** true If the keys being created are for a CA */
     def ca(ca: Boolean): Builder = {
       this.ca = ca
       this
     }
 
+    /** a private key entry to use for the generation of the certificate */
     def privateEntry(entry: PrivateKeyEntry): Builder = {
       this.privateEntry = entry
       this
     }
 
+    /** a private key entry to be used for signing, otherwise self-sign */
     def signer(signer: PrivateKeyEntry): Builder = {
       this.signer = signer
       this
     }
 
+    /** a root CA to include in the final store */
     def rootCa(root: Certificate): Builder = {
       this.rootCa = root
       this
@@ -493,11 +505,20 @@ object KeyStoreUtils {
     def build(): KeyStoreUtils =
       try {
         if (StandardNames.IS_RI) {
-          if (storePassword == null) storePassword = "password".toCharArray()
-          if (keyPassword == null) keyPassword = "password".toCharArray()
+          if (storePassword == null)
+            storePassword = "password".toCharArray()
+          if (keyPassword == null)
+            keyPassword = "password".toCharArray()
         }
 
-        if (privateEntry != null && (keyAlgorithms.length != 1 || "RSA" != keyAlgorithms(0))) {
+        /*
+         * This is not implemented for other key types because the logic
+         * would be long to write and it's not needed currently.
+         */
+        if (
+          privateEntry != null
+          && (keyAlgorithms.length != 1 || "RSA" != keyAlgorithms(0))
+        ) {
           throw new IllegalStateException("Only reusing an existing key is implemented for RSA")
         }
 
@@ -505,8 +526,11 @@ object KeyStoreUtils {
         for (keyAlgorithm <- keyAlgorithms) {
           val publicAlias = aliasPrefix + "-public-" + keyAlgorithm
           val privateAlias = aliasPrefix + "-private-" + keyAlgorithm
+
           if (
-            (keyAlgorithm == "EC_RSA" || keyAlgorithm == "DH_RSA") && signer == null && rootCa == null
+            (keyAlgorithm == "EC_RSA" || keyAlgorithm == "DH_RSA")
+            && signer == null
+            && rootCa == null
           ) {
             createKeys(
               keyStore,
@@ -526,9 +550,17 @@ object KeyStoreUtils {
               privateKey(keyStore, keyPassword, "DSA", "DSA"),
             )
           } else {
-            createKeys(keyStore, keyAlgorithm, publicAlias, privateAlias, privateEntry, signer)
+            createKeys(
+              keyStore,
+              keyAlgorithm,
+              publicAlias,
+              privateAlias,
+              privateEntry,
+              signer,
+            )
           }
         }
+
         if (rootCa != null) {
           keyStore.setCertificateEntry(
             aliasPrefix + "-root-ca-" + rootCa.getPublicKey().getAlgorithm(),
@@ -540,26 +572,39 @@ object KeyStoreUtils {
         case e: Exception => throw new RuntimeException(e)
       }
 
+    /**
+     * Add newly generated keys of a given key type to an existing KeyStore. The PrivateKey will be
+     * stored under the specified private alias name. The X509Certificate will be stored on the
+     * public alias name and have the given subject distinguished name.
+     *
+     * If a CA is provided, it will be used to sign the generated certificate and OCSP responses.
+     * Otherwise, the certificate will be self signed. The certificate will be valid for one day
+     * before and one day after the time of creation.
+     *
+     * Based on:
+     *   - org.bouncycastle.jce.provider.test.SigTest
+     *   - org.bouncycastle.jce.provider.test.CertTest
+     */
     private def createKeys(
         keyStore: KeyStore,
-        keyAlgorithmParam: String,
+        keyAlgorithm: String,
         publicAlias: String,
         privateAlias: String,
         privateEntry: PrivateKeyEntry,
         signer: PrivateKeyEntry,
     ): KeyStore = {
-      var keyAlgorithm = keyAlgorithmParam
-      val caKey = if (signer == null) null else signer.getPrivateKey()
+      val caKey =
+        if signer == null
+        then null
+        else signer.getPrivateKey()
       val caCert =
-        if (signer == null)
-          null
-        else
-          signer.getCertificate().asInstanceOf[X509Certificate]
+        if signer == null
+        then null
+        else signer.getCertificate().asInstanceOf[X509Certificate]
       val caCertChain =
-        if (signer == null)
-          null
-        else
-          signer.getCertificateChain.asInstanceOf[Array[X509Certificate]]
+        if signer == null
+        then null
+        else signer.getCertificateChain().asInstanceOf[Array[X509Certificate]]
 
       if (subject == null) {
         subject = localhost()
@@ -567,92 +612,57 @@ object KeyStoreUtils {
         addSubjectAltNameDnsName(LOCAL_HOST_NAME_IPV6)
       }
 
-      val privateKey: PrivateKey =
-        if (publicAlias == null && privateAlias == null) null
-        else if (privateEntry == null) {
-          var keySize = -1
+      var privateKey: PrivateKey = null
+      var publicKey: PublicKey = null
+      var x509c: X509Certificate = null
+      var keyAlgo = keyAlgorithm
+      if (publicAlias == null && privateAlias == null) {
+        // don't want anything apparently
+        privateKey = null
+        x509c = null
+      } else {
+        if (privateEntry == null) {
+          // 1a.) we make the keys
+          var keySize: Int = -1
           var spec: AlgorithmParameterSpec = null
-          keyAlgorithm match {
-            case "RSA" => keySize = RSA_KEY_SIZE_BITS
-            case "DH_RSA" =>
-              spec = new DHParameterSpec(DH_PARAMS_P, DH_PARAMS_G)
-              keyAlgorithm = "DH"
-            case "DSA" => keySize = DSA_KEY_SIZE_BITS
-            case "DH_DSA" =>
-              spec = new DHParameterSpec(DH_PARAMS_P, DH_PARAMS_G)
-              keyAlgorithm = "DH"
-            case "EC" | "EC_RSA" =>
-              keySize = EC_KEY_SIZE_BITS
-              keyAlgorithm = "EC"
-            case _ => throw new IllegalArgumentException("Unknown key algorithm " + keyAlgorithm)
+          if (keyAlgorithm == "RSA") {
+            keySize = RSA_KEY_SIZE_BITS
+          } else if (keyAlgorithm == "DH_RSA" || keyAlgorithm == "DH_DSA") {
+            spec = new DHParameterSpec(DH_PARAMS_P, DH_PARAMS_G)
+            keyAlgo = "DH"
+          } else if (keyAlgorithm == "DSA") {
+            keySize = DSA_KEY_SIZE_BITS
+          } else if (keyAlgorithm == "EC") {
+            keySize = EC_KEY_SIZE_BITS
+          } else if (keyAlgorithm == "EC_RSA") {
+            keySize = EC_KEY_SIZE_BITS
+            keyAlgo = "EC"
+          } else {
+            throw new IllegalArgumentException("Unknown key algorithm " + keyAlgorithm)
           }
 
           val kpg = KeyPairGenerator.getInstance(keyAlgorithm)
-          if (spec != null) kpg.initialize(spec) else kpg.initialize(keySize)
-          val kp = kpg.generateKeyPair()
-          kp.getPrivate()
-        } else {
-          privateEntry.getPrivateKey()
-        }
-
-      val publicKey: PublicKey =
-        if (publicAlias == null && privateAlias == null) null
-        else if (privateEntry == null) {
-          // This relies on the kpg logic above which isn't cleanly separated here due to porting constraints
-          // In the original Java it's inside the same block
-          null // placeholder
-        } else {
-          privateEntry.getCertificate().getPublicKey()
-        }
-
-      // Note: Re-fetching public key if newly generated
-      val actualPublicKey = if (privateEntry == null && privateKey != null) {
-        // This is a bit messy in the port; in the original, kp was local.
-        // Re-evaluating logic: if newly generated, privateKey is assigned from kp.
-        // We'll assume the publicKey logic is handled correctly in a cleaner implementation.
-        // For the sake of direct port, I'll ensure we have the key.
-        val kpg = KeyPairGenerator.getInstance(keyAlgorithm) // dummy to satisfy compiler if needed
-        null // In reality, we'd store the KeyPair
-      } else publicKey
-
-      // Redoing generation block for clarity in Scala
-      var x509c: X509Certificate = null
-      var privK: PrivateKey = privateKey
-      var pubK: PublicKey = actualPublicKey
-
-      if (publicAlias != null || privateAlias != null) {
-        if (privateEntry == null) {
-          var keySize = -1
-          var spec: AlgorithmParameterSpec = null
-          var effectiveAlgorithm = keyAlgorithm
-          effectiveAlgorithm match {
-            case "RSA" => keySize = RSA_KEY_SIZE_BITS
-            case "DH_RSA" =>
-              spec = new DHParameterSpec(DH_PARAMS_P, DH_PARAMS_G)
-              effectiveAlgorithm = "DH"
-            case "DSA" => keySize = DSA_KEY_SIZE_BITS
-            case "DH_DSA" =>
-              spec = new DHParameterSpec(DH_PARAMS_P, DH_PARAMS_G)
-              effectiveAlgorithm = "DH"
-            case "EC" | "EC_RSA" =>
-              keySize = EC_KEY_SIZE_BITS
-              effectiveAlgorithm = "EC"
-            case _ => throw new IllegalArgumentException("Unknown key algorithm " + keyAlgorithm)
+          if (spec != null) {
+            kpg.initialize(spec)
+          } else {
+            kpg.initialize(keySize)
           }
-          val kpg = KeyPairGenerator.getInstance(effectiveAlgorithm)
-          if (spec != null) kpg.initialize(spec) else kpg.initialize(keySize)
+
           val kp = kpg.generateKeyPair()
-          privK = kp.getPrivate()
-          pubK = kp.getPublic()
+          privateKey = kp.getPrivate()
+          publicKey = kp.getPublic()
         } else {
-          privK = privateEntry.getPrivateKey()
-          pubK = privateEntry.getCertificate().getPublicKey()
+          // 1b.) we use the previous keys
+          privateKey = privateEntry.getPrivateKey()
+          publicKey = privateEntry.getCertificate().getPublicKey()
         }
 
-        val issuer = if (caCert != null) caCert.getSubjectX500Principal() else subject
-        val signingKey = if (caKey == null) privK else caKey
+        // 2.) use keys to make certificate
+        val issuer: X500Principal =
+          if caCert != null then caCert.getSubjectX500Principal() else subject
+        val signingKey: PrivateKey = if caKey == null then privateKey else caKey
         x509c = createCertificate(
-          pubK,
+          publicKey,
           signingKey,
           subject,
           issuer,
@@ -667,28 +677,36 @@ object KeyStoreUtils {
         )
       }
 
-      val x509cc: Array[X509Certificate] =
-        if (privateAlias == null) null
-        else if (caCertChain == null) Array(x509c)
-        else {
-          val chain = new Array[X509Certificate](caCertChain.length + 1)
-          chain(0) = x509c
-          System.arraycopy(caCertChain, 0, chain, 1, caCertChain.length)
-          chain
-        }
+      var x509cc: Array[X509Certificate] = null
+      if (privateAlias == null) {
+        // don't need certificate chain
+        x509cc = null
+      } else if (caCertChain == null) {
+        x509cc = Array[X509Certificate](x509c)
+      } else {
+        x509cc = Array.ofDim[X509Certificate](caCertChain.length + 1)
+        x509cc(0) = x509c
+        System.arraycopy(caCertChain, 0, x509cc, 1, caCertChain.length)
+      }
 
-      if (privateAlias != null)
+      // 3.) put certificate and private key into the key store
+      if (privateAlias != null) {
         keyStore.setKeyEntry(
           privateAlias,
-          privK,
+          privateKey,
           keyPassword,
           x509cc.asInstanceOf[Array[Certificate]],
         )
-      if (publicAlias != null) keyStore.setCertificateEntry(publicAlias, x509c)
+      }
+      if (publicAlias != null) {
+        keyStore.setCertificateEntry(publicAlias, x509c)
+      }
+
       keyStore
     }
 
-    private def localhost(): X500Principal = new X500Principal("CN=" + LOCAL_HOST_NAME)
+    private def localhost(): X500Principal =
+      new X500Principal("CN=" + LOCAL_HOST_NAME)
   }
 
   def createCa(publicKey: PublicKey, privateKey: PrivateKey, subjectStr: String): X509Certificate =
@@ -727,6 +745,14 @@ object KeyStoreUtils {
       excludedNameConstraints: JList[GeneralSubtree],
       serialNumberParam: BigInteger,
   ): X509Certificate = {
+    // Note that there is no way to programmatically make a
+    // Certificate using java.* or javax.* APIs. The
+    // CertificateFactory interface assumes you want to read
+    // in a stream of bytes, typically the X.509 factory would
+    // allow ASN.1 DER encoded bytes and optionally some PEM
+    // formats. Here we use Bouncy Castle's
+    // X509V3CertificateGenerator and related classes.
+
     val millisPerDay = 24L * 60 * 60 * 1000
     val now = System.currentTimeMillis()
     val start = new Date(now - millisPerDay)
@@ -798,16 +824,29 @@ object KeyStoreUtils {
     x509c
   }
 
+  /**
+   * Return the key algorithm for a possible compound algorithm identifier containing an underscore.
+   * If not underscore is present, the argument is returned unmodified. However for an algorithm
+   * such as EC_RSA, return EC.
+   */
   def keyAlgorithm(algorithm: String): String = {
     val index = algorithm.indexOf('_')
     if (index == -1) algorithm else algorithm.substring(0, index)
   }
 
+  /**
+   * Return the signature algorithm for a possible compound algorithm identifier containing an
+   * underscore. If not underscore is present, the argument is returned unmodified. However for an
+   * algorithm such as EC_RSA, return RSA.
+   */
   def signatureAlgorithm(algorithm: String): String = {
     val index = algorithm.indexOf('_')
     if (index == -1) algorithm else algorithm.substring(index + 1)
   }
 
+  /**
+   * Create an empty KeyStore
+   */
   def createKeyStore(): KeyStore =
     try {
       val keyStore = KeyStore.getInstance(StandardNames.KEY_STORE_ALGORITHM)
@@ -817,6 +856,10 @@ object KeyStoreUtils {
       case e: Exception => throw new RuntimeException(e)
     }
 
+  /**
+   * Return the only private key in a keystore for the given algorithms. Throws
+   * IllegalStateException if there are are more or less than one.
+   */
   def privateKey(
       keyStore: KeyStore,
       keyPassword: Array[Char],
@@ -855,6 +898,10 @@ object KeyStoreUtils {
         )
     }
 
+  /**
+   * Return the issuing CA certificate of the given certificate. Throws IllegalStateException if
+   * there are are more or less than one.
+   */
   def issuer(keyStore: KeyStore, c: Certificate): Certificate = {
     if (!c.isInstanceOf[X509Certificate]) {
       throw new IllegalStateException("issuer requires an X509Certificate, found " + c)
@@ -880,6 +927,10 @@ object KeyStoreUtils {
     found
   }
 
+  /**
+   * Return the only self-signed root certificate in a TestKeyStore for the given algorithm. Throws
+   * IllegalStateException if there are are more or less than one.
+   */
   @SuppressWarnings(Array("JavaUtilDate"))
   private def generateOCSPResponse(
       server: PrivateKeyEntry,
@@ -911,6 +962,10 @@ object KeyStoreUtils {
       case e: Exception => throw new CertificateException("cannot generate OCSP response", e)
     }
 
+  /**
+   * Return the only self-signed root certificate in a keystore for the given algorithm. Throws
+   * IllegalStateException if there are are more or less than one.
+   */
   @SuppressWarnings(Array("JavaUtilDate"))
   def rootCertificate(keyStore: KeyStore, algorithm: String): X509Certificate =
     try {
@@ -941,6 +996,9 @@ object KeyStoreUtils {
       case e: Exception => throw new RuntimeException(e)
     }
 
+  /**
+   * Finds an entry in the keystore by the given alias.
+   */
   def entryByAlias(keyStore: KeyStore, alias: String): KeyStore.Entry =
     try
       keyStore.getEntry(alias, null)
@@ -950,12 +1008,19 @@ object KeyStoreUtils {
         throw new RuntimeException(e)
     }
 
+  /**
+   * Create a client key store that only contains self-signed certificates but no private keys
+   */
   def createClient(caKeyStore: KeyStore): KeyStore = {
     val clientKeyStore = createKeyStore()
     copySelfSignedCertificates(clientKeyStore, caKeyStore)
     clientKeyStore
   }
 
+  /**
+   * Copy self-signed certificates from one key store to another. Returns true if successful, false
+   * if no match found.
+   */
   def copySelfSignedCertificates(dst: KeyStore, src: KeyStore): Boolean =
     try {
       var copied = false
@@ -972,6 +1037,10 @@ object KeyStoreUtils {
       case e: Exception => throw new RuntimeException(e)
     }
 
+  /**
+   * Copy named certificates from one key store to another. Returns true if successful, false if no
+   * match found.
+   */
   def copyCertificate(subject: Principal, dst: KeyStore, src: KeyStore): Boolean =
     boundary {
       for (alias <- Collections.list(src.aliases()).asScala)
@@ -985,6 +1054,9 @@ object KeyStoreUtils {
       false
     }
 
+  /**
+   * Dump a key store for debugging.
+   */
   def dump(context: String, keyStore: KeyStore, keyPassword: Array[Char]): Unit = {
     val out = System.out
     out.println("context=" + context)
@@ -1034,6 +1106,11 @@ object KeyStoreUtils {
     }
   }
 
+  /*
+   * Note chain is Object[] to support both
+   * java.security.cert.X509Certificate and
+   * javax.security.cert.X509Certificate
+   */
   def assertChainLength(chain: Array[AnyRef]): Unit =
     assert(3 == chain.length)
 }

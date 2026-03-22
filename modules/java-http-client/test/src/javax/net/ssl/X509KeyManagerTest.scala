@@ -30,9 +30,9 @@ class X509KeyManagerTest extends TestSuite:
       selectedKeyType: String,
       succeeds: Boolean,
   ): Unit = {
-    val ca = new KeyStoreUtils.Builder().keyAlgorithms(caKeyType).build()
+    val ca = new KeyStoreUtils.Builder().keyAlgorithms(Seq(caKeyType)).build()
     val client = new KeyStoreUtils.Builder()
-      .keyAlgorithms(clientKeyType)
+      .keyAlgorithms(Seq(clientKeyType))
       .signer(ca.getPrivateKey(caKeyType, caKeyType))
       .build()
 

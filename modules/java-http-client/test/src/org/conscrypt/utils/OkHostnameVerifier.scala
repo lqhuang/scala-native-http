@@ -259,7 +259,6 @@ object OkHostnameVerifier:
     result
   }
 
-  @SuppressWarnings(Array("MixedMutabilityReturnType"))
   private def getSubjectAltNames(certificate: X509Certificate, typeId: Int): JList[String] = {
     val result = new ArrayList[String]()
     try {
@@ -270,16 +269,21 @@ object OkHostnameVerifier:
 
       for (subjectAltName <- subjectAltNames.asScala) {
         val entry = subjectAltName.asInstanceOf[JList[_]]
-        if (entry != null && entry.size() >= 2) {
-          val altNameType = entry.get(0).asInstanceOf[Integer]
-          if (altNameType != null) {
-            if (altNameType == typeId) {
-              val altName = entry.get(1).asInstanceOf[String]
-              if (altName != null) {
-                result.add(altName): Unit
-              }
-            }
-          }
+        var altNameType: Integer = null
+        var altName: String = null
+
+        if entry == null || entry.size() < 2
+        then {} // continue
+        else if {
+          altNameType = entry.get(0).asInstanceOf[Integer]
+          altNameType == null
+        }
+        then {} // continue
+        else if altNameType == typeId
+        then {
+          altName = entry.get(1).asInstanceOf[String]
+          if (altName != null)
+            result.add(altName): Unit
         }
       }
 

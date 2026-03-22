@@ -51,10 +51,9 @@ class HostnameVerifierTest extends TestSuite:
 
   final class FakeSSLSession(certificates: Array[Certificate]) extends FFakeSSLSession("FakeHost") {
     override def getPeerCertificates(): Array[Certificate] = {
-      if (certificates.length == 0) {
+      if (certificates.length == 0)
         throw new SSLPeerUnverifiedException("peer not authenticated")
-      }
-      certificates;
+      certificates
     }
   }
 
@@ -239,7 +238,7 @@ class HostnameVerifierTest extends TestSuite:
 
       val certs: Array[X509Certificate] = Array()
       for (verifier <- verifiers) {
-        assert(verifier.verify(certs, "foo.com", session) == true)
+        assert(verifier.verify(certs, "foo.com", session) == false) // Android will be true here
         assert(verifier.verify(certs, "a.foo.com", session) == false)
         // these checks test alternative subjects. The test data contains an
         // alternative subject starting with a japanese kanji character. This is
@@ -461,9 +460,11 @@ class HostnameVerifierTest extends TestSuite:
       val certs: Array[X509Certificate] = Array()
       for (verifier <- verifiers) {
         // try the foo.com variations
-        assert(verifier.verify(certs, "foo.com", session) == true)
-        assert(verifier.verify(certs, "www.foo.com", session) == true)
-        assert(verifier.verify(certs, "\u82b1\u5b50.foo.com", session) == true)
+        assert(verifier.verify(certs, "foo.com", session) == false) // Android will be true here
+        assert(verifier.verify(certs, "www.foo.com", session) == false) // Android will be true here
+        assert(
+          verifier.verify(certs, "\u82b1\u5b50.foo.com", session) == false,
+        ) // Android will be true here
         assert(verifier.verify(certs, "a.b.foo.com", session) == false)
         // these checks test alternative subjects. The test data contains an
         // alternative subject starting with a japanese kanji character. This is

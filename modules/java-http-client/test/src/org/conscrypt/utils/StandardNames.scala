@@ -39,9 +39,9 @@ object StandardNames:
     if (IS_SCALA_NATIVE) "scala-native-openssl"
     else "SunJSSE"
 
-  final val KEY_MANAGER_FACTORY_DEFAULT = "PKIX"
-  final val TRUST_MANAGER_FACTORY_DEFAULT = "PKIX"
-  final val KEY_STORE_ALGORITHM = "PKCS12"
+  final val KEY_MANAGER_FACTORY_SUPPORTS_ALGORITHM = "PKIX"
+  final val TRUST_MANAGER_FACTORY_SUPPORTS_ALGORITHM = "PKIX"
+  final val KEY_STORE_ALGORITHM = "pkcs12"
 
   /**
    * RFC 5746's Signaling Cipher Suite Value to indicate a request for secure renegotiation
