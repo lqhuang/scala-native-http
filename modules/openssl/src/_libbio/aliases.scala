@@ -1,13 +1,11 @@
 package snhttp.experimental.openssl._libbio
 
 import scala.scalanative.unsafe.*
-import scala.scalanative.libc.stdio
 import scala.scalanative.libc.stddef.size_t
 
+import _root_.snhttp.experimental.openssl._libbio.structs.*
+
 object aliases:
-
-  import _root_.snhttp.experimental.openssl._libbio.structs.*
-
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
@@ -16,14 +14,14 @@ object aliases:
   object BIO_callback_fn:
     given _tag: Tag[BIO_callback_fn] =
       Tag.materializeCFuncPtr6[Ptr[BIO], CInt, CString, CInt, CLongInt, CLongInt, CLongInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): BIO_callback_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): BIO_callback_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[BIO], CInt, CString, CInt, CLongInt, CLongInt, CLongInt],
     ): BIO_callback_fn = o
     extension (v: BIO_callback_fn)
       inline def value: CFuncPtr6[Ptr[BIO], CInt, CString, CInt, CLongInt, CLongInt, CLongInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -31,21 +29,43 @@ object aliases:
   opaque type BIO_callback_fn_ex =
     CFuncPtr8[Ptr[BIO], CInt, CString, size_t, CInt, CLongInt, CInt, Ptr[size_t], CLongInt]
   object BIO_callback_fn_ex:
+
     given _tag: Tag[BIO_callback_fn_ex] = Tag.materializeCFuncPtr8[Ptr[
       BIO,
     ], CInt, CString, size_t, CInt, CLongInt, CInt, Ptr[size_t], CLongInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): BIO_callback_fn_ex =
+
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): BIO_callback_fn_ex =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
+
     inline def apply(
-        inline o: CFuncPtr8[Ptr[BIO], CInt, CString, size_t, CInt, CLongInt, CInt, Ptr[
+        inline o: CFuncPtr8[
+          Ptr[BIO],
+          CInt,
+          CString,
           size_t,
-        ], CLongInt],
+          CInt,
+          CLongInt,
+          CInt,
+          Ptr[size_t],
+          CLongInt,
+        ],
     ): BIO_callback_fn_ex = o
+
     extension (v: BIO_callback_fn_ex)
-      inline def value: CFuncPtr8[Ptr[BIO], CInt, CString, size_t, CInt, CLongInt, CInt, Ptr[
+
+      inline def value: CFuncPtr8[
+        Ptr[BIO],
+        CInt,
+        CString,
         size_t,
-      ], CLongInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+        CInt,
+        CLongInt,
+        CInt,
+        Ptr[size_t],
+        CLongInt,
+      ] = v
+
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -55,14 +75,14 @@ object aliases:
   object BIO_dgram_sctp_notification_handler_fn:
     given _tag: Tag[BIO_dgram_sctp_notification_handler_fn] =
       Tag.materializeCFuncPtr3[Ptr[BIO], Ptr[Byte], Ptr[Byte], Unit]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): BIO_dgram_sctp_notification_handler_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): BIO_dgram_sctp_notification_handler_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr3[Ptr[BIO], Ptr[Byte], Ptr[Byte], Unit],
     ): BIO_dgram_sctp_notification_handler_fn = o
     extension (v: BIO_dgram_sctp_notification_handler_fn)
       inline def value: CFuncPtr3[Ptr[BIO], Ptr[Byte], Ptr[Byte], Unit] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -72,12 +92,6 @@ object aliases:
     given _tag: Tag[BIO_info_cb] = Tag.materializeCFuncPtr3[Ptr[BIO], CInt, CInt, CInt]
     inline def apply(inline o: CFuncPtr3[Ptr[BIO], CInt, CInt, CInt]): BIO_info_cb = o
     extension (v: BIO_info_cb) inline def value: CFuncPtr3[Ptr[BIO], CInt, CInt, CInt] = v
-
-  type FILE = stdio.FILE
-  object FILE:
-    val _tag: Tag[FILE] = summon[Tag[stdio.FILE]]
-    inline def apply(inline o: stdio.FILE): FILE = o
-    extension (v: FILE) inline def value: stdio.FILE = v
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h

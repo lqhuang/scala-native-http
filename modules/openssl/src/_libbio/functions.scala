@@ -3,6 +3,7 @@ package snhttp.experimental.openssl._libbio
 import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.*
 import scala.scalanative.libc.stddef.size_t
+import scala.scalanative.libc.stdio.FILE
 import scala.scalanative.posix.sys.types.time_t
 
 import _root_.snhttp.experimental.openssl._libbio.aliases.*

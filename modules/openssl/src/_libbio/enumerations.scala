@@ -5,6 +5,7 @@ import _root_.scala.scalanative.unsafe.*
 import _root_.scala.scalanative.unsigned.*
 
 object enumerations:
+
   private[enumerations] trait _BindgenEnumCUnsignedInt[T](using eq: T =:= CUnsignedInt):
     given Tag[T] = Tag.UInt.asInstanceOf[Tag[T]]
     extension (inline t: T)
@@ -41,7 +42,6 @@ object enumerations:
         case BIO_PARSE_PRIO_HOST => Some("BIO_PARSE_PRIO_HOST")
         case BIO_PARSE_PRIO_SERV => Some("BIO_PARSE_PRIO_SERV")
         case _                   => _root_.scala.None
-
     extension (a: BIO_hostserv_priorities)
       inline def &(b: BIO_hostserv_priorities): BIO_hostserv_priorities = a & b
       inline def |(b: BIO_hostserv_priorities): BIO_hostserv_priorities = a | b

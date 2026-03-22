@@ -1,12 +1,13 @@
 package snhttp.experimental.openssl._libbio
 
+import scala.annotation.targetName
 import scala.scalanative.unsafe.*
 import scala.scalanative.libc.stddef.size_t
 
-object structs:
+import _root_.snhttp.experimental.openssl._libbio.aliases.{uint32_t, uint64_t, uintptr_t}
+import _root_.snhttp.experimental.openssl._libbio.unions.BIO_ADDR
 
-  import _root_.snhttp.experimental.openssl._libbio.aliases.{uint32_t, uint64_t, uintptr_t}
-  import _root_.snhttp.experimental.openssl._libbio.unions.BIO_ADDR
+object structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h
@@ -43,7 +44,8 @@ object structs:
 
     // Allocates BIO_MMSG_CB_ARGS on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[BIO_MMSG_CB_ARGS] =
-      scala.scalanative.unsafe.alloc[BIO_MMSG_CB_ARGS](1)
+      alloc[BIO_MMSG_CB_ARGS](1)
+
     def apply(
         msg: Ptr[BIO_MSG],
         stride: size_t,
@@ -81,7 +83,8 @@ object structs:
       Tag.materializeCStruct5Tag[Ptr[Byte], size_t, Ptr[BIO_ADDR], Ptr[BIO_ADDR], uint64_t]
 
     // Allocates BIO_MSG on the heap – fields are not initalised or zeroed out
-    def apply()(using Zone): Ptr[BIO_MSG] = scala.scalanative.unsafe.alloc[BIO_MSG](1)
+    def apply()(using Zone): Ptr[BIO_MSG] = alloc[BIO_MSG](1)
+
     def apply(
         data: Ptr[Byte],
         data_len: size_t,
@@ -120,7 +123,7 @@ object structs:
 
     // Allocates BIO_POLL_DESCRIPTOR on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[BIO_POLL_DESCRIPTOR] =
-      scala.scalanative.unsafe.alloc[BIO_POLL_DESCRIPTOR](1)
+      alloc[BIO_POLL_DESCRIPTOR](1)
     def apply(`type`: uint32_t, value: BIO_POLL_DESCRIPTOR.Value)(using
         Zone,
     ): Ptr[BIO_POLL_DESCRIPTOR] =
@@ -143,33 +146,33 @@ object structs:
       given _tag: Tag[Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
       def apply()(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         ___ptr
 
-      @scala.annotation.targetName("apply_fd")
+      @targetName("apply_fd")
       def apply(fd: CInt)(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[CInt]].update(0, fd)
         ___ptr
 
-      @scala.annotation.targetName("apply_custom")
+      @targetName("apply_custom")
       def apply(custom: Ptr[Byte])(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[Ptr[Byte]]].update(0, custom)
         ___ptr
 
-      @scala.annotation.targetName("apply_custom_ui")
+      @targetName("apply_custom_ui")
       def apply(custom_ui: uintptr_t)(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[uintptr_t]].update(0, custom_ui)
         ___ptr
 
-      @scala.annotation.targetName("apply_ssl")
+      @targetName("apply_ssl")
       def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
         ___ptr
@@ -235,7 +238,8 @@ object structs:
 
     // Allocates bio_mmsg_cb_args_st on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[bio_mmsg_cb_args_st] =
-      scala.scalanative.unsafe.alloc[bio_mmsg_cb_args_st](1)
+      alloc[bio_mmsg_cb_args_st](1)
+
     def apply(
         msg: Ptr[BIO_MSG],
         stride: size_t,
@@ -273,7 +277,8 @@ object structs:
       Tag.materializeCStruct5Tag[Ptr[Byte], size_t, Ptr[BIO_ADDR], Ptr[BIO_ADDR], uint64_t]
 
     // Allocates bio_msg_st on the heap – fields are not initalised or zeroed out
-    def apply()(using Zone): Ptr[bio_msg_st] = scala.scalanative.unsafe.alloc[bio_msg_st](1)
+    def apply()(using Zone): Ptr[bio_msg_st] = alloc[bio_msg_st](1)
+
     def apply(
         data: Ptr[Byte],
         data_len: size_t,
@@ -312,7 +317,8 @@ object structs:
 
     // Allocates bio_poll_descriptor_st on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[bio_poll_descriptor_st] =
-      scala.scalanative.unsafe.alloc[bio_poll_descriptor_st](1)
+      alloc[bio_poll_descriptor_st](1)
+
     def apply(`type`: uint32_t, value: bio_poll_descriptor_st.Value)(using
         Zone,
     ): Ptr[bio_poll_descriptor_st] =
@@ -335,33 +341,33 @@ object structs:
       given _tag: Tag[Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
       def apply()(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         ___ptr
 
-      @scala.annotation.targetName("apply_fd")
+      @targetName("apply_fd")
       def apply(fd: CInt)(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[CInt]].update(0, fd)
         ___ptr
 
-      @scala.annotation.targetName("apply_custom")
+      @targetName("apply_custom")
       def apply(custom: Ptr[Byte])(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[Ptr[Byte]]].update(0, custom)
         ___ptr
 
-      @scala.annotation.targetName("apply_custom_ui")
+      @targetName("apply_custom_ui")
       def apply(custom_ui: uintptr_t)(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[uintptr_t]].update(0, custom_ui)
         ___ptr
 
-      @scala.annotation.targetName("apply_ssl")
+      @targetName("apply_ssl")
       def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
-        val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
+        val ___ptr = alloc[Value](1)
         val un = !___ptr
         un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
         ___ptr
