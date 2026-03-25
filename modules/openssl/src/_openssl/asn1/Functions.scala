@@ -1,32 +1,20 @@
-package snhttp.experimental.openssl._libasn1
+package snhttp.experimental.openssl
+package _openssl.asn1
 
-import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.*
-import scala.scalanative.unsigned.ULong
-import scala.scalanative.libc.stddef.size_t
-import scala.scalanative.libc.stdio.FILE
-import scala.scalanative.posix.sys.types.time_t
-import scala.scalanative.posix.time.tm
 
-import _root_.snhttp.experimental.openssl._libasn1.aliases.*
-import _root_.snhttp.experimental.openssl._libasn1.structs.*
-import _root_.snhttp.experimental.openssl._libbio.structs.BIO
+import _root_.snhttp.experimental.openssl._common.{size_t, int64_t, FILE, tm, uint64_t, time_t}
+import _root_.snhttp.experimental.openssl._openssl.bio.Structs.{BIO, BIO_METHOD}
+import _root_.snhttp.experimental.openssl._openssl.types.{BIGNUM, EVP_PKEY, OSSL_LIB_CTX, EVP_MD}
+import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_X509_ALGOR
+import _root_.snhttp.experimental.openssl._openssl.conf.Types.CONF
+import _root_.snhttp.experimental.openssl._openssl.x509.Types.X509_ALGOR
+import _root_.snhttp.experimental.openssl._openssl.x509v3.Types.X509V3_CTX
 
-object functions:
-
-  @link("libssl")
-  @extern
-  private object ASN1FunctionsWindows extends functions
-
-  @link("ssl")
-  @extern
-  private object ASN1FunctionsUnix extends functions
-
-  private val _functions = if isWindows then ASN1FunctionsWindows else ASN1FunctionsUnix
-  export _functions.*
+import Types.*
 
 @extern
-trait functions:
+trait Functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
@@ -89,7 +77,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
-  @extern def ASN1_ENUMERATED_get_int64(pr: Ptr[Long], a: Ptr[ASN1_ENUMERATED]): CInt = extern
+  @extern def ASN1_ENUMERATED_get_int64(pr: Ptr[int64_t], a: Ptr[ASN1_ENUMERATED]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
@@ -99,7 +87,7 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
-  @extern def ASN1_ENUMERATED_set_int64(a: Ptr[ASN1_ENUMERATED], r: Long): CInt = extern
+  @extern def ASN1_ENUMERATED_set_int64(a: Ptr[ASN1_ENUMERATED], r: int64_t): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
@@ -153,12 +141,12 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
-  @extern def ASN1_INTEGER_get_int64(pr: Ptr[Long], a: Ptr[ASN1_INTEGER]): CInt = extern
+  @extern def ASN1_INTEGER_get_int64(pr: Ptr[int64_t], a: Ptr[ASN1_INTEGER]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
-  @extern def ASN1_INTEGER_get_uint64(pr: Ptr[ULong], a: Ptr[ASN1_INTEGER]): CInt = extern
+  @extern def ASN1_INTEGER_get_uint64(pr: Ptr[uint64_t], a: Ptr[ASN1_INTEGER]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
@@ -168,12 +156,12 @@ trait functions:
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
-  @extern def ASN1_INTEGER_set_int64(a: Ptr[ASN1_INTEGER], r: Long): CInt = extern
+  @extern def ASN1_INTEGER_set_int64(a: Ptr[ASN1_INTEGER], r: int64_t): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
-  @extern def ASN1_INTEGER_set_uint64(a: Ptr[ASN1_INTEGER], r: ULong): CInt = extern
+  @extern def ASN1_INTEGER_set_uint64(a: Ptr[ASN1_INTEGER], r: uint64_t): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
@@ -1178,5 +1166,3 @@ trait functions:
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
   @extern def i2t_ASN1_OBJECT(buf: CString, buf_len: CInt, a: Ptr[ASN1_OBJECT]): CInt = extern
-
-end functions

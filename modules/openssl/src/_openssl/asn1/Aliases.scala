@@ -1,11 +1,20 @@
-package snhttp.experimental.openssl._libasn1
+package snhttp.experimental.openssl
+package _openssl.asn1
 
 import scala.scalanative.unsafe.*
-import scala.scalanative.unsigned.ULong
 
-import _root_.snhttp.experimental.openssl._libasn1.structs.ASN1_ITEM
+import _root_.snhttp.experimental.openssl._openssl.asn1.Structs.ASN1_ITEM
 
-object aliases:
+object Aliases:
+
+  /**
+   * [bindgen] header: /usr/include/openssl/types.h
+   */
+  opaque type ASN1_NULL = CInt
+  object ASN1_NULL:
+    given _tag: Tag[ASN1_NULL] = Tag.Int
+    inline def apply(inline o: CInt): ASN1_NULL = o
+    extension (v: ASN1_NULL) inline def value: CInt = v
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

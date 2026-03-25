@@ -1,28 +1,16 @@
-package snhttp.experimental.openssl._libssl
+package snhttp.experimental.openssl
+package _openssl.ssl
 
 import scala.scalanative.unsafe.*
-import scala.scalanative.unsigned.*
-import scala.scalanative.libc.stdio
-import scala.scalanative.libc.stddef.size_t
-import scala.scalanative.posix.sys.types.{off_t, ssize_t}
-import scala.scalanative.posix.sys.types.time_t
-import scala.scalanative.posix.sys.time.timeval
 
-object aliases:
+import _root_.snhttp.experimental.openssl._common.size_t
+import _root_.snhttp.experimental.openssl._openssl.types.EVP_MD
+import _root_.snhttp.experimental.openssl._openssl.safestack.{stack_st_SCT, stack_st_SSL_CIPHER}
+import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_STORE_CTX}
 
-  import _root_.snhttp.experimental.openssl._libssl.structs.{
-    ssl_st,
-    EVP_MD,
-    SSL,
-    SSL_CIPHER,
-    SSL_CTX,
-    SSL_SESSION,
-    X509,
-    X509_STORE_CTX,
-    CT_POLICY_EVAL_CTX,
-    stack_st_SCT,
-    stack_st_SSL_CIPHER,
-  }
+import Structs.{ssl_st, SSL, SSL_CIPHER, SSL_CTX, SSL_SESSION, CT_POLICY_EVAL_CTX}
+
+object Aliases:
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -30,18 +18,12 @@ object aliases:
   opaque type DTLS_timer_cb = CFuncPtr2[Ptr[SSL], CUnsignedInt, CUnsignedInt]
   object DTLS_timer_cb:
     given _tag: Tag[DTLS_timer_cb] = Tag.materializeCFuncPtr2[Ptr[SSL], CUnsignedInt, CUnsignedInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): DTLS_timer_cb =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): DTLS_timer_cb =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(inline o: CFuncPtr2[Ptr[SSL], CUnsignedInt, CUnsignedInt]): DTLS_timer_cb = o
     extension (v: DTLS_timer_cb)
       inline def value: CFuncPtr2[Ptr[SSL], CUnsignedInt, CUnsignedInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
-
-  type FILE = stdio.FILE
-  object FILE:
-    val _tag: Tag[FILE] = summon[Tag[stdio.FILE]]
-    inline def apply(inline o: stdio.FILE): FILE = o
-    extension (v: FILE) inline def value: stdio.FILE = v
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -50,14 +32,14 @@ object aliases:
   object GEN_SESSION_CB:
     given _tag: Tag[GEN_SESSION_CB] =
       Tag.materializeCFuncPtr3[Ptr[SSL], Ptr[CUnsignedChar], Ptr[CUnsignedInt], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): GEN_SESSION_CB =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): GEN_SESSION_CB =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr3[Ptr[SSL], Ptr[CUnsignedChar], Ptr[CUnsignedInt], CInt],
     ): GEN_SESSION_CB = o
     extension (v: GEN_SESSION_CB)
       inline def value: CFuncPtr3[Ptr[SSL], Ptr[CUnsignedChar], Ptr[CUnsignedInt], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -69,7 +51,7 @@ object aliases:
     given _tag: Tag[SSL_CTX_alpn_select_cb_func] = Tag.materializeCFuncPtr6[Ptr[SSL], Ptr[
       Ptr[CUnsignedChar],
     ], Ptr[CUnsignedChar], Ptr[CUnsignedChar], CUnsignedInt, Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_CTX_alpn_select_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_CTX_alpn_select_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedChar], Ptr[
@@ -80,7 +62,7 @@ object aliases:
       inline def value: CFuncPtr6[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedChar], Ptr[
         CUnsignedChar,
       ], CUnsignedInt, Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -92,7 +74,7 @@ object aliases:
     given _tag: Tag[SSL_CTX_decrypt_session_ticket_fn] = Tag.materializeCFuncPtr6[Ptr[SSL], Ptr[
       SSL_SESSION,
     ], Ptr[CUnsignedChar], size_t, SSL_TICKET_STATUS, Ptr[Byte], SSL_TICKET_RETURN]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_CTX_decrypt_session_ticket_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_CTX_decrypt_session_ticket_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], Ptr[SSL_SESSION], Ptr[
@@ -103,7 +85,7 @@ object aliases:
       inline def value: CFuncPtr6[Ptr[SSL], Ptr[SSL_SESSION], Ptr[
         CUnsignedChar,
       ], size_t, SSL_TICKET_STATUS, Ptr[Byte], SSL_TICKET_RETURN] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -112,14 +94,14 @@ object aliases:
   object SSL_CTX_generate_session_ticket_fn:
     given _tag: Tag[SSL_CTX_generate_session_ticket_fn] =
       Tag.materializeCFuncPtr2[Ptr[SSL], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_CTX_generate_session_ticket_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_CTX_generate_session_ticket_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt],
     ): SSL_CTX_generate_session_ticket_fn = o
     extension (v: SSL_CTX_generate_session_ticket_fn)
       inline def value: CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -127,12 +109,12 @@ object aliases:
   opaque type SSL_CTX_keylog_cb_func = CFuncPtr2[Ptr[SSL], CString, Unit]
   object SSL_CTX_keylog_cb_func:
     given _tag: Tag[SSL_CTX_keylog_cb_func] = Tag.materializeCFuncPtr2[Ptr[SSL], CString, Unit]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_CTX_keylog_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_CTX_keylog_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(inline o: CFuncPtr2[Ptr[SSL], CString, Unit]): SSL_CTX_keylog_cb_func = o
     extension (v: SSL_CTX_keylog_cb_func)
       inline def value: CFuncPtr2[Ptr[SSL], CString, Unit] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -143,7 +125,7 @@ object aliases:
     given _tag: Tag[SSL_CTX_npn_advertised_cb_func] =
       Tag
         .materializeCFuncPtr4[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedInt], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_CTX_npn_advertised_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_CTX_npn_advertised_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr4[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedInt], Ptr[Byte], CInt],
@@ -151,7 +133,7 @@ object aliases:
     extension (v: SSL_CTX_npn_advertised_cb_func)
       inline def value
           : CFuncPtr4[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedInt], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -163,7 +145,7 @@ object aliases:
     given _tag: Tag[SSL_CTX_npn_select_cb_func] = Tag.materializeCFuncPtr6[Ptr[SSL], Ptr[
       Ptr[CUnsignedChar],
     ], Ptr[CUnsignedChar], Ptr[CUnsignedChar], CUnsignedInt, Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_CTX_npn_select_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_CTX_npn_select_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedChar], Ptr[
@@ -174,7 +156,7 @@ object aliases:
       inline def value: CFuncPtr6[Ptr[SSL], Ptr[Ptr[CUnsignedChar]], Ptr[CUnsignedChar], Ptr[
         CUnsignedChar,
       ], CUnsignedInt, Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -201,12 +183,12 @@ object aliases:
   object SSL_allow_early_data_cb_fn:
     given _tag: Tag[SSL_allow_early_data_cb_fn] =
       Tag.materializeCFuncPtr2[Ptr[SSL], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_allow_early_data_cb_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_allow_early_data_cb_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(inline o: CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt]): SSL_allow_early_data_cb_fn = o
     extension (v: SSL_allow_early_data_cb_fn)
       inline def value: CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -214,12 +196,12 @@ object aliases:
   opaque type SSL_async_callback_fn = CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt]
   object SSL_async_callback_fn:
     given _tag: Tag[SSL_async_callback_fn] = Tag.materializeCFuncPtr2[Ptr[SSL], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_async_callback_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_async_callback_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(inline o: CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt]): SSL_async_callback_fn = o
     extension (v: SSL_async_callback_fn)
       inline def value: CFuncPtr2[Ptr[SSL], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -228,14 +210,14 @@ object aliases:
   object SSL_client_hello_cb_fn:
     given _tag: Tag[SSL_client_hello_cb_fn] =
       Tag.materializeCFuncPtr3[Ptr[SSL], Ptr[CInt], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_client_hello_cb_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_client_hello_cb_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr3[Ptr[SSL], Ptr[CInt], Ptr[Byte], CInt],
     ): SSL_client_hello_cb_fn = o
     extension (v: SSL_client_hello_cb_fn)
       inline def value: CFuncPtr3[Ptr[SSL], Ptr[CInt], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -248,7 +230,7 @@ object aliases:
       Tag.materializeCFuncPtr9[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[Ptr[CUnsignedChar]], Ptr[
         size_t,
       ], Ptr[X509], size_t, Ptr[CInt], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_custom_ext_add_cb_ex =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_custom_ext_add_cb_ex =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr9[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[Ptr[CUnsignedChar]], Ptr[
@@ -260,7 +242,7 @@ object aliases:
           : CFuncPtr9[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[Ptr[CUnsignedChar]], Ptr[
             size_t,
           ], Ptr[X509], size_t, Ptr[CInt], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -272,7 +254,7 @@ object aliases:
       .materializeCFuncPtr5[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[CUnsignedChar], Ptr[
         Byte,
       ], Unit]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_custom_ext_free_cb_ex =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_custom_ext_free_cb_ex =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr5[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[CUnsignedChar], Ptr[
@@ -282,7 +264,7 @@ object aliases:
     extension (v: SSL_custom_ext_free_cb_ex)
       inline def value
           : CFuncPtr5[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[CUnsignedChar], Ptr[Byte], Unit] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -296,7 +278,7 @@ object aliases:
         .materializeCFuncPtr9[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[CUnsignedChar], size_t, Ptr[
           X509,
         ], size_t, Ptr[CInt], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_custom_ext_parse_cb_ex =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_custom_ext_parse_cb_ex =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr9[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[CUnsignedChar], size_t, Ptr[
@@ -307,7 +289,7 @@ object aliases:
       inline def value: CFuncPtr9[Ptr[SSL], CUnsignedInt, CUnsignedInt, Ptr[
         CUnsignedChar,
       ], size_t, Ptr[X509], size_t, Ptr[CInt], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -316,14 +298,14 @@ object aliases:
   object SSL_new_pending_conn_cb_fn:
     given _tag: Tag[SSL_new_pending_conn_cb_fn] =
       Tag.materializeCFuncPtr3[Ptr[SSL_CTX], Ptr[SSL], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_new_pending_conn_cb_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_new_pending_conn_cb_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr3[Ptr[SSL_CTX], Ptr[SSL], Ptr[Byte], CInt],
     ): SSL_new_pending_conn_cb_fn = o
     extension (v: SSL_new_pending_conn_cb_fn)
       inline def value: CFuncPtr3[Ptr[SSL_CTX], Ptr[SSL], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -335,7 +317,7 @@ object aliases:
     given _tag: Tag[SSL_psk_client_cb_func] = Tag.materializeCFuncPtr6[Ptr[
       SSL,
     ], CString, CString, CUnsignedInt, Ptr[CUnsignedChar], CUnsignedInt, CUnsignedInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_psk_client_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_psk_client_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], CString, CString, CUnsignedInt, Ptr[
@@ -346,7 +328,7 @@ object aliases:
       inline def value: CFuncPtr6[Ptr[SSL], CString, CString, CUnsignedInt, Ptr[
         CUnsignedChar,
       ], CUnsignedInt, CUnsignedInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -356,7 +338,7 @@ object aliases:
   object SSL_psk_find_session_cb_func:
     given _tag: Tag[SSL_psk_find_session_cb_func] =
       Tag.materializeCFuncPtr4[Ptr[SSL], Ptr[CUnsignedChar], size_t, Ptr[Ptr[SSL_SESSION]], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_psk_find_session_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_psk_find_session_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr4[Ptr[SSL], Ptr[CUnsignedChar], size_t, Ptr[Ptr[SSL_SESSION]], CInt],
@@ -365,7 +347,7 @@ object aliases:
       inline def value
           : CFuncPtr4[Ptr[SSL], Ptr[CUnsignedChar], size_t, Ptr[Ptr[SSL_SESSION]], CInt] =
         v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -375,7 +357,7 @@ object aliases:
   object SSL_psk_server_cb_func:
     given _tag: Tag[SSL_psk_server_cb_func] =
       Tag.materializeCFuncPtr4[Ptr[SSL], CString, Ptr[CUnsignedChar], CUnsignedInt, CUnsignedInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_psk_server_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_psk_server_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr4[Ptr[SSL], CString, Ptr[CUnsignedChar], CUnsignedInt, CUnsignedInt],
@@ -384,7 +366,7 @@ object aliases:
       inline def value
           : CFuncPtr4[Ptr[SSL], CString, Ptr[CUnsignedChar], CUnsignedInt, CUnsignedInt] =
         v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -396,7 +378,7 @@ object aliases:
     given _tag: Tag[SSL_psk_use_session_cb_func] = Tag.materializeCFuncPtr5[Ptr[SSL], Ptr[
       EVP_MD,
     ], Ptr[Ptr[CUnsignedChar]], Ptr[size_t], Ptr[Ptr[SSL_SESSION]], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_psk_use_session_cb_func =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_psk_use_session_cb_func =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr5[Ptr[SSL], Ptr[EVP_MD], Ptr[Ptr[CUnsignedChar]], Ptr[size_t], Ptr[
@@ -407,7 +389,7 @@ object aliases:
       inline def value: CFuncPtr5[Ptr[SSL], Ptr[EVP_MD], Ptr[Ptr[CUnsignedChar]], Ptr[size_t], Ptr[
         Ptr[SSL_SESSION],
       ], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -415,12 +397,12 @@ object aliases:
   opaque type SSL_verify_cb = CFuncPtr2[CInt, Ptr[X509_STORE_CTX], CInt]
   object SSL_verify_cb:
     given _tag: Tag[SSL_verify_cb] = Tag.materializeCFuncPtr2[CInt, Ptr[X509_STORE_CTX], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): SSL_verify_cb =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): SSL_verify_cb =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(inline o: CFuncPtr2[CInt, Ptr[X509_STORE_CTX], CInt]): SSL_verify_cb = o
     extension (v: SSL_verify_cb)
       inline def value: CFuncPtr2[CInt, Ptr[X509_STORE_CTX], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -432,7 +414,7 @@ object aliases:
     given _tag: Tag[custom_ext_add_cb] = Tag.materializeCFuncPtr6[Ptr[SSL], CUnsignedInt, Ptr[
       Ptr[CUnsignedChar],
     ], Ptr[size_t], Ptr[CInt], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): custom_ext_add_cb =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): custom_ext_add_cb =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], CUnsignedInt, Ptr[Ptr[CUnsignedChar]], Ptr[size_t], Ptr[
@@ -443,7 +425,7 @@ object aliases:
       inline def value: CFuncPtr6[Ptr[SSL], CUnsignedInt, Ptr[Ptr[CUnsignedChar]], Ptr[size_t], Ptr[
         CInt,
       ], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -453,14 +435,14 @@ object aliases:
   object custom_ext_free_cb:
     given _tag: Tag[custom_ext_free_cb] =
       Tag.materializeCFuncPtr4[Ptr[SSL], CUnsignedInt, Ptr[CUnsignedChar], Ptr[Byte], Unit]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): custom_ext_free_cb =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): custom_ext_free_cb =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr4[Ptr[SSL], CUnsignedInt, Ptr[CUnsignedChar], Ptr[Byte], Unit],
     ): custom_ext_free_cb = o
     extension (v: custom_ext_free_cb)
       inline def value: CFuncPtr4[Ptr[SSL], CUnsignedInt, Ptr[CUnsignedChar], Ptr[Byte], Unit] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -471,7 +453,7 @@ object aliases:
     given _tag: Tag[custom_ext_parse_cb] = Tag.materializeCFuncPtr6[Ptr[SSL], CUnsignedInt, Ptr[
       CUnsignedChar,
     ], size_t, Ptr[CInt], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): custom_ext_parse_cb =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): custom_ext_parse_cb =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], CUnsignedInt, Ptr[CUnsignedChar], size_t, Ptr[CInt], Ptr[
@@ -483,7 +465,7 @@ object aliases:
           : CFuncPtr6[Ptr[SSL], CUnsignedInt, Ptr[CUnsignedChar], size_t, Ptr[CInt], Ptr[
             Byte,
           ], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h
@@ -513,14 +495,14 @@ object aliases:
   object ssl_ct_validation_cb:
     given _tag: Tag[ssl_ct_validation_cb] =
       Tag.materializeCFuncPtr3[Ptr[CT_POLICY_EVAL_CTX], Ptr[stack_st_SCT], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): ssl_ct_validation_cb =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): ssl_ct_validation_cb =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr3[Ptr[CT_POLICY_EVAL_CTX], Ptr[stack_st_SCT], Ptr[Byte], CInt],
     ): ssl_ct_validation_cb = o
     extension (v: ssl_ct_validation_cb)
       inline def value: CFuncPtr3[Ptr[CT_POLICY_EVAL_CTX], Ptr[stack_st_SCT], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -532,7 +514,7 @@ object aliases:
     given _tag: Tag[tls_session_secret_cb_fn] = Tag.materializeCFuncPtr6[Ptr[SSL], Ptr[Byte], Ptr[
       CInt,
     ], Ptr[stack_st_SSL_CIPHER], Ptr[Ptr[SSL_CIPHER]], Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): tls_session_secret_cb_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): tls_session_secret_cb_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr6[Ptr[SSL], Ptr[Byte], Ptr[CInt], Ptr[stack_st_SSL_CIPHER], Ptr[
@@ -543,7 +525,7 @@ object aliases:
       inline def value: CFuncPtr6[Ptr[SSL], Ptr[Byte], Ptr[CInt], Ptr[stack_st_SSL_CIPHER], Ptr[
         Ptr[SSL_CIPHER],
       ], Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -553,11 +535,11 @@ object aliases:
   object tls_session_ticket_ext_cb_fn:
     given _tag: Tag[tls_session_ticket_ext_cb_fn] =
       Tag.materializeCFuncPtr4[Ptr[SSL], Ptr[CUnsignedChar], CInt, Ptr[Byte], CInt]
-    inline def fromPtr(ptr: Ptr[Byte] | Ptr[?]): tls_session_ticket_ext_cb_fn =
+    inline def fromPtr(ptr: Ptr[Byte] | CVoidPtr): tls_session_ticket_ext_cb_fn =
       CFuncPtr.fromPtr(ptr.asInstanceOf[Ptr[Byte]])
     inline def apply(
         inline o: CFuncPtr4[Ptr[SSL], Ptr[CUnsignedChar], CInt, Ptr[Byte], CInt],
     ): tls_session_ticket_ext_cb_fn = o
     extension (v: tls_session_ticket_ext_cb_fn)
       inline def value: CFuncPtr4[Ptr[SSL], Ptr[CUnsignedChar], CInt, Ptr[Byte], CInt] = v
-      inline def toPtr: Ptr[?] = CFuncPtr.toPtr(v)
+      inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)

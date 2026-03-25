@@ -1,11 +1,12 @@
-package snhttp.experimental.openssl._libasn1
+package snhttp.experimental.openssl
+package _openssl.asn1
 
 import scala.annotation.targetName
 import scala.scalanative.unsafe.*
 
-import _root_.snhttp.experimental.openssl._libasn1.aliases.ASN1_BOOLEAN
+import Aliases.*
 
-object structs:
+object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h
@@ -17,7 +18,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_BIT_STRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -52,7 +53,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_BMPSTRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -85,7 +86,7 @@ object structs:
     given _tag: Tag[ASN1_ENCODING] = Tag.materializeCStruct3Tag[Ptr[CUnsignedChar], CLongInt, CInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_ENCODING)
         inline def enc: Ptr[CUnsignedChar] = struct._1
         inline def enc_=(value: Ptr[CUnsignedChar]): Unit = !struct.at1 = value
@@ -116,7 +117,7 @@ object structs:
       Tag.materializeCStruct3Tag[Ptr[CUnsignedChar], CLongInt, CInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_ENCODING_st)
         inline def enc: Ptr[CUnsignedChar] = struct._1
         inline def enc_=(value: Ptr[CUnsignedChar]): Unit = !struct.at1 = value
@@ -148,7 +149,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_ENUMERATED)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -183,7 +184,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_GENERALIZEDTIME)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -218,7 +219,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_GENERALSTRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -253,7 +254,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_IA5STRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -287,7 +288,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_INTEGER)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -337,7 +338,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_OCTET_STRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -380,7 +381,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_PRINTABLESTRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -431,7 +432,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_STRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -466,7 +467,7 @@ object structs:
       Tag.materializeCStruct5Tag[CInt, CLongInt, CLongInt, CUnsignedLongInt, CUnsignedLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_STRING_TABLE)
         inline def nid: CInt = struct._1
         inline def nid_=(value: CInt): Unit = !struct.at1 = value
@@ -508,7 +509,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_T61STRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -558,7 +559,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_TIME)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -607,7 +608,7 @@ object structs:
     given _tag: Tag[ASN1_TYPE] = Tag.materializeCStruct2Tag[CInt, ASN1_TYPE_Value]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_TYPE)
         inline def `type`: CInt = struct._1
         inline def type_=(value: CInt): Unit = !struct.at1 = value
@@ -631,152 +632,152 @@ object structs:
     given _tag: Tag[ASN1_TYPE_Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
     def apply()(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       ___ptr
 
     @targetName("apply_ptr")
     def apply(ptr: CString)(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[CString]].update(0, ptr)
       ___ptr
 
     @targetName("apply_boolean")
     def apply(boolean: ASN1_BOOLEAN)(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[ASN1_BOOLEAN]].update(0, boolean)
       ___ptr
 
     @targetName("apply_asn1_string")
     def apply(asn1_string: Ptr[ASN1_STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_STRING]]].update(0, asn1_string)
       ___ptr
 
     @targetName("apply_object")
     def apply(`object`: Ptr[ASN1_OBJECT])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_OBJECT]]].update(0, `object`)
       ___ptr
 
     @targetName("apply_integer")
     def apply(integer: Ptr[ASN1_INTEGER])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_INTEGER]]].update(0, integer)
       ___ptr
 
     @targetName("apply_enumerated")
     def apply(enumerated: Ptr[ASN1_ENUMERATED])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_ENUMERATED]]].update(0, enumerated)
       ___ptr
 
     @targetName("apply_bit_string")
     def apply(bit_string: Ptr[ASN1_BIT_STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_BIT_STRING]]].update(0, bit_string)
       ___ptr
 
     @targetName("apply_octet_string")
     def apply(octet_string: Ptr[ASN1_OCTET_STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_OCTET_STRING]]].update(0, octet_string)
       ___ptr
 
     @targetName("apply_printablestring")
     def apply(printablestring: Ptr[ASN1_PRINTABLESTRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_PRINTABLESTRING]]].update(0, printablestring)
       ___ptr
 
     @targetName("apply_t61string")
     def apply(t61string: Ptr[ASN1_T61STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_T61STRING]]].update(0, t61string)
       ___ptr
 
     @targetName("apply_ia5string")
     def apply(ia5string: Ptr[ASN1_IA5STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_IA5STRING]]].update(0, ia5string)
       ___ptr
 
     @targetName("apply_generalstring")
     def apply(generalstring: Ptr[ASN1_GENERALSTRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_GENERALSTRING]]].update(0, generalstring)
       ___ptr
 
     @targetName("apply_bmpstring")
     def apply(bmpstring: Ptr[ASN1_BMPSTRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_BMPSTRING]]].update(0, bmpstring)
       ___ptr
 
     @targetName("apply_universalstring")
     def apply(universalstring: Ptr[ASN1_UNIVERSALSTRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_UNIVERSALSTRING]]].update(0, universalstring)
       ___ptr
 
     @targetName("apply_utctime")
     def apply(utctime: Ptr[ASN1_UTCTIME])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_UTCTIME]]].update(0, utctime)
       ___ptr
 
     @targetName("apply_generalizedtime")
     def apply(generalizedtime: Ptr[ASN1_GENERALIZEDTIME])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_GENERALIZEDTIME]]].update(0, generalizedtime)
       ___ptr
 
     @targetName("apply_visiblestring")
     def apply(visiblestring: Ptr[ASN1_VISIBLESTRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_VISIBLESTRING]]].update(0, visiblestring)
       ___ptr
 
     @targetName("apply_utf8string")
     def apply(utf8string: Ptr[ASN1_UTF8STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_UTF8STRING]]].update(0, utf8string)
       ___ptr
 
     @targetName("apply_set")
     def apply(set: Ptr[ASN1_STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_STRING]]].update(0, set)
       ___ptr
 
     @targetName("apply_sequence")
     def apply(sequence: Ptr[ASN1_STRING])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_STRING]]].update(0, sequence)
       ___ptr
 
     @targetName("apply_asn1_value")
     def apply(asn1_value: Ptr[ASN1_VALUE])(using Zone): Ptr[ASN1_TYPE_Value] =
-      val ___ptr = alloc[ASN1_TYPE_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[ASN1_TYPE_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_VALUE]]].update(0, asn1_value)
       ___ptr
@@ -867,7 +868,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_UNIVERSALSTRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -902,7 +903,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_UTCTIME)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -936,7 +937,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_UTF8STRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -987,7 +988,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: ASN1_VISIBLESTRING)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -1013,30 +1014,6 @@ object structs:
       ____ptr
 
   /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type BIGNUM = CStruct0
-
-  object BIGNUM:
-    given _tag: Tag[BIGNUM] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type BIO = CStruct0
-
-  object BIO:
-    given _tag: Tag[BIO] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/bio.h
-   */
-  opaque type BIO_METHOD = CStruct0
-
-  object BIO_METHOD:
-    given _tag: Tag[BIO_METHOD] = Tag.materializeCStruct0Tag
-
-  /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
   opaque type BIT_STRING_BITNAME = CStruct3[CInt, CString, CString]
@@ -1045,7 +1022,7 @@ object structs:
     given _tag: Tag[BIT_STRING_BITNAME] = Tag.materializeCStruct3Tag[CInt, CString, CString]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: BIT_STRING_BITNAME)
         inline def bitnum: CInt = struct._1
         inline def bitnum_=(value: CInt): Unit = !struct.at1 = value
@@ -1074,7 +1051,7 @@ object structs:
     given _tag: Tag[BIT_STRING_BITNAME_st] = Tag.materializeCStruct3Tag[CInt, CString, CString]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: BIT_STRING_BITNAME_st)
         inline def bitnum: CInt = struct._1
         inline def bitnum_=(value: CInt): Unit = !struct.at1 = value
@@ -1097,54 +1074,6 @@ object structs:
       ____ptr
 
   /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type CONF = CStruct0
-
-  object CONF:
-    given _tag: Tag[CONF] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type EVP_MD = CStruct0
-
-  object EVP_MD:
-    given _tag: Tag[EVP_MD] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type EVP_PKEY = CStruct0
-
-  object EVP_PKEY:
-    given _tag: Tag[EVP_PKEY] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type OSSL_LIB_CTX = CStruct0
-
-  object OSSL_LIB_CTX:
-    given _tag: Tag[OSSL_LIB_CTX] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type X509V3_CTX = CStruct0
-
-  object X509V3_CTX:
-    given _tag: Tag[X509V3_CTX] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type X509_ALGOR = CStruct0
-
-  object X509_ALGOR:
-    given _tag: Tag[X509_ALGOR] = Tag.materializeCStruct0Tag
-
-  /**
    * [bindgen] header: /usr/include/openssl/asn1.h
    */
   opaque type asn1_string_st = CStruct4[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
@@ -1154,7 +1083,7 @@ object structs:
       Tag.materializeCStruct4Tag[CInt, CInt, Ptr[CUnsignedChar], CLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: asn1_string_st)
         inline def length: CInt = struct._1
         inline def length_=(value: CInt): Unit = !struct.at1 = value
@@ -1189,7 +1118,7 @@ object structs:
       Tag.materializeCStruct5Tag[CInt, CLongInt, CLongInt, CUnsignedLongInt, CUnsignedLongInt]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: asn1_string_table_st)
         inline def nid: CInt = struct._1
         inline def nid_=(value: CInt): Unit = !struct.at1 = value
@@ -1230,7 +1159,7 @@ object structs:
     given _tag: Tag[asn1_type_st] = Tag.materializeCStruct2Tag[CInt, asn1_type_st_Value]
 
     export fields.*
-    private[_libasn1] object fields:
+    private[asn1] object fields:
       extension (struct: asn1_type_st)
         inline def `type`: CInt = struct._1
         inline def type_=(value: CInt): Unit = !struct.at1 = value
@@ -1254,152 +1183,152 @@ object structs:
     given _tag: Tag[asn1_type_st_Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
 
     def apply()(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       ___ptr
 
     @targetName("apply_ptr")
     def apply(ptr: CString)(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[CString]].update(0, ptr)
       ___ptr
 
     @targetName("apply_boolean")
     def apply(boolean: ASN1_BOOLEAN)(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[ASN1_BOOLEAN]].update(0, boolean)
       ___ptr
 
     @targetName("apply_asn1_string")
     def apply(asn1_string: Ptr[ASN1_STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_STRING]]].update(0, asn1_string)
       ___ptr
 
     @targetName("apply_object")
     def apply(`object`: Ptr[ASN1_OBJECT])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_OBJECT]]].update(0, `object`)
       ___ptr
 
     @targetName("apply_integer")
     def apply(integer: Ptr[ASN1_INTEGER])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_INTEGER]]].update(0, integer)
       ___ptr
 
     @targetName("apply_enumerated")
     def apply(enumerated: Ptr[ASN1_ENUMERATED])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_ENUMERATED]]].update(0, enumerated)
       ___ptr
 
     @targetName("apply_bit_string")
     def apply(bit_string: Ptr[ASN1_BIT_STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_BIT_STRING]]].update(0, bit_string)
       ___ptr
 
     @targetName("apply_octet_string")
     def apply(octet_string: Ptr[ASN1_OCTET_STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_OCTET_STRING]]].update(0, octet_string)
       ___ptr
 
     @targetName("apply_printablestring")
     def apply(printablestring: Ptr[ASN1_PRINTABLESTRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_PRINTABLESTRING]]].update(0, printablestring)
       ___ptr
 
     @targetName("apply_t61string")
     def apply(t61string: Ptr[ASN1_T61STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_T61STRING]]].update(0, t61string)
       ___ptr
 
     @targetName("apply_ia5string")
     def apply(ia5string: Ptr[ASN1_IA5STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_IA5STRING]]].update(0, ia5string)
       ___ptr
 
     @targetName("apply_generalstring")
     def apply(generalstring: Ptr[ASN1_GENERALSTRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_GENERALSTRING]]].update(0, generalstring)
       ___ptr
 
     @targetName("apply_bmpstring")
     def apply(bmpstring: Ptr[ASN1_BMPSTRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_BMPSTRING]]].update(0, bmpstring)
       ___ptr
 
     @targetName("apply_universalstring")
     def apply(universalstring: Ptr[ASN1_UNIVERSALSTRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_UNIVERSALSTRING]]].update(0, universalstring)
       ___ptr
 
     @targetName("apply_utctime")
     def apply(utctime: Ptr[ASN1_UTCTIME])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_UTCTIME]]].update(0, utctime)
       ___ptr
 
     @targetName("apply_generalizedtime")
     def apply(generalizedtime: Ptr[ASN1_GENERALIZEDTIME])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_GENERALIZEDTIME]]].update(0, generalizedtime)
       ___ptr
 
     @targetName("apply_visiblestring")
     def apply(visiblestring: Ptr[ASN1_VISIBLESTRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_VISIBLESTRING]]].update(0, visiblestring)
       ___ptr
 
     @targetName("apply_utf8string")
     def apply(utf8string: Ptr[ASN1_UTF8STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_UTF8STRING]]].update(0, utf8string)
       ___ptr
 
     @targetName("apply_set")
     def apply(set: Ptr[ASN1_STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_STRING]]].update(0, set)
       ___ptr
 
     @targetName("apply_sequence")
     def apply(sequence: Ptr[ASN1_STRING])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_STRING]]].update(0, sequence)
       ___ptr
 
     @targetName("apply_asn1_value")
     def apply(asn1_value: Ptr[ASN1_VALUE])(using Zone): Ptr[asn1_type_st_Value] =
-      val ___ptr = alloc[asn1_type_st_Value](1)
+      val ___ptr = scala.scalanative.unsafe.alloc[asn1_type_st_Value](1)
       val un = !___ptr
       un.at(0).asInstanceOf[Ptr[Ptr[ASN1_VALUE]]].update(0, asn1_value)
       ___ptr
@@ -1479,11 +1408,3 @@ object structs:
       inline def asn1_value: Ptr[ASN1_VALUE] = !struct.at(0).asInstanceOf[Ptr[Ptr[ASN1_VALUE]]]
       inline def asn1_value_=(value: Ptr[ASN1_VALUE]): Unit =
         !struct.at(0).asInstanceOf[Ptr[Ptr[ASN1_VALUE]]] = value
-
-  /**
-   * [bindgen] header: /usr/include/openssl/asn1.h
-   */
-  opaque type stack_st_X509_ALGOR = CStruct0
-
-  object stack_st_X509_ALGOR:
-    given _tag: Tag[stack_st_X509_ALGOR] = Tag.materializeCStruct0Tag

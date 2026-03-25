@@ -1,119 +1,12 @@
-package snhttp.experimental.openssl._libssl
+package snhttp.experimental.openssl
+package _openssl.ssl
 
-import scala.annotation.targetName
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.*
 
-import _root_.snhttp.experimental.openssl.libbio.{BIO_ADDR, BIO_METHOD, BIO, BIO_POLL_DESCRIPTOR}
+import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO_POLL_DESCRIPTOR
 
-object structs:
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type BIGNUM = CStruct0
-
-  object BIGNUM:
-    given _tag: Tag[BIGNUM] = Tag.materializeCStruct0Tag
-
-  /**
-   * Notes:
-   *
-   * Remove these definitions for BIO related structs.
-   *
-   * Import them from bio package instead.
-   */
-
-  // /**
-  //  * [bindgen] header: /usr/include/openssl/types.h
-  //  */
-  // opaque type BIO = CStruct0
-
-  // object BIO:
-  //   given _tag: Tag[BIO] = Tag.materializeCStruct0Tag
-
-  // /**
-  //  * [bindgen] header: /usr/include/openssl/bio.h
-  //  */
-  // opaque type BIO_METHOD = CStruct0
-
-  // object BIO_METHOD:
-  //   given _tag: Tag[BIO_METHOD] = Tag.materializeCStruct0Tag
-
-  // /**
-  //  * [bindgen] header: /usr/include/openssl/bio.h
-  //  */
-  // opaque type BIO_POLL_DESCRIPTOR = CStruct2[UInt, BIO_POLL_DESCRIPTOR.Value]
-
-  // object BIO_POLL_DESCRIPTOR:
-  //   given _tag: Tag[BIO_POLL_DESCRIPTOR] =
-  //     Tag.materializeCStruct2Tag[UInt, BIO_POLL_DESCRIPTOR.Value]
-
-  //   // Allocates BIO_POLL_DESCRIPTOR on the heap – fields are not initalised or zeroed out
-  //   def apply()(using Zone): Ptr[BIO_POLL_DESCRIPTOR] =
-  //     scala.scalanative.unsafe.alloc[BIO_POLL_DESCRIPTOR](1)
-  //   def apply(`type`: UInt, value: BIO_POLL_DESCRIPTOR.Value)(using
-  //       Zone,
-  //   ): Ptr[BIO_POLL_DESCRIPTOR] =
-  //     val ____ptr = apply()
-  //     (!____ptr).`type` = `type`
-  //     (!____ptr).value = value
-  //     ____ptr
-
-  //   extension (struct: BIO_POLL_DESCRIPTOR)
-  //     def `type`: UInt = struct._1
-  //     def type_=(value: UInt): Unit = !struct.at1 = value
-  //     def value: BIO_POLL_DESCRIPTOR.Value = struct._2
-  //     def value_=(value: BIO_POLL_DESCRIPTOR.Value): Unit = !struct.at2 = value
-
-  // /**
-  //  * [bindgen] header: /usr/include/openssl/bio.h
-  //  */
-  // opaque type Value = CArray[Byte, Nat._8]
-  // object Value:
-  //   given _tag: Tag[Value] = Tag.CArray[CChar, Nat._8](Tag.Byte, Tag.Nat8)
-
-  //   def apply()(using Zone): Ptr[Value] =
-  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-  //     ___ptr
-
-  //   @targetName("apply_fd")
-  //   def apply(fd: CInt)(using Zone): Ptr[Value] =
-  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-  //     val un = !___ptr
-  //     un.at(0).asInstanceOf[Ptr[CInt]].update(0, fd)
-  //     ___ptr
-
-  //   @targetName("apply_custom")
-  //   def apply(custom: Ptr[Byte])(using Zone): Ptr[Value] =
-  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-  //     val un = !___ptr
-  //     un.at(0).asInstanceOf[Ptr[Ptr[Byte]]].update(0, custom)
-  //     ___ptr
-
-  //   @targetName("apply_custom_ui")
-  //   def apply(custom_ui: USize)(using Zone): Ptr[Value] =
-  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-  //     val un = !___ptr
-  //     un.at(0).asInstanceOf[Ptr[USize]].update(0, custom_ui)
-  //     ___ptr
-
-  //   @targetName("apply_ssl")
-  //   def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
-  //     val ___ptr = _root_.scala.scalanative.unsafe.alloc[Value](1)
-  //     val un = !___ptr
-  //     un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
-  //     ___ptr
-
-  //   extension (struct: Value)
-  //     def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
-  //     def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
-  //     def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
-  //     def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
-  //     def custom_ui: USize = !struct.at(0).asInstanceOf[Ptr[USize]]
-  //     def custom_ui_=(value: USize): Unit = !struct.at(0).asInstanceOf[Ptr[USize]] = value
-  //     def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
-  //     def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
+object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h
@@ -187,6 +80,15 @@ object structs:
   object OSSL_DISPATCH:
     given _tag: Tag[OSSL_DISPATCH] = Tag.materializeCStruct2Tag[CInt, CFuncPtr0[Unit]]
 
+    export fields.*
+    private[ssl] object fields:
+      extension (struct: OSSL_DISPATCH)
+        def function_id: CInt = struct._1
+        def function_id_=(value: CInt): Unit = !struct.at1 = value
+        def function: CFuncPtr0[Unit] = struct._2
+        def function_=(value: CFuncPtr0[Unit]): Unit = !struct.at2 = value
+      end extension
+
     // Allocates OSSL_DISPATCH on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[OSSL_DISPATCH] = scala.scalanative.unsafe.alloc[OSSL_DISPATCH](1)
     def apply(function_id: CInt, function: CFuncPtr0[Unit])(using Zone): Ptr[OSSL_DISPATCH] =
@@ -194,28 +96,6 @@ object structs:
       (!____ptr).function_id = function_id
       (!____ptr).function = function
       ____ptr
-
-    extension (struct: OSSL_DISPATCH)
-      def function_id: CInt = struct._1
-      def function_id_=(value: CInt): Unit = !struct.at1 = value
-      def function: CFuncPtr0[Unit] = struct._2
-      def function_=(value: CFuncPtr0[Unit]): Unit = !struct.at2 = value
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type OSSL_LIB_CTX = CStruct0
-
-  object OSSL_LIB_CTX:
-    given _tag: Tag[OSSL_LIB_CTX] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type RSA = CStruct0
-
-  object RSA:
-    given _tag: Tag[RSA] = Tag.materializeCStruct0Tag
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -225,6 +105,15 @@ object structs:
   object SRTP_PROTECTION_PROFILE:
     given _tag: Tag[SRTP_PROTECTION_PROFILE] = Tag.materializeCStruct2Tag[CString, CUnsignedLongInt]
 
+    export fields.*
+    private[ssl] object fields:
+      extension (struct: SRTP_PROTECTION_PROFILE)
+        inline def name: CString = struct._1
+        inline def name_=(value: CString): Unit = !struct.at1 = value
+        inline def id: CUnsignedLongInt = struct._2
+        inline def id_=(value: CUnsignedLongInt): Unit = !struct.at2 = value
+      end extension
+
     // Allocates SRTP_PROTECTION_PROFILE on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[SRTP_PROTECTION_PROFILE] =
       scala.scalanative.unsafe.alloc[SRTP_PROTECTION_PROFILE](1)
@@ -233,12 +122,6 @@ object structs:
       (!____ptr).name = name
       (!____ptr).id = id
       ____ptr
-
-    extension (struct: SRTP_PROTECTION_PROFILE)
-      def name: CString = struct._1
-      def name_=(value: CString): Unit = !struct.at1 = value
-      def id: CUnsignedLongInt = struct._2
-      def id_=(value: CUnsignedLongInt): Unit = !struct.at2 = value
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h
@@ -424,6 +307,15 @@ object structs:
   object TLS_SESSION_TICKET_EXT:
     given _tag: Tag[TLS_SESSION_TICKET_EXT] = Tag.materializeCStruct2Tag[CUnsignedShort, Ptr[Byte]]
 
+    export fields.*
+    private[_openssl] object fields:
+      extension (struct: TLS_SESSION_TICKET_EXT)
+        inline def length: CUnsignedShort = struct._1
+        inline def length_=(value: CUnsignedShort): Unit = !struct.at1 = value
+        inline def data: Ptr[Byte] = struct._2
+        inline def data_=(value: Ptr[Byte]): Unit = !struct.at2 = value
+      end extension
+
     // Allocates TLS_SESSION_TICKET_EXT on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[TLS_SESSION_TICKET_EXT] =
       scala.scalanative.unsafe.alloc[TLS_SESSION_TICKET_EXT](1)
@@ -433,12 +325,6 @@ object structs:
       (!____ptr).data = data
       ____ptr
 
-    extension (struct: TLS_SESSION_TICKET_EXT)
-      def length: CUnsignedShort = struct._1
-      def length_=(value: CUnsignedShort): Unit = !struct.at1 = value
-      def data: Ptr[Byte] = struct._2
-      def data_=(value: Ptr[Byte]): Unit = !struct.at2 = value
-
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
@@ -446,38 +332,6 @@ object structs:
 
   object TLS_SIGALGS:
     given _tag: Tag[TLS_SIGALGS] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type X509 = CStruct0
-
-  object X509:
-    given _tag: Tag[X509] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type X509_STORE = CStruct0
-
-  object X509_STORE:
-    given _tag: Tag[X509_STORE] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type X509_STORE_CTX = CStruct0
-
-  object X509_STORE_CTX:
-    given _tag: Tag[X509_STORE_CTX] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type X509_VERIFY_PARAM = CStruct0
-
-  object X509_VERIFY_PARAM:
-    given _tag: Tag[X509_VERIFY_PARAM] = Tag.materializeCStruct0Tag
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h
@@ -512,6 +366,15 @@ object structs:
     given _tag: Tag[srtp_protection_profile_st] =
       Tag.materializeCStruct2Tag[CString, CUnsignedLongInt]
 
+    export fields.*
+    private[_openssl] object fields:
+      extension (struct: srtp_protection_profile_st)
+        inline def name: CString = struct._1
+        inline def name_=(value: CString): Unit = !struct.at1 = value
+        inline def id: CUnsignedLongInt = struct._2
+        inline def id_=(value: CUnsignedLongInt): Unit = !struct.at2 = value
+      end extension
+
     // Allocates srtp_protection_profile_st on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[srtp_protection_profile_st] =
       scala.scalanative.unsafe.alloc[srtp_protection_profile_st](1)
@@ -521,12 +384,6 @@ object structs:
       (!____ptr).id = id
       ____ptr
 
-    extension (struct: srtp_protection_profile_st)
-      def name: CString = struct._1
-      def name_=(value: CString): Unit = !struct.at1 = value
-      def id: CUnsignedLongInt = struct._2
-      def id_=(value: CUnsignedLongInt): Unit = !struct.at2 = value
-
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
@@ -534,6 +391,14 @@ object structs:
 
   object ssl_cipher_st:
     given _tag: Tag[ssl_cipher_st] = Tag.materializeCStruct0Tag
+
+  /**
+   * [bindgen] header: /usr/include/openssl/ssl.h
+   */
+  opaque type ssl_comp_st = CStruct0
+
+  object ssl_comp_st:
+    given _tag: Tag[ssl_comp_st] = Tag.materializeCStruct0Tag
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
@@ -688,45 +553,45 @@ object structs:
       def quic_error_code: ULong = struct._1
       def quic_error_code_=(value: ULong): Unit = !struct.at1 = value
 
-  /**
-   * [bindgen] header: /usr/include/openssl/ct.h
-   */
-  opaque type stack_st_SCT = CStruct0
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/ct.h
+  //  */
+  // opaque type stack_st_SCT = CStruct0
 
-  object stack_st_SCT:
-    given _tag: Tag[stack_st_SCT] = Tag.materializeCStruct0Tag
+  // object stack_st_SCT:
+  //   given _tag: Tag[stack_st_SCT] = Tag.materializeCStruct0Tag
 
-  /**
-   * [bindgen] header: /usr/include/openssl/ssl.h
-   */
-  opaque type stack_st_SSL_CIPHER = CStruct0
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/ssl.h
+  //  */
+  // opaque type stack_st_SSL_CIPHER = CStruct0
 
-  object stack_st_SSL_CIPHER:
-    given _tag: Tag[stack_st_SSL_CIPHER] = Tag.materializeCStruct0Tag
+  // object stack_st_SSL_CIPHER:
+  //   given _tag: Tag[stack_st_SSL_CIPHER] = Tag.materializeCStruct0Tag
 
-  /**
-   * [bindgen] header: /usr/include/openssl/comp.h
-   */
-  opaque type stack_st_SSL_COMP = CStruct0
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/comp.h
+  //  */
+  // opaque type stack_st_SSL_COMP = CStruct0
 
-  object stack_st_SSL_COMP:
-    given _tag: Tag[stack_st_SSL_COMP] = Tag.materializeCStruct0Tag
+  // object stack_st_SSL_COMP:
+  //   given _tag: Tag[stack_st_SSL_COMP] = Tag.materializeCStruct0Tag
 
-  /**
-   * [bindgen] header: /usr/include/openssl/x509.h
-   */
-  opaque type stack_st_X509 = CStruct0
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/x509.h
+  //  */
+  // opaque type stack_st_X509 = CStruct0
 
-  object stack_st_X509:
-    given _tag: Tag[stack_st_X509] = Tag.materializeCStruct0Tag
+  // object stack_st_X509:
+  //   given _tag: Tag[stack_st_X509] = Tag.materializeCStruct0Tag
 
-  /**
-   * [bindgen] header: /usr/include/openssl/x509.h
-   */
-  opaque type stack_st_X509_NAME = CStruct0
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/x509.h
+  //  */
+  // opaque type stack_st_X509_NAME = CStruct0
 
-  object stack_st_X509_NAME:
-    given _tag: Tag[stack_st_X509_NAME] = Tag.materializeCStruct0Tag
+  // object stack_st_X509_NAME:
+  //   given _tag: Tag[stack_st_X509_NAME] = Tag.materializeCStruct0Tag
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

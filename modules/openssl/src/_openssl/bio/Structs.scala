@@ -1,13 +1,14 @@
-package snhttp.experimental.openssl._libbio
+package snhttp.experimental.openssl
+package _openssl.bio
 
 import scala.annotation.targetName
 import scala.scalanative.unsafe.*
-import scala.scalanative.libc.stddef.size_t
 
-import _root_.snhttp.experimental.openssl._libbio.aliases.{uint32_t, uint64_t, uintptr_t}
-import _root_.snhttp.experimental.openssl._libbio.unions.BIO_ADDR
+import _root_.snhttp.experimental.openssl._common.{size_t, uint32_t, uint64_t, uintptr_t}
 
-object structs:
+import Unions.*
+
+object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h
@@ -170,22 +171,22 @@ object structs:
         un.at(0).asInstanceOf[Ptr[uintptr_t]].update(0, custom_ui)
         ___ptr
 
-      @targetName("apply_ssl")
-      def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
-        val ___ptr = alloc[Value](1)
-        val un = !___ptr
-        un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
-        ___ptr
+      // @targetName("apply_ssl")
+      // def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
+      //   val ___ptr = alloc[Value](1)
+      //   val un = !___ptr
+      //   un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
+      //   ___ptr
 
-      extension (struct: Value)
-        def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
-        def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
-        def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
-        def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
-        def custom_ui: uintptr_t = !struct.at(0).asInstanceOf[Ptr[uintptr_t]]
-        def custom_ui_=(value: uintptr_t): Unit = !struct.at(0).asInstanceOf[Ptr[uintptr_t]] = value
-        def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
-        def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
+      // extension (struct: Value)
+      //   def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
+      //   def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
+      //   def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
+      //   def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
+      //   def custom_ui: uintptr_t = !struct.at(0).asInstanceOf[Ptr[uintptr_t]]
+      //   def custom_ui_=(value: uintptr_t): Unit = !struct.at(0).asInstanceOf[Ptr[uintptr_t]] = value
+      //   def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
+      //   def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
 
   /**
    * [bindgen] header: /usr/include/openssl/core.h
@@ -194,22 +195,6 @@ object structs:
 
   object OSSL_CORE_BIO:
     given _tag: Tag[OSSL_CORE_BIO] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type OSSL_LIB_CTX = CStruct0
-
-  object OSSL_LIB_CTX:
-    given _tag: Tag[OSSL_LIB_CTX] = Tag.materializeCStruct0Tag
-
-  /**
-   * [bindgen] header: /usr/include/openssl/types.h
-   */
-  opaque type SSL = CStruct0
-
-  object SSL:
-    given _tag: Tag[SSL] = Tag.materializeCStruct0Tag
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -365,22 +350,22 @@ object structs:
         un.at(0).asInstanceOf[Ptr[uintptr_t]].update(0, custom_ui)
         ___ptr
 
-      @targetName("apply_ssl")
-      def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
-        val ___ptr = alloc[Value](1)
-        val un = !___ptr
-        un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
-        ___ptr
+      // @targetName("apply_ssl")
+      // def apply(ssl: Ptr[SSL])(using Zone): Ptr[Value] =
+      //   val ___ptr = alloc[Value](1)
+      //   val un = !___ptr
+      //   un.at(0).asInstanceOf[Ptr[Ptr[SSL]]].update(0, ssl)
+      //   ___ptr
 
-      extension (struct: Value)
-        def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
-        def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
-        def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
-        def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
-        def custom_ui: uintptr_t = !struct.at(0).asInstanceOf[Ptr[uintptr_t]]
-        def custom_ui_=(value: uintptr_t): Unit = !struct.at(0).asInstanceOf[Ptr[uintptr_t]] = value
-        def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
-        def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
+      // extension (struct: Value)
+      //   def fd: CInt = !struct.at(0).asInstanceOf[Ptr[CInt]]
+      //   def fd_=(value: CInt): Unit = !struct.at(0).asInstanceOf[Ptr[CInt]] = value
+      //   def custom: Ptr[Byte] = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]]
+      //   def custom_=(value: Ptr[Byte]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[Byte]]] = value
+      //   def custom_ui: uintptr_t = !struct.at(0).asInstanceOf[Ptr[uintptr_t]]
+      //   def custom_ui_=(value: uintptr_t): Unit = !struct.at(0).asInstanceOf[Ptr[uintptr_t]] = value
+      //   def ssl: Ptr[SSL] = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]]
+      //   def ssl_=(value: Ptr[SSL]): Unit = !struct.at(0).asInstanceOf[Ptr[Ptr[SSL]]] = value
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h

@@ -1,11 +1,13 @@
-package snhttp.experimental.openssl._libbio
+package snhttp.experimental.openssl
+package _openssl.bio
 
 import scala.scalanative.unsafe.*
-import scala.scalanative.libc.stddef.size_t
 
-import _root_.snhttp.experimental.openssl._libbio.structs.*
+import _root_.snhttp.experimental.openssl._common.size_t
 
-object aliases:
+import Structs.*
+
+object Aliases:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
@@ -106,23 +108,11 @@ object aliases:
     extension (v: asn1_ps_func)
       inline def value: CFuncPtr4[Ptr[BIO], Ptr[Ptr[CUnsignedChar]], Ptr[CInt], Ptr[Byte], CInt] = v
 
-  type uint32_t = scala.scalanative.unsigned.UInt
-  object uint32_t:
-    val _tag: Tag[uint32_t] = summon[Tag[scala.scalanative.unsigned.UInt]]
-    inline def apply(inline o: scala.scalanative.unsigned.UInt): uint32_t = o
-    extension (v: uint32_t) inline def value: scala.scalanative.unsigned.UInt = v
-
-  type uint64_t = scala.scalanative.unsigned.ULong
-  object uint64_t:
-    val _tag: Tag[uint64_t] = summon[Tag[scala.scalanative.unsigned.ULong]]
-    inline def apply(inline o: scala.scalanative.unsigned.ULong): uint64_t = o
-    extension (v: uint64_t) inline def value: scala.scalanative.unsigned.ULong = v
-
-  /**
-   * [bindgen] header: /usr/include/stdint.h
-   */
-  opaque type uintptr_t = CUnsignedLongInt
-  object uintptr_t:
-    given _tag: Tag[uintptr_t] = Tag.USize
-    inline def apply(inline o: CUnsignedLongInt): uintptr_t = o
-    extension (v: uintptr_t) inline def value: CUnsignedLongInt = v
+  // /**
+  //  * [bindgen] header: /usr/include/openssl/bio.h
+  //  */
+  // type bio_info_cb = BIO_info_cb
+  // object bio_info_cb:
+  //   given _tag: Tag[bio_info_cb] = BIO_info_cb._tag
+  //   inline def apply(inline o: BIO_info_cb): bio_info_cb = o
+  //   extension (v: bio_info_cb) inline def value: BIO_info_cb = v

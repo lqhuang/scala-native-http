@@ -1,32 +1,13 @@
 // scalafmt: { maxColumn = 200, align.preset = most }
-package snhttp.experimental.openssl._libssl
+package snhttp.experimental.openssl
+package _openssl.ssl
 
 import scala.scalanative.unsafe.*
-import scala.scalanative.unsigned.*
+import scala.scalanative.unsigned.{ULong, UnsignedRichLong, UnsignedRichInt}
 
-object enumerations:
-  private[enumerations] trait _BindgenEnumCUnsignedInt[T](using eq: T =:= CUnsignedInt):
-    given Tag[T] = Tag.UInt.asInstanceOf[Tag[T]]
-    extension (inline t: T)
-      inline def value: CUnsignedInt = eq.apply(t)
-      inline def int: CInt           = eq.apply(t).toInt
-      inline def uint: CUnsignedInt  = eq.apply(t)
+import _root_.snhttp.experimental.openssl._internal.{_BindgenEnumCInt, _BindgenEnumCUnsignedInt, _BindgenEnumSize, _BindgenEnumULong}
 
-  private[enumerations] trait _BindgenEnumCInt[T](using eq: T =:= CInt):
-    given Tag[T] = Tag.Int.asInstanceOf[Tag[T]]
-    extension (inline t: T)
-      inline def value: CInt = eq.apply(t)
-      inline def int: CInt   = eq.apply(t).toInt
-
-  private[enumerations] trait _BindgenEnumSize[T](using eq: T =:= Size):
-    given Tag[T] = Tag.Size.asInstanceOf[Tag[T]]
-    extension (inline t: T)
-      inline def value: Size = eq.apply(t)
-      inline def long: Long  = eq.apply(t).toLong
-
-  private[enumerations] trait _BindgenEnumULong[T](using eq: T =:= ULong):
-    given Tag[T]                                    = Tag.ULong.asInstanceOf[Tag[T]]
-    extension (inline t: T) inline def value: ULong = eq.apply(t)
+object Enumerations:
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

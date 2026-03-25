@@ -1,7 +1,8 @@
-package snhttp.experimental.openssl._libssl
+package snhttp.experimental.openssl
+package _openssl.ssl
 
-import _root_.scala.scalanative.unsafe.*
-import _root_.scala.scalanative.unsigned.*
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.UnsignedRichInt
 
 object constants:
   val SSL_CT_VALIDATION_PERMISSIVE: CUnsignedInt = 0.toUInt
