@@ -1,4 +1,5 @@
 package snhttp.experimental.curl
+package curl
 
 import scala.util.Using.Releasable
 
@@ -6,14 +7,14 @@ import scala.scalanative.unsafe.{Ptr, CString, CInt, CLong, CFuncPtr}
 import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.libc.stddef.NULL
 
-import _root_.snhttp.experimental.libcurl.{
+import _root_.snhttp.experimental.curl.libcurl.{
   CurlOption,
   CurlErrCode,
   Curl as _Curl,
   CurlPause,
   CurlBlob as _CurlBlob,
 }
-import _root_.snhttp.experimental.libcurl
+import _root_.snhttp.experimental.curl.libcurl
 
 class CurlEasy(val ptr: Ptr[_Curl]) extends AnyVal:
 

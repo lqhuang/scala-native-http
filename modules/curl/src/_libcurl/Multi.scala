@@ -9,7 +9,8 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental._libcurl
+package snhttp.experimental.curl
+package _libcurl
 
 import scalanative.unsafe.alloc
 import scalanative.unsafe.{
@@ -27,10 +28,10 @@ import scalanative.unsafe.{
 }
 import scalanative.posix.stddef.size_t
 
-import snhttp.experimental._libcurl.curl.{Curl, CurlErrCode, CurlSocket}
-import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumCLong}
+import _root_.snhttp.experimental.curl._libcurl.Curl.{Curl, CurlErrCode, CurlSocket}
+import _root_.snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnumCLong}
 
-object multi:
+private[curl] object Multi:
 
   // known as "CURLM"
   opaque type CurlMulti = Unit // CVoidPtr

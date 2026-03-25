@@ -1,4 +1,5 @@
 package snhttp.experimental.curl
+package curl
 
 import scala.util.Using.Releasable
 
@@ -7,14 +8,14 @@ import scala.scalanative.unsigned.UInt
 import scala.scalanative.libc.stddef.NULL
 import scala.scalanative.posix.sys.select.fd_set
 
-import _root_.snhttp.experimental.libcurl.{
+import _root_.snhttp.experimental.curl.libcurl.{
   CurlMulti as _CurlMulti,
   CurlWaitFd as _CurlWaitFd,
   CurlMultiOption,
   CurlMultiCode,
   CurlSocket,
 }
-import _root_.snhttp.experimental.libcurl
+import _root_.snhttp.experimental.curl.libcurl
 
 class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
 

@@ -1,4 +1,5 @@
-package snhttp.experimental._libcurl
+package snhttp.experimental.curl
+package _libcurl
 
 import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.{Ptr, CString, CVoidPtr, CLong}
@@ -8,8 +9,8 @@ import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.posix.sys.select.fd_set
 
-import snhttp.experimental._libcurl.options.CurlEasyOption
-import snhttp.experimental._libcurl.curl.{
+import snhttp.experimental.curl._libcurl.Options.CurlEasyOption
+import snhttp.experimental.curl._libcurl.Curl.{
   CurlGlobalFlag,
   CurlErrCode,
   CurlOption,
@@ -22,8 +23,8 @@ import snhttp.experimental._libcurl.curl.{
   CurlPause,
   CurlSocket,
 }
-import snhttp.experimental._libcurl.header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
-import snhttp.experimental._libcurl.multi.{
+import snhttp.experimental.curl._libcurl.Header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
+import snhttp.experimental.curl._libcurl.Multi.{
   CurlMulti,
   CurlMultiCode,
   CurlWaitFd,
@@ -31,31 +32,12 @@ import snhttp.experimental._libcurl.multi.{
   CurlMultiOption,
   CurlPushHeaders,
 }
-import snhttp.experimental._libcurl.websockets.{CurlWsFrame, CurlWsSendFlag}
-import snhttp.experimental._libcurl.system.CurlOff
-
-object functions:
-
-  @link("libcurl")
-  @link("Crypt32")
-  @link("Secur32") // required after curl 8.15.0
-  @link("Iphlpapi") // required after curl 8.15.0
-  @link("zlib")
-  @link("libcrypto")
-  @link("libssl")
-  @extern
-  private object CurlFunctionsWindows extends functions
-
-  @link("curl")
-  @extern
-  private object CurlFunctionsUnix extends functions
-
-  private val _functions = if isWindows then CurlFunctionsWindows else CurlFunctionsUnix
-  export _functions.*
+import snhttp.experimental.curl._libcurl.Websockets.{CurlWsFrame, CurlWsSendFlag}
+import snhttp.experimental.curl._libcurl.System.CurlOff
 
 @define("CURL_NO_OLDIES") // deprecate all outdated
 @extern
-trait functions:
+trait Functions:
 
   /**
    * <curl/curl.h>
@@ -614,5 +596,3 @@ trait functions:
 
   @name("curl_ws_meta")
   def wsMeta(curl: Ptr[Curl]): Ptr[CurlWsFrame] = extern
-
-end functions

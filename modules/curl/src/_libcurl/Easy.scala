@@ -9,15 +9,16 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental._libcurl
+package snhttp.experimental.curl
+package _libcurl
 
 import scala.scalanative.unsafe.{Tag, CStruct2, CStruct3, Ptr}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t
 
-import snhttp.experimental._libcurl.internal._BindgenEnumUInt
+import _root_.snhttp.experimental.curl._internal._BindgenEnumUInt
 
-object easy:
+private[curl] object Easy:
 
   opaque type CurlBlobFlag = UInt
   given Tag[CurlBlobFlag] = Tag.UInt

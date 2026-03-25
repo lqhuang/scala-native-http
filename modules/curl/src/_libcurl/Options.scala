@@ -9,16 +9,17 @@
  *
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
-package snhttp.experimental._libcurl
+package snhttp.experimental.curl
+package _libcurl
 
 import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4}
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsigned.UInt
 
-import snhttp.experimental._libcurl.internal._BindgenEnumCInt
-import snhttp.experimental._libcurl.curl.CurlOption
+import snhttp.experimental.curl._internal._BindgenEnumCInt
+import snhttp.experimental.curl._libcurl.Curl.CurlOption
 
-object options:
+private[curl] object Options:
 
   // known as enum "curl_easytype"
   opaque type CurlEasyType = Int

@@ -10,17 +10,18 @@
  * Please follow the same order when adding or updating symbols and revise the commit hash.
  */
 
-package snhttp.experimental._libcurl
+package snhttp.experimental.curl
+package _libcurl
 
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CLong, UnsafeRichLong}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t
 
-import snhttp.experimental._libcurl.system.CurlOff
-import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumUInt, _BindgenEnumCLong}
+import snhttp.experimental.curl._libcurl.System.CurlOff
+import snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnumUInt, _BindgenEnumCLong}
 
-object websockets:
+private[curl] object Websockets:
 
   // known as "curl_ws_frame"
   opaque type CurlWsFrame = CStruct5[
