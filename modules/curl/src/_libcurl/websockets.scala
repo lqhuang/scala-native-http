@@ -13,11 +13,10 @@
 package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.alloc
-import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CVoidPtr, CLong, UnsafeRichLong}
+import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CLong, UnsafeRichLong}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t
 
-import snhttp.experimental._libcurl.curl.{Curl, CurlErrCode}
 import snhttp.experimental._libcurl.system.CurlOff
 import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumUInt, _BindgenEnumCLong}
 

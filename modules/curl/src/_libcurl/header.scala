@@ -12,25 +12,11 @@
 package snhttp.experimental._libcurl
 
 import scala.scalanative.unsafe.alloc
-import scala.scalanative.unsafe.{
-  Tag,
-  Ptr,
-  Zone,
-  CInt,
-  Size,
-  CString,
-  CStruct6,
-  CVoidPtr,
-  CLong,
-  CUnsignedInt,
-}
+import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct6}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
-import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
-import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
 
 import snhttp.experimental._libcurl.internal.{_BindgenEnumCInt, _BindgenEnumUInt}
-import snhttp.experimental._libcurl.curl.Curl
 
 object header:
 

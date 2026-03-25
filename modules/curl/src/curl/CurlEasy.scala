@@ -2,7 +2,7 @@ package snhttp.experimental.curl
 
 import scala.util.Using.Releasable
 
-import scala.scalanative.unsafe.{Ptr, Size, CString, CInt, CLong, CFuncPtr}
+import scala.scalanative.unsafe.{Ptr, CString, CInt, CLong, CFuncPtr}
 import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.libc.stddef.NULL
 

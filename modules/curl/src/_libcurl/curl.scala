@@ -11,7 +11,7 @@
  */
 package snhttp.experimental._libcurl
 
-import scala.scalanative.unsafe.{alloc, name, link, extern, define}
+import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsafe.{
   CFuncPtr2,
   CFuncPtr3,
@@ -35,9 +35,7 @@ import scala.scalanative.unsafe.{
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.posix.sys.socket
 import scala.scalanative.posix.sys.socket.{socklen_t, sockaddr}
-import scala.scalanative.posix.time.time_t
 
-import _root_.snhttp.experimental._libcurl.easy.CurlData
 import _root_.snhttp.experimental._libcurl.internal.{
   _BindgenEnumCInt,
   _BindgenEnumCLong,

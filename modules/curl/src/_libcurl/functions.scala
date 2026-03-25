@@ -2,7 +2,7 @@ package snhttp.experimental._libcurl
 
 import scala.scalanative.meta.LinktimeInfo.isWindows
 import scala.scalanative.unsafe.{Ptr, CString, CVoidPtr, CLong}
-import scala.scalanative.unsafe.{alloc, extern, name, link, define}
+import scala.scalanative.unsafe.{extern, name, link, define}
 import scala.scalanative.unsigned.UInt
 import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t

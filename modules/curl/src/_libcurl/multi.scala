@@ -23,7 +23,6 @@ import scalanative.unsafe.{
   CStruct3,
   CFuncPtr3,
   CFuncPtr5,
-  CVarArgList,
   UnsafeRichLong,
 }
 import scalanative.posix.stddef.size_t

@@ -11,7 +11,6 @@
  */
 package snhttp.experimental._libcurl
 
-import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsafe.{Tag, CStruct2, CStruct3, Ptr}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t

@@ -11,8 +11,7 @@
  */
 package snhttp.experimental._libcurl
 
-import scala.scalanative.posix.sys.socket
-import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4, CLong, UnsafeRichLong}
+import scala.scalanative.unsafe.{Tag, Ptr, Zone, CString, CStruct4}
 import scala.scalanative.unsafe.alloc
 import scala.scalanative.unsigned.UInt
 
