@@ -48,7 +48,7 @@ import _root_.snhttp.experimental.openssl._openssl.safestack.{
 import Structs.*
 
 @extern
-trait Functions:
+private[openssl] trait Functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/x509.h

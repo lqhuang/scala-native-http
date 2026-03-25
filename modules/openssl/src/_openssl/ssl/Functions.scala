@@ -70,22 +70,25 @@ trait MacroFunctions:
   // def sk_SSL_CIPHER_value(sk: Ptr[stack_st_SSL_CIPHER], idx: CInt): Ptr[SSL_CIPHER] =
   //   extern
 
-  @extern def snhttp_ossl_sk_SSL_CIPHER_num(sk: Ptr[stack_st_SSL_CIPHER]): CInt =
+  @extern
+  def snhttp_ossl_sk_SSL_CIPHER_num(sk: Ptr[stack_st_SSL_CIPHER]): CInt =
     extern
 
-  @extern def snhttp_ossl_sk_SSL_CIPHER_value(
+  @extern
+  def snhttp_ossl_sk_SSL_CIPHER_value(
       sk: Ptr[stack_st_SSL_CIPHER],
       idx: CInt,
   ): Ptr[SSL_CIPHER] =
     extern
 
-  @extern def snhttp_ossl_sk_SSL_CIPHER_free(sk: Ptr[stack_st_SSL_CIPHER]): Unit =
+  @extern
+  def snhttp_ossl_sk_SSL_CIPHER_free(sk: Ptr[stack_st_SSL_CIPHER]): Unit =
     extern
 
 end MacroFunctions
 
 @extern
-trait Functions extends MacroFunctions:
+private[openssl] trait Functions extends MacroFunctions:
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

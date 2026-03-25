@@ -14,7 +14,7 @@ import _root_.snhttp.experimental.openssl._openssl.x509v3.Types.X509V3_CTX
 import Types.*
 
 @extern
-trait Functions:
+private[openssl] trait Functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h

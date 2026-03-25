@@ -10,7 +10,7 @@ import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_STORE_
 
 import Structs.{ssl_st, SSL, SSL_CIPHER, SSL_CTX, SSL_SESSION, CT_POLICY_EVAL_CTX}
 
-object Aliases:
+private[openssl] object Aliases:
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

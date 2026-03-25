@@ -1,5 +1,5 @@
 package snhttp.experimental.openssl
 package _openssl.pkcs12
 
-object Types:
+private[openssl] object Types:
   export Structs.*

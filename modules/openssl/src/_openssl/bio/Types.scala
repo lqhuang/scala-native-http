@@ -1,7 +1,7 @@
 package snhttp.experimental.openssl
 package _openssl.bio
 
-object Types:
+private[openssl] object Types:
   export Aliases.*
   export Enumerations.*
   export Structs.*

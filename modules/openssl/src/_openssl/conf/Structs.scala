@@ -6,7 +6,7 @@ import scala.scalanative.unsafe.*
 import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO
 import _root_.snhttp.experimental.openssl._openssl.types.OSSL_LIB_CTX
 
-object Structs:
+private[openssl] object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/conf.h

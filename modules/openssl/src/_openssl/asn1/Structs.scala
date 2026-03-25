@@ -6,7 +6,7 @@ import scala.scalanative.unsafe.*
 
 import Aliases.*
 
-object Structs:
+private[openssl] object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/asn1.h

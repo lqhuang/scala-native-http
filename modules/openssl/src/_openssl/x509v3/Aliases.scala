@@ -9,7 +9,7 @@ import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_CONF_VALUE
 
 import Structs.{v3_ext_ctx, v3_ext_method}
 
-object Aliases:
+private[openssl] object Aliases:
 
   /**
    * [bindgen] header: /usr/include/openssl/x509v3.h

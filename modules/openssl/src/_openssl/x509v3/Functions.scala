@@ -44,7 +44,7 @@ import _root_.snhttp.experimental.openssl._common.{size_t, uint32_t, FILE}
 import Types.*
 
 @extern
-trait Functions:
+private[openssl] trait Functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/x509v3.h

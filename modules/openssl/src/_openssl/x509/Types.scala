@@ -1,5 +1,5 @@
 package snhttp.experimental.openssl
 package _openssl.x509
 
-object Types:
+private[openssl] object Types:
   export Structs.*

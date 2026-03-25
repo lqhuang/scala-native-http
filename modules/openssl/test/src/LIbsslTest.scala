@@ -1,10 +1,12 @@
-import scala.scalanative.unsafe.{Zone, CQuote, fromCString, Ptr}
+package test.snhttp.experimental.openssl
 
-import snhttp.experimental.openssl.libssl
+import scala.scalanative.unsafe.{Zone, CQuote, fromCString}
+
+import _root_.snhttp.experimental.openssl.libssl
 
 import utest.{TestSuite, Tests, test, assert}
 
-object LibcurlTest extends TestSuite:
+object LibsslTest extends TestSuite:
 
   given zone: Zone = Zone.open()
 
@@ -32,7 +34,6 @@ object LibcurlTest extends TestSuite:
           val cipherName = fromCString(libssl.SSL_CIPHER_get_name(cipher))
           assert(cipherName.nonEmpty)
         }
-      }
-      finally libssl.SSL_CTX_free(ssl)
+      } finally libssl.SSL_CTX_free(ssl)
 
     }

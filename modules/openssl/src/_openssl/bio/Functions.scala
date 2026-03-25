@@ -9,7 +9,7 @@ import _root_.snhttp.experimental.openssl._openssl.types.OSSL_LIB_CTX
 import Types.*
 
 @extern
-trait Functions:
+private[openssl] trait Functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h

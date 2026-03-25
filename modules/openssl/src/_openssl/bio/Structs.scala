@@ -8,7 +8,7 @@ import _root_.snhttp.experimental.openssl._common.{size_t, uint32_t, uint64_t, u
 
 import Unions.*
 
-object Structs:
+private[openssl] object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

@@ -6,7 +6,7 @@ import scala.scalanative.unsigned.*
 
 import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO_POLL_DESCRIPTOR
 
-object Structs:
+private[openssl] object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

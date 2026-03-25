@@ -30,7 +30,7 @@ import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO
 import Structs.{PKCS8_PRIV_KEY_INFO, PKCS12_SAFEBAG, PKCS12, PKCS7}
 
 @extern
-trait Functions:
+private[openssl] trait Functions:
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h

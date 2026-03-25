@@ -1,37 +1,37 @@
-/// Header bindings for OpenSSL <openssl/ssl.h>
-///
-/// References:
-///
-/// 1. https://github.com/openssl/openssl/blob/master/include/openssl/ssl.h.in
 package snhttp.experimental.openssl
 package libssl
 
 import scala.scalanative.meta.LinktimeInfo.isWindows
-import scala.scalanative.unsafe.*
+import scala.scalanative.unsafe.{extern, link}
 
-import _root_.snhttp.experimental.openssl._openssl.bio.Functions as BIOFunctions
-import _root_.snhttp.experimental.openssl._openssl.ssl.Functions as SSLFunctions
+import _root_.snhttp.experimental.openssl._openssl.bio.{
+  Functions as BIOFunctions,
+  FuncAliases as BIOFuncAliases,
+}
+import _root_.snhttp.experimental.openssl._openssl.ssl.{
+  Functions as SSLFunctions,
+  FuncAliases as SSLFuncAliases,
+}
 
 export _root_.snhttp.experimental.openssl._openssl.bio.Types.*
 export _root_.snhttp.experimental.openssl._openssl.ssl.Types.*
 
-private[libssl] object Functions:
+@extern
+private trait Functions extends BIOFunctions with SSLFunctions
 
-  @extern
-  trait Functions extends BIOFunctions with SSLFunctions
+@link("libssl")
+@link("libcrypto")
+@extern
+private object FunctionsWindows extends Functions
 
-  @link("libssl")
-  @link("libcrypto")
-  @extern
-  private object FunctionsWindows extends Functions
+@link("ssl")
+@link("crypto")
+@extern
+private object FunctionsUnix extends Functions
 
-  @link("ssl")
-  @link("crypto")
-  @extern
-  private object FunctionsUnix extends Functions
+private final val Funcs = if isWindows then FunctionsWindows else FunctionsUnix
 
-  val funcs = if isWindows then FunctionsWindows else FunctionsUnix
+private object FuncAliases extends BIOFuncAliases(Funcs) with SSLFuncAliases(Funcs)
 
-end Functions
-
-export Functions.funcs.*
+export Funcs.*
+export FuncAliases.*

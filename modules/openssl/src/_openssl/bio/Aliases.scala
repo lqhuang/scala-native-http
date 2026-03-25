@@ -7,7 +7,7 @@ import _root_.snhttp.experimental.openssl._common.size_t
 
 import Structs.*
 
-object Aliases:
+private[openssl] object Aliases:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */

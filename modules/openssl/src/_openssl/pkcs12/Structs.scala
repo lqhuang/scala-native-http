@@ -20,7 +20,7 @@ import _root_.snhttp.experimental.openssl._openssl.safestack.{
 import _root_.snhttp.experimental.openssl._openssl.types.{EVP_CIPHER, OSSL_LIB_CTX}
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.X509_ALGOR
 
-object Structs:
+private[openssl] object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h

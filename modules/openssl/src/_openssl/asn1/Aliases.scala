@@ -5,7 +5,7 @@ import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._openssl.asn1.Structs.ASN1_ITEM
 
-object Aliases:
+private[openssl] object Aliases:
 
   /**
    * [bindgen] header: /usr/include/openssl/types.h

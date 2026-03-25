@@ -17,7 +17,7 @@ import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_CRL, X
 
 import Aliases.*
 
-object Structs:
+private[openssl] object Structs:
 
   /**
    * [bindgen] header: /usr/include/openssl/x509v3.h
