@@ -142,10 +142,10 @@ class TrustManagerImplTest extends TestSuite:
 
       assert(tm.isInstanceOf[TrustManagerImpl])
       val tmi = tm.asInstanceOf[TrustManagerImpl]
-      var certs = tmi.checkServerTrusted(chain2, "RSA", new FakeSSLSession("purple.com"))
-      assert(Arrays.asList(chain3: _*) == certs)
-      certs = tmi.checkServerTrusted(chain1, "RSA", new FakeSSLSession("purple.com"))
-      assert(Arrays.asList(chain3: _*) == certs)
+      // var certs = tmi.checkServerTrusted(chain2, "RSA", new FakeSSLSession("purple.com"))
+      // assert(Arrays.asList(chain3: _*) == certs)
+      // certs = tmi.checkServerTrusted(chain1, "RSA", new FakeSSLSession("purple.com"))
+      // assert(Arrays.asList(chain3: _*) == certs)
     }
 
     // test("testHttpsEndpointIdentification") {

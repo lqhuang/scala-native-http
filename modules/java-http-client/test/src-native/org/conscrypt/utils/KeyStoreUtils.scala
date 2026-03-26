@@ -555,7 +555,7 @@ object KeyStoreUtils {
 
       if (subject == null) {
         subject = localhost()
-        addSubjectAltNameDnsName(LOCAL_HOST_NAME)
+        addSubjectAltNameDnsName(LOCAL_HOST_NAME): Unit
         addSubjectAltNameDnsName(LOCAL_HOST_NAME_IPV6): Unit
       }
 
