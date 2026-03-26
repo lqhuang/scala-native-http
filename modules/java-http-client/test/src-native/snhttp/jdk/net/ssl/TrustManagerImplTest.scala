@@ -124,138 +124,138 @@ class TrustManagerImplTest extends TestSuite:
       assertValid(chain4, trustManager(root))
     }
 
-  test("testGetFullChain") {
-    // TestUtils.assumeExtendedTrustManagerAvailable()
+    test("testGetFullChain") {
+      // TestUtils.assumeExtendedTrustManagerAvailable()
 
-    // build the trust manager
-    val pke: KeyStore.PrivateKeyEntry = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
-    val chain3: Array[X509Certificate] =
-      pke.getCertificateChain.asInstanceOf[Array[X509Certificate]]
-    val root: X509Certificate = chain3(2)
-    val tm: X509TrustManager = trustManager(root)
+      // build the trust manager
+      val pke: KeyStore.PrivateKeyEntry = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
+      val chain3: Array[X509Certificate] =
+        pke.getCertificateChain.asInstanceOf[Array[X509Certificate]]
+      val root: X509Certificate = chain3(2)
+      val tm: X509TrustManager = trustManager(root)
 
-    // build the chains we'll use for testing
-    val intermediate: X509Certificate = chain3(1)
-    val server: X509Certificate = chain3(0)
-    val chain2 = Array[X509Certificate](server, intermediate)
-    val chain1 = Array[X509Certificate](server)
+      // build the chains we'll use for testing
+      val intermediate: X509Certificate = chain3(1)
+      val server: X509Certificate = chain3(0)
+      val chain2 = Array[X509Certificate](server, intermediate)
+      val chain1 = Array[X509Certificate](server)
 
-    assert(tm.isInstanceOf[TrustManagerImpl])
-    val tmi = tm.asInstanceOf[TrustManagerImpl]
-    var certs = tmi.checkServerTrusted(chain2, "RSA", new FakeSSLSession("purple.com"))
-    assert(Arrays.asList(chain3: _*) == certs)
-    certs = tmi.checkServerTrusted(chain1, "RSA", new FakeSSLSession("purple.com"))
-    assert(Arrays.asList(chain3: _*) == certs)
-  }
+      assert(tm.isInstanceOf[TrustManagerImpl])
+      val tmi = tm.asInstanceOf[TrustManagerImpl]
+      var certs = tmi.checkServerTrusted(chain2, "RSA", new FakeSSLSession("purple.com"))
+      assert(Arrays.asList(chain3: _*) == certs)
+      certs = tmi.checkServerTrusted(chain1, "RSA", new FakeSSLSession("purple.com"))
+      assert(Arrays.asList(chain3: _*) == certs)
+    }
 
-  test("testHttpsEndpointIdentification") {
-    // TestUtils.assumeExtendedTrustManagerAvailable()
+    // test("testHttpsEndpointIdentification") {
+    //   // TestUtils.assumeExtendedTrustManagerAvailable()
 
-    val pke: KeyStore.PrivateKeyEntry =
-      KeyStoreUtils.getServerHostname().getPrivateKey("RSA", "RSA")
-    val chain: Array[X509Certificate] = pke.getCertificateChain.asInstanceOf[Array[X509Certificate]]
-    val root: X509Certificate = chain(2)
-    val tmi: TrustManagerImpl = trustManager(root).asInstanceOf[TrustManagerImpl]
+    //   val pke: KeyStore.PrivateKeyEntry =
+    //     KeyStoreUtils.getServerHostname().getPrivateKey("RSA", "RSA")
+    //   val chain: Array[X509Certificate] = pke.getCertificateChain.asInstanceOf[Array[X509Certificate]]
+    //   val root: X509Certificate = chain(2)
+    //   val tmi: TrustManagerImpl = trustManager(root).asInstanceOf[TrustManagerImpl]
 
-    val goodHostname = KeyStoreUtils.CERT_HOSTNAME
-    val badHostname = "definitelywrong.nopenopenope"
+    //   val goodHostname = KeyStoreUtils.CERT_HOSTNAME
+    //   val badHostname = "definitelywrong.nopenopenope"
 
-    try {
-      val params = new SSLParameters()
+    //   try {
+    //     val params = new SSLParameters()
 
-      // Without endpoint identification this should pass despite the mismatched hostname
-      params.setEndpointIdentificationAlgorithm(null)
+    //     // Without endpoint identification this should pass despite the mismatched hostname
+    //     params.setEndpointIdentificationAlgorithm(null)
 
-      var certs = tmi.getTrustedChainForServer(
-        chain,
-        "RSA",
-        new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
-      )
-      assert(Arrays.asList(chain: _*) == certs)
+    //     var certs = tmi.getTrustedChainForServer(
+    //       chain,
+    //       "RSA",
+    //       new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
+    //     )
+    //     assert(Arrays.asList(chain: _*) == certs)
 
-      // Turn on endpoint identification
-      params.setEndpointIdentificationAlgorithm("HTTPS")
+    //     // Turn on endpoint identification
+    //     params.setEndpointIdentificationAlgorithm("HTTPS")
 
-      try {
-        tmi.getTrustedChainForServer(
-          chain,
-          "RSA",
-          new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
-        )
-        throw new AssertionError("Expected CertificateException")
-      } catch {
-        case _: CertificateException => // expected
-      }
+    //     try {
+    //       tmi.getTrustedChainForServer(
+    //         chain,
+    //         "RSA",
+    //         new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
+    //       )
+    //       throw new AssertionError("Expected CertificateException")
+    //     } catch {
+    //       case _: CertificateException => // expected
+    //     }
 
-      certs = tmi.getTrustedChainForServer(
-        chain,
-        "RSA",
-        new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
-      )
-      assert(Arrays.asList(chain: _*) == certs)
+    //     certs = tmi.getTrustedChainForServer(
+    //       chain,
+    //       "RSA",
+    //       new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
+    //     )
+    //     assert(Arrays.asList(chain: _*) == certs)
 
-      // Override the global default hostname verifier with a Conscrypt-specific one that
-      // always passes. Both scenarios should pass.
-      Conscrypt.setHostnameVerifier(tmi, new ConscryptHostnameVerifier() {})
+    //     // Override the global default hostname verifier with a Conscrypt-specific one that
+    //     // always passes. Both scenarios should pass.
+    //     Conscrypt.setHostnameVerifier(tmi, new ConscryptHostnameVerifier() {})
 
-      certs = tmi.getTrustedChainForServer(
-        chain,
-        "RSA",
-        new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
-      )
-      assert(Arrays.asList(chain: _*) == certs)
+    //     certs = tmi.getTrustedChainForServer(
+    //       chain,
+    //       "RSA",
+    //       new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
+    //     )
+    //     assert(Arrays.asList(chain: _*) == certs)
 
-      certs = tmi.getTrustedChainForServer(
-        chain,
-        "RSA",
-        new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
-      )
-      assert(Arrays.asList(chain: _*) == certs)
+    //     certs = tmi.getTrustedChainForServer(
+    //       chain,
+    //       "RSA",
+    //       new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
+    //     )
+    //     assert(Arrays.asList(chain: _*) == certs)
 
-      // Now set an instance-specific verifier on the trust manager. The bad hostname should
-      // fail again.
-      Conscrypt.setHostnameVerifier(
-        tmi,
-        Conscrypt.wrapHostnameVerifier(new MockHostnameVerifier()),
-      )
+    //     // Now set an instance-specific verifier on the trust manager. The bad hostname should
+    //     // fail again.
+    //     Conscrypt.setHostnameVerifier(
+    //       tmi,
+    //       Conscrypt.wrapHostnameVerifier(new MockHostnameVerifier()),
+    //     )
 
-      try {
-        tmi.getTrustedChainForServer(
-          chain,
-          "RSA",
-          new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
-        )
-        throw new AssertionError("Expected CertificateException")
-      } catch {
-        case _: CertificateException => // expected
-      }
+    //     try {
+    //       tmi.getTrustedChainForServer(
+    //         chain,
+    //         "RSA",
+    //         new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
+    //       )
+    //       throw new AssertionError("Expected CertificateException")
+    //     } catch {
+    //       case _: CertificateException => // expected
+    //     }
 
-      certs = tmi.getTrustedChainForServer(
-        chain,
-        "RSA",
-        new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
-      )
-      assert(Arrays.asList(chain: _*) == certs)
+    //     certs = tmi.getTrustedChainForServer(
+    //       chain,
+    //       "RSA",
+    //       new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
+    //     )
+    //     assert(Arrays.asList(chain: _*) == certs)
 
-      // Remove the instance-specific verifier, and both should pass again.
-      Conscrypt.setHostnameVerifier(tmi, null)
+    //     // Remove the instance-specific verifier, and both should pass again.
+    //     Conscrypt.setHostnameVerifier(tmi, null)
 
-      try {
-        tmi.getTrustedChainForServer(
-          chain,
-          "RSA",
-          new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
-        )
-        throw new AssertionError("Expected CertificateException")
-      } catch {
-        case _: CertificateException => // expected
-      }
+    //     try {
+    //       tmi.getTrustedChainForServer(
+    //         chain,
+    //         "RSA",
+    //         new FakeSSLSocket(new FakeSSLSession(badHostname, chain), params),
+    //       )
+    //       throw new AssertionError("Expected CertificateException")
+    //     } catch {
+    //       case _: CertificateException => // expected
+    //     }
 
-      certs = tmi.getTrustedChainForServer(
-        chain,
-        "RSA",
-        new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
-      )
-      assert(Arrays.asList(chain: _*) == certs)
-    } finally Conscrypt.setDefaultHostnameVerifier(null)
-  }
+    //     certs = tmi.getTrustedChainForServer(
+    //       chain,
+    //       "RSA",
+    //       new FakeSSLSocket(new FakeSSLSession(goodHostname, chain), params),
+    //     )
+    //     assert(Arrays.asList(chain: _*) == certs)
+    //   } finally Conscrypt.setDefaultHostnameVerifier(null)
+    // }

@@ -23,7 +23,7 @@ import _root_.snhttp.experimental.openssl._openssl.bio.Types.{
   BIO,
   BIO_POLL_DESCRIPTOR,
 }
-import _root_.snhttp.experimental.openssl._openssl.types.{
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   EVP_PKEY,
   OSSL_LIB_CTX,
   EVP_MD,

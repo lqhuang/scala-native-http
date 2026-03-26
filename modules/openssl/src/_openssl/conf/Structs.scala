@@ -4,7 +4,7 @@ package _openssl.conf
 import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO
-import _root_.snhttp.experimental.openssl._openssl.types.OSSL_LIB_CTX
+import _root_.snhttp.experimental.openssl._openssl.types.Types.OSSL_LIB_CTX
 
 private[openssl] object Structs:
 

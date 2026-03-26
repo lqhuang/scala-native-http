@@ -5,7 +5,7 @@ import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._common.{size_t, int64_t, FILE, tm, uint64_t, time_t}
 import _root_.snhttp.experimental.openssl._openssl.bio.Structs.{BIO, BIO_METHOD}
-import _root_.snhttp.experimental.openssl._openssl.types.{BIGNUM, EVP_PKEY, OSSL_LIB_CTX, EVP_MD}
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{BIGNUM, EVP_PKEY, OSSL_LIB_CTX, EVP_MD}
 import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_X509_ALGOR
 import _root_.snhttp.experimental.openssl._openssl.conf.Types.CONF
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.X509_ALGOR
@@ -1178,3 +1178,13 @@ private[openssl] trait Functions:
   @extern def PKCS8_PRIV_KEY_INFO_new(): Ptr[PKCS8_PRIV_KEY_INFO] = extern
 
   @extern def PKCS8_PRIV_KEY_INFO_free(a: Ptr[PKCS8_PRIV_KEY_INFO]): Unit = extern
+
+  /**
+   * [bindgen] header: /usr/include/openssl/bn.h
+   */
+  @extern def BN_bin2bn(s: Ptr[CUnsignedChar], len: CInt, ret: Ptr[BIGNUM]): Ptr[BIGNUM] = extern
+
+  /**
+   * [bindgen] header: /usr/include/openssl/bn.h
+   */
+  @extern def BN_free(a: Ptr[BIGNUM]): Unit = extern

@@ -38,7 +38,7 @@ import _root_.snhttp.experimental.openssl._openssl.conf.Types.{
   CONF,
   CONF_VALUE,
 }
-import _root_.snhttp.experimental.openssl._openssl.types.EVP_PKEY
+import _root_.snhttp.experimental.openssl._openssl.types.Types.EVP_PKEY
 import _root_.snhttp.experimental.openssl._common.{size_t, uint32_t, FILE}
 
 import Types.*

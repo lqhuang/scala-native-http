@@ -4,7 +4,7 @@ package _openssl.bio
 import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._common.{size_t, FILE, uint64_t, time_t}
-import _root_.snhttp.experimental.openssl._openssl.types.OSSL_LIB_CTX
+import _root_.snhttp.experimental.openssl._openssl.types.Types.OSSL_LIB_CTX
 
 import Types.*
 

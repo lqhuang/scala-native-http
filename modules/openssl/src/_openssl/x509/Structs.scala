@@ -13,7 +13,7 @@ import _root_.snhttp.experimental.openssl._openssl.asn1.Types.{
   ASN1_TIME,
 }
 import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_X509
-import _root_.snhttp.experimental.openssl._openssl.types.{EVP_PKEY, EVP_CIPHER}
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{EVP_PKEY, EVP_CIPHER}
 
 private[openssl] object Structs:
 

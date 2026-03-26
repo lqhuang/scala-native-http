@@ -16,7 +16,7 @@ import _root_.snhttp.experimental.openssl._openssl.asn1.Types.{
   ASN1_OCTET_STRING,
 }
 import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO
-import _root_.snhttp.experimental.openssl._openssl.types.{
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   EVP_MD,
   EVP_CIPHER,
   EC_KEY,
@@ -2670,3 +2670,20 @@ private[openssl] trait Functions:
   @extern def d2i_X509_NAME_bio(bp: Ptr[BIO], a: Ptr[Ptr[X509_NAME]]): Ptr[X509_NAME] = extern
 
   @extern def d2i_X509_NAME_fp(fp: Ptr[FILE], a: Ptr[Ptr[X509_NAME]]): Ptr[X509_NAME] = extern
+
+  @extern def X509_free(a: Ptr[X509]): Unit = extern
+
+  @extern def X509_NAME_free(a: Ptr[X509_NAME]): Unit = extern
+
+  @extern def X509_EXTENSION_free(ext: Ptr[X509_EXTENSION]): Unit = extern
+
+  @extern def EVP_PKEY_free(pkey: Ptr[EVP_PKEY]): Unit = extern
+
+  @extern def EVP_sha256(): Ptr[EVP_MD] = extern
+
+  /**
+   * [bindgen] header: /usr/include/openssl/objects.h
+   *
+   *   - https://docs.openssl.org/master/man3/OBJ_nid2obj/
+   */
+  @extern def OBJ_txt2nid(s: Ptr[CChar]): CInt = extern

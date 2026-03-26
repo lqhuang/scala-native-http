@@ -3,7 +3,7 @@ package _openssl.pkcs12
 
 import scala.scalanative.unsafe.*
 
-import _root_.snhttp.experimental.openssl._openssl.types.{
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   EVP_CIPHER_CTX,
   EVP_CIPHER,
   EVP_MD,

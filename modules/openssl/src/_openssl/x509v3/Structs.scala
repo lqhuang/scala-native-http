@@ -12,7 +12,7 @@ import _root_.snhttp.experimental.openssl._openssl.safestack.{
   stack_st_GENERAL_SUBTREE,
   stack_st_X509_NAME_ENTRY,
 }
-import _root_.snhttp.experimental.openssl._openssl.types.EVP_PKEY
+import _root_.snhttp.experimental.openssl._openssl.types.Types.EVP_PKEY
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_CRL, X509_REQ, X509_NAME}
 
 import Aliases.*

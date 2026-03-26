@@ -17,7 +17,7 @@ import _root_.snhttp.experimental.openssl._openssl.safestack.{
   stack_st_PKCS7_RECIP_INFO,
   stack_st_PKCS7_SIGNER_INFO,
 }
-import _root_.snhttp.experimental.openssl._openssl.types.{EVP_CIPHER, OSSL_LIB_CTX}
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{EVP_CIPHER, OSSL_LIB_CTX}
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.X509_ALGOR
 
 private[openssl] object Structs:

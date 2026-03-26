@@ -15,6 +15,7 @@ import _root_.snhttp.experimental.openssl._openssl.pkcs12.Functions as PKCS12Fun
 import _root_.snhttp.experimental.openssl._openssl.x509.Functions as X509Functions
 import _root_.snhttp.experimental.openssl._openssl.x509v3.Functions as X509v3Functions
 
+export _root_.snhttp.experimental.openssl._openssl.types.Types.*
 export _root_.snhttp.experimental.openssl._openssl.asn1.Types.*
 export _root_.snhttp.experimental.openssl._openssl.bio.Types.*
 export _root_.snhttp.experimental.openssl._openssl.pkcs12.Types.*
