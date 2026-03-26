@@ -12,8 +12,8 @@ import scala.scalanative.unsafe.{CChar, Ptr, alloc, fromCString, stackalloc}
 import scala.scalanative.unsigned.{UInt, UnsignedRichInt}
 
 import snhttp.utils.PointerCleaner
-import snhttp.experimental.openssl.{libssl, libbio}
-import snhttp.experimental.openssl._libssl.enumerations.TLS_VERSION
+import snhttp.experimental.openssl.libssl
+import snhttp.experimental.openssl.libssl.TLS_VERSION
 
 /// Implementation Notes:
 ///

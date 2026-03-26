@@ -21,7 +21,7 @@ import scala.math.Ordering.comparatorToOrdering
 import scala.scalanative.unsafe.{Ptr, fromCString}
 
 import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl._libssl.enumerations.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
+import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
 import snhttp.utils.PointerCleaner
 
 private[snhttp] class SSLContextImpl(

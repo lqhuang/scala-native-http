@@ -49,7 +49,7 @@ import Structs.*
 import Enumerations.{OSSL_HANDSHAKE_STATE, SSL_CTRL, SSL_VERIFY, SSL_ERROR, SSL_OP}
 
 @extern
-trait MacroFunctions:
+private[openssl] trait MacroFunctions:
 
   /**
    * Error msg: undefined reference to `sk_SSL_CIPHER_num'

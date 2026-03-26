@@ -19,11 +19,11 @@ import scala.concurrent.ExecutionContext
 import scala.scalanative.unsafe.{Ptr, stackalloc}
 import scala.scalanative.unsigned.UnsignedRichInt
 
-import _root_.snhttp.experimental.curl.{CurlErrCodeException, CurlMultiException}
-import _root_.snhttp.experimental.curl.{CurlMulti, CurlMsg, CurlEasy}
-import _root_.snhttp.experimental.libcurl
-import _root_.snhttp.experimental.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode}
-import _root_.snhttp.experimental.curl.CurlMultiCode.RichCurlMultiCode
+import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlMultiException}
+import _root_.snhttp.experimental.curl.curl.{CurlMulti, CurlMsg, CurlEasy}
+import _root_.snhttp.experimental.curl.curl.CurlMultiCode.RichCurlMultiCode
+import _root_.snhttp.experimental.curl.libcurl
+import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode}
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner

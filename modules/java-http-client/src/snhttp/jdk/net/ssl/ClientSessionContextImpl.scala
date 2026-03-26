@@ -12,7 +12,7 @@ import scala.scalanative.unsafe.Ptr
 
 import snhttp.jdk.internal.PropertyUtils
 import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl._libssl.enumerations.SSL_SESS_CACHE
+import snhttp.experimental.openssl.libssl.SSL_SESS_CACHE
 
 /**
  * Inspired from

@@ -7,7 +7,7 @@ import scala.scalanative.unsigned.{ULong, UnsignedRichLong, UnsignedRichInt}
 
 import _root_.snhttp.experimental.openssl._internal.{_BindgenEnumCInt, _BindgenEnumCUnsignedInt, _BindgenEnumSize, _BindgenEnumULong}
 
-object Enumerations:
+private[openssl] object Enumerations:
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h

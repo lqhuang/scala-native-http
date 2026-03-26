@@ -16,7 +16,7 @@ import scala.scalanative.libc.stddef.size_t
 import scala.scalanative.libc.stdlib.realloc
 import scala.util.Using
 
-import snhttp.experimental.curl.{
+import snhttp.experimental.curl.curl.{
   CurlEasy,
   CurlOption,
   CurlErrCode,
@@ -24,7 +24,7 @@ import snhttp.experimental.curl.{
   CurlData,
   CurlWriteFuncRet,
 }
-import snhttp.experimental.curl.CurlErrCode.RichCurlErrCode
+import snhttp.experimental.curl.curl.CurlErrCode.RichCurlErrCode
 
 object App:
 

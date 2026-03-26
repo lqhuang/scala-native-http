@@ -15,6 +15,7 @@ import _root_.snhttp.experimental.openssl._openssl.ssl.{
 
 export _root_.snhttp.experimental.openssl._openssl.bio.Types.*
 export _root_.snhttp.experimental.openssl._openssl.ssl.Types.*
+export _root_.snhttp.experimental.openssl._openssl.ssl.Constants.*
 
 @extern
 private trait Functions extends BIOFunctions with SSLFunctions

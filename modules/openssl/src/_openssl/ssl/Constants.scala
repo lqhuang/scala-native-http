@@ -4,7 +4,8 @@ package _openssl.ssl
 import scala.scalanative.unsafe.*
 import scala.scalanative.unsigned.UnsignedRichInt
 
-object constants:
+private[openssl] object Constants:
+
   val SSL_CT_VALIDATION_PERMISSIVE: CUnsignedInt = 0.toUInt
   val SSL_CT_VALIDATION_STRICT: CUnsignedInt = 1.toUInt
 
