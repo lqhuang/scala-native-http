@@ -3,7 +3,7 @@ package javax.net.ssl
 import java.net.{Socket, InetAddress}
 import java.util.List as JList
 import java.util.function.BiFunction
-// import javax.net.ssl.HandshakeCompletedListener
+import javax.net.ssl.HandshakeCompletedListener
 
 /// ## Refs
 ///
@@ -45,9 +45,9 @@ abstract class SSLSocket(
 
   def getHandshakeSession(): SSLSession
 
-  // def addHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit
+  def addHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit
 
-  // def removeHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit
+  def removeHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit
 
   def startHandshake(): Unit
 
