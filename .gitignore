@@ -8,3 +8,5 @@ metals.sbt
 out/
 .out/
 .mill/
+.scala-build
+.DS_Store
