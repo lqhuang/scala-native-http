@@ -37,6 +37,28 @@ class HttpCookieTests extends utest.TestSuite:
       assert(cookie.getVersion() == 0)
     }
 
+    test("parses Set-Cookie2 header") {
+      val cookie = parseSingle("Set-Cookie2: session=abc123; Version=1; Path=/app")
+      assert(cookie.getName() == "session")
+      assert(cookie.getValue() == "abc123")
+      assert(cookie.getPath() == "/app")
+      assert(cookie.getVersion() == 1)
+    }
+
+    test("parses cookie header prefixes case-insensitively") {
+      val c1 = parseSingle("sEt-CoOkIe: a=1; Path=/")
+      val c2 = parseSingle("sEt-CoOkIe2: b=2; Version=1; Path=/")
+      assert(c1.getName() == "a")
+      assert(c2.getName() == "b")
+      assert(c2.getVersion() == 1)
+    }
+
+    test("leading spaces before Set-Cookie prefix are rejected") {
+      assertThrows[IllegalArgumentException] {
+        HttpCookie.parse("       Set-Cookie: e=5"): Unit
+      }
+    }
+
     test("secure and http-only flags toggle correctly") {
       val cookie = parseSingle("auth=token; Secure; HttpOnly")
       assert(cookie.getSecure() == true)
@@ -130,5 +152,228 @@ class HttpCookieTests extends utest.TestSuite:
       assertThrows[IllegalArgumentException] {
         HttpCookie.parse("$bad=value"): Unit
       }
+    }
+
+    // Phase 3: Constructor validation tests
+    test("constructor with null name throws") {
+      assertThrows[NullPointerException] {
+        new HttpCookie(null, "value"): Unit
+      }
+    }
+
+    test("constructor with empty name throws") {
+      assertThrows[IllegalArgumentException] {
+        new HttpCookie("", "value"): Unit
+      }
+    }
+
+    test("constructor with invalid name characters throws") {
+      assertThrows[IllegalArgumentException] {
+        new HttpCookie("cookie;name", "value"): Unit
+      }
+    }
+
+    test("constructor allows null value") {
+      val cookie = new HttpCookie("test", null)
+      assert(cookie.getValue() == null)
+    }
+
+    // Phase 4: Domain matching edge cases
+    test("domainMatches with IP addresses") {
+      assert(HttpCookie.domainMatches("192.168.1.1", "192.168.1.1") == true)
+      assert(HttpCookie.domainMatches("192.168.1.1", "192.168.1.2") == false)
+    }
+
+    test("domainMatches is case insensitive") {
+      assert(HttpCookie.domainMatches("EXAMPLE.COM", "example.com") == true)
+      assert(HttpCookie.domainMatches("example.com", "EXAMPLE.COM") == true)
+    }
+
+    test("domainMatches with null domain returns false") {
+      assert(HttpCookie.domainMatches(null, "example.com") == false)
+    }
+
+    test("domainMatches with null host returns false") {
+      assert(HttpCookie.domainMatches("example.com", null) == false)
+    }
+
+    // Phase 4: Cookie attribute tests
+    test("setMaxAge and getMaxAge") {
+      val cookie = new HttpCookie("test", "value")
+      cookie.setMaxAge(3600)
+      assert(cookie.getMaxAge() == 3600)
+      
+      cookie.setMaxAge(-1)
+      assert(cookie.getMaxAge() == -1)
+      
+      cookie.setMaxAge(0)
+      assert(cookie.getMaxAge() == 0)
+    }
+
+    test("hasExpired for expired cookie") {
+      val cookie = new HttpCookie("test", "value")
+      cookie.setMaxAge(0)
+      assert(cookie.hasExpired() == true)
+    }
+
+    test("hasExpired for session cookie") {
+      val cookie = new HttpCookie("test", "value")
+      cookie.setMaxAge(-1)
+      assert(cookie.hasExpired() == false)
+    }
+
+    test("setPath preserves exact slash form") {
+      val cookie = new HttpCookie("test", "value")
+      cookie.setPath("/app/")
+      assert(cookie.getPath() == "/app/")
+      cookie.setPath("/app")
+      assert(cookie.getPath() == "/app")
+    }
+
+    test("clone creates independent copy") {
+      val original = new HttpCookie("test", "value")
+      original.setDomain("example.com")
+      original.setPath("/")
+      original.setSecure(true)
+      
+      val cloned = original.clone().asInstanceOf[HttpCookie]
+      cloned.setValue("newvalue")
+      cloned.setDomain("other.com")
+      
+      assert(original.getValue() == "value")
+      assert(original.getDomain() == "example.com")
+      assert(cloned.getValue() == "newvalue")
+      assert(cloned.getDomain() == "other.com")
+    }
+
+    test("equals compares name domain and path") {
+      val cookie1 = new HttpCookie("test", "value1")
+      cookie1.setDomain("example.com")
+      cookie1.setPath("/")
+      
+      val cookie2 = new HttpCookie("test", "value2")
+      cookie2.setDomain("example.com")
+      cookie2.setPath("/")
+      
+      val cookie3 = new HttpCookie("test", "value1")
+      cookie3.setDomain("other.com")
+      cookie3.setPath("/")
+      
+      assert(cookie1.equals(cookie2) == true)
+      assert(cookie1.equals(cookie3) == false)
+    }
+
+    test("hashCode is consistent") {
+      val cookie1 = new HttpCookie("test", "value")
+      cookie1.setDomain("example.com")
+      
+      val cookie2 = new HttpCookie("test", "other")
+      cookie2.setDomain("example.com")
+      
+      assert(cookie1.hashCode() == cookie2.hashCode())
+    }
+
+    test("toString contains name and value") {
+      val cookie = new HttpCookie("session", "abc123")
+      val str = cookie.toString()
+      assert(str.contains("session"))
+      assert(str.contains("abc123"))
+    }
+
+    // Phase: parse() null and empty input tests
+    test("parse with null header throws NullPointerException") {
+      assertThrows[NullPointerException] {
+        HttpCookie.parse(null): Unit
+      }
+    }
+
+    test("parse with empty string throws IllegalArgumentException") {
+      assertThrows[IllegalArgumentException] {
+        HttpCookie.parse(""): Unit
+      }
+    }
+
+    test("parse with whitespace-only header throws IllegalArgumentException") {
+      assertThrows[IllegalArgumentException] {
+        HttpCookie.parse(" "): Unit
+      }
+      assertThrows[IllegalArgumentException] {
+        HttpCookie.parse("   "): Unit
+      }
+    }
+
+    // Case-insensitive attribute parsing
+    test("attributes are case-insensitive") {
+      val cookie = parseSingle("test=value; SECURE; HTTPONLY; PATH=/test; MAX-AGE=100")
+      assert(cookie.getSecure() == true)
+      assert(cookie.isHttpOnly() == true)
+      assert(cookie.getPath() == "/test")
+      assert(cookie.getMaxAge() == 100L)
+    }
+
+    // setVersion(2) should throw IllegalArgumentException (only 0 and 1 are valid)
+    test("setVersion with invalid version throws IllegalArgumentException") {
+      val cookie = new HttpCookie("test", "value")
+      assertThrows[IllegalArgumentException] {
+        cookie.setVersion(2): Unit
+      }
+    }
+
+    test("first occurrence of duplicate attributes wins") {
+      val cookie = parseSingle("session=v; Domain=a.com; Domain=b.com; Path=/one; Path=/two")
+      assert(cookie.getDomain() == "a.com")
+      assert(cookie.getPath() == "/one")
+    }
+
+    // clone() test
+    test("clone preserves fields and remains independent") {
+      val original = new HttpCookie("test", "value")
+      original.setDomain("example.com")
+      original.setPath("/app")
+      original.setSecure(true)
+      
+      val cloned = original.clone().asInstanceOf[HttpCookie]
+      assert(cloned.getName() == original.getName())
+      assert(cloned.getValue() == original.getValue())
+      assert(cloned.getDomain() == original.getDomain())
+      assert(cloned.getPath() == original.getPath())
+      assert(cloned.getSecure() == original.getSecure())
+      
+      // Modifying clone should not affect original
+      cloned.setValue("modified")
+      assert(original.getValue() == "value")
+    }
+
+    // equals() tests per spec: same domain (case-insensitive), name (case-insensitive), path (case-sensitive)
+    test("equals compares domain case-insensitively") {
+      val cookie1 = new HttpCookie("test", "value")
+      cookie1.setDomain("EXAMPLE.COM")
+      
+      val cookie2 = new HttpCookie("test", "value")
+      cookie2.setDomain("example.com")
+      
+      assert(cookie1.equals(cookie2))
+    }
+
+    test("equals compares name case-insensitively") {
+      val cookie1 = new HttpCookie("TEST", "value")
+      cookie1.setDomain("example.com")
+      
+      val cookie2 = new HttpCookie("test", "value")
+      cookie2.setDomain("example.com")
+      
+      assert(cookie1.equals(cookie2))
+    }
+
+    test("equals compares path case-sensitively") {
+      val cookie1 = new HttpCookie("test", "value")
+      cookie1.setDomain("example.com")
+      cookie1.setPath("/App")
+      
+      val cookie2 = new HttpCookie("test", "value")
+      cookie2.setDomain("example.com")
+      cookie2.setPath("/app")
+      
+      assert(!cookie1.equals(cookie2))
     }
   }
