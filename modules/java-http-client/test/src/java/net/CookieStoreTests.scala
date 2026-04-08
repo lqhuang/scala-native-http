@@ -266,8 +266,12 @@ class CookieStoreTests extends utest.TestSuite:
       cookie.setPath("/app")
       store.add(uri, cookie)
 
-      assert(store.get(new URI("http://example.com/app/page")).size() == 1)
-      assert(store.get(new URI("http://example.com/other")).size() == 1)
+      // NOTE: CookieStore does NOT enforce path matching (JDK behavior).
+      // Path filtering is handled by CookieManager.
+      val retrieved = store.get(new URI("http://example.com/app/page"))
+      val notRetrieved = store.get(new URI("http://example.com/other"))
+      assert(retrieved.size() == 1)
+      assert(notRetrieved.size() == 1)
     }
 
     test("secure cookies only match HTTPS") {

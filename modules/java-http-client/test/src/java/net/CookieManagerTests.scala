@@ -110,6 +110,24 @@ class CookieManagerTests extends utest.TestSuite:
       assert(cookieHeader.get(0) == "root=v1")
     }
 
+    test("CookieManager enforces path matching") {
+      val manager = new CookieManager()
+      val uri = new URI("http://example.com/app")
+
+      val cookie = new HttpCookie("k", "v")
+      cookie.setPath("/app")
+      manager.getCookieStore().add(uri, cookie)
+
+      val stored = manager.getCookieStore().get(new URI("http://example.com/other"))
+      assert(stored.size() == 1)
+
+      val requestHeaders = new HashMap[String, JList[String]]()
+      val result = manager.get(new URI("http://example.com/other"), requestHeaders)
+
+      // No matching cookies → Cookie header must NOT be present (JDK behavior)
+      assert(!result.containsKey("Cookie"))
+    }
+
     test("get orders cookies by most specific path first") {
       val manager = new CookieManager()
       val uri = new URI("http://example.com/app/page")
