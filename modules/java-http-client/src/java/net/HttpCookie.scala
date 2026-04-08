@@ -4,6 +4,10 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.{ArrayList, HashMap, List as JList, Locale, Map, Objects}
 
+// Refs:
+// 1. https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/HttpCookie.html
+//
+// @since 1.6
 final class HttpCookie private[net] (name: String, value: String, rawHeader: String, creationTime: Long)
     extends Cloneable:
 

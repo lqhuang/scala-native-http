@@ -5,35 +5,13 @@ import java.util.{
   Collections,
   HashMap,
   List as JList,
-  Locale,
   Map as JMap,
 }
-import snhttp.jdk.net.InMemoryCookieStore
 
-/**
- * CookieManager provides a concrete implementation of CookieHandler, which separates the storage of
- * cookies from the policy surrounding accepting and rejecting cookies. A CookieManager is
- * initialized with a CookieStore which manages storage, and a CookiePolicy object, which makes
- * policy decisions on cookie acceptance/rejection.
- *
- * The HTTP cookie management in java.net package looks like:
- *
- * {{{
- *                  use
- * CookieHandler <------- HttpURLConnection
- *       ^
- *       | impl
- *       |
- * CookieManager -------> CookiePolicy
- *       |                    use
- *       | use
- *       |
- *       V
- *    CookieStore
- * }}}
- *
- * @since 1.6
- */
+// Refs:
+// 1. https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/CookieManager.html
+//
+// @since 1.6
 class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHandler:
 
   private val cookieStore: CookieStore =
@@ -55,21 +33,33 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
 
     val cookies = cookieStore.get(uri)
     val result = new HashMap[String, JList[String]]()
+    val matchedCookies = new ArrayList[HttpCookie]()
     val cookieHeader = new ArrayList[String]()
+    val scheme = uri.getScheme()
+    val isSecure = scheme != null && scheme.equalsIgnoreCase("https")
+    val requestPath =
+      val path = uri.getPath()
+      if path == null || path.isEmpty then "/" else path
 
     if cookies != null && !cookies.isEmpty then
-      val it = cookies.iterator()
-      while it.hasNext do
-        val cookie = it.next()
+      cookies.forEach { cookie =>
         if !cookie.hasExpired() then
-          val scheme = uri.getScheme()
-          val isSecure = scheme != null && scheme.equalsIgnoreCase("https")
-          if !cookie.getSecure() || isSecure then
-            val value = cookie.getValue()
-            val pair =
-              if value != null then cookie.getName() + "=" + value
-              else cookie.getName()
-            cookieHeader.add(pair): Unit
+          val cookiePath = cookie.getPath()
+          val pathMatches = cookiePath != null && matchesRequestPath(requestPath, cookiePath)
+          if pathMatches && (!cookie.getSecure() || isSecure) then matchedCookies.add(cookie): Unit
+      }
+
+    Collections.sort(matchedCookies, (left: HttpCookie, right: HttpCookie) =>
+      compareCookiePath(left, right)
+    )
+
+    matchedCookies.forEach { cookie =>
+      val value = cookie.getValue()
+      val pair =
+        if value != null then cookie.getName() + "=" + value
+        else cookie.getName()
+      cookieHeader.add(pair): Unit
+    }
 
     result.put("Cookie", Collections.unmodifiableList(cookieHeader)): Unit
     Collections.unmodifiableMap(result)
@@ -99,7 +89,8 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
                   val cookie = cookieIt.next()
 
                   // Apply default domain if not set
-                  if cookie.getDomain() == null then cookie.setDomain(uri.getHost())
+                  if cookie.getDomain() == null then
+                    cookie.setDomain(uri.getHost())
 
                   // Apply default path if not set
                   if cookie.getPath() == null || cookie.getPath().isEmpty then
@@ -115,3 +106,20 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
                   // Check policy
                   if cookiePolicy.shouldAccept(uri, cookie) then cookieStore.add(uri, cookie)
               catch case _: IllegalArgumentException => () // Ignore malformed cookies
+
+  private def compareCookiePath(left: HttpCookie, right: HttpCookie): Int =
+    val leftPath = left.getPath()
+    val rightPath = right.getPath()
+    if leftPath == rightPath then 0
+    else if leftPath != null && rightPath != null then
+      if leftPath.startsWith(rightPath) then -1
+      else if rightPath.startsWith(leftPath) then 1
+      else 0
+    else 0
+
+  private def matchesRequestPath(requestPath: String, cookiePath: String): Boolean =
+    if requestPath == cookiePath then true
+    else if requestPath.startsWith(cookiePath) then
+      if cookiePath.endsWith("/") then true
+      else requestPath.length > cookiePath.length && requestPath.charAt(cookiePath.length) == '/'
+    else false
