@@ -3,19 +3,23 @@ package snhttp.java.net
 import java.net.{CookieManager, CookiePolicy, HttpCookie, URI}
 import java.util.{ArrayList, HashMap, List as JList}
 
+import scala.jdk.CollectionConverters._
+
 import utest.{Tests, test, assert, assertThrows}
 
 class CookieManagerTests extends utest.TestSuite:
 
   val tests = Tests {
-    test("get returns empty map when no cookies") {
+    test("get returns empty Cookie header when no cookies") {
       val manager = new CookieManager()
       val uri = new URI("http://example.com/path")
       val requestHeaders = new HashMap[String, JList[String]]()
 
       val result = manager.get(uri, requestHeaders)
       assert(result.containsKey("Cookie"))
-      assert(result.get("Cookie").isEmpty)
+      val cookieHeader = result.get("Cookie")
+      assert(cookieHeader != null)
+      assert(cookieHeader.isEmpty)
       assert(result.get("Cookie2") == null)
     }
 
@@ -52,6 +56,48 @@ class CookieManagerTests extends utest.TestSuite:
       assert(cookies.get(0).getValue() == "abc123")
     }
 
+    test("put treats Set-Cookie header case-insensitively") {
+      val manager = new CookieManager()
+      val uri = new URI("http://example.com/path")
+
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val setCookieValues = new ArrayList[String]()
+      setCookieValues.add("session=abc123; Path=/; Domain=example.com")
+      responseHeaders.put("set-cookie", setCookieValues)
+      manager.put(uri, responseHeaders)
+
+      val cookies = manager.getCookieStore().getCookies()
+      assert(cookies.size() == 1)
+      assert(cookies.get(0).getName() == "session")
+      assert(cookies.get(0).getValue() == "abc123")
+    }
+
+    test("put with empty Set-Cookie header value is no-op") {
+      val manager = new CookieManager()
+      val uri = new URI("http://example.com/path")
+
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val values = new ArrayList[String]()
+      values.add("")
+      responseHeaders.put("Set-Cookie", values)
+      manager.put(uri, responseHeaders)
+
+      assert(manager.getCookieStore().getCookies().size() == 0)
+    }
+
+    test("put without Set-Cookie headers is no-op") {
+      val manager = new CookieManager()
+      val uri = new URI("http://example.com/path")
+
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val values = new ArrayList[String]()
+      values.add("v")
+      responseHeaders.put("X-Test", values)
+      manager.put(uri, responseHeaders)
+
+      assert(manager.getCookieStore().getCookies().size() == 0)
+    }
+
     test("get returns Cookie header for stored cookies") {
       val manager = new CookieManager()
       val uri = new URI("http://example.com/path")
@@ -69,6 +115,7 @@ class CookieManagerTests extends utest.TestSuite:
       val cookieHeader = result.get("Cookie")
       assert(cookieHeader.size() == 1)
       assert(cookieHeader.get(0).contains("session=abc123"))
+      assert(result.get("Cookie2") == null)
     }
 
     test("multiple cookies are returned as multiple Cookie header values") {
@@ -89,6 +136,7 @@ class CookieManagerTests extends utest.TestSuite:
       assert(cookieHeader.size() == 2)
       assert(cookieHeader.contains("cookie1=value1"))
       assert(cookieHeader.contains("cookie2=value2"))
+      assert(result.get("Cookie2") == null)
     }
 
     test("get filters cookies by request path") {
@@ -124,8 +172,11 @@ class CookieManagerTests extends utest.TestSuite:
       val requestHeaders = new HashMap[String, JList[String]]()
       val result = manager.get(new URI("http://example.com/other"), requestHeaders)
 
-      // No matching cookies → Cookie header must NOT be present (JDK behavior)
-      assert(!result.containsKey("Cookie"))
+      assert(result.containsKey("Cookie"))
+      val cookieHeader = result.get("Cookie")
+      assert(cookieHeader != null)
+      assert(cookieHeader.isEmpty)
+      assert(result.get("Cookie2") == null)
     }
 
     test("get orders cookies by most specific path first") {
@@ -148,6 +199,26 @@ class CookieManagerTests extends utest.TestSuite:
       assert(cookieHeader.get(1) == "root=v1")
     }
 
+    test("get orders three cookie paths by descending specificity") {
+      val manager = new CookieManager()
+      val uri = new URI("http://example.com/app/deep/page")
+
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val setCookieValues = new ArrayList[String]()
+      setCookieValues.add("root=v1; Path=/; Domain=example.com")
+      setCookieValues.add("app=v2; Path=/app; Domain=example.com")
+      setCookieValues.add("deep=v3; Path=/app/deep; Domain=example.com")
+      responseHeaders.put("Set-Cookie", setCookieValues)
+      manager.put(uri, responseHeaders)
+
+      val result = manager.get(uri, new HashMap[String, JList[String]]())
+      val cookieHeader = result.get("Cookie")
+      assert(cookieHeader.size() == 3)
+      assert(cookieHeader.get(0) == "deep=v3")
+      assert(cookieHeader.get(1) == "app=v2")
+      assert(cookieHeader.get(2) == "root=v1")
+    }
+
     test("put applies default domain from URI") {
       val manager = new CookieManager()
       val uri = new URI("http://example.com/app/page")
@@ -167,15 +238,24 @@ class CookieManagerTests extends utest.TestSuite:
       val manager = new CookieManager()
       val uri = new URI("http://example.com/app/page")
 
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
+      val nestedHeaders = new HashMap[String, JList[String]]()
+      val nestedValues = new ArrayList[String]()
+      nestedValues.add("nested=value")
+      nestedHeaders.put("Set-Cookie", nestedValues)
+      manager.put(uri, nestedHeaders)
 
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getPath() == "/app/")
+      val rootHeaders = new HashMap[String, JList[String]]()
+      val rootValues = new ArrayList[String]()
+      rootValues.add("root=value")
+      rootHeaders.put("Set-Cookie", rootValues)
+      manager.put(new URI("http://example.com/page"), rootHeaders)
+
+      val cookies = manager.getCookieStore().getCookies().asScala.toList
+      assert(cookies.size == 2)
+      val nestedCookie = cookies.find(_.getName() == "nested").get
+      val rootCookie = cookies.find(_.getName() == "root").get
+      assert(nestedCookie.getPath() == "/app/")
+      assert(rootCookie.getPath() == "/")
     }
 
     test("setCookiePolicy changes acceptance policy") {
@@ -193,18 +273,25 @@ class CookieManagerTests extends utest.TestSuite:
       assert(cookies.size() == 0)
     }
 
-    test("ACCEPT_ALL policy accepts all cookies") {
-      val manager = new CookieManager(null, CookiePolicy.ACCEPT_ALL)
-
+    test("constructor with null store and null policy uses defaults") {
+      val manager = new CookieManager(null, null)
       val uri = new URI("http://example.com/path")
+      assert(manager.getCookieStore() != null)
+
       val responseHeaders = new HashMap[String, JList[String]]()
       val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value; Domain=example.com")
+      setCookieValues.add("test=value; Domain=other.com")
       responseHeaders.put("Set-Cookie", setCookieValues)
       manager.put(uri, responseHeaders)
 
       val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
+      assert(cookies.size() == 0)
+    }
+
+    test("constructor with custom store returns custom store") {
+      val customStore = new CookieManager().getCookieStore()
+      val manager = new CookieManager(customStore, null)
+      assert(manager.getCookieStore() eq customStore)
     }
 
     test("malformed cookies are ignored") {
@@ -238,10 +325,16 @@ class CookieManagerTests extends utest.TestSuite:
       val result = manager.get(httpUri, requestHeaders)
 
       assert(result.containsKey("Cookie"))
-      assert(result.get("Cookie").isEmpty)
+      val cookieHeader = result.get("Cookie")
+      assert(cookieHeader != null)
+      assert(cookieHeader.isEmpty)
     }
 
     test("expired cookies are not returned") {
+      val parsed = HttpCookie.parse("expired=value; Max-Age=0")
+      assert(parsed.size() == 1)
+      assert(parsed.get(0).hasExpired() == true)
+
       val manager = new CookieManager()
       val uri = new URI("http://example.com/path")
 
@@ -255,55 +348,43 @@ class CookieManagerTests extends utest.TestSuite:
       val result = manager.get(uri, requestHeaders)
 
       assert(result.containsKey("Cookie"))
-      assert(result.get("Cookie").isEmpty)
+      val cookieHeader = result.get("Cookie")
+      assert(cookieHeader != null)
+      assert(cookieHeader.isEmpty)
     }
 
-    // Phase 3: Null handling tests
-    test("constructor with null store creates default store") {
-      val manager = new CookieManager(null, CookiePolicy.ACCEPT_ALL)
-      assert(manager.getCookieStore() != null)
-    }
-
-    test("constructor with null policy uses default policy") {
-      val manager = new CookieManager(null, null)
-      assert(manager.getCookieStore() != null)
-    }
-
-    test("get with null URI throws IllegalArgumentException") {
+    test("get validates null inputs") {
       val manager = new CookieManager()
       val requestHeaders = new HashMap[String, JList[String]]()
+      val uri = new URI("http://example.com/")
       assertThrows[IllegalArgumentException] {
         manager.get(null, requestHeaders): Unit
       }
-    }
-
-    test("get with null headers throws IllegalArgumentException") {
-      val manager = new CookieManager()
-      val uri = new URI("http://example.com/")
       assertThrows[IllegalArgumentException] {
         manager.get(uri, null): Unit
       }
+      assertThrows[IllegalArgumentException] {
+        manager.get(null, null): Unit
+      }
     }
 
-    test("put with null URI throws IllegalArgumentException") {
+    test("put validates null inputs") {
       val manager = new CookieManager()
+      val uri = new URI("http://example.com/")
       val responseHeaders = new HashMap[String, JList[String]]()
       assertThrows[IllegalArgumentException] {
         manager.put(null, responseHeaders): Unit
       }
-    }
-
-    test("put with null headers throws IllegalArgumentException") {
-      val manager = new CookieManager()
-      val uri = new URI("http://example.com/")
       assertThrows[IllegalArgumentException] {
         manager.put(uri, null): Unit
+      }
+      assertThrows[IllegalArgumentException] {
+        manager.put(null, null): Unit
       }
     }
 
     test("setCookiePolicy with null keeps previous policy") {
       val manager = new CookieManager(null, CookiePolicy.ACCEPT_NONE)
-      // ACCEPT_NONE should reject all cookies
       val uri = new URI("http://example.com/path")
       val responseHeaders = new HashMap[String, JList[String]]()
       val setCookieValues = new ArrayList[String]()
@@ -311,139 +392,22 @@ class CookieManagerTests extends utest.TestSuite:
       responseHeaders.put("Set-Cookie", setCookieValues)
       manager.put(uri, responseHeaders)
       assert(manager.getCookieStore().getCookies().size() == 0)
-      
-      // Setting null should not change policy
+
       manager.setCookiePolicy(null)
       manager.put(uri, responseHeaders)
-      // Should still reject (policy unchanged)
       assert(manager.getCookieStore().getCookies().size() == 0)
     }
 
-    test("cross-domain cookie is accepted by ACCEPT_ALL") {
+    test("setCookiePolicy null does not change ACCEPT_ALL policy") {
       val manager = new CookieManager(null, CookiePolicy.ACCEPT_ALL)
       val uri = new URI("http://example.com/path")
       val responseHeaders = new HashMap[String, JList[String]]()
       val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value; Domain=attacker.com")
+      setCookieValues.add("test=value; Domain=other.com")
       responseHeaders.put("Set-Cookie", setCookieValues)
+
+      manager.setCookiePolicy(null)
       manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getDomain() == "attacker.com")
-    }
-
-    test("subdomain cookie is accepted with dot prefix") {
-      val manager = new CookieManager(null, CookiePolicy.ACCEPT_ALL)
-      val uri = new URI("http://www.example.com/path")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      // Domain with leading dot allows subdomains (per RFC6265)
-      setCookieValues.add("test=value; Domain=.example.com")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-    }
-
-    // Phase 4: Path derivation tests
-    test("path defaults to directory of URI path") {
-      val manager = new CookieManager()
-      val uri = new URI("http://example.com/app/page")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getPath() == "/app/")
-    }
-
-    test("path defaults to root for root URI") {
-      val manager = new CookieManager()
-      val uri = new URI("http://example.com/")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getPath() == "/")
-    }
-
-    test("path defaults to root for single-segment URI path") {
-      val manager = new CookieManager()
-      val uri = new URI("http://example.com/page")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getPath() == "/")
-    }
-
-    test("explicit path is preserved") {
-      val manager = new CookieManager()
-      val uri = new URI("http://example.com/app/page")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value; Path=/custom")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getPath() == "/custom")
-    }
-
-    // Phase 5: Policy integration tests
-    test("ACCEPT_NONE blocks all cookies even with valid domain") {
-      val manager = new CookieManager(null, CookiePolicy.ACCEPT_NONE)
-      val uri = new URI("http://example.com/path")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("test=value; Domain=example.com")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 0)
-    }
-
-    test("ACCEPT_ORIGINAL_SERVER only accepts matching domain") {
-      val manager = new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)
-      val uri = new URI("http://example.com/path")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("valid=value; Domain=example.com")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      assert(cookies.size() == 1)
-      assert(cookies.get(0).getName() == "valid")
-    }
-
-    test("multiple cookies with different domains are filtered by policy") {
-      val manager = new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)
-      val uri = new URI("http://example.com/path")
-      val responseHeaders = new HashMap[String, JList[String]]()
-      val setCookieValues = new ArrayList[String]()
-      setCookieValues.add("valid=value; Domain=example.com")
-      setCookieValues.add("other=value; Domain=.example.com")
-      responseHeaders.put("Set-Cookie", setCookieValues)
-      manager.put(uri, responseHeaders)
-
-      val cookies = manager.getCookieStore().getCookies()
-      // Both should be accepted by ACCEPT_ORIGINAL_SERVER
-      assert(cookies.size() == 2)
+      assert(manager.getCookieStore().getCookies().size() == 1)
     }
   }

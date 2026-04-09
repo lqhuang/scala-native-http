@@ -1,10 +1,5 @@
 package java.net
 
-import java.util.{List as JList}
-
-// Refs:
-// 1. https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/CookiePolicy.html
-//
 // @since 1.6
 trait CookiePolicy:
   def shouldAccept(uri: URI, cookie: HttpCookie): Boolean

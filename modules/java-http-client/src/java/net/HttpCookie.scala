@@ -4,9 +4,6 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.{ArrayList, HashMap, List as JList, Locale, Map, Objects}
 
-// Refs:
-// 1. https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/HttpCookie.html
-//
 // @since 1.6
 final class HttpCookie private[net] (name: String, value: String, rawHeader: String, creationTime: Long)
     extends Cloneable:
@@ -176,7 +173,7 @@ object HttpCookie:
       .toFormatter(Locale.US)
   private val SET_COOKIE = "set-cookie:"
   private val SET_COOKIE2 = "set-cookie2:"
-  private val TSPECIALS = ",; " // deliberately includes space
+  private val TSPECIALS = ",; "
 
   private trait CookieAttributeAssignor:
     def assign(cookie: HttpCookie, attrName: String, attrValue: String): Unit
@@ -246,9 +243,6 @@ object HttpCookie:
     else if diff == -1 && domain.charAt(0) == '.' then host.equalsIgnoreCase(domain.substring(1))
     else false
 
-  /**
-   * Per RFC 6265: cookie-path must be a prefix of request-path.
-   */
   def pathMatches(path: String, pathToMatchWith: String): Boolean =
     if path == null || pathToMatchWith == null then return false
     if path == pathToMatchWith then true
@@ -493,6 +487,3 @@ object HttpCookie:
         previousSpace = false
       i += 1
     builder.toString
-
-
-  // SharedSecrets hook is intentionally omitted in Scala Native port.

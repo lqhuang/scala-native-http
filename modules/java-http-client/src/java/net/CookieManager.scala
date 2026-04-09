@@ -8,9 +8,6 @@ import java.util.{
   Map as JMap,
 }
 
-// Refs:
-// 1. https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/CookieManager.html
-//
 // @since 1.6
 class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHandler:
 
@@ -68,7 +65,6 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
     if uri == null || responseHeaders == null then
       throw new IllegalArgumentException("uri and responseHeaders must not be null")
 
-    // Process Set-Cookie and Set-Cookie2 headers
     val it = responseHeaders.entrySet().iterator()
     while it.hasNext do
       val entry = it.next()
@@ -88,11 +84,9 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
                 while cookieIt.hasNext do
                   val cookie = cookieIt.next()
 
-                  // Apply default domain if not set
                   if cookie.getDomain() == null then
                     cookie.setDomain(uri.getHost())
 
-                  // Apply default path if not set
                   if cookie.getPath() == null || cookie.getPath().isEmpty then
                     val path = uri.getPath()
                     val defaultPath =
@@ -103,9 +97,8 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
                         else path.substring(0, lastSlash + 1)
                     cookie.setPath(defaultPath)
 
-                  // Check policy
                   if cookiePolicy.shouldAccept(uri, cookie) then cookieStore.add(uri, cookie)
-              catch case _: IllegalArgumentException => () // Ignore malformed cookies
+              catch case _: IllegalArgumentException => ()
 
   private def compareCookiePath(left: HttpCookie, right: HttpCookie): Int =
     val leftPath = left.getPath()

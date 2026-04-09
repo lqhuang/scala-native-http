@@ -4,7 +4,7 @@ import java.net.{CookieHandler, CookieManager}
 
 import utest.{Tests, test, assert}
 
-class CookieHandlerTests extends utest.TestSuite:
+class CookieHandlerTest extends utest.TestSuite:
 
   val tests = Tests {
     test("getDefault returns null initially") {

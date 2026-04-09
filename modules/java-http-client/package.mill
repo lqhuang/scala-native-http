@@ -24,6 +24,7 @@ object `package` extends build.CommonModule:
 
   object jvm extends ScalaModule {
     def scalaVersion = build.scalaVersion
+    // def sources = Seq()
 
     object test extends ScalaTests with build.UTestModule:
       def sources = upper.test.sources

@@ -81,6 +81,13 @@ class CookieStoreTests extends utest.TestSuite:
       }
     }
 
+    test("remove with null URI and null cookie throws NullPointerException") {
+      val store = createStore()
+      assertThrows[NullPointerException] {
+        store.remove(null, null): Unit
+      }
+    }
+
     test("remove with null URI removes matching cookie") {
       val store = createStore()
       val uri = new URI("http://example.com/")
@@ -127,6 +134,14 @@ class CookieStoreTests extends utest.TestSuite:
         cookies.add(new HttpCookie("new", "value")): Unit
       }
       assert(store.getCookies().size() == 1)
+    }
+
+    test("getCookies is unmodifiable when store is empty") {
+      val store = createStore()
+      val cookies = store.getCookies()
+      assertThrows[UnsupportedOperationException] {
+        cookies.add(new HttpCookie("new", "value")): Unit
+      }
     }
 
     test("getURIs returns modifiable snapshot list") {
@@ -256,6 +271,19 @@ class CookieStoreTests extends utest.TestSuite:
       store.add(new URI("http://[2001:db8::1]/"), cookie)
 
       assert(store.get(new URI("http://[2001:db8::1]/")).size() == 1)
+      assert(store.get(new URI("http://[2001:db8::2]/")).size() == 0)
+    }
+
+    test("getCookies does not duplicate same cookie object across URIs") {
+      val store = createStore()
+      val cookie = new HttpCookie("dupObj", "1")
+      cookie.setDomain("example.com")
+      cookie.setPath("/")
+
+      store.add(new URI("http://example.com/a"), cookie)
+      store.add(new URI("http://example.com/b"), cookie)
+
+      assert(store.getCookies().stream().filter(cookie => cookie.getName() == "dupObj").count() == 1L)
     }
 
     test("CookieStore.get does not filter by request path") {
@@ -266,8 +294,6 @@ class CookieStoreTests extends utest.TestSuite:
       cookie.setPath("/app")
       store.add(uri, cookie)
 
-      // NOTE: CookieStore does NOT enforce path matching (JDK behavior).
-      // Path filtering is handled by CookieManager.
       val retrieved = store.get(new URI("http://example.com/app/page"))
       val notRetrieved = store.get(new URI("http://example.com/other"))
       assert(retrieved.size() == 1)

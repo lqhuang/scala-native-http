@@ -11,38 +11,28 @@ import java.util.{
 }
 import java.util.concurrent.locks.ReentrantLock
 
-// Refs:
-// 1. https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/CookieStore.html (Interface)
-//
 // @since 1.6
 private[net] class InMemoryCookieStore extends CookieStore:
 
-  // Map from URI to list of cookies associated with that URI
   private val uriIndex: JMap[URI, JList[HttpCookie]] = new HashMap()
 
-  // Lock for thread safety
   private val lock = new ReentrantLock()
 
   override def add(uri: URI, cookie: HttpCookie): Unit =
     Objects.requireNonNull(cookie, "cookie is null")
     lock.lock()
     try
-      // Remove expired cookies first
       removeExpired()
 
-      // Determine the effective URI for indexing
       val effectiveUri = getEffectiveURI(uri)
 
-      // Remove any existing cookie with the same name, domain, and path
       val existingIt = uriIndex.values().iterator()
       while existingIt.hasNext do
         val existing = existingIt.next()
         existing.removeIf(c => cookie.equals(c)): Unit
 
-      // Don't add cookies that are already expired
       if cookie.hasExpired() then return
 
-      // Add the cookie
       var list = uriIndex.get(effectiveUri)
       if list == null then
         list = new ArrayList[HttpCookie]()
@@ -57,7 +47,6 @@ private[net] class InMemoryCookieStore extends CookieStore:
       removeExpired()
       val result = new ArrayList[HttpCookie]()
 
-      // Check all stored cookies for domain and path matching
       val it = uriIndex.entrySet().iterator()
       while it.hasNext do
         val entry = it.next()
@@ -118,7 +107,6 @@ private[net] class InMemoryCookieStore extends CookieStore:
       !wasEmpty
     finally lock.unlock()
 
-  /** Remove all expired cookies from the store. */
   private def removeExpired(): Unit =
     val uriIt = uriIndex.entrySet().iterator()
     while uriIt.hasNext do
@@ -127,30 +115,20 @@ private[net] class InMemoryCookieStore extends CookieStore:
       cookies.removeIf(c => c.hasExpired()): Unit
       if cookies.isEmpty then uriIt.remove(): Unit
 
-  /**
-   * Get an effective URI for storing a cookie. Normalizes the URI to just scheme + host.
-   */
   private def getEffectiveURI(uri: URI): URI =
     if uri != null then getEffectiveURIForRetrieval(uri)
     else null
 
-  /**
-   * Normalize URI for cookie storage/retrieval (scheme + host only).
-   */
   private def getEffectiveURIForRetrieval(uri: URI): URI =
     try
       val scheme = if uri.getScheme() != null then uri.getScheme().toLowerCase(Locale.ROOT) else "http"
       new URI(scheme, extractHost(uri), "/", null)
     catch case _: Exception => uri
 
-  /**
-   * Check if a cookie matches a given URI based on domain and path.
-   */
   private def matchesCookie(uri: URI, indexedUri: URI, cookie: HttpCookie): Boolean = {
     val host = extractHost(uri)
     if host == null then return false
 
-    // Check domain
     val domain = cookie.getDomain()
     val domainMatch =
       if domain == null then
@@ -160,7 +138,6 @@ private[net] class InMemoryCookieStore extends CookieStore:
 
     if !domainMatch then return false
 
-    // Check secure
     if cookie.getSecure() then
       val scheme = uri.getScheme()
       if scheme == null || !scheme.equalsIgnoreCase("https") then return false
