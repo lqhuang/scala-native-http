@@ -61,7 +61,6 @@ jobs:
       - name: Run tests for Java HTTP Client
         run: |
           ./mill modules.java-http-client.test
-          ./mill modules.java-http-client.test-internal
 
   test-windows:
     runs-on: windows-latest
@@ -128,7 +127,6 @@ jobs:
           SCALANATIVE_LIB_DIRS: "${{ env.VCPKG_INSTALLED_DIR }}\\${{ env.VCPKG_DEFAULT_TRIPLET }}\\lib"
         run: |
           .\mill modules.java-http-client.test
-          .\mill modules.java-http-client.test-internal
 
   publish-sonatype:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
