@@ -8,6 +8,7 @@ import java.util.Objects.requireNonNull
 import snhttp.jdk.net.{SystemProxySelectorImpl, StaticProxySelectorImpl}
 
 abstract class ProxySelector:
+
   def select(uri: URI): JList[Proxy]
 
   def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit

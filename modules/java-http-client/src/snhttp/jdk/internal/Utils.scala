@@ -7,6 +7,7 @@ import java.util.regex.Pattern
 import java.util.regex.Pattern.CASE_INSENSITIVE
 
 object Utils:
+
   private val CHARSET_PATTERN = Pattern.compile(
     "(?:^|;)\\s*\\bcharset\\s*=\\s*([^\\s;]+)\\s*",
     Pattern.CASE_INSENSITIVE,

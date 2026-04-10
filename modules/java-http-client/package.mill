@@ -1,5 +1,6 @@
 package build.modules.`java-http-client`
 
+import mill.api.Task
 import mill.scalalib.{DepSyntax, ScalaModule}
 
 object `package` extends build.CommonModule:
@@ -20,12 +21,29 @@ object `package` extends build.CommonModule:
     mvn"com.github.lolgab::scala-native-crypto::0.3.0",
   )
 
-  object `test-internal` extends ScalaNativeTests with build.UTestModule
+  object test extends CommonTestModule:
 
-  object jvm extends ScalaModule {
+    def sources = Task.Sources(
+      moduleDir / "src", // modules/java-http-client/test/src
+      moduleDir / "src-native", // modules/java-http-client/test/src-native
+    )
+
+  val upperModuleTestDir = test.moduleDir
+
+  object jvm extends ScalaModule:
+
     def scalaVersion = build.scalaVersion
     def sources = Seq() // no sources for JVM
 
     object test extends ScalaTests with build.UTestModule:
-      def sources = upper.test.sources
-  }
+
+      def mvnDeps = Seq(
+        // BC kits are Java only deps
+        mvn"org.bouncycastle:bcutil-jdk18on:1.83",
+        mvn"org.bouncycastle:bcpkix-jdk18on:1.83",
+      )
+
+      def sources = Task.Sources(
+        upperModuleTestDir / "src", // modules/java-http-client/test/src
+        upperModuleTestDir / "src-jvm", // modules/java-http-client/test/src-jvm
+      )

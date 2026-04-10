@@ -13,11 +13,10 @@ import scala.scalanative.unsafe.{
 }
 import scala.scalanative.unsigned.UnsignedRichInt
 import scala.scalanative.libc.string.memcpy
-import scala.scalanative.libc.stddef.size_t
 import scala.util.Using
 
-import snhttp.experimental.libcurl
-import snhttp.experimental.libcurl.{
+import snhttp.experimental.curl.libcurl
+import snhttp.experimental.curl.libcurl.{
   CurlOption,
   CurlErrCode,
   Curl,
@@ -26,7 +25,7 @@ import snhttp.experimental.libcurl.{
   CurlData,
   CurlWriteCallback,
 }
-import snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
+import snhttp.experimental.curl.libcurl.CurlErrCode.RichCurlErrCode
 
 import utest.{TestSuite, Tests, test, assert}
 

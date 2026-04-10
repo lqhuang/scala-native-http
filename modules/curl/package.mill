@@ -8,3 +8,9 @@ object `package` extends build.CommonModule:
 
   def artifactName = "scala-native-curl"
 
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-explain-cyclic",
+    "-Wunused:imports",
+  )
+
+  object test extends CommonTestModule

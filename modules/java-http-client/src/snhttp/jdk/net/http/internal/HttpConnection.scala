@@ -26,7 +26,7 @@ import scala.scalanative.unsafe.{
 import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.NULL
 
-import _root_.snhttp.experimental.curl.{
+import _root_.snhttp.experimental.curl.curl.{
   CurlErrCodeException,
   CurlException,
   CurlFollow,
@@ -326,8 +326,6 @@ private[http] final class HttpConnection[T](
       respBodyPublisher.subscribe(subscriber)
     }
   }
-
-end HttpConnection
 
 object HttpConnection:
 

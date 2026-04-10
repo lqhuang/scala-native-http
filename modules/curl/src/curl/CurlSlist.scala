@@ -1,10 +1,11 @@
 package snhttp.experimental.curl
+package curl
 
 import scala.scalanative.unsafe.{Ptr, CString}
 import scala.util.Using.Releasable
 
-import _root_.snhttp.experimental.libcurl.CurlSlist as _CurlSlist
-import _root_.snhttp.experimental.libcurl
+import _root_.snhttp.experimental.curl.libcurl.CurlSlist as _CurlSlist
+import _root_.snhttp.experimental.curl.libcurl
 
 class CurlSlist private (val ptr: Ptr[_CurlSlist]) extends Releasable[CurlSlist]:
 

@@ -88,6 +88,28 @@ class OpenSSLProvider(
           ),
         )
 
+      putProvService(
+        ProvService(
+          this,
+          "KeyManagerFactory",
+          "PKIX",
+          "snhttp.jdk.net.ssl.KeyManagerFactoryImpl",
+          JList.of(),
+          JMap.of(),
+        ),
+      )
+
+      putProvService(
+        ProvService(
+          this,
+          "TrustManagerFactory",
+          "PKCS12",
+          "snhttp.jdk.net.ssl.TrustManagerFactoryImpl",
+          JList.of(),
+          JMap.of(),
+        ),
+      )
+
     }
 
 object OpenSSLProvider:

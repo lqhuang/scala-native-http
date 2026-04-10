@@ -9,7 +9,7 @@ import scala.collection.mutable.Map
 /// ## Refs
 ///
 /// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URLConnection.html
-abstract class URLConnection(url: URL) {
+abstract class URLConnection(url: URL):
 
   def connect(): Unit
 
@@ -95,9 +95,8 @@ abstract class URLConnection(url: URL) {
   def getRequestProperty(key: String): String
 
   def getRequestProperties(): JMap[String, JList[String]]
-}
 
-object URLConnection {
+object URLConnection:
 
   @volatile private var allowUserInteraction: Boolean = true
   private val defaultUseCachesMap: Map[String, Boolean] = Map()
@@ -135,4 +134,5 @@ object URLConnection {
   @deprecated()
   def getDefaultRequestProperty(key: String): String =
     throw new NotImplementedError("deprecated")
-}
+
+end URLConnection

@@ -1,9 +1,15 @@
-package javax.net.ssl
+/**
+ * No java.util.EventObject shim available
+ *
+ * Commenting out for now
+ */
 
-import java.util.EventObject
+// package javax.net.ssl
 
-class SSLSessionBindingEvent(session: SSLSession, name: String) extends EventObject(session):
+// import java.util.EventObject
 
-  def getSession(): SSLSession = session
+// class SSLSessionBindingEvent(session: SSLSession, name: String) extends EventObject(session):
 
-  def getName(): String = name
+//   def getSession(): SSLSession = session
+
+//   def getName(): String = name

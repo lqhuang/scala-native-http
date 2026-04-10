@@ -1,8 +1,9 @@
 package snhttp.experimental.curl
+package curl
 
 import scala.scalanative.unsafe.Ptr
 
-import _root_.snhttp.experimental.libcurl.{CurlMsg as _CurlMsg, CurlMsgCode, CurlMsgData}
+import _root_.snhttp.experimental.curl.libcurl.{CurlMsg as _CurlMsg, CurlMsgCode, CurlMsgData}
 
 // Public class but cannot be instantiated outside of the curl package
 class CurlMsg private[curl] (val ptr: Ptr[_CurlMsg]) extends AnyVal:

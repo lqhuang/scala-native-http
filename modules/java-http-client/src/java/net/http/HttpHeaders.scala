@@ -11,7 +11,8 @@ import java.util.function.BiPredicate
 final class HttpHeaders private (headers: JMap[String, JList[String]]):
 
   // DO NOT USE `JMap.copyOf`, as it is a TreeMap with string case insensitive order
-  val _headers: JMap[String, JList[String]] = Collections.unmodifiableMap(headers)
+  val _headers: JMap[String, JList[String]] =
+    Collections.unmodifiableMap(headers)
 
   def allValues(name: String): JList[String] =
     _headers.getOrDefault(name, JList.of())
@@ -42,7 +43,8 @@ final class HttpHeaders private (headers: JMap[String, JList[String]]):
       }
       .sum()
 
-  override def toString: String = s"${super.toString()} { ${_headers} }"
+  override def toString(): String =
+    s"${super.toString()} { ${_headers} }"
 
 object HttpHeaders:
 

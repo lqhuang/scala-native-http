@@ -3,7 +3,7 @@ import scala.scalanative.unsigned.{USize, UnsignedRichInt}
 import scala.scalanative.libc.string.memcpy
 import scala.util.Using
 
-import snhttp.experimental.curl.{
+import snhttp.experimental.curl.curl.{
   CurlEasy,
   CurlMulti,
   CurlOption,
@@ -12,8 +12,8 @@ import snhttp.experimental.curl.{
   CurlWriteCallback,
   CurlMsg,
 }
-import snhttp.experimental.curl.CurlErrCode.RichCurlErrCode
-import snhttp.experimental.curl.CurlMultiCode.RichCurlMultiCode
+import snhttp.experimental.curl.curl.CurlErrCode.RichCurlErrCode
+import snhttp.experimental.curl.curl.CurlMultiCode.RichCurlMultiCode
 
 object App:
 

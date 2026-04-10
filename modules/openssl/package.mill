@@ -3,3 +3,10 @@ package build.modules.openssl
 object `package` extends build.CommonModule:
 
   def artifactName = "scala-native-openssl"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-explain-cyclic",
+    "-Wunused:imports",
+  )
+
+  object test extends CommonTestModule

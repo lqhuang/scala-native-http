@@ -48,6 +48,7 @@ trait HttpRequest extends Closeable:
     uri().hashCode + method().hashCode + headers().hashCode
 
 object HttpRequest:
+
   def newBuilder(): Builder = new HttpRequestBuilderImpl()
 
   def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(Some(uri))
@@ -77,7 +78,8 @@ object HttpRequest:
     builder
   }
 
-  trait Builder {
+  trait Builder:
+
     def uri(uri: URI): Builder
 
     def expectContinue(enable: Boolean): Builder
@@ -107,11 +109,14 @@ object HttpRequest:
     def build(): HttpRequest
 
     def copy(): Builder
-  }
 
-  trait BodyPublisher extends Flow.Publisher[ByteBuffer] {
+  end Builder
+
+  trait BodyPublisher extends Flow.Publisher[ByteBuffer]:
+
     def contentLength(): Long
-  }
+
+  end BodyPublisher
 
   abstract class BodyPublishers
   object BodyPublishers:
@@ -151,5 +156,7 @@ object HttpRequest:
 
     def concat(publishers: BodyPublisher*): BodyPublisher =
       BodyPublishersImpl.concat(publishers*)
+
+  end BodyPublishers
 
 end HttpRequest

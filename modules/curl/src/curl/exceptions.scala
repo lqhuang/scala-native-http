@@ -1,9 +1,10 @@
 package snhttp.experimental.curl
+package curl
 
-import _root_.snhttp.experimental.libcurl.{CurlOption, CurlErrCode, CurlMultiCode}
-import _root_.snhttp.experimental.libcurl.{easyStrError, multiStrError}
-import _root_.snhttp.experimental.libcurl.CurlErrCode.RichCurlErrCode
-import _root_.snhttp.experimental.libcurl.CurlMultiCode.RichCurlMultiCode
+import _root_.snhttp.experimental.curl.libcurl.{CurlOption, CurlErrCode, CurlMultiCode}
+import _root_.snhttp.experimental.curl.libcurl.{easyStrError, multiStrError}
+import _root_.snhttp.experimental.curl.libcurl.CurlErrCode.RichCurlErrCode
+import _root_.snhttp.experimental.curl.libcurl.CurlMultiCode.RichCurlMultiCode
 import scala.scalanative.unsafe.{CInt, CLong, Ptr, CFuncPtr, fromCString}
 
 class CurlException(message: String, exc: Throwable) extends RuntimeException(message, exc):

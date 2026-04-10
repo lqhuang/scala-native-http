@@ -47,9 +47,7 @@ abstract class SSLSocket(
 
   def addHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit
 
-  def removeHandshakeCompletedListener(
-      listener: HandshakeCompletedListener,
-  ): Unit
+  def removeHandshakeCompletedListener(listener: HandshakeCompletedListener): Unit
 
   def startHandshake(): Unit
 

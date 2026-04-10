@@ -43,7 +43,7 @@ class SSLParametersTest extends TestSuite:
       val p = new SSLParameters(cipherSuites)
 
       assert(p.getCipherSuites() != null)
-      assert(!cipherSuites.equals(p.getCipherSuites()))
+      assert(!cipherSuites.eq(p.getCipherSuites()))
       assert(cipherSuites.sameElements(p.getCipherSuites()))
       assert(p.getProtocols() == null)
       assert(p.getWantClientAuth() == false)
@@ -58,8 +58,8 @@ class SSLParametersTest extends TestSuite:
       assert(p.getCipherSuites() != null)
       assert(p.getProtocols() != null)
 
-      assert(!cipherSuites.equals(p.getCipherSuites()))
-      assert(!protocols.equals(p.getProtocols()))
+      assert(!cipherSuites.eq(p.getCipherSuites()))
+      assert(!protocols.eq(p.getProtocols()))
 
       assert(cipherSuites.sameElements(p.getCipherSuites()))
       assert(protocols.sameElements(p.getProtocols()))
@@ -80,7 +80,7 @@ class SSLParametersTest extends TestSuite:
       assert(cipherSuites.sameElements(p.getCipherSuites()))
 
       // confirm clone on output
-      assert(!p.getCipherSuites().equals(p.getCipherSuites()))
+      assert(!p.getCipherSuites().eq(p.getCipherSuites()))
     }
 
     test("SSLParameters - Protocols") {
@@ -95,7 +95,7 @@ class SSLParametersTest extends TestSuite:
       assert(protocols.sameElements(p.getProtocols()))
 
       // confirm clone on output
-      assert(!p.getProtocols().equals(p.getProtocols()))
+      assert(!p.getProtocols().eq(p.getProtocols()))
     }
 
     test("SSLParameters - ClientAuth") {

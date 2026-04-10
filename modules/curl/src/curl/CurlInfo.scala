@@ -1,15 +1,15 @@
 package snhttp.experimental.curl
+package curl
 
 import java.nio.charset.StandardCharsets
 
 import scala.collection.mutable.{TreeMap, ListBuffer}
-import scala.scalanative.unsafe.{Ptr, CLong, Zone, UnsafeRichLong}
+import scala.scalanative.unsafe.{Ptr, CLong}
 import scala.scalanative.unsafe.{stackalloc, fromCString}
-import scala.scalanative.unsigned.UnsignedRichLong
 import scala.math.Ordering.comparatorToOrdering
 
-import _root_.snhttp.experimental.libcurl
-import _root_.snhttp.experimental.libcurl.{
+import _root_.snhttp.experimental.curl.libcurl
+import _root_.snhttp.experimental.curl.libcurl.{
   CurlInfo as _CurlInfo,
   Curl,
   CurlHttpVersion,

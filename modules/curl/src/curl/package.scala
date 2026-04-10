@@ -1,22 +1,25 @@
-package snhttp.experimental
+package snhttp.experimental.curl
+
+import _root_.snhttp.experimental.curl._libcurl.Curl.CurlGlobalFlag
 
 package object curl:
 
-  export _root_.snhttp.experimental.libcurl.CurlGlobalFlag
-  export _root_.snhttp.experimental.libcurl.{
+  export _root_.snhttp.experimental.curl._libcurl.Curl.{
     CurlOption,
     CurlErrCode,
     CurlHttpVersion,
     CurlWriteCallback,
-    CurlData,
     CurlUseSsl,
     CurlFollow,
-    CurlMsgCode,
-    CurlMultiCode,
-    CurlMultiOption,
     CurlDebugCallback,
     CurlInfoType,
     CurlWriteFuncRet,
+  }
+  export _root_.snhttp.experimental.curl._libcurl.Easy.CurlData
+  export _root_.snhttp.experimental.curl._libcurl.Multi.{
+    CurlMsgCode,
+    CurlMultiCode,
+    CurlMultiOption,
   }
 
   object CurlUtils:

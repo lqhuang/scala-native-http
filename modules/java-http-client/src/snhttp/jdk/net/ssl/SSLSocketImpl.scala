@@ -5,12 +5,12 @@ import java.net.SocketException
 import java.util.List as JList
 import java.util.function.BiFunction
 import java.util.Objects.requireNonNull
-import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket, HandshakeCompletedListener}
+import javax.net.ssl.{SSLParameters, SSLSession, SSLSocket}
+import javax.net.ssl.HandshakeCompletedListener
 
 import scala.scalanative.posix.sys.socket
 
-import snhttp.experimental.openssl.{libssl, libbio}
-import snhttp.experimental.openssl._libssl.constants
+import snhttp.experimental.openssl.libssl
 
 /**
  * SSL Socket Implementation
@@ -31,26 +31,24 @@ class ClientSSLSocketImpl protected (
     case 16 => socket.AF_INET6
     case _  => throw new IllegalArgumentException("Invalid IP address length")
   private val sock = socket.socket(af_inet, socket.SOCK_STREAM, 0)
-  // socket.bind(
-  //   sock,
-  // )
+  // socket.bind(sock)
   if (sock < 0)
     throw new RuntimeException("Failed to create socket")
   // TODO: Test socket can connect to the host:port else we need to recreate the socket
 
-  protected[ssl] val ptr = libbio.BIO_new_socket(sock, if autoClose then 1 else 0)
+  protected[ssl] val ptr = libssl.BIO_new_socket(sock, if autoClose then 1 else 0)
   if (ptr == null)
     throw new RuntimeException("Failed to create new BIO object")
 
   // Setting the socket to be nonblocking
-  val _set_nbio_ret = libbio.BIO_socket_nbio(sock, 1)
+  val _set_nbio_ret = libssl.BIO_socket_nbio(sock, 1)
   if (_set_nbio_ret != 1)
     throw new RuntimeException("Failed to set socket to non-blocking mode")
 
   // little tunings on the socket options can be done here
-  val _ = libbio.BIO_set_conn_mode(ptr, libbio.BIO_SOCK.REUSEADDR)
-  val _ = libbio.BIO_set_conn_mode(ptr, libbio.BIO_SOCK.KEEPALIVE)
-  val _ = libbio.BIO_set_conn_mode(ptr, libbio.BIO_SOCK.NONBLOCK)
+  val _ = libssl.BIO_set_conn_mode(ptr, libssl.BIO_SOCK.REUSEADDR)
+  val _ = libssl.BIO_set_conn_mode(ptr, libssl.BIO_SOCK.KEEPALIVE)
+  val _ = libssl.BIO_set_conn_mode(ptr, libssl.BIO_SOCK.NONBLOCK)
 
   /// This method will initiate the initial handshake if necessary and then
   /// block until the handshake has been established.
@@ -87,16 +85,16 @@ class ClientSSLSocketImpl protected (
    */
 
   protected[ssl] def pendingReadableBytes: Long =
-    libbio.BIO_ctrl_pending(ptr).toLong
+    libssl.BIO_ctrl_pending(ptr).toLong
 
   protected[ssl] def pendingWrittenBytes: Long =
-    libbio.BIO_ctrl_wpending(ptr).toLong
+    libssl.BIO_ctrl_wpending(ptr).toLong
 
   protected[ssl] def requestReadBufferSize: Long =
-    libbio.BIO_ctrl_get_read_request(ptr).toLong
+    libssl.BIO_ctrl_get_read_request(ptr).toLong
 
   protected[ssl] def guaranteeWriteBufferSize: Long =
-    libbio.BIO_ctrl_get_write_guarantee(ptr).toLong
+    libssl.BIO_ctrl_get_write_guarantee(ptr).toLong
 
   /**
    * Helpers

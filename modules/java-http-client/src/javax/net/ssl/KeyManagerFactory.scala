@@ -3,6 +3,8 @@ package javax.net.ssl
 import java.security.{KeyStore, Provider}
 import java.util.Objects.requireNonNull
 
+import snhttp.jdk.net.ssl.{KeyManagerFactoryImpl, KeyManagerFactorySpiImpl}
+
 /// Refs:
 ///
 /// https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactorySpi.html
@@ -27,7 +29,7 @@ class KeyManagerFactory protected (
 
 object KeyManagerFactory:
 
-  final def getDefaultAlgorithm(): String = ???
+  final def getDefaultAlgorithm(): String = "PKIX"
 
   final def getInstance(algorithm: String): KeyManagerFactory = {
     requireNonNull(algorithm)

@@ -11,18 +11,13 @@ import javax.net.ssl.{SSLParameters, SSLContextSpi, SSLSession, SSLEngineResult,
 import javax.net.ssl.SSLException
 import javax.net.ssl.SSLEngineResult.{Status, HandshakeStatus}
 
-import scala.scalanative.runtime.Intrinsics
+import scala.scalanative.runtime.{fromRawPtr, Intrinsics}
 import scala.scalanative.unsafe.{Ptr, Zone, toCString, alloc, stackalloc}
 import scala.scalanative.unsigned.USize
 
 import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl._libssl.enumerations.OSSL_HANDSHAKE_STATE
-import snhttp.experimental.openssl._libssl.constants.{
-  SSL3_RT_MAX_PACKET_SIZE,
-  SSL3_RT_MAX_PLAIN_LENGTH,
-}
-import scala.scalanative.runtime.fromRawPtr
-import scala.scalanative.memory.PointerBuffer
+import snhttp.experimental.openssl.libssl.OSSL_HANDSHAKE_STATE
+import snhttp.experimental.openssl.libssl.{SSL3_RT_MAX_PACKET_SIZE, SSL3_RT_MAX_PLAIN_LENGTH}
 
 /// An **Client** SSLEngine is created by calling `SSLContext.createSSLEngine(host, port)`.
 ///
