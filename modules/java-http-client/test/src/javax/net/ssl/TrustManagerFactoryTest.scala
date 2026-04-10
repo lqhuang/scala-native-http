@@ -75,7 +75,7 @@ class TrustManagerFactoryTest extends TestSuite:
     assert(tmf.getProvider() != null)
 
     // before init
-    if !tmf.getAlgorithm().equals("PAKE")
+    if !(tmf.getAlgorithm() == "PAKE")
     then {
       try
         tmf.getTrustManagers()
@@ -133,10 +133,10 @@ class TrustManagerFactoryTest extends TestSuite:
     test_TrustManagerFactory_getTrustManagers(tmf)
 
     // init with specific key store
-    if !tmf.getAlgorithm().equals("PAKE")
-    then
+    if (!(tmf.getAlgorithm() == "PAKE")) {
       tmf.init(getTestKeyStore().keyStore)
       test_TrustManagerFactory_getTrustManagers(tmf)
+    }
   }
 
   private def test_TrustManagerFactory_getTrustManagers(tmf: TrustManagerFactory): Unit = {

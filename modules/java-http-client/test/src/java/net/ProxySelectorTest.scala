@@ -25,7 +25,7 @@ class ProxySelectorTest extends TestSuite:
       val customSelector = new TestProxySelector()
 
       ProxySelector.setDefault(customSelector)
-      assert(ProxySelector.getDefault().equals(customSelector))
+      assert(ProxySelector.getDefault().eq(customSelector))
 
       ProxySelector.setDefault(originalSelector)
     }

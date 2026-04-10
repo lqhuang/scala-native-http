@@ -35,7 +35,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def OPENSSL_asc2uni(
+  def OPENSSL_asc2uni(
       asc: CString,
       asclen: CInt,
       uni: Ptr[Ptr[CUnsignedChar]],
@@ -45,17 +45,17 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def OPENSSL_uni2asc(uni: Ptr[CUnsignedChar], unilen: CInt): CString = extern
+  def OPENSSL_uni2asc(uni: Ptr[CUnsignedChar], unilen: CInt): CString = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def OPENSSL_uni2utf8(uni: Ptr[CUnsignedChar], unilen: CInt): CString = extern
+  def OPENSSL_uni2utf8(uni: Ptr[CUnsignedChar], unilen: CInt): CString = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def OPENSSL_utf82uni(
+  def OPENSSL_utf82uni(
       asc: CString,
       asclen: CInt,
       uni: Ptr[Ptr[CUnsignedChar]],
@@ -65,12 +65,12 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_PBE_add(): Unit = extern
+  def PKCS12_PBE_add(): Unit = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_PBE_keyivgen(
+  def PKCS12_PBE_keyivgen(
       ctx: Ptr[EVP_CIPHER_CTX],
       pass: CString,
       passlen: CInt,
@@ -83,7 +83,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_PBE_keyivgen_ex(
+  def PKCS12_PBE_keyivgen_ex(
       ctx: Ptr[EVP_CIPHER_CTX],
       pass: CString,
       passlen: CInt,
@@ -98,28 +98,28 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create0_p8inf(p8: Ptr[PKCS8_PRIV_KEY_INFO]): Ptr[PKCS12_SAFEBAG] =
+  def PKCS12_SAFEBAG_create0_p8inf(p8: Ptr[PKCS8_PRIV_KEY_INFO]): Ptr[PKCS12_SAFEBAG] =
     extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create0_pkcs8(p8: Ptr[X509_SIG]): Ptr[PKCS12_SAFEBAG] = extern
+  def PKCS12_SAFEBAG_create0_pkcs8(p8: Ptr[X509_SIG]): Ptr[PKCS12_SAFEBAG] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create_cert(x509: Ptr[X509]): Ptr[PKCS12_SAFEBAG] = extern
+  def PKCS12_SAFEBAG_create_cert(x509: Ptr[X509]): Ptr[PKCS12_SAFEBAG] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create_crl(crl: Ptr[X509_CRL]): Ptr[PKCS12_SAFEBAG] = extern
+  def PKCS12_SAFEBAG_create_crl(crl: Ptr[X509_CRL]): Ptr[PKCS12_SAFEBAG] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create_pkcs8_encrypt(
+  def PKCS12_SAFEBAG_create_pkcs8_encrypt(
       pbe_nid: CInt,
       pass: CString,
       passlen: CInt,
@@ -132,7 +132,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create_pkcs8_encrypt_ex(
+  def PKCS12_SAFEBAG_create_pkcs8_encrypt_ex(
       pbe_nid: CInt,
       pass: CString,
       passlen: CInt,
@@ -147,7 +147,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_create_secret(
+  def PKCS12_SAFEBAG_create_secret(
       `type`: CInt,
       vtype: CInt,
       value: Ptr[CUnsignedChar],
@@ -157,70 +157,70 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_attr(bag: Ptr[PKCS12_SAFEBAG], attr_nid: CInt): Ptr[ASN1_TYPE] =
+  def PKCS12_SAFEBAG_get0_attr(bag: Ptr[PKCS12_SAFEBAG], attr_nid: CInt): Ptr[ASN1_TYPE] =
     extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_attrs(bag: Ptr[PKCS12_SAFEBAG]): Ptr[stack_st_X509_ATTRIBUTE] =
+  def PKCS12_SAFEBAG_get0_attrs(bag: Ptr[PKCS12_SAFEBAG]): Ptr[stack_st_X509_ATTRIBUTE] =
     extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_bag_obj(bag: Ptr[PKCS12_SAFEBAG]): Ptr[ASN1_TYPE] = extern
+  def PKCS12_SAFEBAG_get0_bag_obj(bag: Ptr[PKCS12_SAFEBAG]): Ptr[ASN1_TYPE] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_bag_type(bag: Ptr[PKCS12_SAFEBAG]): Ptr[ASN1_OBJECT] = extern
+  def PKCS12_SAFEBAG_get0_bag_type(bag: Ptr[PKCS12_SAFEBAG]): Ptr[ASN1_OBJECT] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_p8inf(bag: Ptr[PKCS12_SAFEBAG]): Ptr[PKCS8_PRIV_KEY_INFO] = extern
+  def PKCS12_SAFEBAG_get0_p8inf(bag: Ptr[PKCS12_SAFEBAG]): Ptr[PKCS8_PRIV_KEY_INFO] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_pkcs8(bag: Ptr[PKCS12_SAFEBAG]): Ptr[X509_SIG] = extern
+  def PKCS12_SAFEBAG_get0_pkcs8(bag: Ptr[PKCS12_SAFEBAG]): Ptr[X509_SIG] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_safes(bag: Ptr[PKCS12_SAFEBAG]): Ptr[stack_st_PKCS12_SAFEBAG] =
+  def PKCS12_SAFEBAG_get0_safes(bag: Ptr[PKCS12_SAFEBAG]): Ptr[stack_st_PKCS12_SAFEBAG] =
     extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get0_type(bag: Ptr[PKCS12_SAFEBAG]): Ptr[ASN1_OBJECT] = extern
+  def PKCS12_SAFEBAG_get0_type(bag: Ptr[PKCS12_SAFEBAG]): Ptr[ASN1_OBJECT] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get1_cert(bag: Ptr[PKCS12_SAFEBAG]): Ptr[X509] = extern
+  def PKCS12_SAFEBAG_get1_cert(bag: Ptr[PKCS12_SAFEBAG]): Ptr[X509] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get1_crl(bag: Ptr[PKCS12_SAFEBAG]): Ptr[X509_CRL] = extern
+  def PKCS12_SAFEBAG_get1_crl(bag: Ptr[PKCS12_SAFEBAG]): Ptr[X509_CRL] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get_bag_nid(bag: Ptr[PKCS12_SAFEBAG]): CInt = extern
+  def PKCS12_SAFEBAG_get_bag_nid(bag: Ptr[PKCS12_SAFEBAG]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_SAFEBAG_get_nid(bag: Ptr[PKCS12_SAFEBAG]): CInt = extern
+  def PKCS12_SAFEBAG_get_nid(bag: Ptr[PKCS12_SAFEBAG]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add1_attr_by_NID(
+  def PKCS12_add1_attr_by_NID(
       bag: Ptr[PKCS12_SAFEBAG],
       nid: CInt,
       `type`: CInt,
@@ -231,7 +231,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add1_attr_by_txt(
+  def PKCS12_add1_attr_by_txt(
       bag: Ptr[PKCS12_SAFEBAG],
       attrname: CString,
       `type`: CInt,
@@ -242,13 +242,13 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_CSPName_asc(bag: Ptr[PKCS12_SAFEBAG], name: CString, namelen: CInt): CInt =
+  def PKCS12_add_CSPName_asc(bag: Ptr[PKCS12_SAFEBAG], name: CString, namelen: CInt): CInt =
     extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_cert(
+  def PKCS12_add_cert(
       pbags: Ptr[Ptr[stack_st_PKCS12_SAFEBAG]],
       cert: Ptr[X509],
   ): Ptr[PKCS12_SAFEBAG] = extern
@@ -256,7 +256,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_friendlyname_asc(
+  def PKCS12_add_friendlyname_asc(
       bag: Ptr[PKCS12_SAFEBAG],
       name: CString,
       namelen: CInt,
@@ -265,7 +265,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_friendlyname_uni(
+  def PKCS12_add_friendlyname_uni(
       bag: Ptr[PKCS12_SAFEBAG],
       name: Ptr[CUnsignedChar],
       namelen: CInt,
@@ -274,7 +274,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_friendlyname_utf8(
+  def PKCS12_add_friendlyname_utf8(
       bag: Ptr[PKCS12_SAFEBAG],
       name: CString,
       namelen: CInt,
@@ -283,7 +283,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_key(
+  def PKCS12_add_key(
       pbags: Ptr[Ptr[stack_st_PKCS12_SAFEBAG]],
       key: Ptr[EVP_PKEY],
       key_usage: CInt,
@@ -295,7 +295,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_key_ex(
+  def PKCS12_add_key_ex(
       pbags: Ptr[Ptr[stack_st_PKCS12_SAFEBAG]],
       key: Ptr[EVP_PKEY],
       key_usage: CInt,
@@ -309,7 +309,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_localkeyid(
+  def PKCS12_add_localkeyid(
       bag: Ptr[PKCS12_SAFEBAG],
       name: Ptr[CUnsignedChar],
       namelen: CInt,
@@ -318,7 +318,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_safe(
+  def PKCS12_add_safe(
       psafes: Ptr[Ptr[stack_st_PKCS7]],
       bags: Ptr[stack_st_PKCS12_SAFEBAG],
       safe_nid: CInt,
@@ -329,7 +329,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_safe_ex(
+  def PKCS12_add_safe_ex(
       psafes: Ptr[Ptr[stack_st_PKCS7]],
       bags: Ptr[stack_st_PKCS12_SAFEBAG],
       safe_nid: CInt,
@@ -342,12 +342,12 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_safes(safes: Ptr[stack_st_PKCS7], p7_nid: CInt): Ptr[PKCS12] = extern
+  def PKCS12_add_safes(safes: Ptr[stack_st_PKCS7], p7_nid: CInt): Ptr[PKCS12] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_safes_ex(
+  def PKCS12_add_safes_ex(
       safes: Ptr[stack_st_PKCS7],
       p7_nid: CInt,
       ctx: Ptr[OSSL_LIB_CTX],
@@ -357,7 +357,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_add_secret(
+  def PKCS12_add_secret(
       pbags: Ptr[Ptr[stack_st_PKCS12_SAFEBAG]],
       nid_type: CInt,
       value: Ptr[CUnsignedChar],
@@ -367,7 +367,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_create(
+  def PKCS12_create(
       pass: CString,
       name: CString,
       pkey: Ptr[EVP_PKEY],
@@ -383,7 +383,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_create_ex(
+  def PKCS12_create_ex(
       pass: CString,
       name: CString,
       pkey: Ptr[EVP_PKEY],
@@ -401,7 +401,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_decrypt_skey(
+  def PKCS12_decrypt_skey(
       bag: Ptr[PKCS12_SAFEBAG],
       pass: CString,
       passlen: CInt,
@@ -410,7 +410,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_decrypt_skey_ex(
+  def PKCS12_decrypt_skey_ex(
       bag: Ptr[PKCS12_SAFEBAG],
       pass: CString,
       passlen: CInt,
@@ -421,7 +421,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_gen_mac(
+  def PKCS12_gen_mac(
       p12: Ptr[PKCS12],
       pass: CString,
       passlen: CInt,
@@ -432,7 +432,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_get0_mac(
+  def PKCS12_get0_mac(
       pmac: Ptr[Ptr[ASN1_OCTET_STRING]],
       pmacalg: Ptr[Ptr[X509_ALGOR]],
       psalt: Ptr[Ptr[ASN1_OCTET_STRING]],
@@ -443,12 +443,12 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_get_attr(bag: Ptr[PKCS12_SAFEBAG], attr_nid: CInt): Ptr[ASN1_TYPE] = extern
+  def PKCS12_get_attr(bag: Ptr[PKCS12_SAFEBAG], attr_nid: CInt): Ptr[ASN1_TYPE] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_get_attr_gen(
+  def PKCS12_get_attr_gen(
       attrs: Ptr[stack_st_X509_ATTRIBUTE],
       attr_nid: CInt,
   ): Ptr[ASN1_TYPE] = extern
@@ -456,23 +456,23 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_get_friendlyname(bag: Ptr[PKCS12_SAFEBAG]): CString = extern
+  def PKCS12_get_friendlyname(bag: Ptr[PKCS12_SAFEBAG]): CString = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_init(mode: CInt): Ptr[PKCS12] = extern
+  def PKCS12_init(mode: CInt): Ptr[PKCS12] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_init_ex(mode: CInt, ctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[PKCS12] =
+  def PKCS12_init_ex(mode: CInt, ctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[PKCS12] =
     extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_item_decrypt_d2i(
+  def PKCS12_item_decrypt_d2i(
       algor: Ptr[X509_ALGOR],
       it: Ptr[ASN1_ITEM],
       pass: CString,
@@ -484,7 +484,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_item_decrypt_d2i_ex(
+  def PKCS12_item_decrypt_d2i_ex(
       algor: Ptr[X509_ALGOR],
       it: Ptr[ASN1_ITEM],
       pass: CString,
@@ -498,7 +498,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_item_i2d_encrypt(
+  def PKCS12_item_i2d_encrypt(
       algor: Ptr[X509_ALGOR],
       it: Ptr[ASN1_ITEM],
       pass: CString,
@@ -510,7 +510,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_item_i2d_encrypt_ex(
+  def PKCS12_item_i2d_encrypt_ex(
       algor: Ptr[X509_ALGOR],
       it: Ptr[ASN1_ITEM],
       pass: CString,
@@ -524,7 +524,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_item_pack_safebag(
+  def PKCS12_item_pack_safebag(
       obj: Ptr[Byte],
       it: Ptr[ASN1_ITEM],
       nid1: CInt,
@@ -534,7 +534,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_key_gen_asc(
+  def PKCS12_key_gen_asc(
       pass: CString,
       passlen: CInt,
       salt: Ptr[CUnsignedChar],
@@ -549,7 +549,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_key_gen_asc_ex(
+  def PKCS12_key_gen_asc_ex(
       pass: CString,
       passlen: CInt,
       salt: Ptr[CUnsignedChar],
@@ -566,7 +566,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_key_gen_uni(
+  def PKCS12_key_gen_uni(
       pass: Ptr[CUnsignedChar],
       passlen: CInt,
       salt: Ptr[CUnsignedChar],
@@ -581,7 +581,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_key_gen_uni_ex(
+  def PKCS12_key_gen_uni_ex(
       pass: Ptr[CUnsignedChar],
       passlen: CInt,
       salt: Ptr[CUnsignedChar],
@@ -598,7 +598,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_key_gen_utf8(
+  def PKCS12_key_gen_utf8(
       pass: CString,
       passlen: CInt,
       salt: Ptr[CUnsignedChar],
@@ -613,7 +613,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_key_gen_utf8_ex(
+  def PKCS12_key_gen_utf8_ex(
       pass: CString,
       passlen: CInt,
       salt: Ptr[CUnsignedChar],
@@ -630,27 +630,27 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_mac_present(p12: Ptr[PKCS12]): CInt = extern
+  def PKCS12_mac_present(p12: Ptr[PKCS12]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_newpass(p12: Ptr[PKCS12], oldpass: CString, newpass: CString): CInt = extern
+  def PKCS12_newpass(p12: Ptr[PKCS12], oldpass: CString, newpass: CString): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_pack_authsafes(p12: Ptr[PKCS12], safes: Ptr[stack_st_PKCS7]): CInt = extern
+  def PKCS12_pack_authsafes(p12: Ptr[PKCS12], safes: Ptr[stack_st_PKCS7]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_pack_p7data(sk: Ptr[stack_st_PKCS12_SAFEBAG]): Ptr[PKCS7] = extern
+  def PKCS12_pack_p7data(sk: Ptr[stack_st_PKCS12_SAFEBAG]): Ptr[PKCS7] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_pack_p7encdata(
+  def PKCS12_pack_p7encdata(
       pbe_nid: CInt,
       pass: CString,
       passlen: CInt,
@@ -663,7 +663,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_pack_p7encdata_ex(
+  def PKCS12_pack_p7encdata_ex(
       pbe_nid: CInt,
       pass: CString,
       passlen: CInt,
@@ -678,7 +678,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_parse(
+  def PKCS12_parse(
       p12: Ptr[PKCS12],
       pass: CString,
       pkey: Ptr[Ptr[EVP_PKEY]],
@@ -689,7 +689,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_pbe_crypt(
+  def PKCS12_pbe_crypt(
       algor: Ptr[X509_ALGOR],
       pass: CString,
       passlen: CInt,
@@ -703,7 +703,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_pbe_crypt_ex(
+  def PKCS12_pbe_crypt_ex(
       algor: Ptr[X509_ALGOR],
       pass: CString,
       passlen: CInt,
@@ -719,7 +719,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_set_mac(
+  def PKCS12_set_mac(
       p12: Ptr[PKCS12],
       pass: CString,
       passlen: CInt,
@@ -732,7 +732,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_setup_mac(
+  def PKCS12_setup_mac(
       p12: Ptr[PKCS12],
       iter: CInt,
       salt: Ptr[CUnsignedChar],
@@ -743,17 +743,17 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_unpack_authsafes(p12: Ptr[PKCS12]): Ptr[stack_st_PKCS7] = extern
+  def PKCS12_unpack_authsafes(p12: Ptr[PKCS12]): Ptr[stack_st_PKCS7] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_unpack_p7data(p7: Ptr[PKCS7]): Ptr[stack_st_PKCS12_SAFEBAG] = extern
+  def PKCS12_unpack_p7data(p7: Ptr[PKCS7]): Ptr[stack_st_PKCS12_SAFEBAG] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_unpack_p7encdata(
+  def PKCS12_unpack_p7encdata(
       p7: Ptr[PKCS7],
       pass: CString,
       passlen: CInt,
@@ -762,17 +762,17 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS12_verify_mac(p12: Ptr[PKCS12], pass: CString, passlen: CInt): CInt = extern
+  def PKCS12_verify_mac(p12: Ptr[PKCS12], pass: CString, passlen: CInt): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_add_keyusage(p8: Ptr[PKCS8_PRIV_KEY_INFO], usage: CInt): CInt = extern
+  def PKCS8_add_keyusage(p8: Ptr[PKCS8_PRIV_KEY_INFO], usage: CInt): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_decrypt(
+  def PKCS8_decrypt(
       p8: Ptr[X509_SIG],
       pass: CString,
       passlen: CInt,
@@ -781,7 +781,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_decrypt_ex(
+  def PKCS8_decrypt_ex(
       p8: Ptr[X509_SIG],
       pass: CString,
       passlen: CInt,
@@ -792,7 +792,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_encrypt(
+  def PKCS8_encrypt(
       pbe_nid: CInt,
       cipher: Ptr[EVP_CIPHER],
       pass: CString,
@@ -806,7 +806,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_encrypt_ex(
+  def PKCS8_encrypt_ex(
       pbe_nid: CInt,
       cipher: Ptr[EVP_CIPHER],
       pass: CString,
@@ -822,12 +822,12 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_get_attr(p8: Ptr[PKCS8_PRIV_KEY_INFO], attr_nid: CInt): Ptr[ASN1_TYPE] = extern
+  def PKCS8_get_attr(p8: Ptr[PKCS8_PRIV_KEY_INFO], attr_nid: CInt): Ptr[ASN1_TYPE] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_set0_pbe(
+  def PKCS8_set0_pbe(
       pass: CString,
       passlen: CInt,
       p8inf: Ptr[PKCS8_PRIV_KEY_INFO],
@@ -837,7 +837,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def PKCS8_set0_pbe_ex(
+  def PKCS8_set0_pbe_ex(
       pass: CString,
       passlen: CInt,
       p8inf: Ptr[PKCS8_PRIV_KEY_INFO],
@@ -849,19 +849,19 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def d2i_PKCS12_bio(bp: Ptr[BIO], p12: Ptr[Ptr[PKCS12]]): Ptr[PKCS12] = extern
+  def d2i_PKCS12_bio(bp: Ptr[BIO], p12: Ptr[Ptr[PKCS12]]): Ptr[PKCS12] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def d2i_PKCS12_fp(fp: Ptr[FILE], p12: Ptr[Ptr[PKCS12]]): Ptr[PKCS12] = extern
+  def d2i_PKCS12_fp(fp: Ptr[FILE], p12: Ptr[Ptr[PKCS12]]): Ptr[PKCS12] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def i2d_PKCS12_bio(bp: Ptr[BIO], p12: Ptr[PKCS12]): CInt = extern
+  def i2d_PKCS12_bio(bp: Ptr[BIO], p12: Ptr[PKCS12]): CInt = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  @extern def i2d_PKCS12_fp(fp: Ptr[FILE], p12: Ptr[PKCS12]): CInt = extern
+  def i2d_PKCS12_fp(fp: Ptr[FILE], p12: Ptr[PKCS12]): CInt = extern

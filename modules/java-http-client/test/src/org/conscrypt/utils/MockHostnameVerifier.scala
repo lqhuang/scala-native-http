@@ -45,7 +45,7 @@ class MockHostnameVerifier extends HostnameVerifier:
     var isVerified = false
 
     for (certHost <- getHostnames(cert).asScala)
-      if (certHost.equals(hostname))
+      if (certHost == hostname)
         isVerified = true
 
     isVerified
@@ -61,7 +61,7 @@ class MockHostnameVerifier extends HostnameVerifier:
         for (altNamePair <- altNamePairs.asScala)
           // altNames are returned as effectively Pair<Integer, String> instances,
           // where the first member is the type of altName and the second is the name.
-          if (altNamePair.get(0).equals(DNS_NAME_TYPE)) {
+          if (altNamePair.get(0) == DNS_NAME_TYPE) {
             result.add(altNamePair.get(1).asInstanceOf[String]): Unit
           }
       }

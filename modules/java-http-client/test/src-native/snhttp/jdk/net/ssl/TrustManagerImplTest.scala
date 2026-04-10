@@ -22,7 +22,6 @@ import java.io.IOException
 import java.security.{KeyStore, Principal}
 import java.security.cert.{Certificate, CertificateException, X509Certificate}
 import java.util.{Arrays, List as JList}
-
 import javax.net.ssl.{
   SSLParameters,
   SSLPeerUnverifiedException,
@@ -31,6 +30,8 @@ import javax.net.ssl.{
   SSLSocket,
   X509TrustManager,
 }
+
+import scala.collection.JavaConverters._
 
 import utest.{TestSuite, Tests, test}
 
@@ -74,8 +75,6 @@ class TrustManagerImplTest extends TestSuite:
      * regress. http://b/3404902
      */
     test("testLearnIntermediate") {
-      // TestUtils.assumeExtendedTrustManagerAvailable()
-
       // chain3 should be server/intermediate/root
       val pke: KeyStore.PrivateKeyEntry = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
       val chain3: Array[X509Certificate] =
@@ -110,8 +109,6 @@ class TrustManagerImplTest extends TestSuite:
     // We should ignore duplicate cruft in the certificate chain
     // See https://code.google.com/p/android/issues/detail?id=52295 http://b/8313312
     test("testDuplicateInChain") {
-      // TestUtils.assumeExtendedTrustManagerAvailable()
-
       // chain3 should be server/intermediate/root
       val pke: KeyStore.PrivateKeyEntry = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
       val chain3: Array[X509Certificate] =
@@ -125,8 +122,6 @@ class TrustManagerImplTest extends TestSuite:
     }
 
     test("testGetFullChain") {
-      // TestUtils.assumeExtendedTrustManagerAvailable()
-
       // build the trust manager
       val pke: KeyStore.PrivateKeyEntry = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
       val chain3: Array[X509Certificate] =
@@ -149,8 +144,6 @@ class TrustManagerImplTest extends TestSuite:
     }
 
     // test("testHttpsEndpointIdentification") {
-    //   // TestUtils.assumeExtendedTrustManagerAvailable()
-
     //   val pke: KeyStore.PrivateKeyEntry =
     //     KeyStoreUtils.getServerHostname().getPrivateKey("RSA", "RSA")
     //   val chain: Array[X509Certificate] = pke.getCertificateChain.asInstanceOf[Array[X509Certificate]]

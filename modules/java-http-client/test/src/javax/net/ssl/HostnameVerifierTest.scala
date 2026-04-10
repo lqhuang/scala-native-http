@@ -21,7 +21,7 @@
 package snhttp.javax.net.ssl
 
 import java.io.ByteArrayInputStream
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets.UTF_8
 import java.security.cert.{Certificate, CertificateFactory, X509Certificate}
 import java.util.{Collection, Arrays}
 
@@ -56,8 +56,6 @@ class HostnameVerifierTest extends TestSuite:
       certificates
     }
   }
-
-  private final val UTF_8: Charset = Charset.forName("UTF-8")
 
   // BEGIN Android-changed: Run tests for both default and strict verifiers.
   // http://b/144694112

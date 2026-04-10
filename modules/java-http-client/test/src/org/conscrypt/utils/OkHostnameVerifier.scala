@@ -154,7 +154,7 @@ final class OkHostnameVerifier private (strictWildcardMode: Boolean)
 
     if (!pattern.contains("*")) {
       // Not a wildcard pattern -- hostName and pattern must match exactly.
-      return hostName.equals(pattern)
+      return hostName == pattern
     }
     // Wildcard pattern
 

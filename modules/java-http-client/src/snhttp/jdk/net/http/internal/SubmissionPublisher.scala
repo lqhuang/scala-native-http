@@ -126,7 +126,7 @@ class SubmissionPublisher[T](
             else
               pred.next = next
           } // force line break (fmt)
-          else if (subscriber.equals(curr.subscriber)) {
+          else if (subscriber.eq(curr.subscriber)) {
             curr.onError(new IllegalStateException("Duplicate subscribe"))
             break(())
           } // force line break (fmt)

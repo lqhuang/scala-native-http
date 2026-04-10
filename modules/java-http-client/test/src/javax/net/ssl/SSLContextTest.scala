@@ -1,3 +1,6 @@
+// Ported from
+// https://github.com/google/conscrypt/blob/5b46bc69b6ee129b79c719cd8130a5fb4823a75a/common/src/test/java/org/conscrypt/javax/net/ssl/SSLContextTest.java
+
 /*
  * Copyright (C) 2010 The Android Open Source Project
  *
@@ -13,8 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// Ported from https://github.com/google/conscrypt/blob/5b46bc69b6ee129b79c719cd8130a5fb4823a75a/common/src/test/java/org/conscrypt/javax/net/ssl/SSLContextTest.java
 
 package snhttp.javax.net.ssl
 
@@ -58,9 +59,9 @@ import utest.{TestSuite, test, assert, Tests, assertThrows}
 
 class AssertionFailedError extends AssertionError
 
-def fail(): Unit = throw new Exception("Failed")
+object SSLContextTest:
 
-object SSLContextTest {
+  private def fail(): Unit = throw new Exception("Failed")
 
   private def assertEnabledCipherSuites(
       expectedCipherSuites: Seq[String],
@@ -184,8 +185,6 @@ object SSLContextTest {
     assert(expected.sameElements(actual))
   }
 
-}
-
 class SSLContextTest extends TestSuite:
 
   def tests = Tests:
@@ -211,9 +210,9 @@ class SSLContextTest extends TestSuite:
         assert(oldContext != null)
         val newContext = SSLContext.getInstance(protocol)
         assert(newContext != null)
-        assert(!oldContext.equals(newContext))
+        assert(!oldContext.eq(newContext))
         SSLContext.setDefault(newContext)
-        assert(newContext.equals(SSLContext.getDefault()))
+        assert(newContext.eq(SSLContext.getDefault()))
       }
 
       SSLContext.setDefault(defaultContext)
@@ -330,7 +329,7 @@ class SSLContextTest extends TestSuite:
 
       for (protocol <- StandardNames.SSL_CONTEXT_GET_PROTOCOLS) {
         assert(SSLContext.getInstance(protocol) != null)
-        assert(!SSLContext.getInstance(protocol).equals(SSLContext.getInstance(protocol)))
+        assert(!SSLContext.getInstance(protocol).eq(SSLContext.getInstance(protocol)))
       }
 
       val _ = assertThrows[NullPointerException]:
@@ -553,9 +552,9 @@ class SSLContextTest extends TestSuite:
     //     val sessionContext = sslContext.getServerSessionContext
     //     assert(sessionContext != null)
     //     if (protocol == StandardNames.SSL_CONTEXT_GET_PROTOCOLS_DEFAULT)
-    //       assert(SSLContext.getInstance(protocol).getServerSessionContext().equals(sessionContext))
+    //       assert(SSLContext.getInstance(protocol).getServerSessionContext().eq(sessionContext))
     //     else
-    //       assert(!SSLContext.getInstance(protocol).getServerSessionContext().equals(sessionContext))
+    //       assert(!SSLContext.getInstance(protocol).getServerSessionContext().eq(sessionContext))
     //   }
     // }
 
@@ -567,10 +566,10 @@ class SSLContextTest extends TestSuite:
 
         // Doesn't pass in JVM platform, skip ...
         // if (protocol == StandardNames.SSL_CONTEXT_GET_PROTOCOLS_DEFAULT)
-        //   assert(SSLContext.getInstance(protocol).getClientSessionContext().equals(sessionContext))
+        //   assert(SSLContext.getInstance(protocol).getClientSessionContext().eq(sessionContext))
         // else
 
-        assert(!SSLContext.getInstance(protocol).getClientSessionContext().equals(sessionContext))
+        assert(!SSLContext.getInstance(protocol).getClientSessionContext().eq(sessionContext))
       }
     }
 
