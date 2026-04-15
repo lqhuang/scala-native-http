@@ -109,6 +109,7 @@ class CookieStoreTests extends utest.TestSuite:
       cookie.setPath("/")
       store.add(storedUri, cookie)
 
+      assert(store.getCookies().size() == 1)
       assert(store.remove(otherUri, cookie) == true)
       assert(store.getCookies().size() == 0)
     }
@@ -295,9 +296,26 @@ class CookieStoreTests extends utest.TestSuite:
       store.add(uri, cookie)
 
       val retrieved = store.get(new URI("http://example.com/app/page"))
-      val notRetrieved = store.get(new URI("http://example.com/other"))
+      val retrievedDomainMatched = store.get(new URI("http://example.com/other"))
       assert(retrieved.size() == 1)
-      assert(notRetrieved.size() == 1)
+      assert(retrievedDomainMatched.size() == 1)
+    }
+
+    test("CookieStore.get matches either cookie domain or associated URI host") {
+      val store = createStore()
+      val associatedUri = new URI("http://example.com/app")
+      val cookie = new HttpCookie("test", "value")
+      cookie.setDomain("other-examples.com")
+      cookie.setPath("/app")
+      store.add(associatedUri, cookie)
+
+      val retrievedByAssociatedHost = store.get(new URI("http://example.com/app/page"))
+      val retrievedByCookieDomain = store.get(new URI("http://other-examples.com/other"))
+      val notRetrievedByUnrelatedHost = store.get(new URI("http://x.example.com/app/page"))
+
+      assert(retrievedByAssociatedHost.size() == 1)
+      assert(retrievedByCookieDomain.size() == 1)
+      assert(notRetrievedByUnrelatedHost.size() == 0)
     }
 
     test("secure cookies only match HTTPS") {

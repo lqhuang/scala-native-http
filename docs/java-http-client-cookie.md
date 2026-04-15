@@ -10,13 +10,13 @@ The following types are implemented:
 - `CookieManager` — concrete `CookieHandler` implementation
 - `CookiePolicy` — acceptance policies (`ACCEPT_ALL`, `ACCEPT_NONE`, `ACCEPT_ORIGINAL_SERVER`)
 - `CookieStore` — storage interface
-- `InMemoryCookieStore` — thread-safe in-memory store (package-private)
+- `InMemoryCookieStore` — thread-safe internal in-memory store (`snhttp.jdk.net`)
 - `HttpCookie` — cookie representation and parsing
 
 ## Integration
 
 `HttpClient.Builder.cookieHandler(CookieHandler)` accepts any `CookieHandler`.  
-`CookieUtils` (in `snhttp.jdk`) provides glue for request/response header processing.
+`CookieManager` handles request/response cookie header processing.
 
 ## Semantics
 
@@ -35,4 +35,4 @@ The following types are implemented:
 
 ## Testing
 
-Tests are located in `modules/java-http-client/test/src/snhttp/cookie/` and use utest.
+Tests are located in `modules/java-http-client/test/src/java/net/` and use utest.

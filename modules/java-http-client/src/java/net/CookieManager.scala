@@ -8,6 +8,8 @@ import java.util.{
   Map as JMap,
 }
 
+import snhttp.jdk.net.InMemoryCookieStore
+
 // @since 1.6
 class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHandler:
 
@@ -65,40 +67,34 @@ class CookieManager(store: CookieStore, policy: CookiePolicy) extends CookieHand
     if uri == null || responseHeaders == null then
       throw new IllegalArgumentException("uri and responseHeaders must not be null")
 
-    val it = responseHeaders.entrySet().iterator()
-    while it.hasNext do
-      val entry = it.next()
-      val headerName = entry.getKey()
+    responseHeaders.forEach((headerName: String, headerValues: JList[String]) =>
       if headerName != null &&
-        (headerName.equalsIgnoreCase("Set-Cookie") || headerName.equalsIgnoreCase("Set-Cookie2"))
+        (headerName.equalsIgnoreCase("Set-Cookie") || headerName.equalsIgnoreCase("Set-Cookie2")) &&
+        headerValues != null
       then
-        val headerValues = entry.getValue()
-        if headerValues != null then
-          val valueIt = headerValues.iterator()
-          while valueIt.hasNext do
-            val headerValue = valueIt.next()
-            if headerValue != null && !headerValue.isEmpty then
-              try
-                val cookies = HttpCookie.parse(headerValue)
-                val cookieIt = cookies.iterator()
-                while cookieIt.hasNext do
-                  val cookie = cookieIt.next()
+        headerValues.forEach((headerValue: String) =>
+          if headerValue != null && !headerValue.isEmpty then
+            try
+              val cookies = HttpCookie.parse(headerValue)
+              cookies.forEach((cookie: HttpCookie) =>
+                if cookie.getDomain() == null then
+                  cookie.setDomain(uri.getHost())
 
-                  if cookie.getDomain() == null then
-                    cookie.setDomain(uri.getHost())
+                if cookie.getPath() == null || cookie.getPath().isEmpty then
+                  val path = uri.getPath()
+                  val defaultPath =
+                    if path == null || path.isEmpty then "/"
+                    else
+                      val lastSlash = path.lastIndexOf('/')
+                      if lastSlash <= 0 then "/"
+                      else path.substring(0, lastSlash + 1)
+                  cookie.setPath(defaultPath)
 
-                  if cookie.getPath() == null || cookie.getPath().isEmpty then
-                    val path = uri.getPath()
-                    val defaultPath =
-                      if path == null || path.isEmpty then "/"
-                      else
-                        val lastSlash = path.lastIndexOf('/')
-                        if lastSlash <= 0 then "/"
-                        else path.substring(0, lastSlash + 1)
-                    cookie.setPath(defaultPath)
-
-                  if cookiePolicy.shouldAccept(uri, cookie) then cookieStore.add(uri, cookie)
-              catch case _: IllegalArgumentException => ()
+                if cookiePolicy.shouldAccept(uri, cookie) then cookieStore.add(uri, cookie)
+              )
+            catch case _: IllegalArgumentException => ()
+        )
+    )
 
   private def compareCookiePath(left: HttpCookie, right: HttpCookie): Int =
     val leftPath = left.getPath()

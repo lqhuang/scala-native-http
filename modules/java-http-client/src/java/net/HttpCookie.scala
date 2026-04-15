@@ -32,9 +32,6 @@ final class HttpCookie private[net] (name: String, value: String, rawHeader: Str
   def this(name: String, value: String) =
     this(name, value, null, System.currentTimeMillis())
 
-  private def this(name: String, value: String, header: String) =
-    this(name, value, header, System.currentTimeMillis())
-
   def hasExpired(): Boolean = hasExpired(System.currentTimeMillis())
 
   def hasExpired(currentTimeMillis: Long): Boolean =
@@ -267,11 +264,11 @@ object HttpCookie:
       cookies.add(cookie): Unit
     else
       val cookieStrings = splitMultiCookies(work)
-      val it = cookieStrings.iterator()
-      while it.hasNext do
-        val cookie = parseInternal(it.next(), retainHeader, currentTimeMillis)
+      cookieStrings.forEach((cookieString: String) =>
+        val cookie = parseInternal(cookieString, retainHeader, currentTimeMillis)
         cookie.setVersion(1)
         cookies.add(cookie): Unit
+      )
     cookies
 
   private def parseInternal(header: String, retainHeader: Boolean, currentTime: Long): HttpCookie =

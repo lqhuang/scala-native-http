@@ -77,6 +77,18 @@ class CookiePolicyTests extends utest.TestSuite:
       assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == true)
     }
 
+    test("ACCEPT_ORIGINAL_SERVER accepts root domain with dot-prefixed domain") {
+      val uri = new URI("http://example.com/path")
+
+      val cookie = new HttpCookie("test", "value")
+      cookie.setDomain(".example.com")
+      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == true)
+
+      val cookie2 = new HttpCookie("test", "value")
+      cookie2.setDomain(".EXAMPLE.com")
+      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie2) == true)
+    }
+
     test("ACCEPT_ORIGINAL_SERVER rejects parent domain without dot on subdomain host") {
       val uri = new URI("http://www.example.com/path")
       val cookie = new HttpCookie("test", "value")
@@ -101,6 +113,25 @@ class CookiePolicyTests extends utest.TestSuite:
       val cookie = new HttpCookie("test", "value")
       cookie.setDomain("invalid")
 
+      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == false)
+    }
+
+    test("ACCEPT_ORIGINAL_SERVER rejects parent domain on a deep nested subdomain host") {
+      val uri = new URI("http://xxxx.yyyy.zzzz.example.com/path")
+
+      val cookie = new HttpCookie("test", "value")
+      cookie.setDomain("example.com")
+      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == false)
+
+      val cookie2 = new HttpCookie("test", "value")
+      cookie2.setDomain(".example.com")
+      assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie2) == false)
+    }
+
+    test("ACCEPT_ORIGINAL_SERVER rejects empty domain") {
+      val uri = new URI("http://example.com/path")
+      val cookie = new HttpCookie("test", "value")
+      cookie.setDomain("")
       assert(CookiePolicy.ACCEPT_ORIGINAL_SERVER.shouldAccept(uri, cookie) == false)
     }
 
@@ -162,5 +193,61 @@ class CookiePolicyTests extends utest.TestSuite:
       assert(cookies.size() == 1)
       assert(cookies.get(0).getName() == "same")
       assert(cookies.get(0).getDomain() == "example.com")
+    }
+
+    test("CookieManager integration with ACCEPT_ORIGINAL_SERVER accepts dot-prefixed domain") {
+      val manager = new CookieManager()
+      manager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER)
+      val uri = new URI("http://example.com/path")
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val values = new ArrayList[String]()
+      values.add("same=value; Domain=example.com")
+      values.add("other=value; Domain=.example.com")
+      responseHeaders.put("Set-Cookie", values)
+
+      manager.put(uri, responseHeaders)
+
+      val cookies = manager.getCookieStore().getCookies()
+      assert(cookies.size() == 2)
+    }
+
+    test(
+      "CookieManager integration with ACCEPT_ORIGINAL_SERVER rejects root domain on one-level subhost and accepts dot-prefixed domain",
+    ) {
+      val manager = new CookieManager()
+      manager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER)
+      val uri = new URI("http://one.example.com/path")
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val values = new ArrayList[String]()
+      values.add("same=value; Domain=example.com")
+      values.add("other=value; Domain=.example.com")
+      responseHeaders.put("Set-Cookie", values)
+
+      manager.put(uri, responseHeaders)
+
+      val cookies = manager.getCookieStore().getCookies()
+      assert(cookies.size() == 1)
+      assert(cookies.get(0).getName() == "other")
+      assert(cookies.get(0).getDomain() == ".example.com")
+    }
+
+    test(
+      "CookieManager integration with ACCEPT_ORIGINAL_SERVER deep nested subdomain rejects root and dot-prefixed parent domains",
+    ) {
+      val manager = new CookieManager()
+      manager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER)
+      val uri = new URI("http://three.two.one.example.com/path")
+      val responseHeaders = new HashMap[String, JList[String]]()
+      val values = new ArrayList[String]()
+      values.add("aa=bb; Domain=example.com")
+      values.add("a=b; Domain=.example.com")
+      values.add("c=d; Domain=one.example.com")
+      values.add("e=f; Domain=.one.example.com")
+      responseHeaders.put("Set-Cookie", values)
+
+      manager.put(uri, responseHeaders)
+
+      val cookies = manager.getCookieStore().getCookies()
+      assert(cookies.size() == 0)
     }
   }

@@ -1,5 +1,6 @@
-package java.net
+package snhttp.jdk.net
 
+import java.net.{CookieStore, HttpCookie, URI}
 import java.util.{
   ArrayList,
   Collections,
@@ -11,8 +12,7 @@ import java.util.{
 }
 import java.util.concurrent.locks.ReentrantLock
 
-// @since 1.6
-private[net] class InMemoryCookieStore extends CookieStore:
+final class InMemoryCookieStore extends CookieStore:
 
   private val uriIndex: JMap[URI, JList[HttpCookie]] = new HashMap()
 
@@ -26,10 +26,7 @@ private[net] class InMemoryCookieStore extends CookieStore:
 
       val effectiveUri = getEffectiveURI(uri)
 
-      val existingIt = uriIndex.values().iterator()
-      while existingIt.hasNext do
-        val existing = existingIt.next()
-        existing.removeIf(c => cookie.equals(c)): Unit
+      uriIndex.values().forEach((existing: JList[HttpCookie]) => existing.removeIf(c => cookie.equals(c)): Unit)
 
       if cookie.hasExpired() then return
 
@@ -47,16 +44,11 @@ private[net] class InMemoryCookieStore extends CookieStore:
       removeExpired()
       val result = new ArrayList[HttpCookie]()
 
-      val it = uriIndex.entrySet().iterator()
-      while it.hasNext do
-        val entry = it.next()
-        val indexedUri = entry.getKey()
-        val cookies = entry.getValue()
-
-        val cookieIt = cookies.iterator()
-        while cookieIt.hasNext do
-          val cookie = cookieIt.next()
+      uriIndex.forEach((indexedUri: URI, cookies: JList[HttpCookie]) =>
+        cookies.forEach((cookie: HttpCookie) =>
           if !result.contains(cookie) && matchesCookie(uri, indexedUri, cookie) then result.add(cookie): Unit
+        )
+      )
 
       Collections.unmodifiableList(result)
     finally lock.unlock()
@@ -66,13 +58,11 @@ private[net] class InMemoryCookieStore extends CookieStore:
     try
       removeExpired()
       val result = new ArrayList[HttpCookie]()
-      val it = uriIndex.values().iterator()
-      while it.hasNext do
-        val cookies = it.next()
-        val cookieIt = cookies.iterator()
-        while cookieIt.hasNext do
-          val cookie = cookieIt.next()
+      uriIndex.values().forEach((cookies: JList[HttpCookie]) =>
+        cookies.forEach((cookie: HttpCookie) =>
           if !result.contains(cookie) then result.add(cookie): Unit
+        )
+      )
       Collections.unmodifiableList(result)
     finally lock.unlock()
 
@@ -80,10 +70,9 @@ private[net] class InMemoryCookieStore extends CookieStore:
     lock.lock()
     try
       val result = new ArrayList[URI]()
-      val it = uriIndex.keySet().iterator()
-      while it.hasNext do
-        val next = it.next()
+      uriIndex.keySet().forEach((next: URI) =>
         if next != null then result.add(next): Unit
+      )
       result
     finally lock.unlock()
 
@@ -92,10 +81,9 @@ private[net] class InMemoryCookieStore extends CookieStore:
     lock.lock()
     try
       var removed = false
-      val it = uriIndex.values().iterator()
-      while it.hasNext do
-        val list = it.next()
+      uriIndex.values().forEach((list: JList[HttpCookie]) =>
         if list.remove(cookie) then removed = true
+      )
       removed
     finally lock.unlock()
 
@@ -108,12 +96,11 @@ private[net] class InMemoryCookieStore extends CookieStore:
     finally lock.unlock()
 
   private def removeExpired(): Unit =
-    val uriIt = uriIndex.entrySet().iterator()
-    while uriIt.hasNext do
-      val entry = uriIt.next()
+    uriIndex.entrySet().removeIf((entry: java.util.Map.Entry[URI, JList[HttpCookie]]) =>
       val cookies = entry.getValue()
       cookies.removeIf(c => c.hasExpired()): Unit
-      if cookies.isEmpty then uriIt.remove(): Unit
+      cookies.isEmpty
+    ): Unit
 
   private def getEffectiveURI(uri: URI): URI =
     if uri != null then getEffectiveURIForRetrieval(uri)
@@ -129,12 +116,15 @@ private[net] class InMemoryCookieStore extends CookieStore:
     val host = extractHost(uri)
     if host == null then return false
 
+    val indexedHost = if indexedUri != null then extractHost(indexedUri) else null
     val domain = cookie.getDomain()
     val domainMatch =
       if domain == null then
-        val indexedHost = if indexedUri != null then extractHost(indexedUri) else null
         indexedHost != null && host.equalsIgnoreCase(indexedHost)
-      else HttpCookie.domainMatches(domain, host) || domain.equalsIgnoreCase(host)
+      else
+        HttpCookie.domainMatches(domain, host) ||
+          domain.equalsIgnoreCase(host) ||
+          (indexedHost != null && host.equalsIgnoreCase(indexedHost))
 
     if !domainMatch then return false
 
