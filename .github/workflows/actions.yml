@@ -34,15 +34,15 @@ jobs:
           distribution: "temurin"
       - uses: actions/checkout@v6
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev
-
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
         with:
           apps: mill
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
 
       - name: Run tests for Java HTTP Client on JVM
         run: |
@@ -86,17 +86,17 @@ jobs:
           distribution: "temurin"
       - uses: actions/checkout@v6
 
+      - uses: coursier/cache-action@v7
+      - uses: coursier/setup-action@v2
+        with:
+          apps: mill
+
       - id: run-vcpkg
         uses: lukka/run-vcpkg@v11.5
         with:
           vcpkgGitCommitId: "${{ env.VCPKG_COMMIT_ID }}"
           runVcpkgInstall: true
           doNotCache: false
-
-      - uses: coursier/cache-action@v7
-      - uses: coursier/setup-action@v2
-        with:
-          apps: mill
 
       - name: Run tests for Java HTTP Client on JVM
         env:

@@ -865,3 +865,9 @@ private[openssl] trait Functions:
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
   def i2d_PKCS12_fp(fp: Ptr[FILE], p12: Ptr[PKCS12]): CInt = extern
+
+  /*
+   *  Missed from scala-native-bindgen
+   */
+
+  def PKCS12_free(p12: Ptr[PKCS12]): Unit = extern
