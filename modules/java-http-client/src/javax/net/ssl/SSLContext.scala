@@ -6,11 +6,36 @@ import java.util.Objects.requireNonNull
 
 import snhttp.jdk.jsse.provider.OpenSSLProvider
 
-/*
- * Refs
- *
- *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
- */
+// Refs:
+// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContextSpi.html
+abstract class SSLContextSpi:
+
+  protected[ssl] def engineInit(
+      km: Array[KeyManager],
+      tm: Array[TrustManager],
+      random: SecureRandom,
+  ): Unit
+
+  protected[ssl] def engineGetSocketFactory(): SSLSocketFactory
+
+  protected[ssl] def engineGetServerSocketFactory(): SSLServerSocketFactory
+
+  protected[ssl] def engineCreateSSLEngine(): SSLEngine
+
+  protected[ssl] def engineCreateSSLEngine(host: String, port: Int): SSLEngine
+
+  protected[ssl] def engineGetServerSessionContext(): SSLSessionContext
+
+  protected[ssl] def engineGetClientSessionContext(): SSLSessionContext
+
+  protected[ssl] def engineGetDefaultSSLParameters(): SSLParameters
+
+  protected[ssl] def engineGetSupportedSSLParameters(): SSLParameters
+
+end SSLContextSpi
+
+// Refs:
+// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
 class SSLContext protected (
     val spi: SSLContextSpi,
     val provider: Provider,

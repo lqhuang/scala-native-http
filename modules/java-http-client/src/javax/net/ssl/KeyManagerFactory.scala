@@ -5,9 +5,20 @@ import java.util.Objects.requireNonNull
 
 import snhttp.jdk.net.ssl.{KeyManagerFactoryImpl, KeyManagerFactorySpiImpl}
 
-/// Refs:
-///
-/// https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactorySpi.html
+// Refs:
+// https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactorySpi.html
+abstract class KeyManagerFactorySpi:
+
+  protected[ssl] def engineInit(ks: KeyStore, password: Array[Char]): Unit
+
+  protected[ssl] def engineInit(spec: ManagerFactoryParameters): Unit
+
+  protected[ssl] def engineGetKeyManagers(): Array[KeyManager]
+
+end KeyManagerFactorySpi
+
+// Refs:
+// https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactory.html
 class KeyManagerFactory protected (
     private val spi: KeyManagerFactorySpi,
     private val provider: Provider,
