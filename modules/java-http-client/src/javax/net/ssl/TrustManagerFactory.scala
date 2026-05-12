@@ -20,14 +20,16 @@ end TrustManagerFactorySpi
 // Refs:
 // - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactory.html
 class TrustManagerFactory protected (
-    private val spi: TrustManagerFactorySpi,
-    private val provider: Provider,
-    private val algorithm: String,
+    spi: TrustManagerFactorySpi,
+    provider: Provider,
+    algorithm: String,
 ):
 
-  final def getAlgorithm(): String = algorithm
+  final def getAlgorithm(): String =
+    algorithm
 
-  final def getProvider(): Provider = provider
+  final def getProvider(): Provider =
+    provider
 
   final def init(ks: KeyStore): Unit =
     spi.engineInit(ks)
@@ -40,13 +42,13 @@ class TrustManagerFactory protected (
 
 object TrustManagerFactory:
 
-  final inline def getDefaultAlgorithm(): String =
+  final def getDefaultAlgorithm(): String =
     "PKIX"
 
-  final inline def getInstance(algorithm: String): TrustManagerFactory =
+  final def getInstance(algorithm: String): TrustManagerFactory =
     getInstance(algorithm, OpenSSLProvider.defaultInstance)
 
-  final inline def getInstance(algorithm: String, provider: String): TrustManagerFactory =
+  final def getInstance(algorithm: String, provider: String): TrustManagerFactory =
     throw new UnsupportedOperationException("Not supported by Scala Native")
 
   final def getInstance(

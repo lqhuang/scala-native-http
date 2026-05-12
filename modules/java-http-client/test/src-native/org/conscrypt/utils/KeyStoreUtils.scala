@@ -810,7 +810,7 @@ object KeyStoreUtils {
         val certificate = certificateEntry.getTrustedCertificate()
         if (certificate.isInstanceOf[X509Certificate]) {
           val x = certificate.asInstanceOf[X509Certificate]
-          if (cert.getIssuerDN() == x.getSubjectDN()) {
+          if (cert.getIssuerX500Principal() == x.getSubjectX500Principal()) {
             if (found != null) {
               throw new IllegalStateException(s"KeyStore has more than one issuing CA for $cert")
             }
@@ -860,7 +860,7 @@ object KeyStoreUtils {
               .isInstanceOf[X509Certificate]
           ) {
             val x = certificate.asInstanceOf[X509Certificate]
-            if (x.getIssuerDN() == x.getSubjectDN()) {
+            if (x.getIssuerX500Principal() == x.getSubjectX500Principal()) {
               if (found != null)
                 throw new IllegalStateException(
                   s"KeyStore has more than one root CA for $algorithm",
@@ -907,7 +907,7 @@ object KeyStoreUtils {
       for (alias <- Collections.list(src.aliases()).asScala)
         if (src.isCertificateEntry(alias)) {
           val cert = src.getCertificate(alias).asInstanceOf[X509Certificate]
-          if (cert.getSubjectDN() == cert.getIssuerDN()) {
+          if (cert.getSubjectX500Principal() == cert.getIssuerX500Principal()) {
             dst.setCertificateEntry(alias, cert)
             copied = true
           }
@@ -926,7 +926,7 @@ object KeyStoreUtils {
       for (alias <- Collections.list(src.aliases()).asScala)
         if (src.isCertificateEntry(alias)) {
           val cert = src.getCertificate(alias).asInstanceOf[X509Certificate]
-          if (cert.getSubjectDN() == subject) {
+          if (cert.getSubjectX500Principal() == subject) {
             dst.setCertificateEntry(alias, cert)
             boundary.break(true)
           }

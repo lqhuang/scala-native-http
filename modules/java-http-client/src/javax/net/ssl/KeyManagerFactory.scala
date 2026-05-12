@@ -20,14 +20,16 @@ end KeyManagerFactorySpi
 // Refs:
 // https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactory.html
 class KeyManagerFactory protected (
-    private val spi: KeyManagerFactorySpi,
-    private val provider: Provider,
-    private val algorithm: String,
+    spi: KeyManagerFactorySpi,
+    provider: Provider,
+    algorithm: String,
 ):
 
-  final def getAlgorithm(): String = algorithm
+  final def getAlgorithm(): String =
+    algorithm
 
-  final def getProvider(): Provider = provider
+  final def getProvider(): Provider =
+    provider
 
   final def init(ks: KeyStore, password: Array[Char]): Unit =
     spi.engineInit(ks, password)
@@ -40,13 +42,13 @@ class KeyManagerFactory protected (
 
 object KeyManagerFactory:
 
-  final inline def getDefaultAlgorithm(): String =
+  final def getDefaultAlgorithm(): String =
     "PKIX"
 
-  final inline def getInstance(algorithm: String): KeyManagerFactory =
+  final def getInstance(algorithm: String): KeyManagerFactory =
     getInstance(algorithm, OpenSSLProvider.defaultInstance)
 
-  final inline def getInstance(algorithm: String, provider: String): KeyManagerFactory =
+  final def getInstance(algorithm: String, provider: String): KeyManagerFactory =
     throw new UnsupportedOperationException("Not supported in Scala Native yet")
 
   final def getInstance(algorithm: String, provider: Provider): KeyManagerFactory = {

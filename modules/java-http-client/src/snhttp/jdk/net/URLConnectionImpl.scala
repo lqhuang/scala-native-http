@@ -31,7 +31,8 @@ trait URLConnectionImplMixin(
 
   val _connected: AtomicBoolean = new AtomicBoolean(false)
 
-  def connect(): Unit = ???
+  def connect(): Unit =
+    ???
 
   def setConnectTimeout(timeout: Int): Unit =
     require(timeout >= 0, "Connect timeout cannot be negative")
@@ -66,8 +67,6 @@ trait URLConnectionImplMixin(
   /// the `getContentType` method. If this is the first time that the
   /// application has seen that specific content type, a content handler for
   /// that content type is created.
-  ///
-  ///
   def getContent(): Any =
     val contentType = getContentType()
     factory.createContentHandler(contentType) match

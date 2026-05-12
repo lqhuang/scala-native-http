@@ -27,7 +27,7 @@ import snhttp.utils.PointerCleaner
 private[snhttp] class SSLContextImpl(provider: Provider, protocol: String)
     extends SSLContext(new SSLContextSpiImpl(protocol), provider, protocol):
 
-  private[snhttp] val ptr = spi.ptr
+  private[snhttp] val ptr = spi.asInstanceOf[SSLContextSpiImpl].ptr
 
 end SSLContextImpl
 
@@ -74,8 +74,8 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
 
   // Client session context bind to current SSLContext
   // only has one ClientSessionContext instance per SSLContext instance
-  protected[ssl] val clientSessionContext = ClientSessionContextImpl(this)
-  protected[ssl] val sslSocketFactory = SSLSocketFactoryImpl(this)
+  private[ssl] val clientSessionContext = ClientSessionContextImpl(this)
+  private[ssl] val sslSocketFactory = SSLSocketFactoryImpl(this)
 
   private val inited: AtomicBoolean = new AtomicBoolean(false)
 

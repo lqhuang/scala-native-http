@@ -100,10 +100,10 @@ object SSLContext:
     requireNonNull(context)
     defaultContext = context
 
-  final inline def getInstance(protocol: String): SSLContext =
+  final def getInstance(protocol: String): SSLContext =
     getInstance(protocol, OpenSSLProvider.defaultInstance)
 
-  final inline def getInstance(protocol: String, provider: String): SSLContext =
+  final def getInstance(protocol: String, provider: String): SSLContext =
     throw new NotImplementedError("get via string provider is not supported yet")
 
   final def getInstance(protocol: String, provider: Provider): SSLContext = {

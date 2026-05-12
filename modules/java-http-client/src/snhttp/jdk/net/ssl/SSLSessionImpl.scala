@@ -18,7 +18,7 @@ import snhttp.experimental.openssl.libssl.TLS_VERSION
 /// Implementation Notes:
 ///
 /// map to OpenSSL `SSL_SESSION` features
-class SSLSessionImpl(
+private[snhttp] class SSLSessionImpl(
     _sessContext: SSLSessionContext,
     _host: String,
     _port: Int,

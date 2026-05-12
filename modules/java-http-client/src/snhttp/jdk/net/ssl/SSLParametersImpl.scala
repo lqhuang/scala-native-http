@@ -12,7 +12,7 @@ import javax.net.ssl.{
 }
 
 /// Inspired from <https://github.com/google/conscrypt/blob/master/common/src/main/java/org/conscrypt/SSLParametersImpl.java>
-class SSLParametersImpl protected[ssl] (
+private[snhttp] class SSLParametersImpl(
     // km: X509KeyManager,
     // tm: X509TrustManager,
     // sr: SecureRandom,
