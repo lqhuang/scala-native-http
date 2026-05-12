@@ -24,15 +24,14 @@ import snhttp.experimental.openssl.libssl
 import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
 import snhttp.utils.PointerCleaner
 
-private[snhttp] class SSLContextImpl(
-    spi: SSLContextSpiImpl,
-    provider: Provider,
-    protocol: String,
-) extends SSLContext(spi, provider, protocol):
+private[snhttp] class SSLContextImpl(provider: Provider, protocol: String)
+    extends SSLContext(new SSLContextSpiImpl(protocol), provider, protocol):
+
   private[snhttp] val ptr = spi.ptr
+
 end SSLContextImpl
 
-private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi():
+private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
 
   import SSLContextSpiImpl.{
     SUPPORTED_PROTOCOLS,

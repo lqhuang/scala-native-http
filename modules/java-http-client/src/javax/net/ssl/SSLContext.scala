@@ -86,7 +86,8 @@ class SSLContext protected (
 
 object SSLContext:
 
-  @volatile private var defaultContext: SSLContext = {
+  @volatile
+  private var defaultContext: SSLContext = {
     val ssl = SSLContext.getInstance("TLS")
     ssl.init(null, null, null)
     ssl
@@ -99,17 +100,13 @@ object SSLContext:
     requireNonNull(context)
     defaultContext = context
 
-  def getInstance(protocol: String): SSLContext =
-    requireNonNull(protocol)
+  final inline def getInstance(protocol: String): SSLContext =
     getInstance(protocol, OpenSSLProvider.defaultInstance)
 
-  def getInstance(protocol: String, provider: String): SSLContext =
-    requireNonNull(protocol)
-    require(provider != null && provider.nonEmpty)
-    require(protocol.nonEmpty)
+  final inline def getInstance(protocol: String, provider: String): SSLContext =
     throw new NotImplementedError("get via string provider is not supported yet")
 
-  def getInstance(protocol: String, provider: Provider): SSLContext = {
+  final def getInstance(protocol: String, provider: Provider): SSLContext = {
     requireNonNull(protocol)
     requireNonNull(provider)
     require(protocol.nonEmpty)

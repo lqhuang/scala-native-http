@@ -3,7 +3,7 @@ package javax.net.ssl
 import java.security.{KeyStore, Provider}
 import java.util.Objects.requireNonNull
 
-import snhttp.jdk.net.ssl.{KeyManagerFactoryImpl, KeyManagerFactorySpiImpl}
+import snhttp.jdk.jsse.provider.OpenSSLProvider
 
 // Refs:
 // https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/KeyManagerFactorySpi.html
@@ -40,21 +40,22 @@ class KeyManagerFactory protected (
 
 object KeyManagerFactory:
 
-  final def getDefaultAlgorithm(): String = "PKIX"
+  final inline def getDefaultAlgorithm(): String =
+    "PKIX"
 
-  final def getInstance(algorithm: String): KeyManagerFactory = {
-    requireNonNull(algorithm)
-    require(algorithm.nonEmpty)
-    ???
-  }
+  final inline def getInstance(algorithm: String): KeyManagerFactory =
+    getInstance(algorithm, OpenSSLProvider.defaultInstance)
 
-  final def getInstance(algorithm: String, provider: String): KeyManagerFactory =
+  final inline def getInstance(algorithm: String, provider: String): KeyManagerFactory =
     throw new UnsupportedOperationException("Not supported in Scala Native yet")
 
-  final def getInstance(algorithm: String, provider: Provider): KeyManagerFactory =
+  final def getInstance(algorithm: String, provider: Provider): KeyManagerFactory = {
     requireNonNull(algorithm)
     requireNonNull(provider)
     require(algorithm.nonEmpty)
-    ???
+
+    val service = provider.getService("KeyManagerFactory", algorithm)
+    service.newInstance(null).asInstanceOf[KeyManagerFactory]
+  }
 
 end KeyManagerFactory

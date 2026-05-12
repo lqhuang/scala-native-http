@@ -3,6 +3,8 @@ package javax.net.ssl
 import java.security.{Provider, KeyStore}
 import java.util.Objects.requireNonNull
 
+import snhttp.jdk.jsse.provider.OpenSSLProvider
+
 // Refs:
 // - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactorySpi.html
 abstract class TrustManagerFactorySpi:
@@ -38,15 +40,13 @@ class TrustManagerFactory protected (
 
 object TrustManagerFactory:
 
-  final def getDefaultAlgorithm(): String = "PKIX"
+  final inline def getDefaultAlgorithm(): String =
+    "PKIX"
 
-  final def getInstance(algorithm: String): TrustManagerFactory = {
-    requireNonNull(algorithm)
-    require(algorithm.nonEmpty)
-    ???
-  }
+  final inline def getInstance(algorithm: String): TrustManagerFactory =
+    getInstance(algorithm, OpenSSLProvider.defaultInstance)
 
-  final def getInstance(algorithm: String, provider: String): TrustManagerFactory =
+  final inline def getInstance(algorithm: String, provider: String): TrustManagerFactory =
     throw new UnsupportedOperationException("Not supported by Scala Native")
 
   final def getInstance(
@@ -56,7 +56,9 @@ object TrustManagerFactory:
     requireNonNull(algorithm)
     requireNonNull(provider)
     require(algorithm.nonEmpty)
-    ???
+
+    val service = provider.getService("TrustManagerFactory", algorithm)
+    service.newInstance(null).asInstanceOf[TrustManagerFactory]
   }
 
 end TrustManagerFactory

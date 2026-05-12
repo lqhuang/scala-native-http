@@ -3,7 +3,7 @@ package snhttp.jdk.net.ssl
 import java.security.KeyStore
 import javax.net.ssl.{ManagerFactoryParameters, KeyManagerFactory, KeyManagerFactorySpi, KeyManager}
 
-class KeyManagerFactorySpiImpl() extends KeyManagerFactorySpi():
+class KeyManagerFactorySpiImpl extends KeyManagerFactorySpi:
 
   def engineInit(ks: KeyStore, password: Array[Char]): Unit =
     ???
@@ -14,8 +14,5 @@ class KeyManagerFactorySpiImpl() extends KeyManagerFactorySpi():
   def engineGetKeyManagers(): Array[KeyManager] =
     ???
 
-class KeyManagerFactoryImpl(
-    spi: KeyManagerFactorySpi,
-    provider: java.security.Provider,
-    algorithm: String,
-) extends KeyManagerFactory(spi, provider, algorithm)
+class KeyManagerFactoryImpl(provider: java.security.Provider, algorithm: String)
+    extends KeyManagerFactory(KeyManagerFactorySpiImpl(), provider, algorithm)
