@@ -1,3 +1,5 @@
+package snhttp.javax.net.ssl
+
 import java.io.FileInputStream
 import java.security.{SecureRandom, KeyStore}
 import java.security.cert.X509Certificate
@@ -5,9 +7,9 @@ import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManager, X509TrustMana
 
 import utest.{TestSuite, Tests, test, assert}
 
-class CertTest:
+class SSLContextInitTest extends TestSuite:
 
-  private lazy val trustAllCerts = Array[TrustManager](new X509TrustManager() {
+  val trustAllCerts = Array[TrustManager](new X509TrustManager() {
     def getAcceptedIssuers = new Array[X509Certificate](0)
 
     def checkClientTrusted(chain: Array[X509Certificate], authType: String) = {}
@@ -15,8 +17,8 @@ class CertTest:
     def checkServerTrusted(chain: Array[X509Certificate], authType: String) = {}
   })
 
-  val path: String = sys.props.getOrElse("cert.path", "")
-  val password: Option[String] = sys.props.get("cert.password")
+  val path: String = s"${sys.env("MILL_TEST_RESOURCE_DIR")}/test-data/pkcs12-ca/test-trust.p12"
+  val password: String = "test-password"
 
   def tests: Tests = Tests:
 
@@ -30,8 +32,7 @@ class CertTest:
     }
 
     test("verify") {
-      val pass = password.map(_.toCharArray).getOrElse(Array.emptyCharArray)
-
+      val pass = password.toCharArray()
       val keyManagers = {
         val ks = KeyStore.getInstance("PKCS12")
         ks.load(new FileInputStream(path), pass)
@@ -41,7 +42,6 @@ class CertTest:
       }
 
       val sc = SSLContext.getInstance("SSL")
-
       sc.init(keyManagers, null, new SecureRandom())
       sc
     }
