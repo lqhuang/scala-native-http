@@ -37,9 +37,9 @@ end SSLContextSpi
 // Refs:
 // - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLContext.html
 class SSLContext protected (
-    val spi: SSLContextSpi,
-    val provider: Provider,
-    val protocol: String,
+    protected val spi: SSLContextSpi,
+    protected val provider: Provider,
+    protected val protocol: String,
 ):
 
   requireNonNull(spi)
