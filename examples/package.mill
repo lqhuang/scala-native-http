@@ -30,6 +30,7 @@ object `req-async` extends SharedModule
 object req extends SharedModule
 
 object `key-manager-factory` extends SharedModule
+object `ssl-context` extends SharedModule
 
 trait CurlSharedModule extends ScalaNativeModule {
   def scalaVersion = build.scalaVersion

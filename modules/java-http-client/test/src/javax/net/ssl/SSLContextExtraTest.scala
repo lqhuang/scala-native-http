@@ -7,17 +7,16 @@ import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManager, X509TrustMana
 
 import utest.{TestSuite, Tests, test, assert}
 
-class SSLContextInitTest extends TestSuite:
+class SSLContextExtraTest extends TestSuite:
 
   val trustAllCerts = Array[TrustManager](new X509TrustManager() {
-    def getAcceptedIssuers = new Array[X509Certificate](0)
-
+    def getAcceptedIssuers() = Array[X509Certificate]()
     def checkClientTrusted(chain: Array[X509Certificate], authType: String) = {}
-
     def checkServerTrusted(chain: Array[X509Certificate], authType: String) = {}
   })
 
   val path: String = s"${sys.env("MILL_TEST_RESOURCE_DIR")}/test-data/pkcs12-ca/test-trust.p12"
+  println(s"Using PKCS12 file at path: ${path}")
   val password: String = "test-password"
 
   def tests: Tests = Tests:
@@ -25,7 +24,7 @@ class SSLContextInitTest extends TestSuite:
     test("no verify") {
       val noVerifySSLContext = {
         // Install the all-trusting trust manager
-        val sc = SSLContext.getInstance("SSL")
+        val sc = SSLContext.getInstance("TLS")
         sc.init(null, trustAllCerts, new SecureRandom())
         sc
       }
@@ -41,7 +40,7 @@ class SSLContextInitTest extends TestSuite:
         keyManager.getKeyManagers()
       }
 
-      val sc = SSLContext.getInstance("SSL")
+      val sc = SSLContext.getInstance("TLS")
       sc.init(keyManagers, null, new SecureRandom())
       sc
     }
