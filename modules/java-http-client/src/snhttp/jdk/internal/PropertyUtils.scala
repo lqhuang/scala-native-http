@@ -1,13 +1,15 @@
 package snhttp.jdk.internal
 
+import java.lang.String.CASE_INSENSITIVE_ORDER
 import java.nio.ByteBuffer
+import java.security.KeyStore
 import java.util.function.BiPredicate
 
 import scala.collection.immutable.TreeSet
+import scala.math.Ordering.comparatorToOrdering
 import scala.util.Properties
 
-import Ordering.comparatorToOrdering
-import String.CASE_INSENSITIVE_ORDER
+import _root_.snhttp.core.KnownFolders
 
 /**
  * To check semantics and default value of various JDK properties, see
@@ -73,5 +75,28 @@ object PropertyUtils {
       .propOrNone("jdk.httpclient.sessionCacheSize")
       .flatMap(size => size.trim().toIntOption)
       .getOrElse(20480)
+
+  // scalafmt: { maxColumn = 150 }
+
+  /*
+   *   - `-Djavax.net.ssl.keyStore` specifies the keystore file.
+   *   - `-Djavax.net.ssl.keyStorePassword` specifies the passphrase of the keystore.
+   *   - `-Djavax.net.ssl.trustStore` specifies the truststore file to use to validate client
+   *     certificates.
+   *   - `-Djavax.net.ssl.trustStorePassword` specifies the passphrase to access the truststore
+   *     file.
+   */
+  val keyStoreProp = Properties.propOrEmpty("javax.net.ssl.keyStore")
+  val keyStoreTypeProp = Properties.propOrElse("javax.net.ssl.keyStoreType", KeyStore.getDefaultType())
+  val keyStorePasswdProp = Properties.propOrEmpty("javax.net.ssl.keyStorePassword")
+
+  val trustStoreNameProp = Properties.propOrElse("javax.net.ssl.trustStore", KnownFolders.CA_CERTIFICATES)
+  val trustStoreTypeProp = Properties.propOrElse("javax.net.ssl.trustStoreType", KeyStore.getDefaultType())
+  val trustStorePasswordProp = Properties.propOrEmpty("javax.net.ssl.trustStorePassword")
+
+  // val keyStoreProviderProp = Properties.propOrNone("javax.net.ssl.keyStoreProvider")
+  // val trustStoreProviderProp = Properties.propOrNone("javax.net.ssl.trustStoreProvider")
+
+  // scalafmt: { maxColumn = 80 }
 
 }

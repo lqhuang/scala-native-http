@@ -96,8 +96,7 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
       sr: SecureRandom,
   ): Unit =
     if (!inited.compareAndExchange(false, true)) {
-      // FIXME: Do nothing now
-      ()
+      ???
     } else {
       throw new KeyManagementException("SSLContext already initialized")
     }
@@ -207,21 +206,21 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
 
 object SSLContextSpiImpl:
 
-  final val SUPPORTED_PROTOCOLS = TreeSet(
+  private[snhttp] final val SUPPORTED_PROTOCOLS = TreeSet(
     "TLSv1.2",
     "TLSv1.3",
     "TLS",
     "Default",
   )(using comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
 
-  final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
+  private[snhttp] final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
     TLS_VERSION.SSL3,
     TLS_VERSION.TLS1,
     TLS_VERSION.TLS1_1,
     TLS_VERSION.TLS1_2,
     TLS_VERSION.TLS1_3,
   )
-  final val SSL_OP_PROTOCOL_MASK_MAP = Map(
+  private[snhttp] final val SSL_OP_PROTOCOL_MASK_MAP = Map(
     TLS_VERSION.SSL3 -> SSL_OP.NO_SSLv3,
     TLS_VERSION.TLS1 -> SSL_OP.NO_TLSv1,
     TLS_VERSION.TLS1_1 -> SSL_OP.NO_TLSv1_1,
