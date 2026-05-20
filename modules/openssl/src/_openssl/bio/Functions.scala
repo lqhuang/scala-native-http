@@ -4,7 +4,7 @@ package _openssl.bio
 import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._common.{size_t, FILE, uint64_t, time_t}
-import _root_.snhttp.experimental.openssl._openssl.types.Types.OSSL_LIB_CTX
+import _root_.snhttp.experimental.openssl._openssl.types.Types.OsslLibCtxPtr
 
 import Types.*
 
@@ -728,7 +728,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
    */
-  def BIO_new_ex(libctx: Ptr[OSSL_LIB_CTX], method: Ptr[BIO_METHOD]): Ptr[BIO] = extern
+  def BIO_new_ex(libctx: OsslLibCtxPtr, method: Ptr[BIO_METHOD]): Ptr[BIO] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/bio.h
@@ -749,7 +749,7 @@ private[openssl] trait Functions:
    * [bindgen] header: /usr/include/openssl/bio.h
    */
   def BIO_new_from_core_bio(
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       corebio: Ptr[OSSL_CORE_BIO],
   ): Ptr[BIO] = extern
 

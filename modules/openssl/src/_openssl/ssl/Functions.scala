@@ -25,7 +25,7 @@ import _root_.snhttp.experimental.openssl._openssl.bio.Types.{
 }
 import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   EVP_PKEY,
-  OSSL_LIB_CTX,
+  OsslLibCtxPtr,
   EVP_MD,
   RSA,
   BIGNUM,
@@ -744,7 +744,7 @@ private[openssl] trait Functions extends MacroFunctions:
    * [bindgen] header: /usr/include/openssl/ssl.h
    */
   def SSL_CTX_new_ex(
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
       meth: Ptr[SSL_METHOD],
   ): Ptr[SSL_CTX] = extern
@@ -2671,7 +2671,7 @@ private[openssl] trait Functions extends MacroFunctions:
    */
   def SSL_load_client_CA_file_ex(
       file: CString,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[stack_st_X509_NAME] = extern
 
@@ -3585,7 +3585,7 @@ private[openssl] trait Functions extends MacroFunctions:
       a: Ptr[Ptr[SSL_SESSION]],
       pp: Ptr[Ptr[CUnsignedChar]],
       length: CLong,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[SSL_SESSION] = extern
 

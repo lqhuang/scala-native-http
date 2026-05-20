@@ -80,7 +80,6 @@ private[openssl] object Types:
   /**
    * [bindgen] header: /usr/include/openssl/types.h
    */
-  opaque type OSSL_LIB_CTX = CStruct0
-
-  object OSSL_LIB_CTX:
-    given _tag: Tag[OSSL_LIB_CTX] = Tag.materializeCStruct0Tag
+  opaque type OsslLibCtxPtr = CVoidPtr
+  object OsslLibCtxPtr:
+    given _tag: Tag[OsslLibCtxPtr] = Tag.materializePtrWildcard

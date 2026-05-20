@@ -17,7 +17,7 @@ import _root_.snhttp.experimental.openssl._openssl.safestack.{
   stack_st_PKCS7_RECIP_INFO,
   stack_st_PKCS7_SIGNER_INFO,
 }
-import _root_.snhttp.experimental.openssl._openssl.types.Types.{EVP_CIPHER, OSSL_LIB_CTX}
+import _root_.snhttp.experimental.openssl._openssl.types.Types.{EVP_CIPHER, OsslLibCtxPtr}
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.X509_ALGOR
 
 private[openssl] object Structs:
@@ -227,23 +227,23 @@ private[openssl] object Structs:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs7.h
    */
-  opaque type PKCS7_CTX = CStruct2[Ptr[OSSL_LIB_CTX], CString]
+  opaque type PKCS7_CTX = CStruct2[OsslLibCtxPtr, CString]
 
   object PKCS7_CTX:
-    given _tag: Tag[PKCS7_CTX] = Tag.materializeCStruct2Tag[Ptr[OSSL_LIB_CTX], CString]
+    given _tag: Tag[PKCS7_CTX] = Tag.materializeCStruct2Tag[OsslLibCtxPtr, CString]
 
     export fields.*
     private[pkcs12] object fields:
       extension (struct: PKCS7_CTX)
-        inline def libctx: Ptr[OSSL_LIB_CTX] = struct._1
-        inline def libctx_=(value: Ptr[OSSL_LIB_CTX]): Unit = !struct.at1 = value
+        inline def libctx: OsslLibCtxPtr = struct._1
+        inline def libctx_=(value: OsslLibCtxPtr): Unit = !struct.at1 = value
         inline def propq: CString = struct._2
         inline def propq_=(value: CString): Unit = !struct.at2 = value
       end extension
 
     // Allocates PKCS7_CTX on the heap – fields are not initalised or zeroed out
     def apply()(using Zone): Ptr[PKCS7_CTX] = scala.scalanative.unsafe.alloc[PKCS7_CTX](1)
-    def apply(libctx: Ptr[OSSL_LIB_CTX], propq: CString)(using Zone): Ptr[PKCS7_CTX] =
+    def apply(libctx: OsslLibCtxPtr, propq: CString)(using Zone): Ptr[PKCS7_CTX] =
       val ____ptr = apply()
       (!____ptr).libctx = libctx
       (!____ptr).propq = propq
