@@ -6,22 +6,25 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{
   ManagerFactoryParameters,
   TrustManager,
+  X509TrustManager,
   TrustManagerFactory,
   TrustManagerFactorySpi,
 }
 
 private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
 
-  var _tm: X509TrustManagerImpl = _
+  var _tm: X509TrustManager = _
   val _initialized = new AtomicBoolean(false)
 
-  def engineInit(ks: KeyStore): Unit = {
-    require(ks != null, "KeyStore must not be null")
-
+  def engineInit(ks: KeyStore): Unit =
     if !_initialized.compareAndExchange(false, true)
-    then _tm = X509TrustManagerImpl(ks)
-    else throw new IllegalStateException("TrustManagerFactory is already initialized")
-  }
+    then
+      _tm =
+        if ks == null
+        then X509TrustManagerNullImpl.fromDefaultPath()
+        else new X509TrustManagerKeyStoreImpl(ks)
+    else //
+      throw new IllegalStateException("TrustManagerFactory is already initialized")
 
   def engineInit(spec: ManagerFactoryParameters): Unit =
     ???

@@ -27,7 +27,7 @@ import snhttp.utils.PointerCleaner
 private[snhttp] class SSLContextImpl(provider: Provider, protocol: String)
     extends SSLContext(new SSLContextSpiImpl(protocol), provider, protocol):
 
-  private[snhttp] val ptr = spi.asInstanceOf[SSLContextSpiImpl].ptr
+  private[snhttp] def ref = spi.asInstanceOf[SSLContextSpiImpl].ptr
 
 end SSLContextImpl
 

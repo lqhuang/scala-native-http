@@ -1,3 +1,5 @@
+//| mill-jvm-version: zulu:25
+//| mill-jvm-opts: ["-XX:+UseZGC"]
 //| mvnDeps:
 //|   - com.goyeau::mill-scalafix::0.6.0
 //|   - com.github.lolgab::mill-mima_mill1:0.2.0

@@ -12,7 +12,7 @@ object Main {
   })
 
   def main(args: Array[String]): Unit = {
-    val path: String = sys.env.getOrElse("cert.path")
+    val path: String = sys.env.getOrElse("cert.path", "")
     println(s"Using PKCS12 file at path: ${path}")
     val password: String = "test-password"
 

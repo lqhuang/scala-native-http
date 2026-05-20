@@ -2687,6 +2687,21 @@ private[openssl] trait Functions:
 
   def EVP_sha256(): Ptr[EVP_MD] = extern
 
+  def X509_STORE_load_file_ex(
+      xs: Ptr[X509_STORE],
+      file: CString,
+      libctx: OSSL_LIB_CTX,
+      propq: CString,
+  ): CInt = extern
+
+  def X509_STORE_lock(xs: Ptr[X509_STORE]): CInt = extern
+
+  def X509_STORE_unlock(xs: Ptr[X509_STORE]): CInt = extern
+
+  def X509_STORE_up_ref(xs: Ptr[X509_STORE]): CInt = extern
+
+  def X509_STORE_free(xs: Ptr[X509_STORE]): Unit = extern
+
   /**
    * [bindgen] header: /usr/include/openssl/objects.h
    *

@@ -3,10 +3,10 @@
 package snhttp.utils
 
 import java.lang.ref.Cleaner
+import java.lang.ref.Cleaner.Cleanable
 
 import scala.scalanative.meta.LinktimeInfo
 import scala.scalanative.unsafe.Ptr
-import java.lang.ref.Cleaner.Cleanable
 
 object PointerCleaner:
   private val cleaner: Cleaner = Cleaner.create()

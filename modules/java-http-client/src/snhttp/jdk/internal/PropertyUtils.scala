@@ -9,8 +9,6 @@ import scala.collection.immutable.TreeSet
 import scala.math.Ordering.comparatorToOrdering
 import scala.util.Properties
 
-import _root_.snhttp.core.KnownFolders
-
 /**
  * To check semantics and default value of various JDK properties, see
  * https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/module-summary.html
@@ -78,6 +76,20 @@ object PropertyUtils {
 
   // scalafmt: { maxColumn = 150 }
 
+  val CA_CERTIFICATES =
+    if (Properties.isLinux)
+      "/etc/ssl/certs/ca-certificates.crt"
+    else if (Properties.isMac)
+      "/etc/ssl/cert.pem"
+    else if (Properties.isWin) {
+      // TODO: verify in a real machine
+      // Ref: https://learn.microsoft.com/en-us/windows/win32/seccrypto/system-store-locations
+      ???
+    } else
+      throw new RuntimeException(
+        s"Unsupported platform: ${Properties.osName}. Please specify the path to CA certificates using the `javax.net.ssl.trustStore` system property.",
+      )
+
   /*
    *   - `-Djavax.net.ssl.keyStore` specifies the keystore file.
    *   - `-Djavax.net.ssl.keyStorePassword` specifies the passphrase of the keystore.
@@ -90,7 +102,7 @@ object PropertyUtils {
   val keyStoreTypeProp = Properties.propOrElse("javax.net.ssl.keyStoreType", KeyStore.getDefaultType())
   val keyStorePasswdProp = Properties.propOrEmpty("javax.net.ssl.keyStorePassword")
 
-  val trustStoreNameProp = Properties.propOrElse("javax.net.ssl.trustStore", KnownFolders.CA_CERTIFICATES)
+  val trustStoreNameProp = Properties.propOrElse("javax.net.ssl.trustStore", CA_CERTIFICATES)
   val trustStoreTypeProp = Properties.propOrElse("javax.net.ssl.trustStoreType", KeyStore.getDefaultType())
   val trustStorePasswordProp = Properties.propOrEmpty("javax.net.ssl.trustStorePassword")
 
