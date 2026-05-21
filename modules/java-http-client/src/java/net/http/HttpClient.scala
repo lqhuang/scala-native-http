@@ -82,7 +82,7 @@ object HttpClient:
     final val HTTP_2 = new Version("HTTP_2", 1)
     final val HTTP_3 = new Version("HTTP_3", 2)
 
-    def values(): Array[Version] = Array(HTTP_1_1, HTTP_2)
+    def values(): Array[Version] = Array(HTTP_1_1, HTTP_2, HTTP_3)
 
     def valueOf(name: String): Version =
       name match

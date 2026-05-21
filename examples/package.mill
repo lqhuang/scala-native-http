@@ -5,8 +5,11 @@ import mill.scalalib.DepSyntax
 import mill.scalalib.ScalaModule
 import mill.scalanativelib.ScalaNativeModule
 
-trait SharedModule extends Module:
+/*
+ * For java-http-client examples.
+ */
 
+trait SharedModule extends Module:
   val realSources = moduleDir / "src"
 
   object jvm extends ScalaModule:
@@ -26,11 +29,17 @@ end SharedModule
 
 // Define all example modules here
 object post extends SharedModule
-object `req-async` extends SharedModule
 object req extends SharedModule
+object `req-async` extends SharedModule
+object `req-ssl-context` extends SharedModule
+object `req-h3` extends SharedModule
 
 object `key-manager-factory` extends SharedModule
 object `ssl-context` extends SharedModule
+
+/*
+ * For libcurl examples.
+ */
 
 trait CurlSharedModule extends ScalaNativeModule {
   def scalaVersion = build.scalaVersion
@@ -40,6 +49,10 @@ trait CurlSharedModule extends ScalaNativeModule {
 
 object `curl-easy` extends CurlSharedModule
 object `curl-multi` extends CurlSharedModule
+
+/*
+ * For libssl examples.
+ */
 
 trait OpenSSLSharedModule extends ScalaNativeModule {
   def scalaNativeVersion = build.scalaNativeVersion

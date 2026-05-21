@@ -3,7 +3,7 @@ import java.security.{KeyStore, SecureRandom}
 import java.security.cert.X509Certificate
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManager, X509TrustManager}
 
-object Main {
+object Main:
 
   val trustAllCerts = Array[TrustManager](new X509TrustManager() {
     def getAcceptedIssuers() = Array[X509Certificate]()
@@ -37,7 +37,4 @@ object Main {
       sc.init(keyManagers, null, new SecureRandom())
       sc
     }
-
   }
-
-}
