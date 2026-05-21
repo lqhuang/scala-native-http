@@ -1,13 +1,11 @@
 package snhttp.java.net.http
 
-import java.net.{Proxy, ProxySelector, URI, InetAddress}
+import java.net.{CookieManager, ProxySelector, URI, InetAddress}
 import java.net.http.HttpClient
 import java.net.http.HttpClient.{Redirect, Version}
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.Executors
-
-import javax.net.ssl.SSLContext
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
@@ -236,4 +234,24 @@ class HttpClientBuilderTest extends TestSuite:
             noProxy.select(exampleUri).toArray(),
           ),
       )
+    }
+
+    test("HttpClient builder should configure cookie handler") {
+      val manager = new CookieManager()
+      val client = HttpClient.newBuilder().cookieHandler(manager).build()
+
+      assert(client.cookieHandler().isPresent())
+      assert(client.cookieHandler().get() == manager)
+    }
+
+    test("HttpClient builder should reject null cookie handler") {
+      val builder = HttpClient.newBuilder()
+      assertThrows[NullPointerException] {
+        builder.cookieHandler(null): Unit
+      }
+    }
+
+    test("HttpClient builder without cookie handler should keep empty optional") {
+      val client = HttpClient.newBuilder().build()
+      assert(client.cookieHandler() == Optional.empty())
     }

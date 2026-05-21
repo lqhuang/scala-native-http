@@ -1,13 +1,8 @@
 package java.net
 
-import java.net.URI
-import java.util.{Map as JMap, List as JList}
+import java.util.{List as JList, Map as JMap}
 
-/**
- * Reference:
- *
- *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/CookieHandler.html
- */
+// @since 1.6
 abstract class CookieHandler:
 
   def get(uri: URI, requestHeaders: JMap[String, JList[String]]): JMap[String, JList[String]]
@@ -15,9 +10,9 @@ abstract class CookieHandler:
   def put(uri: URI, responseHeaders: JMap[String, JList[String]]): Unit
 
 object CookieHandler:
+  @volatile private var defaultHandler: CookieHandler = null
 
-  def getDefault(): CookieHandler = ???
+  def getDefault(): CookieHandler = defaultHandler
 
-  def setDefault(handler: CookieHandler): Unit = ???
-
-end CookieHandler
+  def setDefault(cHandler: CookieHandler): Unit =
+    defaultHandler = cHandler

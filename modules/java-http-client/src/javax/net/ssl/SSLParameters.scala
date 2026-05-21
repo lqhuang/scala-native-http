@@ -1,6 +1,5 @@
 package javax.net.ssl
 
-import java.security.AlgorithmConstraints
 import java.util.List as JList
 import java.util.{Collection, Collections}
 import java.util.Objects.requireNonNull
@@ -46,7 +45,7 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
 
   // Endpoint identification algorithm (e.g., HTTPS)
   private var _identificationAlgorithm: String = null
-  private var _algorithmConstraints: AlgorithmConstraints = null
+  private var _algorithmConstraints: java.security.AlgorithmConstraints = null
 
   private var _enableRetransmissions: Boolean = true
   private var _maximumPacketSize: Int = 0
@@ -108,11 +107,10 @@ class SSLParameters(cipherSuites: Array[String], protocols: Array[String]):
     _needClientAuth = needClientAuth
     _wantClientAuth = false
 
-  def getAlgorithmConstraints(): AlgorithmConstraints =
+  def getAlgorithmConstraints(): java.security.AlgorithmConstraints =
     _algorithmConstraints
 
-  def setAlgorithmConstraints(constraints: AlgorithmConstraints): Unit =
-    requireNonNull(constraints)
+  def setAlgorithmConstraints(constraints: java.security.AlgorithmConstraints): Unit =
     _algorithmConstraints = constraints
 
   def getEndpointIdentificationAlgorithm(): String =
