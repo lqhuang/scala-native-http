@@ -7,11 +7,11 @@ import javax.net.ssl.X509TrustManager
 import scala.scalanative.unsafe.{Ptr, stackalloc, toCString}
 import scala.scalanative.unsafe.Zone
 
-import com.github.lolgab.scalanativecrypto.OpenSSLProvider
+import _root_.com.github.lolgab.scalanativecrypto.OpenSSLProvider
 import _root_.snhttp.experimental.openssl.libcrypto
-import _root_.snhttp.experimental.openssl.libcrypto.X509_STORE
+import _root_.snhttp.experimental.openssl.libcrypto.{X509_STORE, OsslLibCtxPtr}
 import _root_.snhttp.jdk.internal.PropertyUtils
-import snhttp.utils.PointerCleaner
+import _root_.snhttp.utils.PointerCleaner
 
 private[snhttp] object X509TrustManagerNullImpl:
 
@@ -20,13 +20,13 @@ private[snhttp] object X509TrustManagerNullImpl:
       var ref: Ptr[X509_STORE] = null
       val ret = libcrypto.X509_STORE_load_file_ex(
         ref,
-        toCString(PropertyUtils.CA_CERTIFICATES)(using zone),
-        OpenSSLProvider.defaultLibCTX,
+        toCString(PropertyUtils.trustStoreProp)(using zone),
+        OpenSSLProvider.defaultLibCTX.asInstanceOf[libcrypto.OsslLibCtxPtr],
         null,
       )
       if (ret != 1)
         throw new RuntimeException(
-          s"failed to load trust store from ${PropertyUtils.CA_CERTIFICATES}",
+          s"failed to load trust store from ${PropertyUtils.trustStoreProp}",
         )
       new X509TrustManagerNullImpl(ref)
     }

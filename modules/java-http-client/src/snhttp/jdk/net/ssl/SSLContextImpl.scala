@@ -24,8 +24,8 @@ import snhttp.experimental.openssl.libssl
 import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
 import snhttp.utils.PointerCleaner
 
-private[snhttp] class SSLContextImpl(provider: Provider, protocol: String)
-    extends SSLContext(new SSLContextSpiImpl(protocol), provider, protocol):
+private[snhttp] class SSLContextImpl(spi: SSLContextSpiImpl, provider: Provider, protocol: String)
+    extends SSLContext(spi, provider, protocol):
 
   private[snhttp] def ref = spi.asInstanceOf[SSLContextSpiImpl].ptr
 
@@ -91,12 +91,33 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
    *      the array is used.
    */
   def engineInit(
-      km: Array[KeyManager],
-      tm: Array[TrustManager],
+      kms: Array[KeyManager],
+      tms: Array[TrustManager],
       sr: SecureRandom,
   ): Unit =
     if (!inited.compareAndExchange(false, true)) {
-      ???
+      println(
+        s"Initializing SSLContext with KeyManagers: ${kms}, TrustManagers: ${tms}, SecureRandom: ${sr}",
+      )
+
+      if (kms != null) {
+        kms.foreach(km =>
+          if (km != null && km.isInstanceOf[X509KeyManagerImpl]) {
+            val key = km.asInstanceOf[X509KeyManagerImpl]
+            ???
+          },
+        )
+      }
+
+      if (tms != null) {
+        tms.foreach(tm =>
+          if (tm != null && tm.isInstanceOf[X509TrustManagerKeyStoreImpl]) {
+            val trust = tm.asInstanceOf[X509TrustManagerKeyStoreImpl]
+            ???
+          },
+        )
+      }
+
     } else {
       throw new KeyManagementException("SSLContext already initialized")
     }

@@ -56,7 +56,7 @@ class TrustManagerFactoryTest extends TestSuite:
 
   // note the rare usage of DSA keys here in addition to RSA
   private def getTestKeyStore(): KeyStoreUtils = {
-    if TEST_KEY_STORE == null then
+    if (TEST_KEY_STORE == null)
       TEST_KEY_STORE = new KeyStoreUtils.Builder()
         .keyAlgorithms(KEY_TYPES)
         .aliasPrefix("rsa-dsa-ec")

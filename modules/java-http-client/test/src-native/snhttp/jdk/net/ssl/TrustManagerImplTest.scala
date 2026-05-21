@@ -37,20 +37,20 @@ import utest.{TestSuite, Tests, test}
 
 import org.conscrypt.utils.{FakeSSLSession, FakeSSLSocket, MockHostnameVerifier, KeyStoreUtils}
 
-import _root_.snhttp.jdk.net.ssl.X509TrustManagerImpl
+import _root_.snhttp.jdk.net.ssl.X509TrustManagerKeyStoreImpl
 
-class X509TrustManagerImplSuite extends TestSuite:
+class X509TrustManagerKeyStoreImplSuite extends TestSuite:
 
   private def trustManager(ca: X509Certificate): X509TrustManager = {
     val keyStore = KeyStoreUtils.createKeyStore()
     keyStore.setCertificateEntry("alias", ca)
-    new X509TrustManagerImpl(keyStore)
+    new X509TrustManagerKeyStoreImpl(keyStore)
   }
 
   private def assertValid(chain: Array[X509Certificate], tm: X509TrustManager): Unit =
     tm match {
-      case tmi: X509TrustManagerImpl => tmi.checkServerTrusted(chain, "RSA")
-      case _                         => ()
+      case tmi: X509TrustManagerKeyStoreImpl => tmi.checkServerTrusted(chain, "RSA")
+      case _                                 => ()
     }
     tm.checkServerTrusted(chain, "RSA")
 
@@ -137,8 +137,8 @@ class X509TrustManagerImplSuite extends TestSuite:
       val chain2 = Array[X509Certificate](server, intermediate)
       val chain1 = Array[X509Certificate](server)
 
-      assert(tm.isInstanceOf[X509TrustManagerImpl])
-      val tmi = tm.asInstanceOf[X509TrustManagerImpl]
+      assert(tm.isInstanceOf[X509TrustManagerKeyStoreImpl])
+      val tmi = tm.asInstanceOf[X509TrustManagerKeyStoreImpl]
       // var certs = tmi.checkServerTrusted(chain2, "RSA", new FakeSSLSession("purple.com"))
       // assert(Arrays.asList(chain3: _*) == certs)
       // certs = tmi.checkServerTrusted(chain1, "RSA", new FakeSSLSession("purple.com"))
@@ -150,7 +150,7 @@ class X509TrustManagerImplSuite extends TestSuite:
     //     KeyStoreUtils.getServerHostname().getPrivateKey("RSA", "RSA")
     //   val chain: Array[X509Certificate] = pke.getCertificateChain().asInstanceOf[Array[X509Certificate]]
     //   val root: X509Certificate = chain(2)
-    //   val tmi: X509TrustManagerImpl = trustManager(root).asInstanceOf[X509TrustManagerImpl]
+    //   val tmi: X509TrustManagerKeyStoreImpl = trustManager(root).asInstanceOf[X509TrustManagerKeyStoreImpl]
 
     //   val goodHostname = KeyStoreUtils.CERT_HOSTNAME
     //   val badHostname = "definitelywrong.nopenopenope"

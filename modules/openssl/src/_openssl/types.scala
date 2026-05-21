@@ -83,3 +83,10 @@ private[openssl] object Types:
   opaque type OsslLibCtxPtr = CVoidPtr
   object OsslLibCtxPtr:
     given _tag: Tag[OsslLibCtxPtr] = Tag.materializePtrWildcard
+
+  /**
+   * [bindgen] header: /usr/include/openssl/types.h
+   */
+  opaque type ConfPtr = CVoidPtr
+  object ConfPtr:
+    given _tag: Tag[ConfPtr] = Tag.materializePtrWildcard

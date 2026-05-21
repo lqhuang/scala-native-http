@@ -2690,7 +2690,7 @@ private[openssl] trait Functions:
   def X509_STORE_load_file_ex(
       xs: Ptr[X509_STORE],
       file: CString,
-      libctx: CVoidPtr, // OsslLibCtxPtr,
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
