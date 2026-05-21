@@ -5,11 +5,11 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.Locale
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{TestSuite, Tests, test, assert, assertThrows}
 
-class HttpCookieTests extends utest.TestSuite:
+class HttpCookieTests extends TestSuite:
 
   private val rfc850Formatter =
     new DateTimeFormatterBuilder()
@@ -28,7 +28,8 @@ class HttpCookieTests extends utest.TestSuite:
     assert(list.length == 1)
     list.head
 
-  val tests = Tests {
+  val tests = Tests:
+
     test("parses name and value from Set-Cookie header") {
       val cookie = parseSingle("Set-Cookie: session=abc123; Path=/app")
       assert(cookie.getName() == "session")
@@ -78,7 +79,8 @@ class HttpCookieTests extends utest.TestSuite:
 
     test("max-age takes precedence over expires") {
       val expiresAt = ZonedDateTime.of(2030, 6, 15, 10, 30, 0, 0, ZoneOffset.UTC)
-      val header = s"prefs=dark; Max-Age=42; Expires=${expiresAt.format(DateTimeFormatter.RFC_1123_DATE_TIME)}"
+      val header =
+        s"prefs=dark; Max-Age=42; Expires=${expiresAt.format(DateTimeFormatter.RFC_1123_DATE_TIME)}"
       val cookie = parseSingle(header)
       assert(cookie.getMaxAge() == 42L)
     }
@@ -216,10 +218,10 @@ class HttpCookieTests extends utest.TestSuite:
       val cookie = new HttpCookie("test", "value")
       cookie.setMaxAge(3600)
       assert(cookie.getMaxAge() == 3600)
-      
+
       cookie.setMaxAge(-1)
       assert(cookie.getMaxAge() == -1)
-      
+
       cookie.setMaxAge(0)
       assert(cookie.getMaxAge() == 0)
     }
@@ -265,15 +267,15 @@ class HttpCookieTests extends utest.TestSuite:
       val cookie1 = new HttpCookie("test", "value1")
       cookie1.setDomain("example.com")
       cookie1.setPath("/")
-      
+
       val cookie2 = new HttpCookie("test", "value2")
       cookie2.setDomain("example.com")
       cookie2.setPath("/")
-      
+
       val cookie3 = new HttpCookie("test", "value1")
       cookie3.setDomain("other.com")
       cookie3.setPath("/")
-      
+
       assert(cookie1.equals(cookie2) == true)
       assert(cookie1.equals(cookie3) == false)
     }
@@ -385,4 +387,3 @@ class HttpCookieTests extends utest.TestSuite:
 
       assert(!cookie1.equals(cookie2))
     }
-  }

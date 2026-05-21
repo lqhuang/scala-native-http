@@ -2,14 +2,15 @@ package snhttp.java.net
 
 import java.net.{CookieManager, CookieStore, HttpCookie, URI}
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{Tests, TestSuite, test, assert, assertThrows}
 
-class CookieStoreTests extends utest.TestSuite:
+class CookieStoreTests extends TestSuite:
 
   private def createStore(): CookieStore =
     new CookieManager().getCookieStore()
 
-  val tests = Tests {
+  val tests = Tests:
+
     test("add and retrieve cookie by URI") {
       val store = createStore()
       val uri = new URI("http://example.com/path")
@@ -208,7 +209,53 @@ class CookieStoreTests extends utest.TestSuite:
       store.add(new URI("http://example.com/"), cookie)
 
       assert(store.get(new URI("http://www.example.com/")).size() == 1)
+      assert(store.get(new URI("http://example.com/")).size() == 1)
       assert(store.get(new URI("http://x.y.example.com/")).size() == 0)
+    }
+
+    test("cookies with same name and domain but different path case are distinct") {
+      val store = createStore()
+      val uri = new URI("http://example.com/")
+      val c1 = new HttpCookie("k", "v")
+      c1.setDomain("example.com")
+      c1.setPath("/App")
+      val c2 = new HttpCookie("k", "v")
+      c2.setDomain("example.com")
+      c2.setPath("/app")
+
+      store.add(uri, c1)
+      store.add(uri, c2)
+      assert(store.getCookies().size() == 2)
+    }
+
+    test("cookie without domain is matched by URI host") {
+      val store = createStore()
+      val cookie = new HttpCookie("x", "1")
+      cookie.setPath("/")
+      // domain is null / not set
+      store.add(new URI("http://example.com/"), cookie)
+
+      assert(store.get(new URI("http://example.com/")).size() == 1)
+      assert(store.get(new URI("http://other.com/")).size() == 0)
+    }
+
+    test("adding same-key cookie under new URI removes it from original URI") {
+      val store = createStore()
+      val uri1 = new URI("http://example.com/a")
+      val uri2 = new URI("http://example.com/b")
+      val c1 = new HttpCookie("token", "v1")
+      c1.setDomain("example.com")
+      c1.setPath("/")
+      val c2 = new HttpCookie("token", "v2")
+      c2.setDomain("example.com")
+      c2.setPath("/")
+
+      store.add(uri1, c1)
+      store.add(uri2, c2)
+
+      // store should have only c2, regardless of which URI it's retrieved from
+      assert(store.getCookies().size() == 1)
+      assert(store.getCookies().get(0).getValue() == "v2")
     }
 
     test("localhost and .local domain behavior") {
@@ -284,7 +331,12 @@ class CookieStoreTests extends utest.TestSuite:
       store.add(new URI("http://example.com/a"), cookie)
       store.add(new URI("http://example.com/b"), cookie)
 
-      assert(store.getCookies().stream().filter(cookie => cookie.getName() == "dupObj").count() == 1L)
+      val count = store
+        .getCookies()
+        .stream()
+        .filter(cookie => cookie.getName() == "dupObj")
+        .count()
+      assert(count == 1L)
     }
 
     test("CookieStore.get does not filter by request path") {
@@ -349,4 +401,40 @@ class CookieStoreTests extends utest.TestSuite:
       assert(retrieved.size() == 1)
       assert(retrieved.get(0).getValue() == "value2")
     }
-  }
+
+    test("add cookie with maxAge 0 is not stored") {
+      val store = createStore()
+      val cookie = new HttpCookie("session", "value")
+      cookie.setDomain("example.com")
+      cookie.setPath("/")
+      cookie.setMaxAge(0)
+      store.add(new URI("http://example.com/"), cookie)
+      assert(store.getCookies().size() == 0)
+    }
+
+    test("add cookie with maxAge 0 removes existing matching cookie") {
+      val store = createStore()
+      val uri = new URI("http://example.com/")
+      val original = new HttpCookie("session", "v1")
+      original.setDomain("example.com")
+      original.setPath("/")
+      store.add(uri, original)
+      assert(store.getCookies().size() == 1)
+
+      val deletion = new HttpCookie("session", "")
+      deletion.setDomain("example.com")
+      deletion.setPath("/")
+      deletion.setMaxAge(0)
+      store.add(uri, deletion)
+      assert(store.getCookies().size() == 0)
+    }
+
+    test("session cookie (set maxAge to -1) persists in store") {
+      val store = createStore()
+      val cookie = new HttpCookie("s", "v")
+      cookie.setDomain("example.com")
+      cookie.setPath("/")
+      cookie.setMaxAge(-1) // default: session cookie
+      store.add(new URI("http://example.com/"), cookie)
+      assert(store.getCookies().size() == 1)
+    }

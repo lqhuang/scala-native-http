@@ -3,13 +3,14 @@ package snhttp.java.net
 import java.net.{CookieManager, CookiePolicy, HttpCookie, URI}
 import java.util.{ArrayList, HashMap, List as JList}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
-import utest.{Tests, test, assert, assertThrows}
+import utest.{Tests, test, assert, assertThrows, TestSuite}
 
-class CookieManagerTests extends utest.TestSuite:
+class CookieManagerTests extends TestSuite:
 
-  val tests = Tests {
+  val tests = Tests:
+
     test("get returns empty Cookie header when no cookies") {
       val manager = new CookieManager()
       val uri = new URI("http://example.com/path")
@@ -231,7 +232,19 @@ class CookieManagerTests extends utest.TestSuite:
 
       val cookies = manager.getCookieStore().getCookies()
       assert(cookies.size() == 1)
+      assert(cookies.get(0).getPath() == "/app/")
       assert(cookies.get(0).getDomain() == "example.com")
+
+      manager.put(new URI("http://example.com/page"), responseHeaders)
+      val cookies2 = manager.getCookieStore().getCookies()
+      assert(cookies2.size() == 2)
+
+      val rootCookie = cookies2
+        .stream()
+        .filter(_.getPath() != "/app/")
+        .findFirst()
+        .get()
+      assert(rootCookie.getPath() == "/")
     }
 
     test("put applies default path from URI") {
@@ -410,4 +423,3 @@ class CookieManagerTests extends utest.TestSuite:
       manager.put(uri, responseHeaders)
       assert(manager.getCookieStore().getCookies().size() == 1)
     }
-  }

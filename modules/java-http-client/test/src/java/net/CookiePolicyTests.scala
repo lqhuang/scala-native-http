@@ -3,11 +3,12 @@ package snhttp.java.net
 import java.net.{CookieManager, CookiePolicy, HttpCookie, URI}
 import java.util.{ArrayList, HashMap, List as JList}
 
-import utest.{Tests, test, assert}
+import utest.{TestSuite, Tests, test, assert}
 
-class CookiePolicyTests extends utest.TestSuite:
+class CookiePolicyTests extends TestSuite:
 
-  val tests = Tests {
+  val tests = Tests:
+
     test("ACCEPT_ALL accepts any cookie") {
       val uri = new URI("http://example.com/path")
       val cookie = new HttpCookie("test", "value")
@@ -250,4 +251,3 @@ class CookiePolicyTests extends utest.TestSuite:
       val cookies = manager.getCookieStore().getCookies()
       assert(cookies.size() == 0)
     }
-  }
