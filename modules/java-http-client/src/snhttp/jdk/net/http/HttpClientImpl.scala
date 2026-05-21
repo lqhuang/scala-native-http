@@ -35,7 +35,8 @@ class HttpClientBuilderImpl() extends Builder:
   protected[http] var _redirect: Redirect = Redirect.NORMAL
   protected[http] var _proxy: Optional[ProxySelector] = Optional.empty()
   protected[http] var _authenticator: Optional[Authenticator] = Optional.empty()
-  protected[http] var _version: Version = Version.HTTP_1_1
+  // default to HTTP/2 for TLS, fallback to HTTP/1.1 for non-TLS
+  protected[http] var _version: Version = Version.HTTP_2
   protected[http] var _executor: Optional[Executor] = Optional.empty()
   protected[http] var _sslContext: Optional[SSLContext] = Optional.empty()
   protected[http] var _sslParams: Optional[SSLParameters] = Optional.empty()
@@ -352,13 +353,11 @@ final class HttpClientImpl(
   private inline def performAndGetIsRuning(): Boolean = {
     val ret = multi.perform(_runningCounter)
     if (ret != CurlMultiCode.OK) throw new CurlMultiException(ret)
-    println(s"DEBUG: CURL multi perform running handles: ${!_runningCounter}")
     (!_runningCounter) != 0
   }
 
   private inline def pollAndGetIsErr(timeoutMs: Int): Boolean =
     val ret = multi.poll(null, 0.toUInt, timeoutMs, null)
-    println(s"DEBUG: CURL multi poll result: ${ret.getname}")
     ret != CurlMultiCode.OK
 
 end HttpClientImpl

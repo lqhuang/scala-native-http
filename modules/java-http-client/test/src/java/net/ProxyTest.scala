@@ -1,4 +1,4 @@
-package snhttp.java.net.http
+package snhttp.java.net
 
 import java.net.InetSocketAddress
 import java.net.Proxy
@@ -69,3 +69,4 @@ class ProxyTest extends TestSuite:
     //   assert(Proxy.NO_PROXY == Proxy.NO_PROXY)
     //   assert(Proxy.NO_PROXY == direct)
     // }
+    //

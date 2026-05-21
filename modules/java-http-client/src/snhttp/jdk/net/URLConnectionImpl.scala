@@ -14,9 +14,9 @@ import java.util.{List as JList, Map as JMap}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.Objects.requireNonNull
 
-trait URLConnectionImplMixin(
-    private val url: URL,
-    private val factory: ContentHandlerFactory,
+private[snhttp] class URLConnectionImpl(
+    url: URL,
+    factory: ContentHandlerFactory,
     @volatile private var _connTimeout: Int = 0,
     @volatile private var _readTimeout: Int = 0,
     @volatile private var _doInput: Boolean = true,
@@ -27,11 +27,12 @@ trait URLConnectionImplMixin(
     @volatile private var _contentLengthLong: Long = -1,
     @volatile private var _contentType: Option[String] = None,
     @volatile private var _contentEncoding: Option[String] = None,
-) extends URLConnection {
+) extends URLConnection(url):
 
   val _connected: AtomicBoolean = new AtomicBoolean(false)
 
-  def connect(): Unit = ???
+  def connect(): Unit =
+    ???
 
   def setConnectTimeout(timeout: Int): Unit =
     require(timeout >= 0, "Connect timeout cannot be negative")
@@ -66,8 +67,6 @@ trait URLConnectionImplMixin(
   /// the `getContentType` method. If this is the first time that the
   /// application has seen that specific content type, a content handler for
   /// that content type is created.
-  ///
-  ///
   def getContent(): Any =
     val contentType = getContentType()
     factory.createContentHandler(contentType) match
@@ -138,13 +137,35 @@ trait URLConnectionImplMixin(
     requireUnconnected()
     ???
 
-  protected def requireUnconnected(): Unit =
-    if (_connected.get()) throw new IllegalStateException("Already connected")
+  def getDate(): Long = ???
 
-}
+  def getExpiration(): Long = ???
 
-class URLConnectionImpl protected (url: URL, factory: ContentHandlerFactory)
-    extends URLConnection(url)
-    with URLConnectionImplMixin(url, factory) {
+  def getHeaderField(name: String): String = ???
+
+  def getHeaderField(n: Int): String = ???
+
+  def getHeaderFieldDate(name: String, default: Long): Long = ???
+
+  def getHeaderFieldInt(name: String, default: Int): Int = ???
+
+  def getHeaderFieldKey(n: Int): String = ???
+
+  def getHeaderFieldLong(name: String, default: Long): Long = ???
+
+  def getHeaderFields(): JMap[String, JList[String]] = ???
+
+  def getIfModifiedSince(): Long = ???
+
+  def getLastModified(): Long = ???
+
+  def setIfModifiedSince(ifModifiedSince: Long): Unit = ???
+
   override def toString(): String = ???
-}
+
+  /*
+   * private helper methods
+   */
+
+  private inline def requireUnconnected(): Unit =
+    if (_connected.get()) throw new IllegalStateException("Already connected")

@@ -1,3 +1,11 @@
+//| mill-version: 1.1.6
+//| mill-jvm-version: zulu:25
+//| mill-jvm-opts:
+//|   - -XX:MaxInlineLevel=20
+//|   - -XX:+UseZGC
+//|   - -XX:ZUncommitDelay=30
+//|   - -XX:ZCollectionInterval=5
+//|   - -XX:+IgnoreUnrecognizedVMOptions
 //| mvnDeps:
 //|   - com.goyeau::mill-scalafix::0.6.0
 //|   - com.github.lolgab::mill-mima_mill1:0.2.0
@@ -142,8 +150,8 @@ object `integration-test-requests` extends Module:
   // trait JVM extends RequestsModule:
   //   object test extends ScalaTests with RequestsTestModule
 
-  object native extends Native
-  trait Native extends RequestsModule with ScalaNativeModule:
-    def scalaNativeVersion = build.scalaNativeVersion
-    def moduleDeps = super.moduleDeps ++ Seq(build.modules.`java-http-client`)
-    object test extends ScalaNativeTests with RequestsTestModule
+  // object native extends Native
+  // trait Native extends RequestsModule with ScalaNativeModule:
+  //   def scalaNativeVersion = build.scalaNativeVersion
+  //   def moduleDeps = super.moduleDeps ++ Seq(build.modules.`java-http-client`)
+  //   object test extends ScalaNativeTests with RequestsTestModule

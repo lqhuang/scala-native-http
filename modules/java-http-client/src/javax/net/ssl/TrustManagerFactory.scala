@@ -3,18 +3,33 @@ package javax.net.ssl
 import java.security.{Provider, KeyStore}
 import java.util.Objects.requireNonNull
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactory.html
+import snhttp.jdk.jsse.provider.OpenSSLProvider
+
+// Refs:
+// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactorySpi.html
+abstract class TrustManagerFactorySpi:
+
+  protected[ssl] def engineInit(ks: KeyStore): Unit
+
+  protected[ssl] def engineInit(spec: ManagerFactoryParameters): Unit
+
+  protected[ssl] def engineGetTrustManagers(): Array[TrustManager]
+
+end TrustManagerFactorySpi
+
+// Refs:
+// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/TrustManagerFactory.html
 class TrustManagerFactory protected (
-    private val spi: TrustManagerFactorySpi,
-    private val provider: Provider,
-    private val algorithm: String,
+    spi: TrustManagerFactorySpi,
+    provider: Provider,
+    algorithm: String,
 ):
 
-  final def getAlgorithm(): String = algorithm
+  final def getAlgorithm(): String =
+    algorithm
 
-  final def getProvider(): Provider = provider
+  final def getProvider(): Provider =
+    provider
 
   final def init(ks: KeyStore): Unit =
     spi.engineInit(ks)
@@ -27,13 +42,11 @@ class TrustManagerFactory protected (
 
 object TrustManagerFactory:
 
-  final def getDefaultAlgorithm(): String = "PKIX"
+  final def getDefaultAlgorithm(): String =
+    "PKIX"
 
-  final def getInstance(algorithm: String): TrustManagerFactory = {
-    requireNonNull(algorithm)
-    require(algorithm.nonEmpty)
-    ???
-  }
+  final def getInstance(algorithm: String): TrustManagerFactory =
+    getInstance(algorithm, OpenSSLProvider.defaultInstance)
 
   final def getInstance(algorithm: String, provider: String): TrustManagerFactory =
     throw new UnsupportedOperationException("Not supported by Scala Native")
@@ -45,7 +58,9 @@ object TrustManagerFactory:
     requireNonNull(algorithm)
     requireNonNull(provider)
     require(algorithm.nonEmpty)
-    ???
+
+    val service = provider.getService("TrustManagerFactory", algorithm)
+    service.newInstance(null).asInstanceOf[TrustManagerFactory]
   }
 
 end TrustManagerFactory

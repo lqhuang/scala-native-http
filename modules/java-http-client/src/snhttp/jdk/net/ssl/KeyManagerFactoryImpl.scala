@@ -1,21 +1,30 @@
 package snhttp.jdk.net.ssl
 
-import java.security.KeyStore
+import java.security.{KeyStore, Provider}
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.{Collections, ArrayList}
 import javax.net.ssl.{ManagerFactoryParameters, KeyManagerFactory, KeyManagerFactorySpi, KeyManager}
 
-class KeyManagerFactorySpiImpl() extends KeyManagerFactorySpi():
+private[snhttp] class KeyManagerFactorySpiImpl extends KeyManagerFactorySpi:
 
-  def engineInit(ks: KeyStore, password: Array[Char]): Unit =
-    ???
+  private var _km: X509KeyManagerImpl = _
+  private val _initialized = new AtomicBoolean(false)
+
+  def engineInit(ks: KeyStore, password: Array[Char]): Unit = {
+    require(ks != null, "KeyStore must not be null")
+
+    if !_initialized.compareAndExchange(false, true)
+    then _km = X509KeyManagerImpl(ks, password)
+    else throw new IllegalStateException("KeyManagerFactory is already initialized")
+  }
 
   def engineInit(spec: ManagerFactoryParameters): Unit =
     ???
 
   def engineGetKeyManagers(): Array[KeyManager] =
-    ???
+    if _initialized.get()
+    then Array(_km)
+    else throw new IllegalStateException("KeyManagerFactory is not initialized")
 
-class KeyManagerFactoryImpl(
-    spi: KeyManagerFactorySpi,
-    provider: java.security.Provider,
-    algorithm: String,
-) extends KeyManagerFactory(spi, provider, algorithm)
+private[snhttp] class KeyManagerFactoryImpl(provider: Provider, algorithm: String)
+    extends KeyManagerFactory(KeyManagerFactorySpiImpl(), provider, algorithm)

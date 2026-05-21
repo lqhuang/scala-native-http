@@ -47,3 +47,7 @@ object `package` extends build.CommonModule:
         upperModuleTestDir / "src", // modules/java-http-client/test/src
         upperModuleTestDir / "src-jvm", // modules/java-http-client/test/src-jvm
       )
+
+      def resources = Task.Sources(
+        upperModuleTestDir / "resources", // modules/java-http-client/test/resources
+      )

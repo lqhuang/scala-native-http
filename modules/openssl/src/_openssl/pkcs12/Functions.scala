@@ -8,7 +8,7 @@ import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   EVP_CIPHER,
   EVP_MD,
   EVP_PKEY,
-  OSSL_LIB_CTX,
+  OsslLibCtxPtr,
 }
 import _root_.snhttp.experimental.openssl._openssl.asn1.Types.{
   ASN1_TYPE,
@@ -91,7 +91,7 @@ private[openssl] trait Functions:
       cipher: Ptr[EVP_CIPHER],
       md_type: Ptr[EVP_MD],
       en_de: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -140,7 +140,7 @@ private[openssl] trait Functions:
       saltlen: CInt,
       iter: CInt,
       p8inf: Ptr[PKCS8_PRIV_KEY_INFO],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS12_SAFEBAG] = extern
 
@@ -302,7 +302,7 @@ private[openssl] trait Functions:
       iter: CInt,
       key_nid: CInt,
       pass: CString,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS12_SAFEBAG] = extern
 
@@ -335,7 +335,7 @@ private[openssl] trait Functions:
       safe_nid: CInt,
       iter: CInt,
       pass: CString,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -350,7 +350,7 @@ private[openssl] trait Functions:
   def PKCS12_add_safes_ex(
       safes: Ptr[stack_st_PKCS7],
       p7_nid: CInt,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS12] = extern
 
@@ -394,7 +394,7 @@ private[openssl] trait Functions:
       iter: CInt,
       mac_iter: CInt,
       keytype: CInt,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS12] = extern
 
@@ -414,7 +414,7 @@ private[openssl] trait Functions:
       bag: Ptr[PKCS12_SAFEBAG],
       pass: CString,
       passlen: CInt,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS8_PRIV_KEY_INFO] = extern
 
@@ -466,7 +466,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
-  def PKCS12_init_ex(mode: CInt, ctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[PKCS12] =
+  def PKCS12_init_ex(mode: CInt, ctx: OsslLibCtxPtr, propq: CString): Ptr[PKCS12] =
     extern
 
   /**
@@ -491,7 +491,7 @@ private[openssl] trait Functions:
       passlen: CInt,
       oct: Ptr[ASN1_OCTET_STRING],
       zbuf: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[Byte] = extern
 
@@ -517,7 +517,7 @@ private[openssl] trait Functions:
       passlen: CInt,
       obj: Ptr[Byte],
       zbuf: CInt,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[ASN1_OCTET_STRING] = extern
 
@@ -559,7 +559,7 @@ private[openssl] trait Functions:
       n: CInt,
       out: Ptr[CUnsignedChar],
       md_type: Ptr[EVP_MD],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -591,7 +591,7 @@ private[openssl] trait Functions:
       n: CInt,
       out: Ptr[CUnsignedChar],
       md_type: Ptr[EVP_MD],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -623,7 +623,7 @@ private[openssl] trait Functions:
       n: CInt,
       out: Ptr[CUnsignedChar],
       md_type: Ptr[EVP_MD],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -671,7 +671,7 @@ private[openssl] trait Functions:
       saltlen: CInt,
       iter: CInt,
       bags: Ptr[stack_st_PKCS12_SAFEBAG],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS7] = extern
 
@@ -712,7 +712,7 @@ private[openssl] trait Functions:
       data: Ptr[Ptr[CUnsignedChar]],
       datalen: Ptr[CInt],
       en_de: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[CUnsignedChar] = extern
 
@@ -785,7 +785,7 @@ private[openssl] trait Functions:
       p8: Ptr[X509_SIG],
       pass: CString,
       passlen: CInt,
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[PKCS8_PRIV_KEY_INFO] = extern
 
@@ -815,7 +815,7 @@ private[openssl] trait Functions:
       saltlen: CInt,
       iter: CInt,
       p8: Ptr[PKCS8_PRIV_KEY_INFO],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[X509_SIG] = extern
 
@@ -842,7 +842,7 @@ private[openssl] trait Functions:
       passlen: CInt,
       p8inf: Ptr[PKCS8_PRIV_KEY_INFO],
       pbe: Ptr[X509_ALGOR],
-      ctx: Ptr[OSSL_LIB_CTX],
+      ctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[X509_SIG] = extern
 
@@ -865,3 +865,9 @@ private[openssl] trait Functions:
    * [bindgen] header: /usr/include/openssl/pkcs12.h
    */
   def i2d_PKCS12_fp(fp: Ptr[FILE], p12: Ptr[PKCS12]): CInt = extern
+
+  /*
+   *  Missed from scala-native-bindgen
+   */
+
+  def PKCS12_free(p12: Ptr[PKCS12]): Unit = extern

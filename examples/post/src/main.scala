@@ -1,8 +1,10 @@
 import java.net.URI
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.net.http.{HttpClient, HttpRequest}
 import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse.BodyHandlers
 
-object Post:
+object Main:
+
   def runSimplePostRequest(): Unit =
     val request = HttpRequest
       .newBuilder()
@@ -11,7 +13,7 @@ object Post:
       .POST(BodyPublishers.ofString("Sample request body"))
       .build()
     val client = HttpClient.newBuilder().build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+    val response = client.send(request, BodyHandlers.ofString())
     println(s"Status: ${response.statusCode()}")
     println(s"Response Body: ${response.body()}")
 

@@ -8,7 +8,7 @@ import _root_.snhttp.experimental.openssl._openssl.bio.Structs.{BIO, BIO_METHOD}
 import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   BIGNUM,
   EVP_PKEY,
-  OSSL_LIB_CTX,
+  OsslLibCtxPtr,
   EVP_MD,
 }
 import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_X509_ALGOR
@@ -764,7 +764,7 @@ private[openssl] trait Functions:
       it: Ptr[ASN1_ITEM],
       in: Ptr[BIO],
       pval: Ptr[Byte],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[Byte] = extern
 
@@ -776,7 +776,7 @@ private[openssl] trait Functions:
       in: Ptr[Ptr[CUnsignedChar]],
       len: CLongInt,
       it: Ptr[ASN1_ITEM],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[ASN1_VALUE] = extern
 
@@ -792,7 +792,7 @@ private[openssl] trait Functions:
       it: Ptr[ASN1_ITEM],
       in: Ptr[FILE],
       x: Ptr[Byte],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[Byte] = extern
 
@@ -849,7 +849,7 @@ private[openssl] trait Functions:
    */
   def ASN1_item_new_ex(
       it: Ptr[ASN1_ITEM],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[ASN1_VALUE] = extern
 
@@ -885,7 +885,7 @@ private[openssl] trait Functions:
       id: Ptr[ASN1_OCTET_STRING],
       pkey: Ptr[EVP_PKEY],
       md: Ptr[EVP_MD],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -904,7 +904,7 @@ private[openssl] trait Functions:
       data: Ptr[Byte],
       id: Ptr[ASN1_OCTET_STRING],
       pkey: Ptr[EVP_PKEY],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -1045,7 +1045,7 @@ private[openssl] trait Functions:
       bcont: Ptr[Ptr[BIO]],
       it: Ptr[ASN1_ITEM],
       x: Ptr[Ptr[ASN1_VALUE]],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[ASN1_VALUE] = extern
 
@@ -1080,7 +1080,7 @@ private[openssl] trait Functions:
       econt_nid: CInt,
       mdalgs: Ptr[stack_st_X509_ALGOR],
       it: Ptr[ASN1_ITEM],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 

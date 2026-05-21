@@ -17,7 +17,7 @@ import snhttp.experimental.openssl.libssl
  *
  * map to OpenSSL `BIO` with non-blocking mode
  */
-class ClientSSLSocketImpl protected (
+private[snhttp] class ClientSSLSocketImpl(
     sslParams: SSLParametersImpl,
     addr: InetAddress,
     port: Int,
@@ -36,7 +36,7 @@ class ClientSSLSocketImpl protected (
     throw new RuntimeException("Failed to create socket")
   // TODO: Test socket can connect to the host:port else we need to recreate the socket
 
-  protected[ssl] val ptr = libssl.BIO_new_socket(sock, if autoClose then 1 else 0)
+  private[snhttp] val ptr = libssl.BIO_new_socket(sock, if autoClose then 1 else 0)
   if (ptr == null)
     throw new RuntimeException("Failed to create new BIO object")
 
@@ -84,16 +84,16 @@ class ClientSSLSocketImpl protected (
    * Beyond standard SSLSocket methods
    */
 
-  protected[ssl] def pendingReadableBytes: Long =
+  private[snhttp] def pendingReadableBytes: Long =
     libssl.BIO_ctrl_pending(ptr).toLong
 
-  protected[ssl] def pendingWrittenBytes: Long =
+  private[snhttp] def pendingWrittenBytes: Long =
     libssl.BIO_ctrl_wpending(ptr).toLong
 
-  protected[ssl] def requestReadBufferSize: Long =
+  private[snhttp] def requestReadBufferSize: Long =
     libssl.BIO_ctrl_get_read_request(ptr).toLong
 
-  protected[ssl] def guaranteeWriteBufferSize: Long =
+  private[snhttp] def guaranteeWriteBufferSize: Long =
     libssl.BIO_ctrl_get_write_guarantee(ptr).toLong
 
   /**

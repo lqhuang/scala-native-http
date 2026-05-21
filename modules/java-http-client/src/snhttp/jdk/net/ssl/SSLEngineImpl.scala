@@ -33,7 +33,7 @@ import snhttp.experimental.openssl.libssl.{SSL3_RT_MAX_PACKET_SIZE, SSL3_RT_MAX_
 /// TODO:
 ///
 /// Remove EngineState and leverage SSL_state() to get current state of SSL object.
-class ClientSSLEngineImpl protected[ssl] (ctxSpi: SSLContextSpiImpl, host: String, port: Int)
+private[snhttp] class ClientSSLEngineImpl(ctxSpi: SSLContextSpiImpl, host: String, port: Int)
     extends SSLEngine(host, port):
 
   import EngineState.*

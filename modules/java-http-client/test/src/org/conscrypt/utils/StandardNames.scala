@@ -35,9 +35,9 @@ object StandardNames:
 
   val IS_SCALA_NATIVE: Boolean =
     System.getProperty("java.specification.name") != "Java Platform API Specification"
-  val JSSE_PROVIDER_NAME: String =
-    if (IS_SCALA_NATIVE) "scala-native-openssl"
-    else "SunJSSE"
+  // val JSSE_PROVIDER_NAME: String =
+  //   if (IS_SCALA_NATIVE) "scala-native-openssl"
+  //   else "SunJSSE"
 
   final val KEY_MANAGER_FACTORY_SUPPORTS_ALGORITHM = "PKIX"
   final val TRUST_MANAGER_FACTORY_SUPPORTS_ALGORITHM = "PKIX"

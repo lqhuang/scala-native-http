@@ -6,9 +6,8 @@ import java.util.{List as JList, Map as JMap}
 
 import scala.collection.mutable.Map
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URLConnection.html
+// Refs:
+// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URLConnection.html
 abstract class URLConnection(url: URL):
 
   def connect(): Unit
@@ -31,25 +30,25 @@ abstract class URLConnection(url: URL):
 
   def getContentEncoding(): String
 
-  def getExpiration(): Long = ???
+  def getExpiration(): Long
 
-  def getDate(): Long = ???
+  def getDate(): Long
 
-  def getLastModified(): Long = ???
+  def getLastModified(): Long
 
-  def getHeaderField(name: String): String = ???
+  def getHeaderField(name: String): String
 
-  def getHeaderFields(): JMap[String, JList[String]] = ???
+  def getHeaderFields(): JMap[String, JList[String]]
 
-  def getHeaderFieldInt(name: String, default: Int): Int = ???
+  def getHeaderFieldInt(name: String, default: Int): Int
 
-  def getHeaderFieldLong(name: String, default: Long): Long = ???
+  def getHeaderFieldLong(name: String, default: Long): Long
 
-  def getHeaderFieldDate(name: String, default: Long): Long = ???
+  def getHeaderFieldDate(name: String, default: Long): Long
 
-  def getHeaderFieldKey(n: Int): String = ???
+  def getHeaderFieldKey(n: Int): String
 
-  def getHeaderField(n: Int): String = ???
+  def getHeaderField(n: Int): String
 
   def getContent(): Any
 
@@ -80,9 +79,9 @@ abstract class URLConnection(url: URL):
 
   def getUseCaches(): Boolean
 
-  def setIfModifiedSince(ifModifiedSince: Long): Unit = ???
+  def setIfModifiedSince(ifModifiedSince: Long): Unit
 
-  def getIfModifiedSince(): Long = ???
+  def getIfModifiedSince(): Long
 
   def getDefaultUseCaches(): Boolean
 
@@ -123,9 +122,11 @@ object URLConnection:
   def setContentHandlerFactory(factory: ContentHandlerFactory): Unit =
     throw new UnsupportedOperationException()
 
-  def guessContentTypeFromName(fname: String): String = ???
+  def guessContentTypeFromName(fname: String): String =
+    ???
 
-  def guessContentTypeFromStream(is: InputStream): String = ???
+  def guessContentTypeFromStream(is: InputStream): String =
+    ???
 
   @deprecated()
   def setDefaultRequestProperty(key: String, value: String): Unit =

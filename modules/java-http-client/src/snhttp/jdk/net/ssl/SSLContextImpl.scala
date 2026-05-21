@@ -24,15 +24,14 @@ import snhttp.experimental.openssl.libssl
 import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
 import snhttp.utils.PointerCleaner
 
-private[snhttp] class SSLContextImpl(
-    spi: SSLContextSpiImpl,
-    provider: Provider,
-    protocol: String,
-) extends SSLContext(spi, provider, protocol):
-  private[snhttp] val ptr = spi.ptr
+private[snhttp] class SSLContextImpl(spi: SSLContextSpiImpl, provider: Provider, protocol: String)
+    extends SSLContext(spi, provider, protocol):
+
+  private[snhttp] def ref = spi.asInstanceOf[SSLContextSpiImpl].ptr
+
 end SSLContextImpl
 
-private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi():
+private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
 
   import SSLContextSpiImpl.{
     SUPPORTED_PROTOCOLS,
@@ -75,8 +74,8 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
 
   // Client session context bind to current SSLContext
   // only has one ClientSessionContext instance per SSLContext instance
-  protected[ssl] val clientSessionContext = ClientSessionContextImpl(this)
-  protected[ssl] val sslSocketFactory = SSLSocketFactoryImpl(this)
+  private[ssl] val clientSessionContext = ClientSessionContextImpl(this)
+  private[ssl] val sslSocketFactory = SSLSocketFactoryImpl(this)
 
   private val inited: AtomicBoolean = new AtomicBoolean(false)
 
@@ -92,13 +91,33 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
    *      the array is used.
    */
   def engineInit(
-      km: Array[KeyManager],
-      tm: Array[TrustManager],
+      kms: Array[KeyManager],
+      tms: Array[TrustManager],
       sr: SecureRandom,
   ): Unit =
     if (!inited.compareAndExchange(false, true)) {
-      // FIXME: Do nothing now
-      ()
+      println(
+        s"Initializing SSLContext with KeyManagers: ${kms}, TrustManagers: ${tms}, SecureRandom: ${sr}",
+      )
+
+      if (kms != null) {
+        kms.foreach(km =>
+          if (km != null && km.isInstanceOf[X509KeyManagerImpl]) {
+            val key = km.asInstanceOf[X509KeyManagerImpl]
+            ???
+          },
+        )
+      }
+
+      if (tms != null) {
+        tms.foreach(tm =>
+          if (tm != null && tm.isInstanceOf[X509TrustManagerKeyStoreImpl]) {
+            val trust = tm.asInstanceOf[X509TrustManagerKeyStoreImpl]
+            ???
+          },
+        )
+      }
+
     } else {
       throw new KeyManagementException("SSLContext already initialized")
     }
@@ -208,21 +227,21 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi(
 
 object SSLContextSpiImpl:
 
-  final val SUPPORTED_PROTOCOLS = TreeSet(
+  private[snhttp] final val SUPPORTED_PROTOCOLS = TreeSet(
     "TLSv1.2",
     "TLSv1.3",
     "TLS",
     "Default",
   )(using comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
 
-  final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
+  private[snhttp] final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
     TLS_VERSION.SSL3,
     TLS_VERSION.TLS1,
     TLS_VERSION.TLS1_1,
     TLS_VERSION.TLS1_2,
     TLS_VERSION.TLS1_3,
   )
-  final val SSL_OP_PROTOCOL_MASK_MAP = Map(
+  private[snhttp] final val SSL_OP_PROTOCOL_MASK_MAP = Map(
     TLS_VERSION.SSL3 -> SSL_OP.NO_SSLv3,
     TLS_VERSION.TLS1 -> SSL_OP.NO_TLSv1,
     TLS_VERSION.TLS1_1 -> SSL_OP.NO_TLSv1_1,

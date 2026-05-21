@@ -22,7 +22,7 @@ import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   EC_KEY,
   EVP_PKEY,
   EVP_MD_CTX,
-  OSSL_LIB_CTX,
+  OsslLibCtxPtr,
   DSA,
   RSA,
 }
@@ -153,7 +153,7 @@ private[openssl] trait Functions:
    */
   def EVP_PKCS82PKEY_ex(
       p8: Ptr[PKCS8_PRIV_KEY_INFO],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[EVP_PKEY] = extern
 
@@ -300,7 +300,7 @@ private[openssl] trait Functions:
       saltlen: CInt,
       aiv: Ptr[CUnsignedChar],
       prf_nid: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
   ): Ptr[X509_ALGOR] = extern
 
   /**
@@ -346,7 +346,7 @@ private[openssl] trait Functions:
       iter: CInt,
       salt: Ptr[CUnsignedChar],
       saltlen: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
   ): CInt = extern
 
   /**
@@ -357,7 +357,7 @@ private[openssl] trait Functions:
       iter: CInt,
       salt: Ptr[CUnsignedChar],
       saltlen: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
   ): Ptr[X509_ALGOR] = extern
 
   /**
@@ -380,7 +380,7 @@ private[openssl] trait Functions:
       saltlen: CInt,
       prf_nid: CInt,
       keylen: CInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
   ): Ptr[X509_ALGOR] = extern
 
   /**
@@ -773,7 +773,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
    */
-  def X509_CRL_new_ex(libctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[X509_CRL] = extern
+  def X509_CRL_new_ex(libctx: OsslLibCtxPtr, propq: CString): Ptr[X509_CRL] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
@@ -1100,7 +1100,7 @@ private[openssl] trait Functions:
    */
   def X509_NAME_hash_ex(
       x: Ptr[X509_NAME],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
       ok: Ptr[CInt],
   ): CUnsignedLongInt = extern
@@ -1184,7 +1184,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
    */
-  def X509_PUBKEY_new_ex(libctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[X509_PUBKEY] =
+  def X509_PUBKEY_new_ex(libctx: OsslLibCtxPtr, propq: CString): Ptr[X509_PUBKEY] =
     extern
 
   /**
@@ -1363,7 +1363,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
    */
-  def X509_REQ_new_ex(libctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[X509_REQ] = extern
+  def X509_REQ_new_ex(libctx: OsslLibCtxPtr, propq: CString): Ptr[X509_REQ] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
@@ -1450,7 +1450,7 @@ private[openssl] trait Functions:
   def X509_REQ_verify_ex(
       a: Ptr[X509_REQ],
       r: Ptr[EVP_PKEY],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): CInt = extern
 
@@ -1970,7 +1970,7 @@ private[openssl] trait Functions:
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
    */
-  def X509_new_ex(libctx: Ptr[OSSL_LIB_CTX], propq: CString): Ptr[X509] = extern
+  def X509_new_ex(libctx: OsslLibCtxPtr, propq: CString): Ptr[X509] = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/x509.h
@@ -2360,7 +2360,7 @@ private[openssl] trait Functions:
       a: Ptr[Ptr[EVP_PKEY]],
       pp: Ptr[Ptr[CUnsignedChar]],
       length: CLongInt,
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[EVP_PKEY] = extern
 
@@ -2380,7 +2380,7 @@ private[openssl] trait Functions:
   def d2i_PrivateKey_ex_bio(
       bp: Ptr[BIO],
       a: Ptr[Ptr[EVP_PKEY]],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[EVP_PKEY] = extern
 
@@ -2390,7 +2390,7 @@ private[openssl] trait Functions:
   def d2i_PrivateKey_ex_fp(
       fp: Ptr[FILE],
       a: Ptr[Ptr[EVP_PKEY]],
-      libctx: Ptr[OSSL_LIB_CTX],
+      libctx: OsslLibCtxPtr,
       propq: CString,
   ): Ptr[EVP_PKEY] = extern
 
@@ -2686,6 +2686,21 @@ private[openssl] trait Functions:
   def EVP_PKEY_free(pkey: Ptr[EVP_PKEY]): Unit = extern
 
   def EVP_sha256(): Ptr[EVP_MD] = extern
+
+  def X509_STORE_load_file_ex(
+      xs: Ptr[X509_STORE],
+      file: CString,
+      libctx: OsslLibCtxPtr,
+      propq: CString,
+  ): CInt = extern
+
+  def X509_STORE_lock(xs: Ptr[X509_STORE]): CInt = extern
+
+  def X509_STORE_unlock(xs: Ptr[X509_STORE]): CInt = extern
+
+  def X509_STORE_up_ref(xs: Ptr[X509_STORE]): CInt = extern
+
+  def X509_STORE_free(xs: Ptr[X509_STORE]): Unit = extern
 
   /**
    * [bindgen] header: /usr/include/openssl/objects.h

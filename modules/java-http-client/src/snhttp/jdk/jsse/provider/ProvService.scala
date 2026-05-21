@@ -6,7 +6,12 @@ import java.security.Provider
 import java.util.{List as JList, Map as JMap}
 import javax.net.ssl.SSLContext
 
-import snhttp.jdk.net.ssl.{SSLContextImpl, SSLContextSpiImpl}
+import snhttp.jdk.net.ssl.{
+  SSLContextImpl,
+  SSLContextSpiImpl,
+  KeyManagerFactoryImpl,
+  TrustManagerFactoryImpl,
+}
 
 /* OpenSSLProviderService */
 private[snhttp] class ProvService private[provider] (
@@ -34,8 +39,15 @@ private[snhttp] class ProvService private[provider] (
   override def newInstance(constructorParameter: Object): Object =
     svcType match
       case "SSLContext" =>
-        val ins = new SSLContextImpl(new SSLContextSpiImpl(algorithm), provider, algorithm)
-        if algorithm.equalsIgnoreCase("Default") then ins.init(null, null, null)
+        val spi = new SSLContextSpiImpl(algorithm)
+        val ins = new SSLContextImpl(spi, provider, algorithm)
+        if (algorithm.equalsIgnoreCase("Default")) ins.init(null, null, null)
+        ins
+      case "KeyManagerFactory" =>
+        val ins = new KeyManagerFactoryImpl(provider, algorithm)
+        ins
+      case "TrustManagerFactory" =>
+        val ins = new TrustManagerFactoryImpl(provider, algorithm)
         ins
       case _ =>
         throw new NoSuchAlgorithmException(

@@ -41,8 +41,9 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlSlist,
   CurlWriteFuncRet,
 }
-import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.internal.PropertyUtils
+import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
+import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 
 type CurlRecvBuffer = CStruct3[
   AtomicBoolean, // flag for resp body received
@@ -172,18 +173,18 @@ private[http] final class HttpConnection[T](
     easy.setCStringOption(CurlOption.URL, toCString(request.uri().toString()))
 
     val httpVersion = request.version()
-    if (httpVersion.isPresent())
+    if (httpVersion.isPresent()) {
+      val h3 = Version.valueOf("HTTP_3") // FIXME: avoid compile error
       val version = httpVersion.get() match
         case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
-        case Version.HTTP_2   => CurlHttpVersion.VERSION_2_0
+        case Version.HTTP_2   => CurlHttpVersion.VERSION_2TLS
+        case h3               => CurlHttpVersion.VERSION_3
       easy.setCLongOption(CurlOption.HTTP_VERSION, version.value)
+    }
 
     // default to 30 seconds
     val timeoutMs = request.timeout().map(_.toMillis()).orElse(30 * 1000L)
-    easy.setCLongOption(
-      CurlOption.TIMEOUT_MS,
-      timeoutMs.toSize,
-    )
+    easy.setCLongOption(CurlOption.TIMEOUT_MS, timeoutMs.toSize)
 
     val connectTimeoutMs = client.builder._connectTimeout.map(_.toMillis).orElse(3 * 1000L)
     easy.setCLongOption(CurlOption.CONNECTTIMEOUT_MS, connectTimeoutMs.toSize)
@@ -228,17 +229,28 @@ private[http] final class HttpConnection[T](
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
     easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
 
-    /**
-     * TLS options
-     */
-    val scheme = request.uri().getScheme().toLowerCase().strip()
-    if !scheme.endsWith("s")
-    then // no TLS
-      easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
-    else // with TLS
-      // TODO: Register SSL context ptr to set up custom SSL context
-      // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
-      easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
+    // /**
+    //  * TLS options
+    //  */
+    // val scheme = request.uri().getScheme().toLowerCase().strip()
+    // if !scheme.endsWith("s")
+    // then // no TLS
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
+    // else // with TLS
+    //   // TODO: Register SSL context ptr to set up custom SSL context
+    //   // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
+
+    if (client.builder._sslContext.isPresent) {
+      val ctx = {
+        val ctx = client.builder._sslContext.get()
+        if (!ctx.isInstanceOf[SSLContextImpl])
+          throw new RuntimeException(s"Expected internal SSLContextImpl but got ${ctx.getClass}")
+
+        ctx.asInstanceOf[SSLContextImpl]
+      }
+      easy.setPtrOption(CurlOption.SSL_CTX_DATA, ctx.ref)
+    }
 
     /**
      * set up request method and body for POST, PUT, etc.
@@ -276,7 +288,6 @@ private[http] final class HttpConnection[T](
      * TODO: set error buffer? https://curl.se/libcurl/c/CURLOPT_ERRORBUFFER.html
      */
 
-    println("INFO: Curl options initialized successfully")
   }
 
   private def requireNonShutdown(): Unit =

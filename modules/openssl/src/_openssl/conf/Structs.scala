@@ -4,7 +4,7 @@ package _openssl.conf
 import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO
-import _root_.snhttp.experimental.openssl._openssl.types.Types.OSSL_LIB_CTX
+import _root_.snhttp.experimental.openssl._openssl.types.Types.OsslLibCtxPtr
 
 private[openssl] object Structs:
 
@@ -20,12 +20,12 @@ private[openssl] object Structs:
    * [bindgen] header: /usr/include/openssl/conftypes.h
    */
   opaque type CONF =
-    CStruct7[Ptr[Byte], Ptr[Byte], Ptr[lhash_st_CONF_VALUE], CInt, CInt, CString, Ptr[OSSL_LIB_CTX]]
+    CStruct7[Ptr[Byte], Ptr[Byte], Ptr[lhash_st_CONF_VALUE], CInt, CInt, CString, OsslLibCtxPtr]
 
   object CONF:
     given _tag: Tag[CONF] = Tag.materializeCStruct7Tag[Ptr[Byte], Ptr[Byte], Ptr[
       lhash_st_CONF_VALUE,
-    ], CInt, CInt, CString, Ptr[OSSL_LIB_CTX]]
+    ], CInt, CInt, CString, OsslLibCtxPtr]
 
     export fields.*
     private[conf] object fields:
@@ -43,8 +43,8 @@ private[openssl] object Structs:
         inline def flag_abspath_=(value: CInt): Unit = !struct.at5 = value
         inline def includedir: CString = struct._6
         inline def includedir_=(value: CString): Unit = !struct.at6 = value
-        inline def libctx: Ptr[OSSL_LIB_CTX] = struct._7
-        inline def libctx_=(value: Ptr[OSSL_LIB_CTX]): Unit = !struct.at7 = value
+        inline def libctx: OsslLibCtxPtr = struct._7
+        inline def libctx_=(value: OsslLibCtxPtr): Unit = !struct.at7 = value
       end extension
 
     // Allocates CONF on the heap – fields are not initalised or zeroed out
@@ -56,7 +56,7 @@ private[openssl] object Structs:
         flag_dollarid: CInt,
         flag_abspath: CInt,
         includedir: CString,
-        libctx: Ptr[OSSL_LIB_CTX],
+        libctx: OsslLibCtxPtr,
     )(using Zone): Ptr[CONF] =
       val ____ptr = apply()
       (!____ptr).meth = meth

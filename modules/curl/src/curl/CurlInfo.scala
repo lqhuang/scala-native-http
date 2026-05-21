@@ -4,9 +4,9 @@ package curl
 import java.nio.charset.StandardCharsets
 
 import scala.collection.mutable.{TreeMap, ListBuffer}
+import scala.math.Ordering.comparatorToOrdering
 import scala.scalanative.unsafe.{Ptr, CLong}
 import scala.scalanative.unsafe.{stackalloc, fromCString}
-import scala.math.Ordering.comparatorToOrdering
 
 import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{

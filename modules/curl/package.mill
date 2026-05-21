@@ -8,6 +8,8 @@ object `package` extends build.CommonModule:
 
   def artifactName = "scala-native-curl"
 
+  def moduleDeps = Seq(build.modules.openssl)
+
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-explain-cyclic",
     "-Wunused:imports",
