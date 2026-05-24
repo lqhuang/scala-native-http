@@ -12,7 +12,7 @@ import java.util.List as JList
 import scala.util.Random
 
 // import snhttp.jdk.internal.PropertyUtils
-import _root_.snhttp.java.net.http.utils.{MockByteBufSubscriber, MockBodySubscriber}
+import _root_.snhttp.java.net.http.utils.{MockSubscriber, MockBodySubscriber}
 
 import utest.{assert, assertThrows, TestSuite, Tests, test}
 
@@ -32,7 +32,7 @@ class BodyPublishersTest extends TestSuite:
       // val publisher = BodyPublishers.ofString(content, StandardCharsets.UTF_16)
       // assert(publisher.contentLength() == contentLength)
 
-      // val subscriber = MockByteBufSubscriber()
+      // val subscriber = MockSubscriber()
       // publisher.subscribe(subscriber)
       // subscriber.subscription.request(10)
 
@@ -46,7 +46,7 @@ class BodyPublishersTest extends TestSuite:
       // val publisher = BodyPublishers.ofByteArray(arr)
       // assert(publisher.contentLength() == arr.length.toLong)
 
-      // val subscriber = MockByteBufSubscriber()
+      // val subscriber = MockSubscriber()
       // publisher.subscribe(subscriber)
       // subscriber.subscription.request(10)
 
@@ -57,7 +57,7 @@ class BodyPublishersTest extends TestSuite:
     test("ofByteArray with offset/length publishes correct slice") {
       // val arr = Array[Byte](10, 20, 30, 40, 50)
       // val publisher = BodyPublishers.ofByteArray(arr, 1, 3)
-      // val subscriber = MockByteBufSubscriber()
+      // val subscriber = MockSubscriber()
       // assert(publisher.contentLength() == 3L)
 
       // publisher.subscribe(subscriber)
@@ -75,7 +75,7 @@ class BodyPublishersTest extends TestSuite:
       // val publisher = BodyPublishers.ofByteArray(arr)
       // assert(publisher.contentLength() == arr.length.toLong)
 
-      // val subscriber = MockByteBufSubscriber()
+      // val subscriber = MockSubscriber()
       // publisher.subscribe(subscriber)
       // subscriber.subscription.request(Long.MaxValue)
 
@@ -96,7 +96,7 @@ class BodyPublishersTest extends TestSuite:
       // )
       // assert(publisher.contentLength() == PropertyUtils.INTERNAL_BUFFER_SIZE * 2 + 100)
 
-      // val subscriber = MockByteBufSubscriber()
+      // val subscriber = MockSubscriber()
       // publisher.subscribe(subscriber)
       // subscriber.subscription.request(10)
 

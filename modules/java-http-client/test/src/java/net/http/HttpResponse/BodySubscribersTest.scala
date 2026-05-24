@@ -12,12 +12,7 @@ import java.util.function.{Consumer, Function}
 
 import scala.collection.mutable.ListBuffer
 
-import _root_.snhttp.java.net.http.utils.{
-  MockBodySubscriber,
-  MockSubscription,
-  MockStringSubscriber,
-  MockByteBufSubscriber,
-}
+import _root_.snhttp.java.net.http.utils.{MockBodySubscriber, MockSubscription, MockSubscriber}
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
@@ -120,7 +115,7 @@ class BodySubscribersTest extends TestSuite:
     // ========================================= //
 
     test("fromLineSubscriber(Subscriber) should forward lines and return Unit") {
-      val mocker = MockStringSubscriber()
+      val mocker = MockSubscriber[String]()
       val subscriber = BodySubscribers.fromLineSubscriber(mocker)
 
       subscriber.onSubscribe(MockSubscription())
@@ -137,8 +132,8 @@ class BodySubscribersTest extends TestSuite:
     }
 
     test("fromLineSubscriber with finisher should apply finisher after onComplete") {
-      val mocker = MockStringSubscriber()
-      val finisher: Function[MockStringSubscriber, Int] = s => s.received.size
+      val mocker = MockSubscriber[String]()
+      val finisher: Function[MockSubscriber[String], Int] = s => s.received.size
       val subscriber = BodySubscribers.fromLineSubscriber(
         mocker,
         finisher,
@@ -155,11 +150,11 @@ class BodySubscribersTest extends TestSuite:
     }
 
     test("fromLineSubscriber should reject empty lineSeparator") {
-      val mocker = MockStringSubscriber()
+      val mocker = MockSubscriber[String]()
       assertThrows[IllegalArgumentException] {
         BodySubscribers.fromLineSubscriber(
           mocker,
-          ((_: MockStringSubscriber) => "done"): Function[MockStringSubscriber, String],
+          ((_: MockSubscriber[String]) => "done"): Function[MockSubscriber[String], String],
           StandardCharsets.UTF_8,
           "",
         ): Unit
@@ -167,10 +162,10 @@ class BodySubscribersTest extends TestSuite:
     }
 
     test("fromLineSubscriber should accept null lineSeparator") {
-      val mocker = MockStringSubscriber()
+      val mocker = MockSubscriber[String]()
       val subscriber = BodySubscribers.fromLineSubscriber(
         mocker,
-        ((_: MockStringSubscriber) => "ok"): Function[MockStringSubscriber, String],
+        ((_: MockSubscriber[String]) => "ok"): Function[MockSubscriber[String], String],
         StandardCharsets.UTF_8,
         null,
       )
@@ -187,8 +182,8 @@ class BodySubscribersTest extends TestSuite:
     }
 
     test("fromLineSubscriber with custom separator should split correctly") {
-      val mocker = MockStringSubscriber()
-      val finisher: Function[MockStringSubscriber, Int] = s => s.received.size
+      val mocker = MockSubscriber[String]()
+      val finisher: Function[MockSubscriber[String], Int] = s => s.received.size
       val subscriber = BodySubscribers.fromLineSubscriber(
         mocker,
         finisher,
@@ -208,8 +203,8 @@ class BodySubscribersTest extends TestSuite:
     }
 
     test("fromLineSubscriber with custom separators should split correctly") {
-      val mocker = MockStringSubscriber()
-      val finisher: Function[MockStringSubscriber, Int] = s => s.received.size
+      val mocker = MockSubscriber[String]()
+      val finisher: Function[MockSubscriber[String], Int] = s => s.received.size
       val subscriber = BodySubscribers.fromLineSubscriber(
         mocker,
         finisher,
@@ -229,8 +224,8 @@ class BodySubscribersTest extends TestSuite:
     }
 
     // test("fromLineSubscriber with custom separators || should split correctly") {
-    //   val mocker = MockStringSubscriber()
-    //   val finisher: Function[MockStringSubscriber, Int] = s => s.received.size
+    //   val mocker = MockSubscriber[String]()
+    //   val finisher: Function[MockSubscriber[String], Int] = s => s.received.size
     //   val subscriber = BodySubscribers.fromLineSubscriber(
     //     mocker,
     //     finisher,
@@ -250,8 +245,8 @@ class BodySubscribersTest extends TestSuite:
     // }
 
     test("fromLineSubscriber should handle data split across chunks") {
-      val mocker = MockStringSubscriber()
-      val finisher: Function[MockStringSubscriber, Int] = s => s.received.size
+      val mocker = MockSubscriber[String]()
+      val finisher: Function[MockSubscriber[String], Int] = s => s.received.size
       val subscriber = BodySubscribers.fromLineSubscriber(
         mocker,
         finisher,
@@ -271,8 +266,8 @@ class BodySubscribersTest extends TestSuite:
     }
 
     test("fromLineSubscriber should handle empty body") {
-      val mocker = MockStringSubscriber()
-      val finisher: Function[MockStringSubscriber, Int] = s => s.received.size
+      val mocker = MockSubscriber[String]()
+      val finisher: Function[MockSubscriber[String], Int] = s => s.received.size
       val subscriber = BodySubscribers.fromLineSubscriber(
         mocker,
         finisher,
@@ -291,8 +286,8 @@ class BodySubscribersTest extends TestSuite:
      * doesn't pass on JVM
      */
     // test("fromLineSubscriber finisher exception should complete body exceptionally") {
-    //   val mocker = MockStringSubscriber()
-    //   val faultyFinisher: Function[MockStringSubscriber, String] =
+    //   val mocker = MockSubscriber[String]()
+    //   val faultyFinisher: Function[MockSubscriber[String], String] =
     //     _ => throw new RuntimeException("line finisher error")
     //   val subscriber = BodySubscribers.fromLineSubscriber(
     //     mocker,

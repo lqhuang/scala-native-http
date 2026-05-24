@@ -14,7 +14,7 @@ import scala.collection.immutable.LazyList
 import scala.util.{Try, Failure, Success}
 
 import _root_.snhttp.jdk.internal.PropertyUtils
-import _root_.snhttp.jdk.net.http.internal.DelegatePublisher
+import _root_.snhttp.jdk.net.http.internal.PullPublisher
 
 type BufferSubscriber = Subscriber[? >: ByteBuffer]
 
@@ -31,13 +31,13 @@ end OnErrorPublisher
 
 class NoBodyPublisher() extends BodyPublisher:
 
-  val delegate: Publisher[ByteBuffer] = DelegatePublisher(Seq(ByteBuffer.allocate(0)))
+  class NoBodySubscription() extends Subscription:
+    override def request(n: Long): Unit = ()
+    override def cancel(): Unit = ()
 
-  def contentLength() =
-    0
+  def contentLength(): Long = 0L
 
-  def subscribe(subscriber: BufferSubscriber) =
-    delegate.subscribe(subscriber)
+  def subscribe(subscriber: BufferSubscriber): Unit = ()
 
 end NoBodyPublisher
 
@@ -61,11 +61,12 @@ class ByteArrayPublisher(
     // val demandLength = length
     val bufs: Seq[ByteBuffer] =
       if length <= bufSize
-      then
+      then {
         val bb = ByteBuffer.allocate(length)
         bb.put(bytes, offset, length)
         bb.flip()
         Seq(bb)
+      } //
       else {
         val group =
           if length % bufSize == 0
@@ -83,7 +84,7 @@ class ByteArrayPublisher(
           bb
       }
 
-    val delegate = DelegatePublisher(bufs)
+    val delegate = PullPublisher(bufs)
     delegate.subscribe(subscriber)
   }
 
@@ -108,13 +109,13 @@ class StringPublisher(
 
 end StringPublisher
 
-class ByteArraysPublisher(private val iter: Iterable[Array[Byte]]) extends BodyPublisher:
+class ByteArraysPublisher(iter: Iterable[Array[Byte]]) extends BodyPublisher:
 
   override def contentLength(): Long =
     -1
 
   override def subscribe(subscriber: BufferSubscriber): Unit =
-    val delegate = DelegatePublisher(iter.map(ByteBuffer.wrap))
+    val delegate = PullPublisher(iter.map(ByteBuffer.wrap))
     delegate.subscribe(subscriber)
 
 end ByteArraysPublisher
@@ -143,8 +144,7 @@ class InputStreamPublisher(
       .takeWhile(_.isDefined)
       .map(_.get)
 
-    val publisher = DelegatePublisher(bufs)
-    publisher.subscribe(subscriber)
+    PullPublisher(bufs).subscribe(subscriber)
   }
 
 end InputStreamPublisher

@@ -68,7 +68,7 @@ case class HttpRequestBuilderImpl(
     this._headerMap.put(key, new ArrayList(JList.of(valueTrimmed)))
     this
 
-  def headers(headers: String*): Builder =
+  def headers(headers: Array[String]): Builder =
     require(headers.length % 2 == 0, "Headers must be supplied in name-value pairs")
     headers.grouped(2).foreach(pair => header(pair(0), pair(1)))
     this

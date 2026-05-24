@@ -12,12 +12,7 @@ import java.util.{List as JList, Map as JMap}
 import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.function.{Consumer, Function}
 
-import _root_.snhttp.java.net.http.utils.{
-  MockBodySubscriber,
-  MockByteBufSubscriber,
-  MockSubscription,
-  MockStringSubscriber,
-}
+import _root_.snhttp.java.net.http.utils.{MockBodySubscriber, MockSubscription, MockSubscriber}
 import _root_.snhttp.java.net.http.utils.HttpClientTestUtils.{
   ResponseInfoImpl,
   createHeaders,
@@ -92,7 +87,7 @@ class BodyHandlersTest extends TestSuite:
     // ====================================== //
 
     test("fromLineSubscriber(Subscriber) should create handler using charset from headers") {
-      val subscriber = MockStringSubscriber()
+      val subscriber = MockSubscriber[String]()
       val handler = BodyHandlers.fromLineSubscriber(subscriber)
       val responseInfo =
         createResponseInfo(Map("Content-Type" -> "text/plain; charset=iso-8859-1"))
@@ -106,7 +101,7 @@ class BodyHandlersTest extends TestSuite:
     }
 
     test("fromLineSubscriber should accept null lineSeparator") {
-      val subscriber = MockStringSubscriber()
+      val subscriber = MockSubscriber[String]()
       val handler = BodyHandlers.fromLineSubscriber(
         subscriber,
         ((_: Subscriber[? >: String]) => "done"): Function[Subscriber[? >: String], String],
@@ -118,7 +113,7 @@ class BodyHandlersTest extends TestSuite:
     }
 
     test("fromLineSubscriber should reject empty lineSeparator") {
-      val subscriber = MockStringSubscriber()
+      val subscriber = MockSubscriber[String]()
       assertThrows[IllegalArgumentException] {
         BodyHandlers.fromLineSubscriber(
           subscriber,
@@ -129,7 +124,7 @@ class BodyHandlersTest extends TestSuite:
     }
 
     test("fromLineSubscriber should accept non-empty lineSeparator") {
-      val subscriber = MockStringSubscriber()
+      val subscriber = MockSubscriber[String]()
       val handler = BodyHandlers.fromLineSubscriber(
         subscriber,
         ((_: Subscriber[? >: String]) => "done"): Function[Subscriber[? >: String], String],

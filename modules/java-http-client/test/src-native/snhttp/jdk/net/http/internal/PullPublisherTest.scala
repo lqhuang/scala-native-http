@@ -8,82 +8,31 @@ import java.util.function.Consumer
 import scala.util.boundary
 import scala.util.boundary.break
 
-import _root_.snhttp.jdk.net.http.internal.DelegatePublisher
+import _root_.snhttp.jdk.net.http.internal.PullPublisher
+import _root_.snhttp.java.net.http.utils.MockSubscriber
 
 import utest.{Tests, TestSuite, test, assert}
 
-class DelegatePublisherTest extends TestSuite:
-
-  class SPException extends RuntimeException
-
-  class TestSubscriber[T]() extends Flow.Subscriber[T]:
-    @volatile var sub: Flow.Subscription = null
-
-    @volatile var request = true
-    @volatile var received = List.empty[T]
-    @volatile var nexts = 0
-
-    @volatile var completed = false
-
-    @volatile var throwOnCall = false
-    @volatile var error: Option[Throwable] = None
-
-    override def onSubscribe(subscription: Flow.Subscription): Unit = {
-      assert(sub == null)
-      sub = subscription
-      if (throwOnCall) throw new SPException()
-      if (request) sub.request(1)
-    }
-
-    override def onNext(item: T): Unit = synchronized {
-      nexts += 1
-      received = received :+ item
-      sub.request(1)
-      if (request) sub.request(1)
-      if (throwOnCall) throw new SPException()
-    }
-
-    override def onError(throwable: Throwable): Unit =
-      assert(!completed)
-      assert(error == None)
-      synchronized {
-        error = Some(throwable)
-      }
-
-    override def onComplete(): Unit =
-      assert(!completed)
-      synchronized {
-        completed = true
-      }
-
-    def awaitComplete(): Unit =
-      boundary {
-        while (completed == false && error == None)
-          synchronized {
-            try wait(1L)
-            catch case ex: Exception => break(())
-
-          }
-      }
-
-  end TestSubscriber
+class PullPublisherTest extends TestSuite:
 
   def tests = Tests:
 
     test("Construction with empty iterable should not throw and complete immediately") {
-      // val publisher = DelegatePublisher(Iterable.empty[String])
-      // val subscriber = TestSubscriber[String]()
-      // publisher.subscribe(subscriber)
+      val publisher = PullPublisher(Iterable.empty[String])
+      val subscriber = MockSubscriber[String]()
+      publisher.subscribe(subscriber)
 
-      // assert(subscriber.received.isEmpty)
-      // subscriber.awaitComplete()
-      // assert(subscriber.completed == true)
-      // assert(subscriber.error == None)
+      subscriber.subscription.request(1)
+      subscriber.awaitComplete()
+
+      assert(subscriber.received.isEmpty)
+      assert(subscriber.completed == true)
+      assert(subscriber.error == null)
     }
 
     // test("publish single item should deliver and complete") {
     //   val items = List("hello")
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[String]()
 
     //   publisher.subscribe(subscriber)
@@ -97,7 +46,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("publish multiple items should deliver all and complete") {
     //   val items = List("a", "b", "c", "d", "e")
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[String]()
 
     //   publisher.subscribe(subscriber)
@@ -111,7 +60,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("request more than available should deliver all and complete") {
     //   val items = List(1, 2, 3)
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
@@ -125,7 +74,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("backpressure should work with demand") {
     //   val items = List(1, 2, 3, 4, 5)
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
@@ -153,7 +102,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("zero or negative request should cause error") {
     //   val items = List(1, 2, 3)
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
@@ -167,7 +116,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("negative request should cause error") {
     //   val items = List(1, 2, 3)
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
@@ -181,7 +130,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("cancel should stop delivery") {
     //   val items = List(1, 2, 3, 4, 5)
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
@@ -200,7 +149,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("publisher with error should deliver error") {
     //   val error = new RuntimeException("test error")
-    //   val publisher = DelegatePublisher(error)
+    //   val publisher = PullPublisher(error)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
@@ -224,7 +173,7 @@ class DelegatePublisherTest extends TestSuite:
     //     }
     //   }
 
-    //   val publisher = DelegatePublisher(failingIterable)
+    //   val publisher = PullPublisher(failingIterable)
     //   val subscriber = new TestSubscriber[String]()
 
     //   publisher.subscribe(subscriber)
@@ -238,7 +187,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("multiple subscribers should get independent iterators") {
     //   val items = List(1, 2, 3)
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber1 = new TestSubscriber[Int]()
     //   val subscriber2 = new TestSubscriber[Int]()
 
@@ -257,7 +206,7 @@ class DelegatePublisherTest extends TestSuite:
 
     // test("concurrent requests should work correctly") {
     //   val items = (1 to 100).toList
-    //   val publisher = DelegatePublisher(items)
+    //   val publisher = PullPublisher(items)
     //   val subscriber = new TestSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)

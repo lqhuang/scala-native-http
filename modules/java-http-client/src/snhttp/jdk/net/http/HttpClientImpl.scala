@@ -265,10 +265,9 @@ final class HttpClientImpl(
     if (interrupted.get())
       Thread.currentThread().interrupt()
 
-  /**
+  /*
    * Getters for HttpClient properties
    */
-
   def cookieHandler(): Optional[CookieHandler] =
     builder._cookieHandler
 
@@ -340,7 +339,7 @@ final class HttpClientImpl(
         case None => ()
   }
 
-  /**
+  /*
    * Private helpers
    */
 

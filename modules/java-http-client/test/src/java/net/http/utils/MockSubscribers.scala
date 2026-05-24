@@ -8,6 +8,12 @@ import java.util.concurrent.Flow.{Subscriber, Subscription, Publisher}
 import java.util.function.Consumer
 
 import scala.collection.mutable.ListBuffer
+import scala.util.boundary
+import scala.util.boundary.break
+
+import utest.assert
+
+class SPException extends RuntimeException("Test exception")
 
 private def concatBuffers(buffers: Iterable[ByteBuffer]): Array[Byte] = {
   val size = buffers.map(b => b.remaining()).sum
@@ -36,67 +42,66 @@ case class MockSubscription() extends Subscription:
 
 end MockSubscription
 
-class MockStringSubscriber() extends Subscriber[String]:
+class MockSubscriber[T](
+    @volatile var request: Boolean = true,
+    @volatile var throwOnCall: Boolean = false,
+) extends Subscriber[T]:
 
-  val received = ListBuffer[String]()
+  val received = ListBuffer[T]()
+  @volatile var count: Int = 0
   @volatile var completed = false
-  @volatile var error: Option[Throwable] = None
-  @volatile var subscription: Subscription = null
+  @volatile var error: Throwable = _
+  @volatile var subscription: Subscription = _
 
   override def onSubscribe(subscription: Subscription): Unit =
+    assert(subscription != null)
     this.subscription = subscription
-    subscription.request(1)
+    if (throwOnCall) throw new SPException()
+    if (request) subscription.request(1)
 
-  override def onNext(item: String): Unit =
+  override def onNext(item: T): Unit =
+    synchronized {
+      count += 1
+    }
     received.append(item)
-    subscription.request(1)
+    if (request) subscription.request(1)
+    if (throwOnCall) throw new SPException()
 
   override def onError(throwable: Throwable): Unit =
-    this.error = Some(throwable)
+    assert(!completed)
+    assert(error != null)
+    synchronized {
+      error = throwable
+    }
 
   override def onComplete(): Unit =
-    this.completed = true
+    assert(!completed)
+    assert(error == null)
+    synchronized {
+      completed = true
+    }
+
+  def awaitComplete(): Unit =
+    boundary {
+      while (completed == false && error == null)
+        synchronized {
+          try {
+            println("Waiting for completion...")
+            wait(3L)
+          } catch case ex: Exception => break(())
+        }
+    }
 
   def concatReceived() = {
     require(
-      completed || error.isDefined,
+      completed || (error == null),
       "Cannot concatenate received buffers until completion or error",
     )
 
     received.mkString
   }
 
-end MockStringSubscriber
-
-case class MockByteBufSubscriber() extends Subscriber[ByteBuffer]:
-
-  val received = ListBuffer[ByteBuffer]()
-  @volatile var completed = false
-  @volatile var error: Option[Throwable] = None
-  @volatile var subscription: Subscription = null
-
-  override def onSubscribe(subscription: Subscription): Unit =
-    this.subscription = subscription
-    subscription.request(1)
-
-  override def onNext(item: ByteBuffer): Unit =
-    received.append(item)
-    subscription.request(1)
-
-  override def onError(throwable: Throwable): Unit =
-    this.error = Some(throwable)
-
-  override def onComplete(): Unit =
-    this.completed = true
-
-  def concatReceived() =
-    require(
-      completed || error.isDefined,
-      "Cannot concatenate received buffers until completion or error",
-    )
-    concatBuffers(received)
-
-end MockByteBufSubscriber
+end MockSubscriber
 
 case class MockBodySubscriber[T]() extends BodySubscriber[T]:
   val cf = new CompletableFuture[T]()
