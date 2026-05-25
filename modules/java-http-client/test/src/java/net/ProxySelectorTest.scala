@@ -1,4 +1,4 @@
-package snhttp.java.net
+package snhttp.test.java.net
 
 import java.net.{Proxy, ProxySelector}
 import java.net.{URI, InetSocketAddress, SocketAddress}

@@ -5,8 +5,6 @@ import java.net.{InetSocketAddress, SocketAddress, URI, Proxy, ProxySelector}
 import java.util.List as JList
 import java.util.Objects.requireNonNull
 
-import snhttp.jdk.internal.PropertyUtils
-
 class SystemProxySelectorImpl() extends ProxySelector:
 
   def connectFailed(uri: URI, address: SocketAddress, exc: IOException): Unit =

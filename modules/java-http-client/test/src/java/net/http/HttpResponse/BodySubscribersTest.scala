@@ -1,4 +1,4 @@
-package snhttp.java.net.http
+package snhttp.test.java.net.http
 
 import java.io.IOException
 import java.net.http.HttpResponse.BodySubscribers
@@ -12,7 +12,7 @@ import java.util.function.{Consumer, Function}
 
 import scala.collection.mutable.ListBuffer
 
-import _root_.snhttp.java.net.http.utils.{MockBodySubscriber, MockSubscription, MockSubscriber}
+import _root_.snhttp.test.jdk.net.http.{MockBodySubscriber, MockSubscription, MockSubscriber}
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
@@ -124,7 +124,7 @@ class BodySubscribersTest extends TestSuite:
       subscriber.onNext(JList.of(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8))))
       subscriber.onComplete()
 
-      assert(mocker.completed)
+      assert(mocker.completes == 1)
       assert(mocker.received.contains("line1"))
       assert(mocker.received.contains("line2"))
       val result = subscriber.getBody().toCompletableFuture.get()

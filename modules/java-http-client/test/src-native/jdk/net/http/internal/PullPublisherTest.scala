@@ -1,13 +1,12 @@
 package snhttp.test.jdk.net.http.internal
 
-import _root_.snhttp.jdk.net.http.internal.PullPublisher
-import _root_.snhttp.java.net.http.utils.MockSubscriber
-
 import java.util.concurrent.ThreadLocalRandom
-
 import scala.concurrent.duration.DurationInt
 
 import utest.{Tests, TestSuite, assert, test}
+
+import _root_.snhttp.jdk.net.http.internal.PullPublisher
+import _root_.snhttp.test.jdk.net.http.MockSubscriber
 
 class PullPublisherTest extends TestSuite:
 

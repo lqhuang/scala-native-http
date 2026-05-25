@@ -1,4 +1,4 @@
-package snhttp.java.net.http.utils
+package snhttp.test.jdk.net.http
 
 import java.net.http.HttpResponse.BodySubscriber
 import java.nio.ByteBuffer
@@ -94,23 +94,6 @@ class MockSubscriber[T](
     completes += 1
     notifyAll()
   }
-
-  // def awaitComplete(assertFailTimeouts: Duration = 3.seconds): Unit = synchronized {
-
-  //   while completed == false && error == null
-  //   do {
-  //     System.err.println("Waiting for completion...")
-  //     // if (System.currentTimeMillis() > deadline) {
-  //     //   throw new AssertionError(
-  //     //     s"Timeout waiting for completion or error after ${assertFailTimeouts.toSeconds}s",
-  //     //   )
-  //     // }
-  //     try wait(500L)
-  //     catch
-  //       case _: InterruptedException         => ()
-  //       case _: IllegalMonitorStateException => ()
-  //   }
-  // }
 
   def awaitSubscribe(): Unit = synchronized {
     if (sub == null) {

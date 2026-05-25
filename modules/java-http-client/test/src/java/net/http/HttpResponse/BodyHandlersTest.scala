@@ -1,4 +1,4 @@
-package snhttp.java.net.http
+package snhttp.test.java.net.http
 
 import java.io.InputStream
 import java.net.http.HttpClient.Version
@@ -12,8 +12,8 @@ import java.util.{List as JList, Map as JMap}
 import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.function.{Consumer, Function}
 
-import _root_.snhttp.java.net.http.utils.{MockBodySubscriber, MockSubscription, MockSubscriber}
-import _root_.snhttp.java.net.http.utils.HttpClientTestUtils.{
+import _root_.snhttp.test.jdk.net.http.{MockBodySubscriber, MockSubscription, MockSubscriber}
+import _root_.snhttp.test.jdk.net.http.HttpClientTestUtils.{
   ResponseInfoImpl,
   createHeaders,
   createResponseInfo,

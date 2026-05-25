@@ -8,7 +8,7 @@ import java.util.Map as JMap
 import java.util.function.BiPredicate
 import javax.net.ssl.SSLContext
 
-import _root_.snhttp.jdk.internal.Utils
+import _root_.snhttp.jdk.net.http.internal.Utils
 
 import utest.{TestSuite, Tests, test, assert}
 

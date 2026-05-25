@@ -10,7 +10,7 @@ import scala.collection.mutable.{LinkedHashMap, Map as MutableMap}
 import scala.collection.JavaConverters.asJavaCollection
 import scala.scalanative.unsafe.Ptr
 
-import snhttp.jdk.internal.PropertyUtils
+import snhttp.jdk.net.http.internal.PropertyUtils
 import snhttp.experimental.openssl.libssl
 import snhttp.experimental.openssl.libssl.SSL_SESS_CACHE
 

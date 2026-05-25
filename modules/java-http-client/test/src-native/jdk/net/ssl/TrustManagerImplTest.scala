@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package snhttp.jdk.net.ssl
+package snhttp.test.jdk.net.ssl
 
 import java.io.IOException
 import java.security.{KeyStore, Principal}

@@ -1,4 +1,4 @@
-package snhttp.jdk.internal
+package snhttp.jdk.net.http.internal
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.charset.UnsupportedCharsetException

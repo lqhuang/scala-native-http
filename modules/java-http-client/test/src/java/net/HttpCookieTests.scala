@@ -1,4 +1,4 @@
-package snhttp.java.net
+package snhttp.test.java.net
 
 import java.net.HttpCookie
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}

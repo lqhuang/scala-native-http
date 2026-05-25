@@ -1,4 +1,4 @@
-package snhttp.java.net
+package snhttp.test.java.net
 
 import java.net.{CookieManager, CookiePolicy, HttpCookie, URI}
 import java.util.{ArrayList, HashMap, List as JList}

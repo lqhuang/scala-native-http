@@ -10,7 +10,7 @@ import java.nio.file.{OpenOption, Files, Path, Paths}
 import java.util.{List, Set}
 import java.util.function.Function
 
-import snhttp.jdk.internal.Utils.filenameFrom
+import snhttp.jdk.net.http.internal.Utils.filenameFrom
 
 object BodyHandlersImpl:
 

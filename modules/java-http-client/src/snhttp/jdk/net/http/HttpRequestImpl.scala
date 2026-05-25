@@ -13,7 +13,7 @@ import java.util.Objects.requireNonNull
 import java.util.function.BiPredicate
 
 import snhttp.core.Method
-import snhttp.jdk.internal.PropertyUtils
+import snhttp.jdk.net.http.internal.PropertyUtils
 
 case class HttpRequestBuilderImpl(
     protected[http] var _uri: Option[URI] = None,

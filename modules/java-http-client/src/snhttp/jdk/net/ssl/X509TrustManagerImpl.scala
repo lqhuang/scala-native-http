@@ -10,8 +10,8 @@ import scala.scalanative.unsafe.Zone
 import _root_.com.github.lolgab.scalanativecrypto.OpenSSLProvider
 import _root_.snhttp.experimental.openssl.libcrypto
 import _root_.snhttp.experimental.openssl.libcrypto.{X509_STORE, OsslLibCtxPtr}
-import _root_.snhttp.jdk.internal.PropertyUtils
 import _root_.snhttp.utils.PointerCleaner
+import _root_.snhttp.jdk.net.internal.PropertyUtils
 
 private[snhttp] object X509TrustManagerNullImpl:
 

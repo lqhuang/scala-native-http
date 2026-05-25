@@ -1,4 +1,4 @@
-package snhttp.javax.net.ssl
+package snhttp.test.javax.net.ssl
 
 import java.io.FileInputStream
 import java.security.{SecureRandom, KeyStore}

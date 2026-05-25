@@ -1,4 +1,4 @@
-package snhttp.java.net.http.utils
+package snhttp.test.jdk.net.http
 
 import java.net.http.{HttpClient, HttpHeaders, HttpResponse}
 import java.net.http.HttpResponse.{BodyHandlers, BodySubscribers, ResponseInfo}

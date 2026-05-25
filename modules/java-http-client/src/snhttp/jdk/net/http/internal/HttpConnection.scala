@@ -41,8 +41,8 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlSlist,
   CurlWriteFuncRet,
 }
-import _root_.snhttp.jdk.internal.PropertyUtils
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
+import _root_.snhttp.jdk.net.http.internal.PropertyUtils
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 
 type CurlRecvBuffer = CStruct3[

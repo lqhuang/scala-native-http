@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package snhttp.javax.net.ssl
+package snhttp.test.javax.net.ssl
 
 import java.util
 import javax.net.ssl.SNIHostName
