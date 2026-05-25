@@ -8,8 +8,7 @@ import java.util.concurrent.Flow.{Subscriber, Subscription, Publisher}
 import java.util.function.Consumer
 
 import scala.collection.mutable.ListBuffer
-import scala.util.boundary
-import scala.util.boundary.break
+import scala.concurrent.duration.*
 
 import utest.assert
 
@@ -29,7 +28,7 @@ private def concatBuffers(buffers: Iterable[ByteBuffer]): Array[Byte] = {
   bytes
 }
 
-case class MockSubscription() extends Subscription:
+class MockSubscription() extends Subscription:
 
   @volatile var received: Long = 0
   @volatile var cancelled: Boolean = false
@@ -43,58 +42,123 @@ case class MockSubscription() extends Subscription:
 end MockSubscription
 
 class MockSubscriber[T](
-    @volatile var request: Boolean = true,
+    @volatile var request: Boolean = false,
     @volatile var throwOnCall: Boolean = false,
 ) extends Subscriber[T]:
 
   val received = ListBuffer[T]()
-  @volatile var count: Int = 0
-  @volatile var completed = false
-  @volatile var error: Throwable = _
-  @volatile var subscription: Subscription = _
+  @volatile var nexts: Int = 0
+  @volatile var last: Int = 0 // Requires that onNexts are in numeric order
+  @volatile var completes: Int = 0
+  @volatile var errors: Int = 0
+  @volatile var lastError: Throwable = _
+  @volatile var sub: Subscription = _
 
-  override def onSubscribe(subscription: Subscription): Unit =
+  def threadUnexpectedException(t: Throwable): Unit =
+    t match {
+      case t: RuntimeException => throw t
+      case t: Error            => throw t
+      case t                   => throw new AssertionError(s"unexpected exception: $t", t)
+    }
+
+  override def onSubscribe(subscription: Subscription): Unit = {
     assert(subscription != null)
-    this.subscription = subscription
+    assert(sub == null)
+    sub = subscription
     if (throwOnCall) throw new SPException()
     if (request) subscription.request(1)
+  }
 
-  override def onNext(item: T): Unit =
-    synchronized {
-      count += 1
-    }
+  override def onNext(item: T): Unit = synchronized {
+    assert(item != null)
+    nexts += 1
     received.append(item)
-    if (request) subscription.request(1)
+    assert(last + 1 == nexts)
+    last = nexts
+    notifyAll()
+    if (request) sub.request(1)
     if (throwOnCall) throw new SPException()
+  }
 
-  override def onError(throwable: Throwable): Unit =
-    assert(!completed)
-    assert(error != null)
-    synchronized {
-      error = throwable
-    }
+  override def onError(throwable: Throwable): Unit = synchronized {
+    assert(completes == 0)
+    assert(errors == 0)
+    errors += 1
+    lastError = throwable
+    notifyAll()
+  }
 
-  override def onComplete(): Unit =
-    assert(!completed)
-    assert(error == null)
-    synchronized {
-      completed = true
-    }
+  override def onComplete(): Unit = synchronized {
+    assert(completes == 0)
+    assert(errors == 0)
+    completes += 1
+    notifyAll()
+  }
 
-  def awaitComplete(): Unit =
-    boundary {
-      while (completed == false && error == null)
-        synchronized {
-          try {
-            println("Waiting for completion...")
-            wait(3L)
-          } catch case ex: Exception => break(())
-        }
+  // def awaitComplete(assertFailTimeouts: Duration = 3.seconds): Unit = synchronized {
+
+  //   while completed == false && error == null
+  //   do {
+  //     System.err.println("Waiting for completion...")
+  //     // if (System.currentTimeMillis() > deadline) {
+  //     //   throw new AssertionError(
+  //     //     s"Timeout waiting for completion or error after ${assertFailTimeouts.toSeconds}s",
+  //     //   )
+  //     // }
+  //     try wait(500L)
+  //     catch
+  //       case _: InterruptedException         => ()
+  //       case _: IllegalMonitorStateException => ()
+  //   }
+  // }
+
+  def awaitSubscribe(): Unit = synchronized {
+    if (sub == null) {
+      while ({
+        try wait(300L)
+        catch case ex: Exception => threadUnexpectedException(ex)
+
+        sub == null
+      }) {}
     }
+  }
+
+  def awaitNext(n: Int): Unit = synchronized {
+    if (nexts < n) {
+      while ({
+        try wait(300L)
+        catch case ex: Exception => threadUnexpectedException(ex)
+
+        nexts < n
+      }) {}
+    }
+  }
+
+  def awaitComplete(): Unit = synchronized {
+    if (completes == 0 && errors == 0) {
+      while ({
+        try wait(300L)
+        catch case ex: Exception => threadUnexpectedException(ex)
+
+        completes == 0 && errors == 0
+      }) {}
+    }
+  }
+
+  def awaitError(): Unit = synchronized {
+    if (errors == 0) {
+      while ({
+        try wait(300L)
+        catch case ex: Exception => threadUnexpectedException(ex)
+
+        errors == 0
+      }) {}
+    }
+  }
 
   def concatReceived() = {
     require(
-      completed || (error == null),
+      completes > 0 || errors > 0,
       "Cannot concatenate received buffers until completion or error",
     )
 

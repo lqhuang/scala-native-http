@@ -1,20 +1,11 @@
 package snhttp.jdk.net.http.internal
 
-import java.util.NoSuchElementException
-import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
-import java.util.concurrent.locks.ReentrantLock
-import java.util.concurrent.{Future, Executor, ForkJoinPool}
 import java.util.Objects.requireNonNull
+import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicBoolean, AtomicLong}
+import java.util.concurrent.{Executor, ForkJoinPool}
 
-import scala.collection.BufferedIterator
 import scala.util.control.NonFatal
-import scala.scalanative.annotation.alwaysinline
-
-import scala.collection.mutable.HashMap
-import java.util.concurrent.atomic.AtomicInteger
-import scala.util.boundary
-import scala.util.boundary.break
 
 /**
  * Pull-based Single publisher single subscribers. Also known as SPSC (Single Producer Single
@@ -23,29 +14,21 @@ import scala.util.boundary.break
  * Produces items only when requested by the subscriber. It is designed to be used in the
  * implementation of HttpRequest.BodyPublisher.
  *
- * TODO: imperfect implementation, needs more testing and improvements.
+ * TODO:
+ *   1. Imperfect implementation, needs more testing and improvements.
+ *   2. Failed with concurrent requests / cancellations
  */
 private[snhttp] class PullPublisher[T] private (
     private[PullPublisher] val iterable: Iterable[T],
     private[PullPublisher] val executor: Executor,
+    private[PullPublisher] val cleanup: () => Unit,
 ) extends Publisher[T]
     with AutoCloseable:
 
   import PullPublisher.DelegateSubscription
 
-  /** Set true on first call to subscribe, to initialize possible owner */
   private val subscribed = new AtomicBoolean(false)
-
-  /** Run status, updated only within locks */
-  @volatile
-  private var closed = false
-
-  /** If non-null, the exception in closeExceptionally */
-  @volatile
-  private var error: Throwable = _
-
-  /** A lock for operations that need to be synchronous */
-  private final val lock = new ReentrantLock()
+  private val closed = new AtomicBoolean(false)
 
   override def subscribe(subscriber: Subscriber[? >: T]): Unit = {
     requireNonNull(subscriber, "subscriber cannot be null")
@@ -54,6 +37,7 @@ private[snhttp] class PullPublisher[T] private (
       val subscription = DelegateSubscription[T](this, subscriber)
       subscriber.onSubscribe(subscription)
     } else {
+      System.err.println("PullPublisher: rejecting subscriber, already subscribed")
       subscriber.onSubscribe(new Subscription {
         override def request(n: Long): Unit = ()
         override def cancel(): Unit = ()
@@ -64,26 +48,30 @@ private[snhttp] class PullPublisher[T] private (
   }
 
   def close(): Unit =
-    if (!closed) {
-      lock.lock()
-      try closed = true
-      finally lock.unlock()
-    }
-
-  private[PullPublisher] def closeExceptionally(exc: Throwable): Unit =
-    if (!closed) {
-      lock.lock()
-      try { closed = true; error = exc }
-      finally lock.unlock()
+    if (!closed.compareAndSet(false, true)) {
+      cleanup()
     }
 
 object PullPublisher:
 
   def apply[T](iterable: Iterable[T]): PullPublisher[T] =
-    new PullPublisher(iterable, ASYNC_POOL)
+    new PullPublisher(iterable, ASYNC_POOL, () => ())
 
   def apply[T](iterable: Iterable[T], executor: Executor): PullPublisher[T] =
-    new PullPublisher(iterable, executor)
+    new PullPublisher(iterable, executor, () => ())
+
+  def apply[T](
+      iterable: Iterable[T],
+      closeHandler: () => Unit,
+  ): PullPublisher[T] =
+    new PullPublisher(iterable, ASYNC_POOL, closeHandler)
+
+  def apply[T](
+      iterable: Iterable[T],
+      executor: Executor,
+      closeHandler: () => Unit,
+  ): PullPublisher[T] =
+    new PullPublisher(iterable, executor, closeHandler)
 
   /**
    * Default executor -- ForkJoinPool.commonPool() unless it cannot support parallelism.
@@ -102,49 +90,43 @@ object PullPublisher:
     }
   end ThreadPerTaskExecutor
 
-  /** ctl bit values */
-  private[PullPublisher] object Ctl:
-    val ACTIVE = 0x01
-    val CLOSED = 0x02
-    val REQS = 0x04
-    val ERROR = 0x08
-    val COMPLETE = 0x16
-    val CANCELLED = 0x32
-  end Ctl
-
   private[PullPublisher] final class DelegateSubscription[T](
       publisher: PullPublisher[T],
       subscriber: Subscriber[? >: T],
   ) extends Subscription:
 
-    private var error: Throwable = _
-    private val ctl = new AtomicInteger(0)
-    private val demand = new AtomicLong(0)
-    private val buffIter: BufferedIterator[T] = publisher.iterable.iterator.buffered
+    private val cancelled = new AtomicBoolean(false)
+    private val terminated = new AtomicBoolean(false)
+
+    private val demand = new AtomicLong(0L)
+    private val fills = new AtomicLong(0L)
+
+    private lazy val bufferedIter: Iterator[T] = publisher.iterable.iterator.buffered
 
     private lazy val task = new Runnable {
       override def run(): Unit = {
-        if ((ctl.get() & Ctl.CLOSED & Ctl.CANCELLED) > 0)
+        System.err.println(s"Running task with demand ${demand.get()} and fills ${fills.get()}")
+        if (cancelled.get() || terminated.get())
           return ()
 
-        if (error != null) {
-          if ((ctl.getAndUpdate(c => c | Ctl.ERROR | Ctl.CLOSED) & Ctl.CLOSED) != 0)
-            subscriber.onError(error)
-          return ()
-        }
-
-        while (ctl.get() & Ctl.CLOSED) != Ctl.CLOSED
-          && (ctl.get() & Ctl.CANCELLED) != Ctl.CANCELLED
-          && buffIter.hasNext
-          && (demand.get() > 0)
+        while //
+          !cancelled.get()
+          && !terminated.get()
+          && bufferedIter.hasNext
+          && demand.get() > fills.get()
         do
           try {
-            demand.decrementAndGet(): Unit
-            subscriber.onNext(buffIter.next())
-          } catch case NonFatal(exc) => onError(exc): Unit
+            subscriber.onNext(bufferedIter.next())
+            fills.incrementAndGet(): Unit
+          } //
+          catch {
+            case NonFatal(exc) =>
+              signalError(exc)
+              return ()
+          }
 
-        if (error == null && !buffIter.hasNext)
-          onComplete(): Unit
+        if (cancelled.get() || (!bufferedIter.hasNext && !terminated.get()))
+          signalComplete()
       }
     }
 
@@ -156,45 +138,37 @@ object PullPublisher:
      * additional `onNext` invocations (or fewer if terminated).
      */
     override def request(n: Long): Unit = {
-      if (
-        (ctl.get() & Ctl.CANCELLED) == Ctl.CANCELLED
-        || (ctl.get() & Ctl.CLOSED) == Ctl.CLOSED
-      ) return ()
+      System.err.println(s"DelegateSubscription: request($n) called")
+      System.err.println(s"Current demand: ${demand.get()}, fills: ${fills.get()}")
+      if (cancelled.get() || terminated.get())
+        return ()
 
-      if n < 0 //
+      if n <= 0
       then //
-        if ((ctl.getAndUpdate(c => c | Ctl.ERROR) & Ctl.ERROR) != 0)
-          error = new IllegalArgumentException(s"Non-positive request: ${n}")
-      else //
-        demand.addAndGet(n): Unit
-
-      if ((ctl.get() | Ctl.ACTIVE) != Ctl.ACTIVE) {
-        ctl.updateAndGet(c => c | Ctl.ACTIVE): Unit
-        println(s"Scheduling task with demand ${demand.get()}")
-        publisher.executor.execute(task)
+        signalError(new IllegalArgumentException(s"Non-positive request: ${n}"))
+      else {
+        if (!terminated.get() && demand.addAndGet(n) > fills.get())
+          publisher.executor.execute(task)
       }
     }
 
     override def cancel(): Unit =
-      ctl.getAndUpdate(c => c | Ctl.CANCELLED): Unit
+      if (!cancelled.compareAndExchange(false, true))
+        publisher.close()
 
     //
     // Non-public methods
     //
 
-    private inline def onError(exc: Throwable): Unit =
-      if (ctl.getAndUpdate(c => c | Ctl.ERROR | Ctl.CLOSED) != Ctl.CLOSED)
-        publisher.closeExceptionally(exc)
+    private inline def signalError(exc: Throwable): Unit =
+      if (!terminated.compareAndExchange(false, true))
         subscriber.onError(exc)
-
-    private inline def onComplete(): Unit =
-      if (ctl.getAndUpdate(c => c | Ctl.COMPLETE | Ctl.CLOSED) != Ctl.CLOSED)
         publisher.close()
-        subscriber.onComplete()
 
-    // private[PullPublisher] def onSubscribe(): Unit =
-    //   if (ctl.getAndUpdate(c => c | Ctl.SUBSCRIBED) != 0)
-    //     subscriber.onSubscribe(this)
+    private inline def signalComplete(): Unit =
+      if (!terminated.compareAndExchange(false, true))
+        subscriber.onComplete()
+        publisher.close()
 
   end DelegateSubscription
 

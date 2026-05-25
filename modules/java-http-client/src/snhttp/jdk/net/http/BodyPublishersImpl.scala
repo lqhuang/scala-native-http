@@ -10,8 +10,8 @@ import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.function.Supplier
 import java.util.Objects.requireNonNull
 
-import scala.collection.immutable.LazyList
-import scala.util.{Try, Failure, Success}
+import scala.util.Try
+import scala.util.control.NonFatal
 
 import _root_.snhttp.jdk.internal.PropertyUtils
 import _root_.snhttp.jdk.net.http.internal.PullPublisher
@@ -21,6 +21,7 @@ type BufferSubscriber = Subscriber[? >: ByteBuffer]
 private class OnErrorPublisher[T](error: Throwable) extends Publisher[T]:
 
   override def subscribe(subscriber: Subscriber[? >: T]): Unit =
+    requireNonNull(subscriber, "subscriber must not be null")
     subscriber.onSubscribe(new Subscription {
       override def request(n: Long): Unit = ()
       override def cancel(): Unit = ()
@@ -31,13 +32,30 @@ end OnErrorPublisher
 
 class NoBodyPublisher() extends BodyPublisher:
 
-  class NoBodySubscription() extends Subscription:
-    override def request(n: Long): Unit = ()
-    override def cancel(): Unit = ()
-
   def contentLength(): Long = 0L
 
-  def subscribe(subscriber: BufferSubscriber): Unit = ()
+  def subscribe(subscriber: BufferSubscriber): Unit = {
+    requireNonNull(subscriber, "subscriber must not be null")
+    subscriber.onSubscribe(new Subscription {
+      private var done = false
+
+      override def request(n: Long): Unit =
+        if done then //
+          ()
+        else if n <= 0 then
+          if (!done) {
+            done = true
+            subscriber.onError(new IllegalArgumentException(s"Non-positive request: ${n}"))
+          }
+        else if !done then {
+          done = true
+          subscriber.onComplete()
+        }
+
+      override def cancel(): Unit =
+        done = true
+    })
+  }
 
 end NoBodyPublisher
 
@@ -95,8 +113,8 @@ class StringPublisher(
     private val charset: Charset,
 ) extends BodyPublisher:
 
-  requireNonNull(body != null, "body must not be null")
-  requireNonNull(charset != null, "charset must not be null")
+  requireNonNull(body, "body must not be null")
+  requireNonNull(charset, "charset must not be null")
 
   private val bytes = body.getBytes(charset)
   private val delegate: ByteArrayPublisher = new ByteArrayPublisher(bytes, 0, bytes.length)
@@ -110,6 +128,7 @@ class StringPublisher(
 end StringPublisher
 
 class ByteArraysPublisher(iter: Iterable[Array[Byte]]) extends BodyPublisher:
+  requireNonNull(iter, "iter must not be null")
 
   override def contentLength(): Long =
     -1
@@ -153,20 +172,18 @@ class FilePublisher(
     path: Path,
     bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
 ) extends BodyPublisher:
-
-  private val file =
-    path.toFile()
+  requireNonNull(path, "path must not be null")
 
   private lazy val maybeLength: Try[Long] =
-    Try(file.length())
+    Try(Files.size(path))
 
   override def contentLength(): Long =
     maybeLength.getOrElse(-1)
 
   override def subscribe(subscriber: BufferSubscriber): Unit = {
     val publisher =
-      if file.isFile()
-      then InputStreamPublisher(() => Files.newInputStream(path))
+      if Files.isRegularFile(path)
+      then new InputStreamPublisher(() => Files.newInputStream(path), bufSize)
       else OnErrorPublisher[ByteBuffer](new FileNotFoundException(s"File not found: $path"))
     publisher.subscribe(subscriber)
   }
@@ -184,6 +201,9 @@ class PublisherWrapper(publisher: Publisher[? <: ByteBuffer], length: Long) exte
 end PublisherWrapper
 
 class ConcatPublisher(val publishers: Seq[BodyPublisher]) extends BodyPublisher:
+
+  requireNonNull(publishers, "publishers must not be null")
+  publishers.foreach(p => requireNonNull(p, "publishers cannot contain null elements"))
 
   override def contentLength(): Long =
     val lengths = publishers.map(_.contentLength())

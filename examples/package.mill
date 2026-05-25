@@ -28,6 +28,8 @@ trait SharedModule extends Module:
 end SharedModule
 
 // Define all example modules here
+object sandbox extends SharedModule
+
 object post extends SharedModule
 object req extends SharedModule
 object `req-async` extends SharedModule

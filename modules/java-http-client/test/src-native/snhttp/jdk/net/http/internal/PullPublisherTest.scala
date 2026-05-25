@@ -1,17 +1,13 @@
-package snhttp.jdk.net.http.internal
-
-import java.net.http.HttpResponse.BodySubscribers
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{CountDownLatch, TimeUnit, Flow}
-import java.util.function.Consumer
-
-import scala.util.boundary
-import scala.util.boundary.break
+package snhttp.test.jdk.net.http.internal
 
 import _root_.snhttp.jdk.net.http.internal.PullPublisher
 import _root_.snhttp.java.net.http.utils.MockSubscriber
 
-import utest.{Tests, TestSuite, test, assert}
+import java.util.concurrent.ThreadLocalRandom
+
+import scala.concurrent.duration.DurationInt
+
+import utest.{Tests, TestSuite, assert, test}
 
 class PullPublisherTest extends TestSuite:
 
@@ -22,199 +18,189 @@ class PullPublisherTest extends TestSuite:
       val subscriber = MockSubscriber[String]()
       publisher.subscribe(subscriber)
 
-      subscriber.subscription.request(1)
+      subscriber.sub.request(1)
       subscriber.awaitComplete()
-
       assert(subscriber.received.isEmpty)
-      assert(subscriber.completed == true)
-      assert(subscriber.error == null)
+      assert(subscriber.nexts == 0)
+      assert(subscriber.completes == 1)
+      assert(subscriber.errors == 0)
     }
 
-    // test("publish single item should deliver and complete") {
-    //   val items = List("hello")
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[String]()
+    test("request more than available should deliver all and complete") {
+      val items = List(1, 2, 3)
+      val publisher = PullPublisher(items)
+      val subscriber = new MockSubscriber[Int]()
 
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(1)
+      publisher.subscribe(subscriber)
+      subscriber.sub.request(100)
 
-    //   assert(subscriber.waitForCompletion(1000))
-    //   // assertEquals(subscriber.received, items)
-    //   assert(subscriber.completed)
-    //   asert(!subscriber.error.isEmpty)
-    // }
+      subscriber.awaitComplete()
+      assert(subscriber.received.sameElements(items))
+      assert(subscriber.completes == 1)
+      assert(subscriber.errors == 0)
+    }
 
-    // test("publish multiple items should deliver all and complete") {
-    //   val items = List("a", "b", "c", "d", "e")
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[String]()
+    test("backpressure should work with demand") {
+      val items = List(1, 2, 3, 4, 5)
+      val publisher = PullPublisher(items)
+      val subscriber = new MockSubscriber[Int]()
 
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(10)
+      publisher.subscribe(subscriber)
 
-    //   assert(subscriber.waitForCompletion(1000))
-    //   // assertEquals(subscriber.received, items)
-    //   assert(subscriber.completed)
-    //   asert(!subscriber.error.isEmpty)
-    // }
+      // Request 2 items
+      subscriber.sub.request(2)
+      Thread.sleep(100)
 
-    // test("request more than available should deliver all and complete") {
-    //   val items = List(1, 2, 3)
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[Int]()
+      assert(subscriber.received.sameElements(List(1, 2)))
+      assert(subscriber.completes == 0)
 
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(100)
+      // Request 2 more items
+      subscriber.sub.request(2)
+      Thread.sleep(100)
+      assert(subscriber.received.sameElements(List(1, 2, 3, 4)))
+      assert(subscriber.completes == 0)
 
-    //   assert(subscriber.waitForCompletion(1000))
-    //   // assertEquals(subscriber.received, items)
-    //   assert(subscriber.completed)
-    //   asert(!subscriber.error.isEmpty)
-    // }
+      // Request last item
+      subscriber.sub.request(1)
+      subscriber.awaitComplete()
+      assert(subscriber.received.sameElements(items))
+      assert(subscriber.completes == 1)
+      assert(subscriber.errors == 0)
+    }
 
-    // test("backpressure should work with demand") {
-    //   val items = List(1, 2, 3, 4, 5)
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[Int]()
+    test("cancel should stop delivery") {
+      val items = Range(0, 100).toList
+      val publisher = PullPublisher(items)
+      val subscriber = new MockSubscriber[Int]()
 
-    //   publisher.subscribe(subscriber)
+      publisher.subscribe(subscriber)
+      subscriber.sub.request(2)
+      Thread.sleep(100)
+      assert(subscriber.received.sameElements(List(0, 1)))
 
-    //   // Request 2 items
-    //   subscriber.subscription.request(2)
-    //   Thread.sleep(100)
-    //   assertEquals(subscriber.received.size, 2)
-    //   // assertEquals(subscriber.received, List(1, 2))
-    //   assert(!subscriber.completed)
+      subscriber.sub.cancel()
+      subscriber.sub.request(10)
+      Thread.sleep(100)
 
-    //   // Request 2 more items
-    //   subscriber.subscription.request(2)
-    //   Thread.sleep(100)
-    //   assertEquals(subscriber.received.size, 4)
-    //   // assertEquals(subscriber.received, List(1, 2, 3, 4))
-    //   assert(!subscriber.completed)
-
-    //   // Request last item
-    //   subscriber.subscription.request(1)
-    //   assert(subscriber.waitForCompletion(1000))
-    //   // assertEquals(subscriber.received, items)
-    //   assert(subscriber.completed)
-    // }
-
-    // test("zero or negative request should cause error") {
-    //   val items = List(1, 2, 3)
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[Int]()
-
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(0)
-
-    //   assert(subscriber.waitForError(1000))
-    //   assert(subscriber.hasError)
-    //   assert(!subscriber.completed)
-    //   assert(subscriber.error.isInstanceOf[IllegalArgumentException])
-    // }
-
-    // test("negative request should cause error") {
-    //   val items = List(1, 2, 3)
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[Int]()
-
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(-5)
-
-    //   assert(subscriber.waitForError(1000))
-    //   assert(subscriber.hasError)
-    //   assert(!subscriber.completed)
-    //   assert(subscriber.error.isInstanceOf[IllegalArgumentException])
-    // }
-
-    // test("cancel should stop delivery") {
-    //   val items = List(1, 2, 3, 4, 5)
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[Int]()
-
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(2)
-    //   Thread.sleep(100)
-    //   assertEquals(subscriber.received.size, 2)
-
-    //   subscriber.subscription.cancel()
-    //   subscriber.subscription.request(10)
-    //   Thread.sleep(100)
-
-    //   // Should not receive more items
-    //   assertEquals(subscriber.received.size, 2)
-    //   assert(!subscriber.completed)
-    // }
-
-    // test("publisher with error should deliver error") {
-    //   val error = new RuntimeException("test error")
-    //   val publisher = PullPublisher(error)
-    //   val subscriber = new TestSubscriber[Int]()
-
-    //   publisher.subscribe(subscriber)
-
-    //   assert(subscriber.waitForError(1000))
-    //   assert(subscriber.hasError)
-    //   assertEquals(subscriber.error, error)
-    //   assertEquals(subscriber.received.size, 0)
-    // }
-
-    // test("iterator exception should be propagated") {
-    //   val failingIterable = new Iterable[String] {
-    //     def iterator: Iterator[String] = new Iterator[String] {
-    //       private var count = 0
-    //       def hasNext: Boolean = count < 3
-    //       def next(): String = {
-    //         count += 1
-    //         if count == 2 then throw new RuntimeException("iterator failure")
-    //         else s"item$count"
-    //       }
-    //     }
-    //   }
-
-    //   val publisher = PullPublisher(failingIterable)
-    //   val subscriber = new TestSubscriber[String]()
-
-    //   publisher.subscribe(subscriber)
-    //   subscriber.subscription.request(10)
-
-    //   assert(subscriber.waitForError(1000))
-    //   assert(subscriber.hasError)
-    //   // assertEquals(subscriber.received, List("item1"))
-    //   assert(subscriber.error.getMessage.contains("iterator failure"))
-    // }
-
-    // test("multiple subscribers should get independent iterators") {
-    //   val items = List(1, 2, 3)
-    //   val publisher = PullPublisher(items)
-    //   val subscriber1 = new TestSubscriber[Int]()
-    //   val subscriber2 = new TestSubscriber[Int]()
-
-    //   publisher.subscribe(subscriber1)
-    //   publisher.subscribe(subscriber2)
-
-    //   subscriber1.subscription.request(10)
-    //   subscriber2.subscription.request(10)
-
-    //   assert(subscriber1.waitForCompletion(1000))
-    //   assert(subscriber2.waitForCompletion(1000))
-
-    //   // assertEquals(subscriber1.received, items)
-    //   // assertEquals(subscriber2.received, items)
-    // }
+      // Should not receive more items
+      assert(subscriber.received.sameElements(List(0, 1)))
+      assert(subscriber.completes == 0)
+    }
 
     // test("concurrent requests should work correctly") {
-    //   val items = (1 to 100).toList
+    //   val items = (1 to 1000).toList
     //   val publisher = PullPublisher(items)
-    //   val subscriber = new TestSubscriber[Int]()
+    //   val subscriber = new MockSubscriber[Int]()
 
     //   publisher.subscribe(subscriber)
 
     //   // Multiple concurrent requests
-    //   (1 to 10).foreach(_ => new Thread(() => subscriber.subscription.request(10)).start())
+    //   (1 to 10).foreach(_ => new Thread(() => subscriber.sub.request(100)).start())
 
-    //   assert(subscriber.waitForCompletion(2000))
-    //   assertEquals(subscriber.received.size, 100)
-    //   // assertEquals(subscriber.received.sorted, items)
+    //   subscriber.awaitComplete()
+    //   assert(subscriber.received.sameElements(items))
+    //   assert(subscriber.completes == 1)
+    //   assert(subscriber.errors == 0)
     // }
+
+    test("concurrent cancellations should work correctly") {
+      val items = (1 to 1000).toList
+      val publisher = PullPublisher(items)
+      val subscriber = new MockSubscriber[Int]()
+
+      publisher.subscribe(subscriber)
+
+      (1 to 10).foreach(_ =>
+        new Thread(() => {
+          subscriber.sub.request(100)
+          if (ThreadLocalRandom.current().nextBoolean())
+            subscriber.sub.cancel()
+        }).start(),
+      )
+
+      subscriber.awaitComplete()
+      assert(subscriber.completes == 1)
+      assert(subscriber.errors == 0)
+    }
+
+    test("publishes staged demand in order and completes once exhausted") {
+      val items = Seq(1, 2, 3, 4, 5)
+      val publisher = PullPublisher(items)
+      val subscriber = MockSubscriber[Int]()
+      publisher.subscribe(subscriber)
+
+      subscriber.sub.request(2)
+      Thread.sleep(50L)
+      assert(subscriber.received.sameElements(Seq(1, 2)))
+      assert(subscriber.completes == 0)
+      assert(subscriber.errors == 0)
+
+      subscriber.sub.request(3)
+      subscriber.awaitComplete()
+      assert(subscriber.received.sameElements(items))
+      assert(subscriber.errors == 0)
+      assert(subscriber.completes == 1)
+    }
+
+    test(s"non-positive request terminates with IllegalArgumentException") {
+      for (n <- Seq(0, -1, -100)) {
+        val publisher = PullPublisher(List(1, 2, 3))
+        val subscriber = MockSubscriber[Int]()
+
+        publisher.subscribe(subscriber)
+        subscriber.sub.request(n)
+
+        subscriber.awaitComplete()
+        assert(subscriber.errors == 1)
+        assert(subscriber.completes == 0)
+        assert(subscriber.received.isEmpty)
+        assert(subscriber.lastError.isInstanceOf[IllegalArgumentException])
+      }
+    }
+
+    test("iterator failure is propagated after already emitted items") {
+      val publisher = PullPublisher(
+        new Iterable[String]:
+          override def iterator: Iterator[String] = new Iterator[String]:
+            private var count = 0
+
+            override def hasNext: Boolean =
+              count < 2
+
+            override def next(): String =
+              count += 1
+              if count == 2
+              then throw new RuntimeException("iterator failure")
+              else s"item$count",
+      )
+      val subscriber = MockSubscriber[String]()
+
+      publisher.subscribe(subscriber)
+      subscriber.sub.request(10)
+
+      subscriber.awaitComplete()
+      assert(subscriber.errors == 1)
+      assert(subscriber.received.toList == List("item1"))
+      assert(subscriber.lastError.getMessage.contains("iterator failure"))
+    }
+
+    test("PullPublisher can be subscribed only once") {
+      val publisher = PullPublisher(Seq(1, 2, 3))
+
+      val subscriber1 = MockSubscriber[Int]()
+      val subscriber2 = MockSubscriber[Int]()
+
+      publisher.subscribe(subscriber1)
+      publisher.subscribe(subscriber2)
+
+      subscriber1.sub.request(10)
+      subscriber1.awaitComplete()
+      assert(subscriber1.received.sameElements(Seq(1, 2, 3)))
+      assert(subscriber1.errors == 0)
+      assert(subscriber1.completes == 1)
+
+      subscriber2.awaitError()
+      assert(subscriber2.errors == 1)
+      assert(subscriber2.lastError.isInstanceOf[IllegalStateException])
+      assert(subscriber2.received.isEmpty)
+    }

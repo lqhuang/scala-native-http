@@ -35,7 +35,7 @@ import scala.collection.JavaConverters._
 
 import utest.{TestSuite, Tests, test}
 
-import org.conscrypt.utils.{FakeSSLSession, FakeSSLSocket, MockHostnameVerifier, KeyStoreUtils}
+import org.conscrypt.utils.{FakeSSLSession, FakeSSLSocket, KeyStoreUtils}
 
 import _root_.snhttp.jdk.net.ssl.X509TrustManagerKeyStoreImpl
 
