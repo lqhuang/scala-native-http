@@ -11,7 +11,9 @@ import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import java.util.function.Supplier
+import java.lang.Iterable as JIterable
 
+import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -42,7 +44,7 @@ object BodyPublishersImpl:
   def ofFile(path: Path): BodyPublisher =
     new FilePublisher(path)
 
-  def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher =
+  def ofByteArrays(iter: JIterable[Array[Byte]]): BodyPublisher =
     new ByteArraysPublisher(iter)
 
   def noBody(): BodyPublisher =
@@ -93,8 +95,9 @@ class ByteArrayPublisher(
 
   override def subscribe(subscriber: ByteBufferSubscriber): Unit = {
     val bufs: Seq[ByteBuffer] =
-      if length <= bufSize
-      then {
+      if length == 0 then //
+        Seq.empty[ByteBuffer]
+      else if length <= bufSize then {
         val bb = ByteBuffer.allocate(length)
         bb.put(bytes, offset, length)
         bb.flip()
@@ -136,14 +139,14 @@ class StringPublisher(
   lazy val delegate: ByteArrayPublisher = new ByteArrayPublisher(bytes, 0, bytes.length)
 
   override def contentLength(): Long =
-    delegate.contentLength()
+    bytes.length
 
   override def subscribe(subscriber: ByteBufferSubscriber): Unit =
     delegate.subscribe(subscriber)
 
 end StringPublisher
 
-class ByteArraysPublisher(iter: Iterable[Array[Byte]]) extends BodyPublisher:
+class ByteArraysPublisher(iter: JIterable[Array[Byte]]) extends BodyPublisher:
 
   requireNonNull(iter, "iter must not be null")
 
@@ -151,7 +154,7 @@ class ByteArraysPublisher(iter: Iterable[Array[Byte]]) extends BodyPublisher:
     -1
 
   override def subscribe(subscriber: ByteBufferSubscriber): Unit =
-    val delegate = PullPublisher(iter.map(ByteBuffer.wrap))
+    val delegate = PullPublisher(iter.asScala.map(ByteBuffer.wrap))
     delegate.subscribe(subscriber)
 
 end ByteArraysPublisher
@@ -207,11 +210,8 @@ class FilePublisher(
 
   requireNonNull(path, "path must not be null")
 
-  private lazy val maybeLength: Try[Long] =
-    Try(Files.size(path))
-
   override def contentLength(): Long =
-    maybeLength.getOrElse(-1)
+    Try(Files.size(path)).getOrElse(-1)
 
   override def subscribe(subscriber: ByteBufferSubscriber): Unit = {
     val publisher =

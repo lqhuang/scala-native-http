@@ -1,6 +1,7 @@
 package java.net.http
 
 import java.io.{Closeable, InputStream}
+import java.lang.{Iterable => JIterable}
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -134,7 +135,7 @@ object HttpRequest:
       BodyPublishersImpl.ofString(body, charset)
 
     def ofString(body: String): BodyPublisher =
-      ofString(body, UTF_8)
+      BodyPublishersImpl.ofString(body, UTF_8)
 
     def ofInputStream(streamSupplier: Supplier[? <: InputStream]): BodyPublisher =
       BodyPublishersImpl.ofInputStream(streamSupplier)
@@ -143,12 +144,12 @@ object HttpRequest:
       BodyPublishersImpl.ofByteArray(buf, offset, length)
 
     def ofByteArray(buf: Array[Byte]): BodyPublisher =
-      ofByteArray(buf, 0, buf.length)
+      BodyPublishersImpl.ofByteArray(buf, 0, buf.length)
 
     def ofFile(path: Path): BodyPublisher =
       BodyPublishersImpl.ofFile(path)
 
-    def ofByteArrays(iter: Iterable[Array[Byte]]): BodyPublisher =
+    def ofByteArrays(iter: JIterable[Array[Byte]]): BodyPublisher =
       BodyPublishersImpl.ofByteArrays(iter)
 
     def noBody(): BodyPublisher =
