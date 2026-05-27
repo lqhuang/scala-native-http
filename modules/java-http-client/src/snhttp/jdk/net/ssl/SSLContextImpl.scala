@@ -96,10 +96,6 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
       sr: SecureRandom,
   ): Unit =
     if (!inited.compareAndExchange(false, true)) {
-      println(
-        s"Initializing SSLContext with KeyManagers: ${kms}, TrustManagers: ${tms}, SecureRandom: ${sr}",
-      )
-
       if (kms != null) {
         kms.foreach(km =>
           if (km != null && km.isInstanceOf[X509KeyManagerImpl]) {

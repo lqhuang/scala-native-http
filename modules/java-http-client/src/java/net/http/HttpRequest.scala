@@ -88,7 +88,7 @@ object HttpRequest:
 
     def header(name: String, value: String): Builder
 
-    def headers(headers: Array[String]): Builder
+    def headers(headers: Array[? <: String]): Builder
 
     def timeout(duration: Duration): Builder
 

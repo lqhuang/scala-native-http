@@ -22,9 +22,8 @@ case class HttpRequestBuilderImpl(
     protected[http] var _version: Option[Version] = None,
     protected[http] var _timeout: Option[Duration] = None,
     protected[http] var _bodyPublisher: Option[BodyPublisher] = None,
-    protected[http] val _headerMap: TreeMap[String, JList[String]] = new TreeMap(
-      String.CASE_INSENSITIVE_ORDER,
-    ),
+    protected[http] val _headerMap: TreeMap[String, JList[String]] = //
+      new TreeMap(String.CASE_INSENSITIVE_ORDER),
 ) extends HttpRequest.Builder:
 
   def uri(uri: URI): Builder =
@@ -68,7 +67,7 @@ case class HttpRequestBuilderImpl(
     this._headerMap.put(key, new ArrayList(JList.of(valueTrimmed)))
     this
 
-  def headers(headers: Array[String]): Builder =
+  def headers(headers: Array[? <: String]): Builder =
     require(headers.length % 2 == 0, "Headers must be supplied in name-value pairs")
     headers.grouped(2).foreach(pair => header(pair(0), pair(1)))
     this

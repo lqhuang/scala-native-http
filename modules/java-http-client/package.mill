@@ -22,7 +22,6 @@ object `package` extends build.CommonModule:
   )
 
   object test extends CommonTestModule:
-
     def sources = Task.Sources(
       moduleDir / "src", // modules/java-http-client/test/src
       moduleDir / "src-native", // modules/java-http-client/test/src-native
