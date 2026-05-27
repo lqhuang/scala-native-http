@@ -151,30 +151,38 @@ class MockSubscriber[T](
 end MockSubscriber
 
 case class MockBodySubscriber[T]() extends BodySubscriber[T]:
+
   val cf = new CompletableFuture[T]()
   val received = new ListBuffer[ByteBuffer]()
-  @volatile var completed = false
-  @volatile var error: Option[Throwable] = None
+
+  @volatile var errors = 0
+  @volatile var completes = 0
+  @volatile var lastError: Throwable = null
   @volatile var subscription: Subscription = null
 
-  override def onSubscribe(subscription: Subscription): Unit =
+  override def onSubscribe(subscription: Subscription): Unit = synchronized {
     this.subscription = subscription
+  }
 
-  override def onNext(item: JList[ByteBuffer]): Unit =
+  override def onNext(item: JList[ByteBuffer]): Unit = synchronized {
     item.forEach(buffer => received.append(buffer)): Unit
+  }
 
-  override def onError(throwable: Throwable): Unit =
-    this.error = Some(throwable)
+  override def onError(throwable: Throwable): Unit = synchronized {
+    errors += 1
+    lastError = throwable
+  }
 
-  override def onComplete(): Unit =
-    this.completed = true
+  override def onComplete(): Unit = synchronized {
+    completes += 1
+  }
 
   override def getBody(): CompletionStage[T] =
     cf
 
   def concatReceived() = {
     require(
-      completed || error.isDefined,
+      completes > 0 || errors > 0,
       "Cannot concatenate received buffers until completion or error",
     )
     concatBuffers(received)

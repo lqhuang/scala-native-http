@@ -62,19 +62,15 @@ object HttpResponse:
   object BodyHandlers:
 
     def fromSubscriber(subscriber: Subscriber[? >: JList[ByteBuffer]]): BodyHandler[Void] =
-      requireNonNull(subscriber)
       responseInfo => BodySubscribers.fromSubscriber(subscriber, _ => null)
 
     def fromSubscriber[S <: Subscriber[? >: JList[ByteBuffer]], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
     ): BodyHandler[T] =
-      requireNonNull(subscriber)
-      requireNonNull(finisher)
       _ => BodySubscribers.fromSubscriber(subscriber, finisher)
 
-    def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] = {
-      requireNonNull(subscriber)
+    def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] =
       ri =>
         BodySubscribers.fromLineSubscriber(
           subscriber,
@@ -82,17 +78,14 @@ object HttpResponse:
           charsetFrom(ri.headers()),
           null,
         )
-    }
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
         lineSeparator: String,
     ): BodyHandler[T] = {
-      requireNonNull(subscriber)
-      requireNonNull(finisher)
-      if (lineSeparator != null && lineSeparator.isEmpty)
-        throw new IllegalArgumentException("line separator cannot be empty")
+      if (lineSeparator == null && lineSeparator.isEmpty())
+        throw new IllegalArgumentException("lineSeparator can not be empty")
       ri =>
         BodySubscribers.fromLineSubscriber(
           subscriber,
@@ -109,19 +102,19 @@ object HttpResponse:
       _ => BodySubscribers.replacing(value)
 
     def ofString(charset: Charset): BodyHandler[String] =
-      requireNonNull(charset)
       _ => BodySubscribers.ofString(charset)
 
-    def ofFile(file: Path, openOptions: Array[OpenOption]): BodyHandler[Path] =
+    def ofFile(file: Path, openOptions: Array[OpenOption]): BodyHandler[Path] = {
       requireNonNull(file)
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
-        s"invalid openOptions: $openOptions",
+        s"invalid openOptions: ${openOptions}",
       )
-      BodyHandlersImpl.ofFile(file, openOptions*)
+      BodyHandlersImpl.ofFile(file, openOptions)
+    }
 
     def ofFile(file: Path): BodyHandler[Path] =
-      ofFile(file, Array(CREATE, WRITE))
+      BodyHandlersImpl.ofFile(file, Array(CREATE, WRITE))
 
     def ofFileDownload(directory: Path, openOptions: Array[OpenOption]): BodyHandler[Path] = {
       requireNonNull(directory)
@@ -134,13 +127,12 @@ object HttpResponse:
       require(!Files.notExists(directory), s"non-existent directory: $directory")
       require(Files.isDirectory(directory), s"not a directory: $directory")
       require(Files.isWritable(directory), s"non-writable directory: $directory")
-
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
         s"invalid openOptions: ${openOptions}",
       )
 
-      BodyHandlersImpl.ofFileDownload(directory, openOptions: _*)
+      BodyHandlersImpl.ofFileDownload(directory, openOptions)
     }
 
     def ofInputStream(): BodyHandler[InputStream] =
@@ -152,21 +144,22 @@ object HttpResponse:
     def ofByteArrayConsumer(consumer: Consumer[Optional[Array[Byte]]]): BodyHandler[Void] =
       _ => BodySubscribers.ofByteArrayConsumer(consumer)
 
-    def ofByteArray(): BodyHandler[Array[Byte]] = _ => BodySubscribers.ofByteArray()
+    def ofByteArray(): BodyHandler[Array[Byte]] =
+      _ => BodySubscribers.ofByteArray()
 
-    def ofString(): BodyHandler[String] = ri => BodySubscribers.ofString(charsetFrom(ri.headers()))
+    def ofString(): BodyHandler[String] =
+      ri => BodySubscribers.ofString(charsetFrom(ri.headers()))
 
     def ofPublisher(): BodyHandler[Publisher[JList[ByteBuffer]]] = _ =>
       BodySubscribers.ofPublisher()
 
     def buffering[T](downstreamHandler: BodyHandler[T], bufferSize: Int): BodyHandler[T] =
-      require(bufferSize > 0, "must be greater than 0")
+      require(bufferSize > 0, "bufferSize can not be negative or zero")
       ri => BodySubscribers.buffering(downstreamHandler(ri), bufferSize)
 
     // @since 25
     def limiting[T](downstreamHandler: BodyHandler[T], capacity: Long): BodyHandler[T] =
-      if (capacity < 0)
-        throw new IllegalArgumentException("capacity must not be negative")
+      require(capacity >= 0, s"capacity must be non-negative: ${capacity}")
       ri => BodySubscribers.limiting(downstreamHandler(ri), capacity)
 
   end BodyHandlers
@@ -199,40 +192,42 @@ object HttpResponse:
     def fromSubscriber(
         subscriber: Subscriber[? >: JList[ByteBuffer]],
     ): BodySubscriber[Void] =
-      new BodySubscribersImpl.SubscriberAdapter(subscriber, _ => null)
+      BodySubscribersImpl.fromSubscriber(subscriber, _ => null)
 
     def fromSubscriber[S <: Subscriber[? >: JList[ByteBuffer]], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
     ): BodySubscriber[T] =
-      new BodySubscribersImpl.SubscriberAdapter(subscriber, finisher)
+      BodySubscribersImpl.fromSubscriber(subscriber, finisher)
 
     def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodySubscriber[Void] =
-      fromLineSubscriber(subscriber, (_: Any) => null, UTF_8, null)
+      BodySubscribersImpl.fromLineSubscriber(subscriber, (_: Any) => null, UTF_8, null)
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
         charset: Charset,
         lineSeparator: String,
-    ): BodySubscriber[T] = BodySubscribersImpl.fromLineSubscriber(
-      subscriber,
-      finisher,
-      charset,
-      lineSeparator,
-    )
+    ): BodySubscriber[T] =
+      BodySubscribersImpl.fromLineSubscriber(subscriber, finisher, charset, lineSeparator)
 
     def ofString(charset: Charset): BodySubscriber[String] =
+      requireNonNull(charset)
       BodySubscribersImpl.ofByteArray(bytes => new String(bytes, charset))
 
     def ofByteArray(): BodySubscriber[Array[Byte]] =
       BodySubscribersImpl.ofByteArray(identity)
 
     def ofFile(file: Path, openOptions: Array[OpenOption]): BodySubscriber[Path] =
+      requireNonNull(file)
+      require(
+        !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
+        s"invalid openOptions: ${openOptions}",
+      )
       BodySubscribersImpl.ofFile(file, openOptions)
 
     def ofFile(file: Path): BodySubscriber[Path] =
-      ofFile(file, Array(CREATE, WRITE))
+      BodySubscribersImpl.ofFile(file, Array(CREATE, WRITE))
 
     def ofByteArrayConsumer(consumer: Consumer[Optional[Array[Byte]]]): BodySubscriber[Void] =
       BodySubscribersImpl.ofByteArrayConsumer(consumer)
@@ -253,19 +248,19 @@ object HttpResponse:
       BodySubscribersImpl.discarding()
 
     def buffering[T](downstream: BodySubscriber[T], bufferSize: Int): BodySubscriber[T] =
-      require(bufferSize > 0, "must be greater than 0")
-      BodySubscribersImpl.BufferingSubscriber(downstream, bufferSize)
+      require(bufferSize > 0, "bufferSize can not be negative or zero")
+      BodySubscribersImpl.buffering(downstream, bufferSize)
 
     def mapping[T, U](
         upstream: BodySubscriber[T],
         mapper: Function[? >: T, ? <: U],
     ): BodySubscriber[U] =
-      BodySubscribersImpl.MappingSubscriber(upstream, mapper)
+      BodySubscribersImpl.mapping(upstream, mapper)
 
     // @since 25
     def limiting[T](downstream: BodySubscriber[T], capacity: Long): BodySubscriber[T] =
-      require(capacity >= 0, "capacity must not be negative")
-      BodySubscribersImpl.LimitingSubscriber(downstream, capacity)
+      require(capacity >= 0, s"capacity must be non-negative: ${capacity}")
+      BodySubscribersImpl.limiting(downstream, capacity)
 
   end BodySubscribers
 

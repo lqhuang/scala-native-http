@@ -55,7 +55,7 @@ object BodyPublishersImpl:
 
 end BodyPublishersImpl
 
-class NoBodyPublisher() extends BodyPublisher:
+private[snhttp] class NoBodyPublisher() extends BodyPublisher:
 
   def contentLength(): Long = 0L
 
@@ -67,7 +67,8 @@ class NoBodyPublisher() extends BodyPublisher:
 
 end NoBodyPublisher
 
-class PublisherWrapper(publisher: Publisher[? <: ByteBuffer], length: Long) extends BodyPublisher:
+private[snhttp] class PublisherWrapper(publisher: Publisher[? <: ByteBuffer], length: Long)
+    extends BodyPublisher:
 
   override def contentLength(): Long =
     length
@@ -77,7 +78,7 @@ class PublisherWrapper(publisher: Publisher[? <: ByteBuffer], length: Long) exte
 
 end PublisherWrapper
 
-class ByteArrayPublisher(
+private[snhttp] class ByteArrayPublisher(
     bytes: Array[Byte],
     offset: Int,
     length: Int,
@@ -127,10 +128,7 @@ class ByteArrayPublisher(
 
 end ByteArrayPublisher
 
-class StringPublisher(
-    body: String,
-    charset: Charset,
-) extends BodyPublisher:
+private[snhttp] class StringPublisher(body: String, charset: Charset) extends BodyPublisher:
 
   requireNonNull(body, "body must not be null")
   requireNonNull(charset, "charset must not be null")
@@ -146,7 +144,7 @@ class StringPublisher(
 
 end StringPublisher
 
-class ByteArraysPublisher(iter: JIterable[Array[Byte]]) extends BodyPublisher:
+private[snhttp] class ByteArraysPublisher(iter: JIterable[Array[Byte]]) extends BodyPublisher:
 
   requireNonNull(iter, "iter must not be null")
 
@@ -159,7 +157,7 @@ class ByteArraysPublisher(iter: JIterable[Array[Byte]]) extends BodyPublisher:
 
 end ByteArraysPublisher
 
-class InputStreamPublisher(
+private[snhttp] class InputStreamPublisher(
     supplier: Supplier[? <: InputStream],
     bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
 ) extends BodyPublisher:
@@ -203,7 +201,7 @@ class InputStreamPublisher(
 
 end InputStreamPublisher
 
-class FilePublisher(
+private[snhttp] class FilePublisher(
     path: Path,
     bufSize: Int = PropertyUtils.INTERNAL_BUFFER_SIZE,
 ) extends BodyPublisher:

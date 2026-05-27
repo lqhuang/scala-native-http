@@ -1,51 +1,21 @@
 package snhttp.jdk.net.http
 
 import java.io.{IOException, UncheckedIOException}
-import java.util.concurrent.{CompletableFuture, ConcurrentMap}
 import java.net.URI
-import java.net.http.HttpResponse
-import java.net.http.HttpRequest
+import java.net.http.{HttpResponse, HttpRequest}
 import java.net.http.HttpResponse.{BodyHandler, ResponseInfo, BodySubscriber, BodySubscribers}
-import java.nio.file.{OpenOption, Files, Path, Paths}
-import java.util.{List, Set}
+import java.nio.file.{OpenOption, Path}
+import java.util.concurrent.{CompletableFuture, ConcurrentMap}
 import java.util.function.Function
 
 import snhttp.jdk.net.http.internal.Utils.filenameFrom
 
 object BodyHandlersImpl:
 
-  class PathBodyHandler(
-      private val file: Path,
-      private val openOptions: OpenOption*,
-  ) extends BodyHandler[Path]:
-
-    override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
-      BodySubscribers.ofFile(file, openOptions.toArray)
-
-  end PathBodyHandler
-
-  def ofFile(file: Path, openOptions: OpenOption*): PathBodyHandler =
+  def ofFile(file: Path, openOptions: Array[OpenOption]): PathBodyHandler =
     new PathBodyHandler(file, openOptions*)
 
-  class FileDownloadBodyHandler(
-      private val directory: Path,
-      private val openOptions: OpenOption*,
-  ) extends BodyHandler[Path]:
-
-    /**
-     * Notes from JDK docs:
-     *
-     * The Content-Disposition header must specify the attachment type and must also contain a
-     * filename parameter.
-     */
-    override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
-      val filename = filenameFrom(responseInfo.headers())
-      val targetFile = directory.resolve(filename)
-      BodySubscribers.ofFile(targetFile, openOptions.toArray)
-
-  end FileDownloadBodyHandler
-
-  def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] =
+  def ofFileDownload(directory: Path, openOptions: Array[OpenOption]): BodyHandler[Path] =
     new FileDownloadBodyHandler(directory, openOptions*)
 
   /// Implements the `PushPromiseHandler` interface from `HttpResponse`
@@ -64,3 +34,33 @@ object BodyHandlersImpl:
       pushPromisesMap.put(pushPromiseRequest, responseFuture): Unit
 
   end PushPromisesHandlerWithMap
+
+end BodyHandlersImpl
+
+private[snhttp] class PathBodyHandler(
+    file: Path,
+    openOptions: OpenOption*,
+) extends BodyHandler[Path]:
+
+  override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
+    BodySubscribers.ofFile(file, openOptions.toArray)
+
+end PathBodyHandler
+
+private[snhttp] class FileDownloadBodyHandler(
+    directory: Path,
+    openOptions: OpenOption*,
+) extends BodyHandler[Path]:
+
+  /**
+   * Notes from JDK docs:
+   *
+   * The Content-Disposition header must specify the attachment type and must also contain a
+   * filename parameter.
+   */
+  override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
+    val filename = filenameFrom(responseInfo.headers())
+    val targetFile = directory.resolve(filename)
+    BodySubscribers.ofFile(targetFile, openOptions.toArray)
+
+end FileDownloadBodyHandler
