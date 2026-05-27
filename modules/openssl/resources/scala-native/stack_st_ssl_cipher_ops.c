@@ -1,3 +1,5 @@
+#ifdef SCALANATIVE_LINK_SSL
+
 #include "openssl/ssl.h"
 
 int snhttp_ossl_sk_SSL_CIPHER_num(struct stack_st_SSL_CIPHER* stack) {
@@ -14,3 +16,5 @@ const SSL_CIPHER* snhttp_ossl_sk_SSL_CIPHER_value(
 void snhttp_ossl_sk_SSL_CIPHER_free(struct stack_st_SSL_CIPHER* stack) {
   return sk_SSL_CIPHER_free(stack);
 }
+
+#endif

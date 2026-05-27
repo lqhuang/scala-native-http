@@ -33,7 +33,7 @@ import com.goyeau.mill.scalafix.ScalafixModule
 
 val scalaNextVersion = Properties.propOrNone("scalaNextVersion")
 val scalaVersion = if scalaNextVersion.isEmpty then "3.3.7" else scalaNextVersion.get
-val scalaNativeVersion = "0.5.10"
+val scalaNativeVersion = "0.5.12"
 
 // def format = ScalafmtModule
 
