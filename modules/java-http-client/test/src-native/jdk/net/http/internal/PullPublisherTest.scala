@@ -39,6 +39,25 @@ class PullPublisherTest extends TestSuite:
       assert(subscriber.errors == 0)
     }
 
+    test("publishes staged demand in order and completes once exhausted") {
+      val items = Seq(1, 2, 3, 4, 5)
+      val publisher = PullPublisher(items)
+      val subscriber = MockSubscriber[Int]()
+      publisher.subscribe(subscriber)
+
+      subscriber.sub.request(2)
+      Thread.sleep(50L)
+      assert(subscriber.received.sameElements(Seq(1, 2)))
+      assert(subscriber.completes == 0)
+      assert(subscriber.errors == 0)
+
+      subscriber.sub.request(3)
+      subscriber.awaitComplete()
+      assert(subscriber.received.sameElements(items))
+      assert(subscriber.errors == 0)
+      assert(subscriber.completes == 1)
+    }
+
     test("backpressure should work with demand") {
       val items = List(1, 2, 3, 4, 5)
       val publisher = PullPublisher(items)
@@ -48,19 +67,19 @@ class PullPublisherTest extends TestSuite:
 
       // Request 2 items
       subscriber.sub.request(2)
-      Thread.sleep(100)
+      Thread.sleep(100L)
 
       assert(subscriber.received.sameElements(List(1, 2)))
       assert(subscriber.completes == 0)
 
       // Request 2 more items
       subscriber.sub.request(2)
-      Thread.sleep(100)
+      Thread.sleep(100L)
       assert(subscriber.received.sameElements(List(1, 2, 3, 4)))
       assert(subscriber.completes == 0)
 
       // Request last item
-      subscriber.sub.request(1)
+      subscriber.sub.request(2)
       subscriber.awaitComplete()
       assert(subscriber.received.sameElements(items))
       assert(subscriber.completes == 1)
@@ -79,6 +98,7 @@ class PullPublisherTest extends TestSuite:
 
       subscriber.sub.cancel()
       subscriber.sub.request(10)
+
       Thread.sleep(100)
 
       // Should not receive more items
@@ -86,59 +106,48 @@ class PullPublisherTest extends TestSuite:
       assert(subscriber.completes == 0)
     }
 
-    // test("concurrent requests should work correctly") {
-    //   val items = (1 to 1000).toList
-    //   val publisher = PullPublisher(items)
-    //   val subscriber = new MockSubscriber[Int]()
-
-    //   publisher.subscribe(subscriber)
-
-    //   // Multiple concurrent requests
-    //   (1 to 10).foreach(_ => new Thread(() => subscriber.sub.request(100)).start())
-
-    //   subscriber.awaitComplete()
-    //   assert(subscriber.received.sameElements(items))
-    //   assert(subscriber.completes == 1)
-    //   assert(subscriber.errors == 0)
-    // }
-
-    test("concurrent cancellations should work correctly") {
+    test("concurrent requests should work correctly") {
       val items = (1 to 1000).toList
       val publisher = PullPublisher(items)
       val subscriber = new MockSubscriber[Int]()
 
       publisher.subscribe(subscriber)
 
-      (1 to 10).foreach(_ =>
-        new Thread(() => {
-          subscriber.sub.request(100)
-          if (ThreadLocalRandom.current().nextBoolean())
-            subscriber.sub.cancel()
-        }).start(),
-      )
+      // Multiple concurrent requests
+      (1 to 10).foreach(_ => new Thread(() => subscriber.sub.request(100)).start())
 
       subscriber.awaitComplete()
+      assert(subscriber.received.sameElements(items))
       assert(subscriber.completes == 1)
       assert(subscriber.errors == 0)
     }
 
-    test("publishes staged demand in order and completes once exhausted") {
-      val items = Seq(1, 2, 3, 4, 5)
-      val publisher = PullPublisher(items)
-      val subscriber = MockSubscriber[Int]()
+    test("concurrent cancellations should work correctly") {
+      @volatile
+      var counter = 0
+
+      val closeHandler = () =>
+        synchronized {
+          counter += 1
+        }
+
+      val items = (1 to 1000).toList
+      val publisher = PullPublisher(items, closeHandler)
+      val subscriber = new MockSubscriber[Int]()
       publisher.subscribe(subscriber)
 
-      subscriber.sub.request(2)
-      Thread.sleep(50L)
-      assert(subscriber.received.sameElements(Seq(1, 2)))
-      assert(subscriber.completes == 0)
-      assert(subscriber.errors == 0)
+      (1 to 10)
+        .foreach { _ =>
+          val thread = new Thread(() => {
+            subscriber.sub.request(100)
+            if (ThreadLocalRandom.current().nextBoolean())
+              subscriber.sub.cancel()
+          })
+          thread.start()
+          thread.join()
+        }
 
-      subscriber.sub.request(3)
-      subscriber.awaitComplete()
-      assert(subscriber.received.sameElements(items))
-      assert(subscriber.errors == 0)
-      assert(subscriber.completes == 1)
+      assert(counter == 1)
     }
 
     test(s"non-positive request terminates with IllegalArgumentException") {
@@ -159,7 +168,7 @@ class PullPublisherTest extends TestSuite:
 
     test("iterator failure is propagated after already emitted items") {
       val publisher = PullPublisher(
-        new Iterable[String]:
+        new Iterable[String] {
           override def iterator: Iterator[String] = new Iterator[String]:
             private var count = 0
 
@@ -170,7 +179,8 @@ class PullPublisherTest extends TestSuite:
               count += 1
               if count == 2
               then throw new RuntimeException("iterator failure")
-              else s"item$count",
+              else s"item${count}"
+        },
       )
       val subscriber = MockSubscriber[String]()
 
@@ -178,9 +188,9 @@ class PullPublisherTest extends TestSuite:
       subscriber.sub.request(10)
 
       subscriber.awaitComplete()
-      assert(subscriber.errors == 1)
       assert(subscriber.received.toList == List("item1"))
-      assert(subscriber.lastError.getMessage.contains("iterator failure"))
+      assert(subscriber.errors == 1)
+      assert(subscriber.lastError.getMessage().contains("iterator failure"))
     }
 
     test("PullPublisher can be subscribed only once") {

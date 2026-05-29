@@ -2,8 +2,9 @@ package snhttp.jdk.net.http.internal
 
 import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
-import java.util.concurrent.atomic.{AtomicInteger, AtomicBoolean, AtomicLong}
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executor, ForkJoinPool}
+import java.util.concurrent.locks.ReentrantLock
 
 import scala.util.control.NonFatal
 
@@ -20,7 +21,6 @@ import scala.util.control.NonFatal
  */
 private[snhttp] final class PullPublisher[T] private (
     private[PullPublisher] val iterable: Iterable[T],
-    private[PullPublisher] val executor: Executor,
     private[PullPublisher] val closeHandler: () => Unit,
 ) extends Publisher[T]
     with AutoCloseable:
@@ -52,23 +52,13 @@ private[snhttp] final class PullPublisher[T] private (
 object PullPublisher:
 
   def apply[T](iterable: Iterable[T]): PullPublisher[T] =
-    new PullPublisher(iterable, ASYNC_POOL, () => ())
-
-  def apply[T](iterable: Iterable[T], executor: Executor): PullPublisher[T] =
-    new PullPublisher(iterable, executor, () => ())
+    new PullPublisher(iterable, () => ())
 
   def apply[T](
       iterable: Iterable[T],
       closeHandler: () => Unit,
   ): PullPublisher[T] =
-    new PullPublisher(iterable, ASYNC_POOL, closeHandler)
-
-  def apply[T](
-      iterable: Iterable[T],
-      executor: Executor,
-      closeHandler: () => Unit,
-  ): PullPublisher[T] =
-    new PullPublisher(iterable, executor, closeHandler)
+    new PullPublisher(iterable, closeHandler)
 
   /**
    * Default executor -- ForkJoinPool.commonPool() unless it cannot support parallelism.
@@ -94,8 +84,13 @@ object PullPublisher:
 
     private val cancelled = new AtomicBoolean(false)
     private val terminated = new AtomicBoolean(false)
-    private val demand = new AtomicLong(0L)
+
     private val iterator: Iterator[T] = publisher.iterable.iterator
+    private val seqExecutor: Executor = ForkJoinPool(1)
+
+    @volatile
+    private var demand = 0L
+    private val demandLock = new ReentrantLock()
 
     /**
      * Notes from JDK docs:
@@ -109,24 +104,31 @@ object PullPublisher:
       then //
         signalError(new IllegalArgumentException(s"Non-positive request: ${n}"))
       else {
-        if (!terminated.get() && demand.addAndGet(n) > 0)
-          publisher.executor.execute { () =>
+        seqExecutor.execute { () =>
+          demandLock.lock()
+          demand += n
+          try {
             while //
-              !cancelled.get() && !terminated.get() && demand.get() > 0
+              !cancelled.get() && !terminated.get() && demand > 0
             do
               if iterator.hasNext
               then {
-                try {
+                try
                   subscriber.onNext(iterator.next())
-                  demand.decrementAndGet(): Unit
-                } //
+                  demand -= 1
                 catch {
                   case NonFatal(exc) => signalError(exc)
                 }
               } //
               else //
                 signalComplete()
-          }
+
+            if (!iterator.hasNext)
+              signalComplete()
+          } //
+          finally //
+            demandLock.unlock()
+        }
       }
 
     override def cancel(): Unit =
