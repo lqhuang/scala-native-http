@@ -13,7 +13,7 @@ class PullPublisherTest extends TestSuite:
   def tests = Tests:
 
     test("Construction with empty iterable should not throw and complete immediately") {
-      val publisher = PullPublisher(Iterable.empty[String])
+      val publisher = PullPublisher(Iterator.empty[String])
       val subscriber = MockSubscriber[String]()
       publisher.subscribe(subscriber)
 
@@ -27,7 +27,7 @@ class PullPublisherTest extends TestSuite:
 
     test("request more than available should deliver all and complete") {
       val items = List(1, 2, 3)
-      val publisher = PullPublisher(items)
+      val publisher = PullPublisher(items.iterator)
       val subscriber = new MockSubscriber[Int]()
 
       publisher.subscribe(subscriber)
@@ -41,7 +41,7 @@ class PullPublisherTest extends TestSuite:
 
     test("publishes staged demand in order and completes once exhausted") {
       val items = Seq(1, 2, 3, 4, 5)
-      val publisher = PullPublisher(items)
+      val publisher = PullPublisher(items.iterator)
       val subscriber = MockSubscriber[Int]()
       publisher.subscribe(subscriber)
 
@@ -60,7 +60,7 @@ class PullPublisherTest extends TestSuite:
 
     test("backpressure should work with demand") {
       val items = List(1, 2, 3, 4, 5)
-      val publisher = PullPublisher(items)
+      val publisher = PullPublisher(items.iterator.iterator)
       val subscriber = new MockSubscriber[Int]()
 
       publisher.subscribe(subscriber)
@@ -88,7 +88,7 @@ class PullPublisherTest extends TestSuite:
 
     test("cancel should stop delivery") {
       val items = Range(0, 100).toList
-      val publisher = PullPublisher(items)
+      val publisher = PullPublisher(items.iterator)
       val subscriber = new MockSubscriber[Int]()
 
       publisher.subscribe(subscriber)
@@ -108,7 +108,7 @@ class PullPublisherTest extends TestSuite:
 
     test("concurrent requests should work correctly") {
       val items = (1 to 1000).toList
-      val publisher = PullPublisher(items)
+      val publisher = PullPublisher(items.iterator)
       val subscriber = new MockSubscriber[Int]()
 
       publisher.subscribe(subscriber)
@@ -132,7 +132,7 @@ class PullPublisherTest extends TestSuite:
         }
 
       val items = (1 to 1000).toList
-      val publisher = PullPublisher(items, closeHandler)
+      val publisher = PullPublisher(items.iterator, closeHandler)
       val subscriber = new MockSubscriber[Int]()
       publisher.subscribe(subscriber)
 
@@ -152,7 +152,7 @@ class PullPublisherTest extends TestSuite:
 
     test(s"non-positive request terminates with IllegalArgumentException") {
       for (n <- Seq(0, -1, -100)) {
-        val publisher = PullPublisher(List(1, 2, 3))
+        val publisher = PullPublisher(Iterator(1, 2, 3))
         val subscriber = MockSubscriber[Int]()
 
         publisher.subscribe(subscriber)
@@ -168,18 +168,16 @@ class PullPublisherTest extends TestSuite:
 
     test("iterator failure is propagated after already emitted items") {
       val publisher = PullPublisher(
-        new Iterable[String] {
-          override def iterator: Iterator[String] = new Iterator[String]:
-            private var count = 0
+        new Iterator[String] {
+          private var count = 0
+          override def hasNext: Boolean =
+            count < 2
 
-            override def hasNext: Boolean =
-              count < 2
-
-            override def next(): String =
-              count += 1
-              if count == 2
-              then throw new RuntimeException("iterator failure")
-              else s"item${count}"
+          override def next(): String =
+            count += 1
+            if count == 2
+            then throw new RuntimeException("iterator failure")
+            else s"item${count}"
         },
       )
       val subscriber = MockSubscriber[String]()
@@ -194,7 +192,7 @@ class PullPublisherTest extends TestSuite:
     }
 
     test("PullPublisher can be subscribed only once") {
-      val publisher = PullPublisher(Seq(1, 2, 3))
+      val publisher = PullPublisher(Iterator(1, 2, 3))
 
       val subscriber1 = MockSubscriber[Int]()
       val subscriber2 = MockSubscriber[Int]()
@@ -204,7 +202,7 @@ class PullPublisherTest extends TestSuite:
 
       subscriber1.sub.request(10)
       subscriber1.awaitComplete()
-      assert(subscriber1.received.sameElements(Seq(1, 2, 3)))
+      assert(subscriber1.received.sameElements(Iterator(1, 2, 3)))
       assert(subscriber1.errors == 0)
       assert(subscriber1.completes == 1)
 

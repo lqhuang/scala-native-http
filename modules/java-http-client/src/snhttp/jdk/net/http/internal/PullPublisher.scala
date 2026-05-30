@@ -1,5 +1,6 @@
 package snhttp.jdk.net.http.internal
 
+import java.io.{IOException, UncheckedIOException}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.AtomicBoolean
@@ -19,13 +20,17 @@ import scala.util.control.NonFatal
  *   1. Imperfect implementation, needs more testing and improvements.
  *   2. Failed with concurrent requests / cancellations
  */
-private[snhttp] final class PullPublisher[T] private (
-    private[PullPublisher] val iterable: Iterable[T],
+private[snhttp] final class PullPublisher[T](
+    private[PullPublisher] val iterator: Iterator[T],
     private[PullPublisher] val closeHandler: () => Unit,
 ) extends Publisher[T]
     with AutoCloseable:
 
+  requireNonNull(iterator)
+
   import PullPublisher.DelegateSubscription
+
+  def this(iterator: Iterator[T]) = this(iterator, () => ())
 
   private val subscribed = new AtomicBoolean(false)
   private val closed = new AtomicBoolean(false)
@@ -50,15 +55,6 @@ private[snhttp] final class PullPublisher[T] private (
       closeHandler()
 
 object PullPublisher:
-
-  def apply[T](iterable: Iterable[T]): PullPublisher[T] =
-    new PullPublisher(iterable, () => ())
-
-  def apply[T](
-      iterable: Iterable[T],
-      closeHandler: () => Unit,
-  ): PullPublisher[T] =
-    new PullPublisher(iterable, closeHandler)
 
   /**
    * Default executor -- ForkJoinPool.commonPool() unless it cannot support parallelism.
@@ -85,8 +81,8 @@ object PullPublisher:
     private val cancelled = new AtomicBoolean(false)
     private val terminated = new AtomicBoolean(false)
 
-    private val iterator: Iterator[T] = publisher.iterable.iterator
     private val seqExecutor: Executor = ForkJoinPool(1)
+    private val iterator: Iterator[T] = publisher.iterator
 
     @volatile
     private var demand = 0L
@@ -111,20 +107,25 @@ object PullPublisher:
             while //
               !cancelled.get() && !terminated.get() && demand > 0
             do
-              if iterator.hasNext
-              then {
-                try
+              try
+                if iterator.hasNext
+                then {
                   subscriber.onNext(iterator.next())
                   demand -= 1
-                catch {
-                  case NonFatal(exc) => signalError(exc)
-                }
-              } //
-              else //
-                signalComplete()
+                } //
+                else //
+                  signalComplete()
+              catch {
+                case exc: IOException => signalError(UncheckedIOException(exc))
+                case exc: Exception   => signalError(exc)
+              }
 
-            if (!iterator.hasNext)
-              signalComplete()
+            try
+              if (!iterator.hasNext) signalComplete()
+            catch {
+              case exc: IOException => signalError(UncheckedIOException(exc))
+              case exc: Exception   => signalError(exc)
+            }
           } //
           finally //
             demandLock.unlock()

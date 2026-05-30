@@ -1,10 +1,17 @@
 package snhttp.test.java.net.http
 
-import java.io.{ByteArrayInputStream, IOException, UncheckedIOException, InputStream}
+import java.io.{
+  ByteArrayInputStream,
+  IOException,
+  UncheckedIOException,
+  InputStream,
+  FileNotFoundException,
+}
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.Flow
 import java.util.List as JList
 
@@ -78,7 +85,7 @@ class BodyPublishersTest extends TestSuite:
     }
 
     // =========================================================================
-    // ofString(String) – default UTF-8
+    // ofString(String) and ofString(String, Charset)
     // =========================================================================
 
     test("ofString - default charset encodes as UTF-8") {
@@ -121,10 +128,6 @@ class BodyPublishersTest extends TestSuite:
       assert(publisher.contentLength() == expected.length.toLong)
     }
 
-    // =========================================================================
-    // ofString(String, Charset)
-    // =========================================================================
-
     test("ofString - UTF-16 charset publishes correct bytes and contentLength") {
       val content = "Hello, World!"
       val expected = content.getBytes(StandardCharsets.UTF_16)
@@ -162,10 +165,11 @@ class BodyPublishersTest extends TestSuite:
 
       subscriber.awaitComplete()
       assert(publisher.contentLength() == 0L)
+      assert(subscriber.completes == 1)
     }
 
     // =========================================================================
-    // ofByteArray(byte[])
+    // ofByteArray(byte[]) and ofByteArray(byte[], int offset, int length)
     // =========================================================================
 
     test("ofByteArray - publishes correct bytes and contentLength") {
@@ -191,10 +195,6 @@ class BodyPublishersTest extends TestSuite:
       subscriber.awaitComplete()
       assert(publisher.contentLength() == 0L)
     }
-
-    // =========================================================================
-    // ofByteArray(byte[], int offset, int length)
-    // =========================================================================
 
     test("ofByteArray - offset and length selects correct sub-range") {
       val data = Array[Byte](10, 20, 30, 40, 50)
@@ -235,19 +235,19 @@ class BodyPublishersTest extends TestSuite:
 
     test("ofByteArray - out-of-bounds range throws IndexOutOfBoundsException") {
       val data = Array[Byte](1, 2, 3)
-      assertThrows[IndexOutOfBoundsException] {
+      val _ = assertThrows[IndexOutOfBoundsException] {
         BodyPublishers.ofByteArray(data, 0, 10): Unit // length > array size
-      }: Unit
-      assertThrows[IndexOutOfBoundsException] {
+      }
+      val _ = assertThrows[IndexOutOfBoundsException] {
         BodyPublishers.ofByteArray(data, -1, 2): Unit // negative offset
-      }: Unit
-      assertThrows[IndexOutOfBoundsException] {
+      }
+      val _ = assertThrows[IndexOutOfBoundsException] {
         BodyPublishers.ofByteArray(data, 2, 2): Unit // offset + length > array size
-      }: Unit
+      }
     }
 
     // =========================================================================
-    // ofByteArrays(Iterable<byte[]>)
+    // ofByteArrays(Iterable[Array[byte]])
     // =========================================================================
 
     test("ofByteArrays - multiple arrays are published in order") {
@@ -400,13 +400,54 @@ class BodyPublishersTest extends TestSuite:
     }
 
     test("ofFile - non-existent path throws FileNotFoundException") {
-      assertThrows[java.io.FileNotFoundException] {
+      assertThrows[FileNotFoundException] {
         BodyPublishers.ofFile(Path.of("/nonexistent/path/body-test-file.bin")): Unit
       }
     }
 
+    test("ofFile - not readable file throw AccessDeniedException via onError") {
+      val data = Array[Byte](10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+      val tmp = Files.createTempFile("body-publisher-test", ".bin")
+      try {
+        Files.write(tmp, data)
+        Files.setPosixFilePermissions(tmp, PosixFilePermissions.fromString("---------"))
+        val publisher = BodyPublishers.ofFile(tmp)
+        val subscriber = MockSubscriber[ByteBuffer]()
+
+        publisher.subscribe(subscriber)
+        subscriber.sub.request(10)
+
+        subscriber.awaitError()
+        assert(publisher.contentLength() == data.length.toLong)
+        assert(subscriber.errors == 1)
+        assert(subscriber.lastError.isInstanceOf[FileNotFoundException])
+      } //
+      finally //
+        Files.deleteIfExists(tmp): Unit
+    }
+
+    // Align to JVM behavior
+    test("ofFile - not regular file won't throw") {
+      val tmpDir = Files.createDirectories(Path.of("body-publisher-test"))
+      try {
+        val publisher = BodyPublishers.ofFile(tmpDir)
+        val subscriber = MockSubscriber[ByteBuffer]()
+
+        publisher.subscribe(subscriber)
+        subscriber.sub.request(10)
+
+        subscriber.awaitError()
+        assert(publisher.contentLength() == Files.size(tmpDir))
+        assert(subscriber.errors == 1)
+        assert(subscriber.lastError.isInstanceOf[FileNotFoundException])
+      } //
+      finally //
+        Files.deleteIfExists(tmpDir): Unit
+    }
+
     // =========================================================================
-    // fromPublisher(Flow.Publisher<ByteBuffer>)
+    // fromPublisher(Flow.Publisher[ByteBuffer])
+    // and fromPublisher(Flow.Publisher[ByteBuffer], contentLength: Long)
     // =========================================================================
 
     test("fromPublisher - contentLength is unknown (-1)") {
@@ -428,10 +469,6 @@ class BodyPublishersTest extends TestSuite:
       assert(flatten(subscriber.received).sameElements(data))
     }
 
-    // =========================================================================
-    // fromPublisher(Flow.Publisher<ByteBuffer>, long contentLength)
-    // =========================================================================
-
     test("fromPublisher with contentLength - reports given contentLength") {
       val publisher = BodyPublishers.fromPublisher(
         BodyPublishers.ofByteArray(Array[Byte](1, 2, 3)),
@@ -452,23 +489,17 @@ class BodyPublishersTest extends TestSuite:
       assert(flatten(subscriber.received).sameElements(data))
     }
 
-    test("fromPublisher with contentLength - throws IllegalArgumentException for zero") {
-      assertThrows[IllegalArgumentException] {
-        BodyPublishers.fromPublisher(BodyPublishers.ofByteArray(Array.empty[Byte]), 0L): Unit
-      }
-    }
-
-    test("fromPublisher with contentLength - throws IllegalArgumentException for negative") {
-      assertThrows[IllegalArgumentException] {
-        BodyPublishers.fromPublisher(
-          BodyPublishers.ofByteArray(Array.empty[Byte]),
-          -1L,
-        ): Unit
-      }
+    test(
+      "fromPublisher with contentLength - throws IllegalArgumentException for negative or zero",
+    ) {
+      for (invalid <- Seq(0L, -1L, -100L))
+        val _ = assertThrows[IllegalArgumentException] {
+          BodyPublishers.fromPublisher(BodyPublishers.ofByteArray(Array.empty[Byte]), invalid): Unit
+        }
     }
 
     // =========================================================================
-    // concat(BodyPublisher...)
+    // concat(Array[BodyPublisher])
     // =========================================================================
 
     test("concat - multiple publishers deliver all data in order") {

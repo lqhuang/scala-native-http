@@ -12,7 +12,8 @@ import scala.concurrent.duration.*
 
 import utest.assert
 
-class SPException extends RuntimeException("Test exception")
+class SPException(msg: String) extends RuntimeException(msg):
+  def this() = this(null)
 
 private def concatBuffers(buffers: Iterable[ByteBuffer]): Array[Byte] = {
   val size = buffers.map(b => b.remaining()).sum
@@ -33,11 +34,13 @@ class MockSubscription() extends Subscription:
   @volatile var received: Long = 0
   @volatile var cancelled: Boolean = false
 
-  override def request(n: Long): Unit =
+  override def request(n: Long): Unit = synchronized {
     received += n
+  }
 
-  override def cancel(): Unit =
+  override def cancel(): Unit = synchronized {
     cancelled = true
+  }
 
 end MockSubscription
 

@@ -129,6 +129,7 @@ object HttpRequest:
         publisher: Flow.Publisher[? <: ByteBuffer],
         contentLength: Long,
     ): BodyPublisher =
+      require(contentLength > 0, "Content length cannot be negative or zero")
       BodyPublishersImpl.fromPublisher(publisher, contentLength)
 
     def ofString(body: String, charset: Charset): BodyPublisher =
