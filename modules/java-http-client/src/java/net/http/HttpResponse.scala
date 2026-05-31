@@ -201,7 +201,12 @@ object HttpResponse:
       BodySubscribersImpl.fromSubscriber(subscriber, finisher)
 
     def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodySubscriber[Void] =
-      BodySubscribersImpl.fromLineSubscriber(subscriber, (_: Any) => null, UTF_8, null)
+      BodySubscribersImpl.fromLineSubscriber(
+        subscriber,
+        (_: Any) => null,
+        UTF_8,
+        null,
+      )
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,
