@@ -1,23 +1,28 @@
 package snhttp.jdk.net.http.internal
 
+import java.nio.file.Path
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.charset.UnsupportedCharsetException
 import java.net.http.HttpHeaders
+import java.util.Optional
 import java.util.regex.Pattern
 import java.util.regex.Pattern.CASE_INSENSITIVE
 
 object Utils:
 
-  private val CHARSET_PATTERN = Pattern.compile(
+  private final val CHARSET_PATTERN = Pattern.compile(
     "(?:^|;)\\s*\\bcharset\\s*=\\s*([^\\s;]+)\\s*",
     Pattern.CASE_INSENSITIVE,
   )
-  /// Get the `Charset` from `Content-Type` field. Defaults to `UTF_8`
-  ///
-  /// Reference for `Content-type` header:
-  ///
-  /// 1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type
-  /// 2. https://datatracker.ietf.org/doc/html/rfc7231
+
+  /**
+   * Get the `Charset` from `Content-Type` field. Defaults to `UTF_8`
+   *
+   * Reference for `Content-type` header:
+   *
+   *   1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type
+   *   2. https://datatracker.ietf.org/doc/html/rfc7231
+   */
   def charsetFrom(headers: HttpHeaders): Charset = {
     val contentType = headers.firstValue("Content-Type")
 
@@ -40,63 +45,89 @@ object Utils:
     }
   }
 
-  // val DISPOSITION_TYPE = "attachment"
-  // val PROHIBITED_PREFIX = Set(".", "..", "", "~", "|")
-  // val FILENAME_PATTERN = Pattern.compile("filename\\s*=\\s*", CASE_INSENSITIVE)
-  val QUOTED_FILENAME_PATTERN = Pattern.compile("\\s*\"([^\"]*)\"", CASE_INSENSITIVE)
-  // Insprired from:
-  //   - [sindresorhus/filenamify](https://github.com/sindresorhus/filenamify): Convert a string to a valid safe filename
-  //   - https://labex.io/tutorials/nmap-how-to-sanitize-filenames-in-cybersecurity-419804
-  val ILLEGAL_FILENAME_CHARACTERS =
-    Set(
-      '\\', '/', ':', '*', '?', '"', '<', '>', '|', '~', '#', '%', '&', '{', '}', '\n', '\t', '\r',
-    )
-  private def isAllowedInFilename(c: Char): Boolean = !ILLEGAL_FILENAME_CHARACTERS.contains(c)
-
   /**
    * Get the `filename` from `Content-Disposition` field.
    *
    * Reference for `Content-Disposition` header:
    *
    *   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition
+   *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpResponse.BodyHandlers.html#ofFileDownload(java.nio.file.Path,java.nio.file.OpenOption...)
+   *   - https://datatracker.ietf.org/doc/html/rfc6266
    *
    * The HTTP Content-Disposition header indicates whether content should be displayed inline in the
    * browser as a web page or part of a web page or downloaded as an attachment locally.
    *
-   * We assume that the `Content-Disposition` header is not `inline` here Well-formed
-   * `Content-Disposition` header should look like:
+   * Well-formed `Content-Disposition` header should look like:
    *
    * ```
    * Content-Disposition: attachment
    * Content-Disposition: attachment; filename="file name.jpg"
-   * Content-Disposition: attachment; filename*=UTF-8''file%20name.jpg
    * ```
-   *
-   * TODO: current only supports `attachment; filename="file name.jpg"` like format.
    */
-  def filenameFrom(headers: HttpHeaders, fallbackFilename: String = "downloaded-file"): String = {
-    val contentDisposition = headers
-      .firstValue("Content-Disposition")
-      .orElse(s"aattachment; filename=\"${fallbackFilename}\"")
+  def filenameFrom(
+      headers: HttpHeaders,
+  ): Optional[String] = {
+    val maybeContentDisposition = headers.firstValue("Content-Disposition")
 
-    val maybeFilename = contentDisposition
-      .split(";")
-      .filter(_.toLowerCase.trim.startsWith("filename="))
-      .headOption
+    maybeContentDisposition.flatMap { cd =>
+      val parts = cd.split(";").map(_.trim())
+      val isAttachment = parts.headOption.exists(_.equalsIgnoreCase("attachment"))
+      val filename = parts.find(s => FILENAME_PARAM_PATTERN.matcher(s).find())
 
-    maybeFilename match
-      case Some(unfilename) =>
-        val matcher = QUOTED_FILENAME_PATTERN.matcher(unfilename)
-        if matcher.matches() then {
-          val raw = matcher.group(1).replaceAll("^\"|\"$", "").trim().translateEscapes()
-          // spec: if filename has multiple path components, use only the final one
-          val lastComponent =
-            val idx = math.max(raw.lastIndexOf('/'), raw.lastIndexOf('\\'))
-            if idx >= 0 then raw.substring(idx + 1) else raw
-          if lastComponent.nonEmpty && lastComponent.forall(isAllowedInFilename)
-          then lastComponent
-          else fallbackFilename
-        } // qualified filename not matches, return fallback
-        else fallbackFilename
-      case None => fallbackFilename
+      if (!parts.headOption.exists(_.equalsIgnoreCase("attachment")) || filename.isEmpty)
+        Optional.empty()
+      else if (filename.isDefined) {
+        parseFilename(filename.get)
+      } //
+      else
+        Optional.empty()
+    }
+  }
+
+  /*
+   *  Helpers for `filenameFrom`
+   */
+
+  private final val FILENAME_PARAM_PATTERN =
+    Pattern.compile("^filename\\s*=\\s*(.+?)\\s*$", Pattern.CASE_INSENSITIVE)
+
+  private final val QUOTED_FILENAME_PATTERN =
+    Pattern.compile("\"([^\"]+)\"", CASE_INSENSITIVE)
+
+  private final val QUOTED_ILLEGAL_FILENAME_CHARACTERS: Set[Char] =
+    Set('\'', '\n', '\t', '\r', '"', '\\')
+
+  private final val UNQUOTE_ILLEGAL_FILENAME_CHARACTERS: Set[Char] =
+    QUOTED_ILLEGAL_FILENAME_CHARACTERS ++ Set('?', '[', ']', '(', ')', '\\', '/', ' ')
+
+  /**
+   * Parse the `filename` parameter value, handling both quoted and unquoted tokens.
+   */
+  private def parseFilename(param: String): Optional[String] = {
+    val m = FILENAME_PARAM_PATTERN.matcher(param)
+    if !m.find()
+    then //
+      Optional.empty()
+    else {
+      val rawValue = m.group(1).trim().replaceAllLiterally("\\\\", "/")
+      val quoted = QUOTED_FILENAME_PATTERN.matcher(rawValue)
+
+      if (rawValue.isEmpty())
+        Optional.empty()
+      else if (quoted.find()) {
+        Optional
+          .ofNullable(Path.of(quoted.group(1).trim()).getFileName())
+          .map(_.toString())
+          .filter(name =>
+            name != "." && name != ".." && !name.isEmpty()
+              && !name.exists(QUOTED_ILLEGAL_FILENAME_CHARACTERS.contains(_)),
+          )
+      } //
+      else {
+        if rawValue == "." || rawValue == ".." || rawValue.isEmpty()
+          || rawValue.exists(UNQUOTE_ILLEGAL_FILENAME_CHARACTERS.contains(_))
+        then Optional.empty()
+        else Optional.of(rawValue)
+      }
+    }
   }

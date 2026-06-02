@@ -72,19 +72,14 @@ object HttpResponse:
 
     def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodyHandler[Void] =
       ri =>
-        BodySubscribers.fromLineSubscriber(
-          subscriber,
-          _ => null,
-          charsetFrom(ri.headers()),
-          null,
-        )
+        BodySubscribers.fromLineSubscriber(subscriber, _ => null, charsetFrom(ri.headers()), null)
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,
         finisher: Function[? >: S, ? <: T],
         lineSeparator: String,
     ): BodyHandler[T] = {
-      if (lineSeparator == null && lineSeparator.isEmpty())
+      if (lineSeparator != null && lineSeparator.isEmpty())
         throw new IllegalArgumentException("lineSeparator can not be empty")
       ri =>
         BodySubscribers.fromLineSubscriber(
@@ -116,21 +111,27 @@ object HttpResponse:
     def ofFile(file: Path): BodyHandler[Path] =
       BodyHandlersImpl.ofFile(file, Array(CREATE, WRITE))
 
+    /*
+     * Notes from JDK docs:
+     *
+     * if the given path does not exist, is not of the default file system, is not a directory, is
+     * not writable, or if an invalid set of open options are specified
+     */
     def ofFileDownload(directory: Path, openOptions: Array[OpenOption]): BodyHandler[Path] = {
-      requireNonNull(directory)
-      try
-        directory.toFile.getPath()
-      catch {
-        case exc: UnsupportedOperationException =>
-          throw new IllegalArgumentException(s"invalid path: ${directory}", exc)
-      }
-      require(!Files.notExists(directory), s"non-existent directory: $directory")
-      require(Files.isDirectory(directory), s"not a directory: $directory")
-      require(Files.isWritable(directory), s"non-writable directory: $directory")
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
         s"invalid openOptions: ${openOptions}",
       )
+      requireNonNull(directory)
+      require(!Files.notExists(directory), s"non-existent directory: $directory")
+      require(Files.isDirectory(directory), s"not a directory: $directory")
+      require(Files.isWritable(directory), s"non-writable directory: $directory")
+      try
+        directory.toFile().getPath()
+      catch {
+        case exc: UnsupportedOperationException =>
+          throw new IllegalArgumentException(s"invalid path: ${directory}", exc)
+      }
 
       BodyHandlersImpl.ofFileDownload(directory, openOptions)
     }
@@ -201,12 +202,7 @@ object HttpResponse:
       BodySubscribersImpl.fromSubscriber(subscriber, finisher)
 
     def fromLineSubscriber(subscriber: Subscriber[? >: String]): BodySubscriber[Void] =
-      BodySubscribersImpl.fromLineSubscriber(
-        subscriber,
-        (_: Any) => null,
-        UTF_8,
-        null,
-      )
+      BodySubscribersImpl.fromLineSubscriber(subscriber, _ => null, UTF_8, null)
 
     def fromLineSubscriber[S <: Subscriber[? >: String], T](
         subscriber: S,

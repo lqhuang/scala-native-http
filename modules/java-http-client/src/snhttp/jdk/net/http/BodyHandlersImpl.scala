@@ -3,7 +3,7 @@ package snhttp.jdk.net.http
 import java.io.{IOException, UncheckedIOException}
 import java.net.URI
 import java.net.http.{HttpResponse, HttpRequest}
-import java.net.http.HttpResponse.{BodyHandler, ResponseInfo, BodySubscriber, BodySubscribers}
+import java.net.http.HttpResponse.{BodyHandler, ResponseInfo, BodySubscriber}
 import java.nio.file.{OpenOption, Path}
 import java.util.concurrent.{CompletableFuture, ConcurrentMap}
 import java.util.function.Function
@@ -43,7 +43,7 @@ private[snhttp] class PathBodyHandler(
 ) extends BodyHandler[Path]:
 
   override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
-    BodySubscribers.ofFile(file, openOptions.toArray)
+    new PathBodySubscriber(file, openOptions*)
 
 end PathBodyHandler
 
@@ -59,8 +59,13 @@ private[snhttp] class FileDownloadBodyHandler(
    * filename parameter.
    */
   override def apply(responseInfo: ResponseInfo): BodySubscriber[Path] =
-    val filename = filenameFrom(responseInfo.headers())
-    val targetFile = directory.resolve(filename)
-    BodySubscribers.ofFile(targetFile, openOptions.toArray)
+    filenameFrom(responseInfo.headers())
+      .map { name =>
+        val targetFile = directory.resolve(name)
+        new PathBodySubscriber(targetFile, openOptions*)
+      }
+      .orElseThrow(() =>
+        new UncheckedIOException(new IOException("Bad Content-Disposition header")),
+      )
 
 end FileDownloadBodyHandler

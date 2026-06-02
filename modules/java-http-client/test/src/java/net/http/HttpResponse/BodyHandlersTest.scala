@@ -178,32 +178,23 @@ class BodyHandlersTest extends TestSuite:
       val subscriber = MockSubscriber[String](request = true)
       val handler = BodyHandlers.fromLineSubscriber(
         subscriber,
-        ((_: Subscriber[? >: String]) => "done"): Function[Subscriber[? >: String], String],
+        _ => "done",
         null,
       )
       val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
       val bodySubscriber = handler(responseInfo)
-      // Should not throw
     }
 
     test("fromLineSubscriber should reject empty lineSeparator") {
       val subscriber = MockSubscriber[String](request = true)
       assertThrows[IllegalArgumentException] {
-        BodyHandlers.fromLineSubscriber(
-          subscriber,
-          ((_: Subscriber[? >: String]) => "done"): Function[Subscriber[? >: String], String],
-          "",
-        ): Unit
+        BodyHandlers.fromLineSubscriber(subscriber, _ => "done", ""): Unit
       }
     }
 
     test("fromLineSubscriber should accept non-empty lineSeparator") {
       val subscriber = MockSubscriber[String](request = true)
-      val handler = BodyHandlers.fromLineSubscriber(
-        subscriber,
-        ((_: Subscriber[? >: String]) => "done"): Function[Subscriber[? >: String], String],
-        "\n",
-      )
+      val handler = BodyHandlers.fromLineSubscriber(subscriber, _ => "done", "\n")
       val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
       val bodySubscriber = handler(responseInfo)
       // Should not throw
@@ -472,12 +463,222 @@ class BodyHandlersTest extends TestSuite:
         subscriber.onComplete()
 
         val resultPath = subscriber.getBody().toCompletableFuture().get()
-        assert(resultPath.getFileName.toString == "document.txt")
+        assert(resultPath.getFileName().toString() == "document.txt")
         assert(Files.exists(resultPath))
-        Files.deleteIfExists(resultPath): Unit
+        assert(Files.deleteIfExists(resultPath))
       } //
       finally //
         Files.deleteIfExists(tempDir): Unit
+    }
+
+    test(
+      "ofFileDownload should extract filename when Content-Disposition has additional parameters",
+    ) {
+      Seq(
+        "attachment; size=1024; filename=\"file.txt\"",
+        "attachment; filename=\"file.txt\"; size=1024",
+        "attachment; type=document; filename=\"file.txt\"; charset=utf-8",
+        "attachment; creation-date=\"Mon, 01 Jan 2024 00:00:00 GMT\"; filename=\"file.txt\"",
+      ).foreach { contentDisposition =>
+        val tempDir = Files.createTempDirectory("test-downloads")
+        try {
+          val handler =
+            BodyHandlers.ofFileDownload(
+              tempDir,
+              StandardOpenOption.CREATE,
+              StandardOpenOption.WRITE,
+            )
+          val responseInfo = createResponseInfo(Map("Content-Disposition" -> contentDisposition))
+          val subscriber = handler(responseInfo)
+
+          subscriber.onSubscribe(MockSubscription())
+          subscriber.onNext(
+            JList.of(ByteBuffer.wrap("file content".getBytes(StandardCharsets.UTF_8))),
+          )
+          subscriber.onComplete()
+
+          val resultPath = subscriber.getBody().toCompletableFuture().get()
+          assert(resultPath.getFileName().toString() == "file.txt")
+          assert(Files.exists(resultPath))
+          assert(Files.deleteIfExists(resultPath))
+        } //
+        finally Files.deleteIfExists(tempDir): Unit
+      }
+    }
+
+    test("ofFileDownload should support multiple formats of Content-Disposition") {
+      Seq(
+        ("attachment; filename=\"document.txt\"", "document.txt"),
+        // ("attachment; filename='document.txt'", "document.txt"),
+        ("attachment; filename=document.txt", "document.txt"),
+        ("attachment; filename=\"document with space.txt\"", "document with space.txt"),
+        ("attachment; filename=\"document%20with%20space.txt\"", "document%20with%20space.txt"),
+        ("attachment; filename=document%20with%20space.txt", "document%20with%20space.txt"),
+        ("attachment; filename=\"dir/file.txt\"", "file.txt"),
+        ("attachment; filename=\"a/b/c/file.txt\"", "file.txt"),
+        ("attachment; filename=\"/absolute/path/file.txt\"", "file.txt"),
+        ("attachment; filename=\"../parent/file.txt\"", "file.txt"),
+        ("attachment; filename=\"../../etc/passwd\"", "passwd"),
+        ("attachment; filename=\"..passwd\"", "..passwd"),
+        ("attachment; filename=\"dir\\\\file.txt\"", "file.txt"),
+        ("attachment; filename=\"C:\\\\Users\\\\user\\\\file.txt\"", "file.txt"),
+        ("attachment; filename=\"..\\\\secret.txt\"", "secret.txt"),
+        ("attachment; filename=\"fil?e.txt\"", "fil?e.txt"),
+        ("attachment; filename=\"fil*e.txt\"", "fil*e.txt"),
+        ("attachment; filename=\"fil:e.txt\"", "fil:e.txt"),
+        ("attachment; filename=\"fil#e.txt\"", "fil#e.txt"),
+        ("attachment; filename=\"fil<e.txt\"", "fil<e.txt"),
+        ("attachment; filename=\"fil>e.txt\"", "fil>e.txt"),
+        ("attachment; filename=\"fil~e.txt\"", "fil~e.txt"),
+        ("attachment; filename=\"fil|e.txt\"", "fil|e.txt"),
+        ("attachment; filename=\"fil%e.txt\"", "fil%e.txt"),
+        ("attachment; filename=\"fil{e.txt\"", "fil{e.txt"),
+        ("attachment; filename=\"fil}e.txt\"", "fil}e.txt"),
+        ("attachment; filename=\"fil&e.txt\"", "fil&e.txt"),
+        ("attachment; filename=\"fil\"e.txt\"", "fil"),
+      ).foreach { (contentDisposition, expected) =>
+        val tempDir = Files.createTempDirectory("test-downloads")
+        try {
+          val handler = BodyHandlers.ofFileDownload(
+            tempDir,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE,
+          )
+          val responseInfo = createResponseInfo(
+            Map("Content-Disposition" -> contentDisposition),
+          )
+          val subscriber = handler(responseInfo)
+
+          subscriber.onSubscribe(MockSubscription())
+          subscriber.onNext(
+            JList.of(ByteBuffer.wrap("file content".getBytes(StandardCharsets.UTF_8))),
+          )
+          subscriber.onComplete()
+
+          val resultPath = subscriber.getBody().toCompletableFuture().get()
+          assert(resultPath.getFileName().toString() == expected)
+          assert(Files.exists(resultPath))
+          assert(Files.deleteIfExists(resultPath))
+        } //
+        finally Files.deleteIfExists(tempDir): Unit
+      }
+    }
+
+    test("ofFileDownload should extract first filename from Content-Disposition") {
+      val tempDir = Files.createTempDirectory("test-downloads")
+      try {
+        val handler =
+          BodyHandlers.ofFileDownload(tempDir, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+        val responseInfo = createResponseInfo(
+          Map(
+            "Content-Disposition" -> "attachment; filename = \"document.txt\"; filename = \"hello-document.txt\"",
+          ),
+        )
+        val subscriber = handler(responseInfo)
+
+        subscriber.onSubscribe(MockSubscription())
+        subscriber.onNext(
+          JList.of(ByteBuffer.wrap("file content".getBytes(StandardCharsets.UTF_8))),
+        )
+        subscriber.onComplete()
+
+        val resultPath = subscriber.getBody().toCompletableFuture().get()
+        assert(resultPath.getFileName().toString() == "document.txt")
+        assert(Files.exists(resultPath))
+        assert(Files.deleteIfExists(resultPath))
+      } //
+      finally //
+        Files.deleteIfExists(tempDir): Unit
+    }
+
+    test("ofFileDownload should fail for Content-Disposition contains `filename*` parameter") {
+      val tempDir = Files.createTempDirectory("test-downloads")
+      try {
+        val responseInfo = createResponseInfo(
+          Map("Content-Disposition" -> "attachment; filename*=UTF-8''document.txt"),
+        )
+        val handler =
+          BodyHandlers.ofFileDownload(tempDir, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+
+        val exc = assertThrows[UncheckedIOException] {
+          val subscriber = handler(responseInfo)
+        }
+        assert(exc.getCause().isInstanceOf[IOException])
+      } //
+      finally Files.deleteIfExists(tempDir): Unit
+    }
+
+    test("ofFileDownload should fail for invalid unquote filename format") {
+      Seq(
+        "attachment; filename=\"documen\nt.txt\"",
+        "attachment; filename=\"documen\tt.txt\"",
+        "attachment; filename=\"documen\rt.txt\"",
+        "attachment; filename=documen\rt.txt",
+        "attachment; filename=documen\nt.txt",
+        "attachment; filename=document.txt\"",
+        "attachment; filename=\"document.txt",
+        "attachment; filename=document no quotes with space.txt",
+        "attachment; filename=./document.txt;",
+        "attachment; filename=../document.txt",
+        "attachment; filename=a/document.txt",
+        "attachment; filename=\\document.txt",
+        "attachment; filename=.\\document.txt",
+        "attachment; filename=..\\document.txt",
+        "attachment; filename=a\\document.txt",
+        "attachment; filename=a?document.txt",
+        "attachment; filename=a[document.txt",
+        "attachment; filename=]document.txt",
+        "attachment; filename=(document.txt",
+        "attachment; filename=)document.txt",
+      ).foreach { contentDisposition =>
+        println(s"!!!!!! !!!! Testing Content-Disposition: ${contentDisposition}")
+        val tempDir = Files.createTempDirectory("test-downloads")
+        try {
+          val responseInfo = createResponseInfo(
+            Map("Content-Disposition" -> contentDisposition),
+          )
+          val handler =
+            BodyHandlers.ofFileDownload(
+              tempDir,
+              StandardOpenOption.CREATE,
+              StandardOpenOption.WRITE,
+            )
+
+          val exc = assertThrows[UncheckedIOException] {
+            val subscriber = handler(responseInfo)
+          }
+          assert(exc.getCause().isInstanceOf[IOException])
+        } //
+        finally Files.deleteIfExists(tempDir): Unit
+      }
+    }
+
+    test("ofFileDownload should fail for empty `filename` ") {
+      Seq(
+        "attachment; filename=\"\"",
+        "attachment; filename=\"\";",
+        "attachment; filename=",
+        "attachment; filename=;",
+      ).foreach { contentDisposition =>
+        val tempDir = Files.createTempDirectory("test-downloads")
+        try {
+          val responseInfo = createResponseInfo(
+            Map("Content-Disposition" -> contentDisposition),
+          )
+          val handler =
+            BodyHandlers.ofFileDownload(
+              tempDir,
+              StandardOpenOption.CREATE,
+              StandardOpenOption.WRITE,
+            )
+
+          val exc = assertThrows[UncheckedIOException] {
+            val subscriber = handler(responseInfo)
+          }
+          assert(exc.getCause().isInstanceOf[IOException])
+        } //
+        finally Files.deleteIfExists(tempDir): Unit
+      }
     }
 
     test("ofFileDownload should fail when Content-Disposition is missing") {
@@ -490,38 +691,10 @@ class BodyHandlersTest extends TestSuite:
           handler(createResponseInfo()): Unit // no Content-Disposition
         }
         assert(exc.getCause().isInstanceOf[IOException])
-
       } //
       finally //
         Files.deleteIfExists(tempDir): Unit
     }
-
-    /*
-     * Security: regardless of whether an implementation uses the final component or
-     * rejects path traversal entirely, the resulting file MUST NOT escape the directory.
-     *
-     * This can pass on JVM ???
-     */
-    // test("ofFileDownload should reject path traversal in filename") {
-    //   val tempDir = Files.createTempDirectory("test-downloads")
-    //   try {
-    //     val handler =
-    //       BodyHandlers.ofFileDownload(tempDir, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
-    //     // Spec requires that filename components other than simple names (e.g. containing path separators) are rejected
-    //     val responseInfo = createResponseInfo(
-    //       Map("Content-Disposition" -> "attachment; filename=\"../evil.txt\""),
-    //     )
-    //     val subscriber = handler(responseInfo)
-
-    //     subscriber.onSubscribe(MockSubscription())
-    //     subscriber.onNext(JList.of(ByteBuffer.wrap("data".getBytes())))
-    //     subscriber.onComplete()
-
-    //     // assertThrows[DirectoryNotEmptyException] {
-    //     subscriber.getBody().toCompletableFuture().get(): Unit
-    //     // }
-    //   } finally rmdir(tempDir): Unit
-    // }
 
     test("ofFileDownload should reject DELETE_ON_CLOSE option") {
       val tempDir = Files.createTempDirectory("test-downloads")
@@ -608,69 +781,69 @@ class BodyHandlersTest extends TestSuite:
       finally Files.deleteIfExists(tempDir): Unit
     }
 
-    // // ================================= //
-    // // Test BodyHandlers.ofInputStream() //
-    // // ================================= //
+    // ================================= //
+    // Test BodyHandlers.ofInputStream() //
+    // ================================= //
 
-    // test("ofInputStream should create handler returning InputStream") {
-    //   val handler = BodyHandlers.ofInputStream()
-    //   val responseInfo = createResponseInfo()
-    //   val subscriber = handler(responseInfo)
+    test("ofInputStream should create handler returning InputStream") {
+      val handler = BodyHandlers.ofInputStream()
+      val responseInfo = createResponseInfo()
+      val subscriber = handler(responseInfo)
 
-    //   subscriber.onSubscribe(MockSubscription())
+      subscriber.onSubscribe(MockSubscription())
 
-    //   val inputStream = subscriber.getBody().toCompletableFuture().get()
-    //   assert(inputStream != null)
-    //   inputStream.close()
-    // }
+      val inputStream = subscriber.getBody().toCompletableFuture().get()
+      assert(inputStream != null)
+      inputStream.close()
+    }
 
-    // test("ofInputStream should make data available to read") {
-    //   val handler = BodyHandlers.ofInputStream()
-    //   val subscriber = handler(createResponseInfo())
+    test("ofInputStream should make data available to read") {
+      val handler = BodyHandlers.ofInputStream()
+      val subscriber = handler(createResponseInfo())
 
-    //   subscriber.onSubscribe(MockSubscription())
+      subscriber.onSubscribe(MockSubscription())
 
-    //   val inputStream = subscriber.getBody().toCompletableFuture().get()
-    //   subscriber.onNext(JList.of(ByteBuffer.wrap("stream data".getBytes(StandardCharsets.UTF_8))))
-    //   subscriber.onComplete()
+      val inputStream = subscriber.getBody().toCompletableFuture().get()
+      subscriber.onNext(JList.of(ByteBuffer.wrap("stream data".getBytes(StandardCharsets.UTF_8))))
+      subscriber.onComplete()
 
-    //   val bytes = inputStream.readAllBytes()
-    //   inputStream.close()
-    //   assert(new String(bytes, StandardCharsets.UTF_8) == "stream data")
-    // }
+      val bytes = inputStream.readAllBytes()
+      inputStream.close()
+      assert(new String(bytes, StandardCharsets.UTF_8) == "stream data")
+    }
 
-    // // =========================== //
-    // // Test BodyHandlers.ofLines() //
-    // // =========================== //
+    // =========================== //
+    // Test BodyHandlers.ofLines() //
+    // =========================== //
 
-    // test("ofLines should create handler using charset from Content-Type") {
-    //   val handler = BodyHandlers.ofLines()
-    //   val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
-    //   val subscriber = handler(responseInfo)
+    test("ofLines should create handler using charset from Content-Type") {
+      val handler = BodyHandlers.ofLines()
+      val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
+      val subscriber = handler(responseInfo)
 
-    //   subscriber.onSubscribe(MockSubscription())
+      subscriber.onSubscribe(MockSubscription())
 
-    //   val stream = subscriber.getBody().toCompletableFuture().get()
-    //   assert(stream != null)
-    //   stream.close()
-    // }
+      val stream = subscriber.getBody().toCompletableFuture().get()
+      assert(stream != null)
+      stream.close()
+    }
 
-    // test("ofLines should stream body content as lines") {
-    //   val handler = BodyHandlers.ofLines()
-    //   val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
-    //   val subscriber = handler(responseInfo)
+    test("ofLines should stream body content as lines") {
+      val handler = BodyHandlers.ofLines()
+      val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
+      val subscriber = handler(responseInfo)
 
-    //   subscriber.onSubscribe(MockSubscription())
-    //   val stream = subscriber.getBody().toCompletableFuture().get()
-    //   subscriber.onNext(
-    //     JList.of(ByteBuffer.wrap("line1\nline2\nline3".getBytes(StandardCharsets.UTF_8))),
-    //   )
-    //   subscriber.onComplete()
+      subscriber.onSubscribe(MockSubscription())
+      val stream = subscriber.getBody().toCompletableFuture().get()
+      subscriber.onNext(
+        JList.of(ByteBuffer.wrap("line1\nline2\nline3".getBytes(StandardCharsets.UTF_8))),
+      )
+      subscriber.onComplete()
 
-    //   val lines = stream.toArray()
-    //   stream.close()
-    //   assert(lines.length == 3)
-    // }
+      val lines = stream.toArray()
+      stream.close()
+      assert(lines.length == 3)
+    }
 
     // ======================================= //
     // Test BodyHandlers.ofByteArrayConsumer() //
