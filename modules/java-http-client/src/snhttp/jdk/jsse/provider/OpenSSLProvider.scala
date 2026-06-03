@@ -18,7 +18,7 @@ class OpenSSLProvider(
 
   private val initialized: AtomicBoolean = new AtomicBoolean(false)
 
-  private val services: JMap[ServiceKey, ProvService] =
+  private val services: JMap[ServiceKey, OpenSSLProvService] =
     new ConcurrentHashMap()
 
   setup()
@@ -65,7 +65,7 @@ class OpenSSLProvider(
   override protected def removeService(s: Provider.Service): Unit =
     ???
 
-  private def putProvService(provSvc: ProvService): Unit =
+  private def putProvService(provSvc: OpenSSLProvService): Unit =
     services.put(ServiceKey(provSvc.getType(), provSvc.getAlgorithm()), provSvc): Unit
     provSvc.getAliases().forEach { alias =>
       services.put(
@@ -78,7 +78,7 @@ class OpenSSLProvider(
     if (!initialized.compareAndExchange(false, true)) {
       for (algorithm <- Set("TLSv1.3", "TLSv1.2", "TLS", "Default"))
         putProvService(
-          ProvService(
+          new OpenSSLProvService(
             this,
             "SSLContext",
             algorithm,
@@ -89,7 +89,7 @@ class OpenSSLProvider(
         )
 
       putProvService(
-        ProvService(
+        new OpenSSLProvService(
           this,
           "KeyManagerFactory",
           "PKIX",
@@ -100,10 +100,10 @@ class OpenSSLProvider(
       )
 
       putProvService(
-        ProvService(
+        new OpenSSLProvService(
           this,
           "TrustManagerFactory",
-          "PKCS12",
+          "PKIX",
           "snhttp.jdk.net.ssl.TrustManagerFactoryImpl",
           JList.of(),
           JMap.of(),

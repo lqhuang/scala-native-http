@@ -18,7 +18,7 @@ object `package` extends build.CommonModule:
   def mvnDeps = Seq(
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",
     mvn"io.github.cquiroz::scala-java-time::2.6.0",
-    mvn"com.github.lolgab::scala-native-crypto::0.0.0-64-255fa4-DIRTY5a4581dc",
+    mvn"com.github.lolgab::scala-native-crypto::0.0.0-65-ee25bf-DIRTYd35a9930",
   )
 
   object test extends CommonTestModule:

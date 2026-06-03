@@ -10,8 +10,12 @@ import javax.net.ssl.{
   TrustManagerFactory,
   TrustManagerFactorySpi,
 }
+import java.security.InvalidAlgorithmParameterException
 
 import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
+
+private[snhttp] class TrustManagerFactoryImpl(provider: Provider, algorithm: String)
+    extends TrustManagerFactory(new TrustManagerFactorySpiImpl(), provider, algorithm)
 
 private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
 
@@ -36,7 +40,11 @@ private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
       throw new IllegalStateException("TrustManagerFactory is already initialized")
 
   def engineInit(spec: ManagerFactoryParameters): Unit =
-    ???
+    if (spec != null) {
+      throw new InvalidAlgorithmParameterException(
+        "ManagerFactoryParameters is not supported for current TrustManagerFactorySpiImpl",
+      )
+    }
 
   def engineGetTrustManagers(): Array[TrustManager] =
     if _initialized.get()
@@ -44,6 +52,3 @@ private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
     else throw new IllegalStateException("TrustManagerFactory is not initialized")
 
 end TrustManagerFactorySpiImpl
-
-private[snhttp] class TrustManagerFactoryImpl(provider: Provider, algorithm: String)
-    extends TrustManagerFactory(new TrustManagerFactorySpiImpl(), provider, algorithm)

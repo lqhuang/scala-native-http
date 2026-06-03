@@ -13,8 +13,7 @@ import snhttp.jdk.net.ssl.{
   TrustManagerFactoryImpl,
 }
 
-/* OpenSSLProviderService */
-private[snhttp] class ProvService private[provider] (
+private[snhttp] class OpenSSLProvService(
     provider: Provider,
     svcType: JSSEServiceType,
     algorithm: String,
@@ -41,35 +40,14 @@ private[snhttp] class ProvService private[provider] (
       case "SSLContext" =>
         val spi = new SSLContextSpiImpl(algorithm)
         val ins = new SSLContextImpl(spi, provider, algorithm)
-        if (algorithm.equalsIgnoreCase("Default")) ins.init(null, null, null)
+        if (algorithm.equalsIgnoreCase("Default"))
+          ins.init(null, null, null)
         ins
       case "KeyManagerFactory" =>
-        val ins = new KeyManagerFactoryImpl(provider, algorithm)
-        ins
+        new KeyManagerFactoryImpl(provider, algorithm)
       case "TrustManagerFactory" =>
-        val ins = new TrustManagerFactoryImpl(provider, algorithm)
-        ins
+        new TrustManagerFactoryImpl(provider, algorithm)
       case _ =>
         throw new NoSuchAlgorithmException(
           s"Unsupported service type: ${svcType}",
         )
-
-object ProvService:
-
-  def apply(
-      provider: Provider,
-      svcType: JSSEServiceType,
-      algorithm: String,
-      className: String,
-      aliases: JList[String],
-      attributes: JMap[String, String],
-  ): ProvService = new ProvService(
-    provider,
-    svcType,
-    algorithm,
-    className,
-    aliases,
-    attributes,
-  )
-
-end ProvService

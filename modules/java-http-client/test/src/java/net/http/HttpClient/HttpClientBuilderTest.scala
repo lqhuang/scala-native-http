@@ -7,6 +7,8 @@ import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.Executors
 
+import scala.util.Properties
+
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class HttpClientBuilderTest extends TestSuite:
@@ -201,10 +203,19 @@ class HttpClientBuilderTest extends TestSuite:
       } finally executor.shutdown()
 
     test("HttpClient enum values should be correct") {
+      val isNative = Properties.propOrEmpty("java.vm.name") == "Scala Native"
+      val isH3Available = Properties.isJavaAtLeast(26) || isNative
+
       // Test Version enum
-      assert(Version.values().length == 2)
       assert(Version.values().contains(Version.HTTP_1_1))
       assert(Version.values().contains(Version.HTTP_2))
+
+      if isH3Available
+      then
+        assert(Version.values().length == 3)
+        assert(Version.values().contains(Version.valueOf("HTTP_3")))
+      else //
+        assert(Version.values().length == 2)
 
       // Test Redirect enum
       assert(Redirect.values().length == 3)
