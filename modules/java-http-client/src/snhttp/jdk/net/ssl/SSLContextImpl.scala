@@ -21,7 +21,7 @@ import scala.math.Ordering.comparatorToOrdering
 import scala.scalanative.unsafe.{Ptr, fromCString}
 
 import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP}
+import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP, SSL_CTX}
 import snhttp.utils.PointerCleaner
 
 private[snhttp] class SSLContextImpl(spi: SSLContextSpiImpl, provider: Provider, protocol: String)
@@ -46,7 +46,7 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
       throw new NoSuchAlgorithmException(
         s"Unsupported protocol: ${protocol}. Only TLSv1.2 and TLSv1.3 are supported.",
       )
-  private[ssl] val ptr: Ptr[libssl.SSL_CTX] = libssl.SSL_CTX_new(tlsVersionPtr)
+  private[ssl] val ptr: Ptr[SSL_CTX] = libssl.SSL_CTX_new(tlsVersionPtr)
   if (ptr == null)
     throw new RuntimeException("Failed to create SSL_CTX for SSLContextSpiImpl")
   PointerCleaner.register(this, ptr, _ptr => libssl.SSL_CTX_free(_ptr)): Unit
@@ -100,7 +100,7 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
         kms.foreach(km =>
           if (km != null && km.isInstanceOf[X509KeyManagerImpl]) {
             val key = km.asInstanceOf[X509KeyManagerImpl]
-            ???
+            key.registerToSSLContext(this.ptr)
           },
         )
       }
@@ -113,7 +113,6 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
           },
         )
       }
-
     } else {
       throw new KeyManagementException("SSLContext already initialized")
     }

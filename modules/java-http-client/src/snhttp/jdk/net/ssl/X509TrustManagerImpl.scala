@@ -7,7 +7,9 @@ import javax.net.ssl.X509TrustManager
 import scala.scalanative.unsafe.{Ptr, stackalloc, toCString}
 import scala.scalanative.unsafe.Zone
 
-import _root_.com.github.lolgab.scalanativecrypto.OpenSSLProvider
+import com.github.lolgab.scalanativecrypto.OpenSSLProvider
+import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
+
 import _root_.snhttp.experimental.openssl.libcrypto
 import _root_.snhttp.experimental.openssl.libcrypto.{X509_STORE, OsslLibCtxPtr}
 import _root_.snhttp.utils.PointerCleaner
@@ -63,7 +65,7 @@ private[snhttp] class X509TrustManagerNullImpl(val ref: Ptr[X509_STORE]) extends
 
 end X509TrustManagerNullImpl
 
-private[snhttp] class X509TrustManagerKeyStoreImpl(ks: KeyStore) extends X509TrustManager:
+private[snhttp] class X509TrustManagerKeyStoreImpl(ks: OpenSSLKeyStore) extends X509TrustManager:
 
   def checkClientTrusted(chain: Array[X509Certificate], authType: String): Unit =
     checkTrusted(chain, authType)

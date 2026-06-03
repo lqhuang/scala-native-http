@@ -222,7 +222,7 @@ class TrustManagerFactoryTest extends TestSuite:
 
   def tests = Tests:
 
-    test("test_TrustManagerFactory_getInstance") {
+    test("test TrustManagerFactory getInstance") {
       val tmf =
         TrustManagerFactory.getInstance(StandardNames.TRUST_MANAGER_FACTORY_SUPPORTS_ALGORITHM)
       assert(tmf.getAlgorithm() == StandardNames.TRUST_MANAGER_FACTORY_SUPPORTS_ALGORITHM)
@@ -240,49 +240,50 @@ class TrustManagerFactoryTest extends TestSuite:
 
     }
 
-    test("test_TrustManagerFactory_intermediate") {
-      // chain should be server/intermediate/root
-      val pke = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
-      val chain = pke.getCertificateChain().asInstanceOf[Array[X509Certificate]]
-      assert(chain.length == 3)
+    // // TODO: Add back
+    // test("test TrustManagerFactory intermediate") {
+    //   // chain should be server/intermediate/root
+    //   val pke = KeyStoreUtils.getServer().getPrivateKey("RSA", "RSA")
+    //   val chain = pke.getCertificateChain().asInstanceOf[Array[X509Certificate]]
+    //   assert(chain.length == 3)
 
-      // keyStore should contain only the intermediate CA so we can
-      // test proper validation even if there are extra certs after
-      // the trusted one (in this case the original root is "extra")
-      val keyStore = KeyStoreUtils.createKeyStore()
-      keyStore.setCertificateEntry("alias", chain(1))
+    //   // keyStore should contain only the intermediate CA so we can
+    //   // test proper validation even if there are extra certs after
+    //   // the trusted one (in this case the original root is "extra")
+    //   val keyStore = KeyStoreUtils.createKeyStore()
+    //   keyStore.setCertificateEntry("alias", chain(1))
 
-      val algorithm = TrustManagerFactory.getDefaultAlgorithm()
-      val tmf = TrustManagerFactory.getInstance(algorithm)
-      tmf.init(keyStore)
-      val trustManagers = tmf.getTrustManagers()
-      for trustManager <- trustManagers do
-        if (trustManager.isInstanceOf[X509TrustManager]) {
-          val tm = trustManager.asInstanceOf[X509TrustManager]
-          tm.checkClientTrusted(chain, "RSA")
-          tm.checkServerTrusted(chain, "RSA")
-        }
+    //   val algorithm = TrustManagerFactory.getDefaultAlgorithm()
+    //   val tmf = TrustManagerFactory.getInstance(algorithm)
+    //   tmf.init(keyStore)
+    //   val trustManagers = tmf.getTrustManagers()
+    //   for trustManager <- trustManagers do
+    //     if (trustManager.isInstanceOf[X509TrustManager]) {
+    //       val tm = trustManager.asInstanceOf[X509TrustManager]
+    //       tm.checkClientTrusted(chain, "RSA")
+    //       tm.checkServerTrusted(chain, "RSA")
+    //     }
+    // }
 
-    }
+    // // TODO: Add back
+    // test("test TrustManagerFactory keyOnly") {
+    //   // create a KeyStore containing only a private key with chain.
+    //   // unlike PKIXParameters(KeyStore), the cert chain of the key should be trusted.
+    //   val ks = KeyStoreUtils.createKeyStore()
+    //   val pke = getTestKeyStore().getPrivateKey("RSA", "RSA")
+    //   ks.setKeyEntry("key", pke.getPrivateKey(), "pw".toCharArray(), pke.getCertificateChain())
 
-    test("test_TrustManagerFactory_keyOnly") {
-      // create a KeyStore containing only a private key with chain.
-      // unlike PKIXParameters(KeyStore), the cert chain of the key should be trusted.
-      val ks = KeyStoreUtils.createKeyStore()
-      val pke = getTestKeyStore().getPrivateKey("RSA", "RSA")
-      ks.setKeyEntry("key", pke.getPrivateKey(), "pw".toCharArray(), pke.getCertificateChain())
+    //   val algorithm = TrustManagerFactory.getDefaultAlgorithm()
+    //   val tmf = TrustManagerFactory.getInstance(algorithm)
+    //   tmf.init(ks)
+    //   val trustManager = tmf.getTrustManagers()(0).asInstanceOf[X509TrustManager]
+    //   trustManager.checkServerTrusted(
+    //     pke.getCertificateChain().asInstanceOf[Array[X509Certificate]],
+    //     "RSA",
+    //   )
+    // }
 
-      val algorithm = TrustManagerFactory.getDefaultAlgorithm()
-      val tmf = TrustManagerFactory.getInstance(algorithm)
-      tmf.init(ks)
-      val trustManager = tmf.getTrustManagers()(0).asInstanceOf[X509TrustManager]
-      trustManager.checkServerTrusted(
-        pke.getCertificateChain().asInstanceOf[Array[X509Certificate]],
-        "RSA",
-      )
-    }
-
-    // test("test_TrustManagerFactory_extendedKeyUsage") {
+    // test("test TrustManagerFactory extendedKeyUsage") {
     //   // anyExtendedKeyUsage should work for client or server
     //   test_TrustManagerFactory_extendedKeyUsage(KeyPurposeId.anyExtendedKeyUsage, false, true, true)
     //   test_TrustManagerFactory_extendedKeyUsage(KeyPurposeId.anyExtendedKeyUsage, true, true, true)

@@ -21,8 +21,8 @@ PKCS12_PASSWORD="test-password"
 
 # Create test private key and self signed ca
 openssl req \
-  -x509 -newkey rsa:2048 \
-  -sha256 -nodes \
+  -x509 -newkey rsa:8192 \
+  -nodes \
   -days 36500 -subj "${SUBJECT}" \
   -keyout "${PKEY_FILE}" \
   -out "${CERT_FILE}"

@@ -12,6 +12,7 @@ import _root_.snhttp.experimental.openssl._openssl.bio.{
 }
 
 import _root_.snhttp.experimental.openssl._openssl.conf.Functions as ConfFunctions
+import _root_.snhttp.experimental.openssl._openssl.err.Functions as ErrFunctions
 import _root_.snhttp.experimental.openssl._openssl.pkcs12.Functions as PKCS12Functions
 import _root_.snhttp.experimental.openssl._openssl.x509.Functions as X509Functions
 import _root_.snhttp.experimental.openssl._openssl.x509v3.Functions as X509v3Functions
@@ -29,6 +30,7 @@ private trait Functions
     extends ASN1Functions
     with BIOFunctions
     with ConfFunctions
+    with ErrFunctions
     with PKCS12Functions
     with X509Functions
     with X509v3Functions

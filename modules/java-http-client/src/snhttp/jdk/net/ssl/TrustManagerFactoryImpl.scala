@@ -11,6 +11,8 @@ import javax.net.ssl.{
   TrustManagerFactorySpi,
 }
 
+import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
+
 private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
 
   var _tm: X509TrustManager = _
@@ -22,7 +24,14 @@ private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
       _tm =
         if ks == null
         then X509TrustManagerNullImpl.fromDefaultPath()
-        else new X509TrustManagerKeyStoreImpl(ks)
+        else {
+          if (ks.isInstanceOf[OpenSSLKeyStore])
+            new X509TrustManagerKeyStoreImpl(ks.asInstanceOf[OpenSSLKeyStore])
+          else
+            throw new IllegalArgumentException(
+              s"Unsupported KeyStore type: ${ks.getClass()}. Only OpenSSLKeyStore is supported.",
+            )
+        }
     else //
       throw new IllegalStateException("TrustManagerFactory is already initialized")
 
