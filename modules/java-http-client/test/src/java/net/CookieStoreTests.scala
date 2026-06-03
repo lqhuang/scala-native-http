@@ -146,7 +146,7 @@ class CookieStoreTests extends TestSuite:
       }
     }
 
-    test("getURIs returns modifiable snapshot list") {
+    test("getURIs returns unmodifiable snapshot list") {
       val store = createStore()
       val uri = new URI("http://example.com/")
       val cookie = new HttpCookie("test", "value")
@@ -156,9 +156,9 @@ class CookieStoreTests extends TestSuite:
 
       val uris = store.getURIs()
       assert(uris.size() == 1)
-      uris.add(new URI("http://new.com/"))
-      assert(uris.size() == 2)
-      assert(store.getURIs().size() == 1)
+      val _ = assertThrows[UnsupportedOperationException] {
+        uris.add(new URI("http://new.com/")): Unit
+      }
     }
 
     test("empty store returns empty non-null cookie and URI lists") {

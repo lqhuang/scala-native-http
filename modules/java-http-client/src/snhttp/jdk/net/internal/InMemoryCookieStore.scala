@@ -1,13 +1,15 @@
 package snhttp.jdk.net.internal
 
 import java.net.{CookieStore, HttpCookie, URI}
-import java.util.{ArrayList, Collections, HashMap, List as JList, Locale, Map as JMap, Objects}
+import java.util.{ArrayList, Collections, HashMap, Locale, Objects}
+import java.util.{List as JList, Map as JMap}
+import java.util.Map.Entry
+
 import java.util.concurrent.locks.ReentrantLock
 
 final class InMemoryCookieStore extends CookieStore:
 
   private val uriIndex: JMap[URI, JList[HttpCookie]] = new HashMap()
-
   private val lock = new ReentrantLock()
 
   override def add(uri: URI, cookie: HttpCookie): Unit = {
@@ -74,14 +76,12 @@ final class InMemoryCookieStore extends CookieStore:
     } finally lock.unlock()
   }
 
-  override def getURIs(): JList[URI] = {
-    lock.lock()
-    try {
-      val result = new ArrayList[URI]()
-      uriIndex.keySet().forEach((next: URI) => if next != null then result.add(next): Unit)
-      result
-    } finally lock.unlock()
-  }
+  override def getURIs(): JList[URI] =
+    uriIndex
+      .keySet()
+      .stream()
+      .filter(next => next != null)
+      .toList()
 
   override def remove(uri: URI, cookie: HttpCookie): Boolean = {
     Objects.requireNonNull(cookie, "cookie is null")
@@ -90,24 +90,20 @@ final class InMemoryCookieStore extends CookieStore:
       var removed = false
       uriIndex
         .values()
-        .forEach((list: JList[HttpCookie]) => if (list.remove(cookie)) removed = true)
+        .forEach(list => if (list.remove(cookie)) removed = true)
       removed
     } finally lock.unlock()
   }
 
-  override def removeAll(): Boolean = {
-    lock.lock()
-    try {
-      val wasEmpty = uriIndex.isEmpty
-      uriIndex.clear()
-      !wasEmpty
-    } finally lock.unlock()
-  }
+  override def removeAll(): Boolean =
+    val wasEmpty = uriIndex.isEmpty()
+    uriIndex.clear()
+    !wasEmpty
 
   private def removeExpired(): Unit =
     uriIndex
       .entrySet()
-      .removeIf((entry: java.util.Map.Entry[URI, JList[HttpCookie]]) =>
+      .removeIf(entry =>
         val cookies = entry.getValue()
         cookies.removeIf(c => c.hasExpired()): Unit
         cookies.isEmpty,
