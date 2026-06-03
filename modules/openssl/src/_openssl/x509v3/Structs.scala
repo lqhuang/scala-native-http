@@ -4,7 +4,7 @@ package _openssl.x509v3
 import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._openssl.asn1.Types.*
-import _root_.snhttp.experimental.openssl._openssl.safestack.{
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
   stack_st_SXNETID,
   stack_st_CONF_VALUE,
   stack_st_ASN1_INTEGER,

@@ -5,7 +5,7 @@ import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._openssl.asn1.Types.BIT_STRING_BITNAME
 import _root_.snhttp.experimental.openssl._openssl.bio.Types.BIO
-import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_CONF_VALUE
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.stack_st_CONF_VALUE
 
 import Structs.{v3_ext_ctx, v3_ext_method}
 

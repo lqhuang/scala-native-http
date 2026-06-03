@@ -38,7 +38,7 @@ import _root_.snhttp.experimental.openssl._openssl.x509.Types.{
   X509_REVOKED,
   X509,
 }
-import _root_.snhttp.experimental.openssl._openssl.safestack.{
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
   stack_st_X509,
   stack_st_X509_ATTRIBUTE,
   stack_st_X509_REVOKED,

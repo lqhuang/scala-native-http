@@ -36,7 +36,7 @@ import _root_.snhttp.experimental.openssl._openssl.x509.Types.{
   X509_STORE,
   X509_STORE_CTX,
 }
-import _root_.snhttp.experimental.openssl._openssl.safestack.{
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
   stack_st_SSL_CIPHER,
   stack_st_SSL_COMP,
   stack_st_X509_NAME,

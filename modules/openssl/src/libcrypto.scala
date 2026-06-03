@@ -22,6 +22,7 @@ export _root_.snhttp.experimental.openssl._openssl.bio.Types.*
 export _root_.snhttp.experimental.openssl._openssl.pkcs12.Types.*
 export _root_.snhttp.experimental.openssl._openssl.x509.Types.*
 export _root_.snhttp.experimental.openssl._openssl.x509v3.Types.*
+export _root_.snhttp.experimental.openssl._openssl.safestack.Types.*
 
 @extern
 private trait Functions

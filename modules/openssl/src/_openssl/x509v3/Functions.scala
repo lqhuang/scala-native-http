@@ -15,7 +15,7 @@ import _root_.snhttp.experimental.openssl._openssl.asn1.Types.{
   ASN1_UTF8STRING,
   ASN1_ENUMERATED,
 }
-import _root_.snhttp.experimental.openssl._openssl.safestack.{
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
   stack_st_X509,
   stack_st_ADMISSIONS,
   stack_st_ASN1_OBJECT,

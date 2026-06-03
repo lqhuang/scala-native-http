@@ -10,7 +10,7 @@ import _root_.snhttp.experimental.openssl._openssl.asn1.Types.{
   ASN1_INTEGER,
   ASN1_OCTET_STRING,
 }
-import _root_.snhttp.experimental.openssl._openssl.safestack.{
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
   stack_st_X509,
   stack_st_X509_ALGOR,
   stack_st_X509_CRL,

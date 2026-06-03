@@ -5,7 +5,7 @@ import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._common.size_t
 import _root_.snhttp.experimental.openssl._openssl.types.Types.EVP_MD
-import _root_.snhttp.experimental.openssl._openssl.safestack.{stack_st_SCT, stack_st_SSL_CIPHER}
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{stack_st_SCT, stack_st_SSL_CIPHER}
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_STORE_CTX}
 
 import Structs.{ssl_st, SSL, SSL_CIPHER, SSL_CTX, SSL_SESSION, CT_POLICY_EVAL_CTX}

@@ -18,7 +18,7 @@ import _root_.snhttp.experimental.openssl._openssl.asn1.Types.{
   ASN1_OCTET_STRING,
 }
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_CRL, X509_ALGOR, X509_SIG}
-import _root_.snhttp.experimental.openssl._openssl.safestack.{
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
   stack_st_PKCS7,
   stack_st_PKCS12_SAFEBAG,
   stack_st_X509_ATTRIBUTE,

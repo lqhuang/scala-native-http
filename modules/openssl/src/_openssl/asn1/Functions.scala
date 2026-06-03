@@ -11,7 +11,7 @@ import _root_.snhttp.experimental.openssl._openssl.types.Types.{
   OsslLibCtxPtr,
   EVP_MD,
 }
-import _root_.snhttp.experimental.openssl._openssl.safestack.stack_st_X509_ALGOR
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.stack_st_X509_ALGOR
 import _root_.snhttp.experimental.openssl._openssl.conf.Types.CONF
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.X509_ALGOR
 import _root_.snhttp.experimental.openssl._openssl.x509v3.Types.X509V3_CTX
