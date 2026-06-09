@@ -16,14 +16,14 @@ import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
-import scala.scalanative.unsafe.{Ptr, stackalloc}
+import scala.scalanative.unsafe.{Ptr, stackalloc, CVoidPtr}
+import scala.scalanative.libc.stddef.NULL as NullPtr
 import scala.scalanative.unsigned.UnsignedRichInt
 
 import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlMultiException}
 import _root_.snhttp.experimental.curl.curl.{CurlMulti, CurlMsg, CurlEasy}
-import _root_.snhttp.experimental.curl.curl.CurlMultiCode.RichCurlMultiCode
 import _root_.snhttp.experimental.curl.libcurl
-import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode}
+import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode, CurlWaitFd}
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
@@ -108,6 +108,8 @@ final class HttpClientImpl(
     private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
 
+  private type NullPtr = CVoidPtr
+
   private[http] val ptr: Ptr[_CurlMulti] = libcurl.multiInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURLM pointer")
@@ -121,16 +123,13 @@ final class HttpClientImpl(
     },
   ): Unit
 
-  private val multi = CurlMulti(ptr)
   private val _runningCounter = stackalloc[Int]()
+  private[http] val multi = CurlMulti(ptr)
+  private[http] val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
 
-  // private val _started = new AtomicBoolean(false)
-  private val _alive = new AtomicBoolean(false)
   private val _terminated = new AtomicBoolean(false)
   private val _terminable = new AtomicBoolean(false)
   private val _shutdown = new AtomicBoolean(false)
-
-  private val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
 
   private[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
@@ -183,17 +182,8 @@ final class HttpClientImpl(
     CompletableFuture.supplyAsync(
       () => {
         val conn = HttpConnection(request, responseBodyHandler, this)
-        connections.put(conn.easy, conn): Unit
-
         try {
-          val ret = multi.addCurlEasy(conn.easy)
-          if (ret != CurlMultiCode.OK)
-            throw new RuntimeException(
-              s"CURLM add easy failed: error code ${ret} (${ret.getname})",
-            )
-
-          conn.waitUntilDoneReceived()
-          val response = conn.buildResponse()
+          val response = conn.fetchResponse()
           response
         } //
         catch {
@@ -204,10 +194,7 @@ final class HttpClientImpl(
           case exc: Throwable =>
             throw exc
         } //
-        finally {
-          connections.remove(conn.easy): Unit
-          conn.close()
-        }
+        finally conn.close()
       },
       _executor,
     )
@@ -314,29 +301,52 @@ final class HttpClientImpl(
    * Non-JDK public methods
    */
 
-  private[http] def isRunning: Boolean =
+  private[http] inline def isRunning: Boolean =
     !_runningCounter != 0
 
-  private[http] inline def runAndGetIsDone(timeoutMs: Int): Boolean =
-    !(performAndGetIsRuning() && !pollAndGetIsErr(timeoutMs))
+  private[http] inline def performUntilWakeupOrDone(timeoutMs: Int): Boolean = {
+    // trigger perform until running counter becomes non-zero
+    while {
+      val ret = multi.perform(_runningCounter)
+      if (ret != CurlMultiCode.OK)
+        throw new CurlMultiException(ret)
 
-  private[http] def collectInfo(): Unit = synchronized {
-    var msg: Option[CurlMsg] = None
+      isRunning
+    }
+    do ()
+
+    // get poll result
+    val ret = multi.poll(
+      NullPtr.asInstanceOf[Ptr[CurlWaitFd]],
+      0.toUInt,
+      timeoutMs,
+      NullPtr.asInstanceOf[Ptr[Int]],
+    )
+    println(s"wait returned with code: ${ret}, isRunning: ${isRunning}, timeoutMs: ${timeoutMs}")
+    ret != CurlMultiCode.OK
+  }
+
+  private[http] def collectInfo(): Unit = {
     val msgCount = stackalloc[Int]()
-    while
-      msg = multi.infoRead(msgCount)
-      msg != None
-    do
-      msg match
-        case Some(m) =>
-          val conn = connections.getOrElse(
-            m.curl,
-            throw new IllegalStateException(
-              s"Failed to find HttpConnection for CURL easy handle pointer: ${m.curl}",
-            ),
-          )
-          conn.assignCurlMsg(m)
-        case None => ()
+    while {
+      val msg = multi.infoRead(msgCount)
+
+      if msg == NullPtr
+      then //
+        false // break the loop
+      else {
+        val m = msg.asInstanceOf[CurlMsg]
+        val conn = connections.getOrElse(
+          m.curl,
+          throw new IllegalStateException(
+            s"Failed to find HttpConnection for CURL easy handle pointer: ${m.curl}",
+          ),
+        )
+        conn.assignCurlErrMsg(m)
+        true // continue the loop
+      }
+    }
+    do ()
   }
 
   /*
@@ -348,15 +358,3 @@ final class HttpClientImpl(
       throw new IllegalStateException(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
-
-  private inline def performAndGetIsRuning(): Boolean = {
-    val ret = multi.perform(_runningCounter)
-    if (ret != CurlMultiCode.OK) throw new CurlMultiException(ret)
-    (!_runningCounter) != 0
-  }
-
-  private inline def pollAndGetIsErr(timeoutMs: Int): Boolean =
-    val ret = multi.poll(null, 0.toUInt, timeoutMs, null)
-    ret != CurlMultiCode.OK
-
-end HttpClientImpl
