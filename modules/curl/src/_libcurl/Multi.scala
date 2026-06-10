@@ -34,18 +34,18 @@ import _root_.snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnum
 private[curl] object Multi:
 
   // known as "CURLM"
-  opaque type CurlMulti = Unit // CVoidPtr
+  opaque type CurlMulti = CVoidPtr
   object CurlMulti:
-    given Tag[CurlMulti] = Tag.Unit
+    given Tag[CurlMulti] = Tag.materializePtrWildcard
 
   // known as "CURLMcode"
-  type CurlMultiCode = Int
-  object CurlMultiCode extends _BindgenEnumCInt[CurlMultiCode]:
+  type CurlMultiErrCode = Int
+  object CurlMultiErrCode extends _BindgenEnumCInt[CurlMultiErrCode]:
 
-    given Tag[CurlMultiCode] = Tag.Int
-    given CanEqual[CurlMultiCode, CurlMultiCode] = CanEqual.derived
+    given Tag[CurlMultiErrCode] = Tag.Int
+    given CanEqual[CurlMultiErrCode, CurlMultiErrCode] = CanEqual.derived
 
-    private inline def define(inline a: Int): CurlMultiCode = a
+    private inline def define(inline a: Int): CurlMultiErrCode = a
 
     /* please call curl_multi_perform() or curl_multi_socket*() soon */
     val CALL_MULTI_PERFORM = define(-1)
@@ -74,7 +74,7 @@ private[curl] object Multi:
     val UNRECOVERABLE_POLL = define(12)
     val LAST = define(13)
 
-    implicit class RichCurlMultiCode(value: CurlMultiCode) extends AnyVal:
+    implicit class RichCurlMultiErrCode(value: CurlMultiErrCode) extends AnyVal:
       inline def getname: String =
         value match
           case CALL_MULTI_PERFORM    => "CURLM_CALL_MULTI_PERFORM"
@@ -93,7 +93,7 @@ private[curl] object Multi:
           case UNRECOVERABLE_POLL    => "CURLM_UNRECOVERABLE_POLL"
           case LAST                  => "CURLM_LAST"
 
-  end CurlMultiCode
+  end CurlMultiErrCode
 
   opaque type CurlPipe = CLong
   object CurlPipe extends _BindgenEnumCLong[CurlPipe]:

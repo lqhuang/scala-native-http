@@ -1,5 +1,7 @@
 package snhttp.experimental.curl
 
+import scala.scalanative.unsafe.fromCString
+
 import _root_.snhttp.experimental.curl._libcurl.Curl.CurlGlobalFlag
 
 package object curl:
@@ -7,9 +9,10 @@ package object curl:
   export _root_.snhttp.experimental.curl._libcurl.Curl.{
     CurlOption,
     CurlErrCode,
+    CurlShareErrCode,
     CurlHttpVersion,
     CurlWriteCallback,
-    CurlUseSsl,
+    CurlUseSSL,
     CurlFollow,
     CurlDebugCallback,
     CurlInfoType,
@@ -18,20 +21,20 @@ package object curl:
   export _root_.snhttp.experimental.curl._libcurl.Easy.CurlData
   export _root_.snhttp.experimental.curl._libcurl.Multi.{
     CurlMsgCode,
-    CurlMultiCode,
+    CurlMultiErrCode,
     CurlMultiOption,
   }
 
   object CurlUtils:
 
     def version(): String =
-      libcurl.curlVersion().toString
+      fromCString(libcurl.curlVersion())
 
     def getStrError(code: CurlErrCode): String =
-      libcurl.easyStrError(code).toString
+      fromCString(libcurl.easyStrError(code))
 
-    def getMultiStrError(code: CurlMultiCode): String =
-      libcurl.multiStrError(code).toString
+    def getMultiStrError(code: CurlMultiErrCode): String =
+      fromCString(libcurl.multiStrError(code))
 
   end CurlUtils
 

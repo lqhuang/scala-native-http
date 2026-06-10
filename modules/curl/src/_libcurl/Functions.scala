@@ -22,11 +22,14 @@ import snhttp.experimental.curl._libcurl.Curl.{
   CurlInfo,
   CurlPause,
   CurlSocket,
+  CurlShare,
+  CurlShareOption,
+  CurlShareErrCode,
 }
 import snhttp.experimental.curl._libcurl.Header.{CurlHeaderOrigin, CurlHeaderErrCode, CurlHeader}
 import snhttp.experimental.curl._libcurl.Multi.{
   CurlMulti,
-  CurlMultiCode,
+  CurlMultiErrCode,
   CurlWaitFd,
   CurlMsg,
   CurlMultiOption,
@@ -335,7 +338,7 @@ trait Functions:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_add_handle")
-  def multiAddHandle(handle: Ptr[CurlMulti], curlHandle: Ptr[Curl]): CurlMultiCode = extern
+  def multiAddHandle(handle: Ptr[CurlMulti], curlHandle: Ptr[Curl]): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_remove_handle()
@@ -345,7 +348,7 @@ trait Functions:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_remove_handle")
-  def multiRemoveHandle(handle: Ptr[CurlMulti], curlHandle: Ptr[Curl]): CurlMultiCode = extern
+  def multiRemoveHandle(handle: Ptr[CurlMulti], curlHandle: Ptr[Curl]): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_fdset()
@@ -362,7 +365,7 @@ trait Functions:
       writeFdSet: Ptr[fd_set],
       excFdSet: Ptr[fd_set],
       maxFd: Ptr[Int],
-  ): CurlMultiCode = extern
+  ): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_wait()
@@ -378,7 +381,7 @@ trait Functions:
       extraNfds: UInt,
       timeoutMs: Int,
       ret: Ptr[Int],
-  ): CurlMultiCode = extern
+  ): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_poll()
@@ -394,7 +397,7 @@ trait Functions:
       extraNfds: UInt,
       timeoutMs: Int,
       ret: Ptr[Int],
-  ): CurlMultiCode = extern
+  ): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_wakeup()
@@ -404,7 +407,7 @@ trait Functions:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_wakeup")
-  def multiWakeup(handle: Ptr[CurlMulti]): CurlMultiCode = extern
+  def multiWakeup(handle: Ptr[CurlMulti]): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_perform()
@@ -420,7 +423,7 @@ trait Functions:
    * transfers even when this returns OK.
    */
   @name("curl_multi_perform")
-  def multiPerform(handle: Ptr[CurlMulti], runningHandles: Ptr[Int]): CurlMultiCode = extern
+  def multiPerform(handle: Ptr[CurlMulti], runningHandles: Ptr[Int]): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_cleanup()
@@ -432,7 +435,7 @@ trait Functions:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_cleanup")
-  def multiCleanup(handle: Ptr[CurlMulti]): CurlMultiCode = extern
+  def multiCleanup(handle: Ptr[CurlMulti]): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_info_read()
@@ -468,7 +471,7 @@ trait Functions:
    * Returns: A pointer to a null-terminated error message.
    */
   @name("curl_multi_strerror")
-  def multiStrError(code: CurlMultiCode): CString = extern
+  def multiStrError(code: CurlMultiErrCode): CString = extern
 
   // func `curl_multi_socket` is DEPRECATED since curl 7.19.5
 
@@ -478,7 +481,7 @@ trait Functions:
       s: CurlSocket,
       evBitmask: Int,
       runningHandles: Ptr[Int],
-  ): CurlMultiCode = extern
+  ): CurlMultiErrCode = extern
 
   // func `curl_multi_socket_all` is DEPRECATED since curl 7.19.5
 
@@ -492,7 +495,7 @@ trait Functions:
    * Returns: CURLM error code.
    */
   @name("curl_multi_timeout")
-  def multiTimeout(handle: Ptr[CurlMulti], milliseconds: Ptr[CLong]): CurlMultiCode =
+  def multiTimeout(handle: Ptr[CurlMulti], milliseconds: Ptr[CLong]): CurlMultiErrCode =
     extern
 
   /**
@@ -507,7 +510,7 @@ trait Functions:
       handle: Ptr[CurlMulti],
       option: CurlMultiOption,
       params: Any*, // CVarArgList,
-  ): CurlMultiCode = extern
+  ): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_assign()
@@ -522,7 +525,7 @@ trait Functions:
       handle: Ptr[CurlMulti],
       sockfd: CurlSocket,
       sockp: CVoidPtr,
-  ): CurlMultiCode = extern
+  ): CurlMultiErrCode = extern
 
   /**
    * Name: curl_multi_get_handles()
@@ -596,3 +599,27 @@ trait Functions:
 
   @name("curl_ws_meta")
   def wsMeta(curl: Ptr[Curl]): Ptr[CurlWsFrame] = extern
+
+  /*
+   * functions for CurlShare
+   */
+
+  @name("curl_share_cleanup")
+  def shareCleanup(share: Ptr[CurlShare]): CurlShareErrCode =
+    extern
+
+  @name("curl_share_init")
+  def shareInit(): Ptr[CurlShare] =
+    extern
+
+  @name("curl_share_setopt")
+  def shareSetopt(
+      share: Ptr[CurlShare],
+      option: CurlShareOption,
+      params: Any*, // CVarArgList
+  ): CurlShareErrCode =
+    extern
+
+  @name("curl_share_strerror")
+  def shareStrError(code: CurlShareErrCode): CString =
+    extern

@@ -47,20 +47,20 @@ import _root_.snhttp.experimental.curl._libcurl.System.CurlOff
 private[curl] object Curl:
 
   // known as "CURL"
-  opaque type Curl = Unit // CVoidPtr // curl easy
+  opaque type Curl = CVoidPtr // curl easy
   object Curl:
-    given Tag[Curl] = Tag.Unit
+    given Tag[Curl] = Tag.materializePtrWildcard
 
   // known as "CURLSH"
-  opaque type CurlShare = Unit // CVoidPtr // curl share
+  opaque type CurlShare = CVoidPtr // CVoidPtr // curl share
   object CurlShare:
-    given Tag[CurlShare] = Tag.Unit
+    given Tag[CurlShare] = Tag.materializePtrWildcard
 
   // known as "curl_socket_t"
   opaque type CurlSocket = Int
   object CurlSocket:
     given Tag[CurlSocket] = Tag.Int
-    inline def define(inline v: Int): CurlSocket = v
+    private inline def define(inline v: Int): CurlSocket = v
     val BAD = define(-1)
 
   /**
@@ -70,7 +70,7 @@ private[curl] object Curl:
   opaque type CurlSslBackendId = Int
   object CurlSslBackendId:
     given Tag[CurlSslBackendId] = Tag.Int
-    inline def define(inline a: Int): CurlSslBackendId = a
+    private inline def define(inline a: Int): CurlSslBackendId = a
 
     // Doesn't include the following deprecated backends
     // NSS, GSKIT, AXTLS, MESALINK
@@ -115,8 +115,7 @@ private[curl] object Curl:
   opaque type CurlFollow = CLong
   object CurlFollow extends _BindgenEnumCLong[CurlFollow]:
     given Tag[CurlFollow] = Tag.Size
-
-    inline def define(inline a: Long): CurlFollow = a.toSize
+    private inline def define(inline a: Long): CurlFollow = a.toSize
 
     /** default:    disabled */
     val DISABLED = define(0L)
@@ -134,7 +133,7 @@ private[curl] object Curl:
     val FIRSTONLY = define(3L)
 
     implicit class RichCurlFollow(value: CurlFollow) extends AnyVal:
-      def getname: String =
+      inline def getname: String =
         value match
           case DISABLED  => "CURLFOLLOW_DISABLED"
           case ALL       => "CURLFOLLOW_ALL"
@@ -294,7 +293,7 @@ private[curl] object Curl:
   opaque type CurlHttpPostFlag = Int
   object CurlHttpPostFlag:
     given Tag[CurlHttpPostFlag] = Tag.Int
-    inline def define(inline a: Int): CurlHttpPostFlag = a
+    private inline def define(inline a: Int): CurlHttpPostFlag = a
 
     /** specified content is a file name */
     val FILENAME = define(1 << 0)
@@ -353,8 +352,7 @@ private[curl] object Curl:
   opaque type CurlWriteFuncRet = CSize
   object CurlWriteFuncRet extends _BindgenEnumCSize[CurlWriteFuncRet]:
     given Tag[CurlWriteFuncRet] = Tag.USize
-
-    inline def define(inline a: Long): CurlWriteFuncRet = a.toUSize
+    private inline def define(inline a: Long): CurlWriteFuncRet = a.toUSize
 
     /* pause receiving on the current transfer. */
     val PAUSE = define(0x10000001)
@@ -474,7 +472,7 @@ private[curl] object Curl:
   opaque type CurlSockType = Int
   object CurlSockType:
     given Tag[CurlSockType] = Tag.Int
-    inline def define(inline a: Int): CurlSockType = a
+    private inline def define(inline a: Int): CurlSockType = a
 
     /** socket created for a specific IP connection */
     val IPCXN = define(0)
@@ -504,7 +502,7 @@ private[curl] object Curl:
   opaque type CurlSockOpt = Int
   object CurlSockOpt:
     given Tag[CurlSockOpt] = Tag.Int
-    inline def define(inline a: Int): CurlSockOpt = a
+    private inline def define(inline a: Int): CurlSockOpt = a
 
     val OK = define(0)
 
@@ -605,7 +603,7 @@ private[curl] object Curl:
   opaque type CurlIoErr = Int
   object CurlIoErr:
     given Tag[CurlIoErr] = Tag.Int
-    inline def define(inline a: Int): CurlIoErr = a
+    private inline def define(inline a: Int): CurlIoErr = a
 
     /** I/O operation successful */
     val OK = define(0)
@@ -635,7 +633,7 @@ private[curl] object Curl:
   opaque type CurlIoCmd = Int
   object CurlIoCmd:
     given Tag[CurlIoCmd] = Tag.Int
-    inline def define(inline a: Int): CurlIoCmd = a
+    private inline def define(inline a: Int): CurlIoCmd = a
 
     /** no operation */
     val NOP = define(0)
@@ -680,8 +678,7 @@ private[curl] object Curl:
   opaque type CurlInfoType = CInt
   object CurlInfoType extends _BindgenEnumCInt[CurlInfoType]:
     given Tag[CurlInfoType] = Tag.Int
-
-    inline def define(inline a: Int): CurlInfoType = a
+    private inline def define(inline a: Int): CurlInfoType = a
 
     val TEXT = define(0)
     val HEADER_IN = define(1)
@@ -693,7 +690,7 @@ private[curl] object Curl:
     val END = define(7)
 
     implicit class RichCurlInfoType(value: CurlInfoType) extends AnyVal:
-      def getname: String =
+      inline def getname: String =
         value match
           case TEXT         => "CURLINFO_TEXT"
           case HEADER_IN    => "CURLINFO_HEADER_IN"
@@ -732,7 +729,6 @@ private[curl] object Curl:
   opaque type CurlErrCode = Size
   object CurlErrCode extends _BindgenEnumCLong[CurlErrCode]:
     given Tag[CurlErrCode] = Tag.Size
-
     private inline def define(inline a: Int): CurlErrCode = a
 
     val OK = define(0)
@@ -838,7 +834,7 @@ private[curl] object Curl:
     val CURL_LAST = define(100)
 
     implicit class RichCurlErrCode(value: CurlErrCode) extends AnyVal:
-      def getname: String =
+      inline def getname: String =
         value match
           case OK                       => "CURLE_OK"
           case UNSUPPORTED_PROTOCOL     => "CURLE_UNSUPPORTED_PROTOCOL"
@@ -946,7 +942,6 @@ private[curl] object Curl:
   opaque type CurlProxyCode = Int
   object CurlProxyCode:
     given Tag[CurlProxyCode] = Tag.Int
-
     private inline def define(inline a: Int): CurlProxyCode = a
 
     val OK = define(0)
@@ -1038,7 +1033,6 @@ private[curl] object Curl:
   opaque type CurlProxyType = CLong
   object CurlProxyType extends _BindgenEnumCLong[CurlProxyType]:
     given Tag[CurlProxyType] = Tag.Size
-
     private inline def define(inline a: Long): CurlProxyType = a.toSize
 
     val HTTP = define(0L)
@@ -1076,18 +1070,17 @@ private[curl] object Curl:
    *
    * parameter for the `CURLOPT_USE_SSL` option
    */
-  opaque type CurlUseSsl = CLong
-  object CurlUseSsl extends _BindgenEnumCLong[CurlUseSsl]:
-    given Tag[CurlUseSsl] = Tag.Size
-
-    private inline def define(inline a: Long): CurlUseSsl = a.toSize
+  opaque type CurlUseSSL = CLong
+  object CurlUseSSL extends _BindgenEnumCLong[CurlUseSSL]:
+    given Tag[CurlUseSSL] = Tag.Size
+    private inline def define(inline a: Long): CurlUseSSL = a.toSize
 
     val NONE = define(0L) // do not attempt to use SSL
     val TRY = define(1L) // try using SSL, proceed anyway otherwise
     val CONTROL = define(2L) // SSL for the control connection or fail
     val ALL = define(3L) // SSL for all communication or fail
     val LAST = define(4L) // not an option, never use
-  end CurlUseSsl
+  end CurlUseSSL
 
   // TODO:
   //
@@ -1456,7 +1449,7 @@ private[curl] object Curl:
     val LASTENTRY = define(10324)
 
     extension (value: CurlOption)
-      def getname: String =
+      inline def getname: String =
         value match
           case WRITEDATA                  => "CURLOPT_WRITEDATA"
           case URL                        => "CURLOPT_URL"
@@ -1774,8 +1767,7 @@ private[curl] object Curl:
   opaque type CurlIpResolve = CLong
   object CurlIpResolve extends _BindgenEnumCLong[CurlIpResolve]:
     given Tag[CurlIpResolve] = Tag.Size
-
-    inline def define(inline a: Long): CurlIpResolve = a.toSize
+    private inline def define(inline a: Long): CurlIpResolve = a.toSize
 
     /** default, uses addresses to all IP versions that your system allows */
     val WHATEVER = define(0L)
@@ -1793,8 +1785,7 @@ private[curl] object Curl:
   opaque type CurlHttpVersion = CLong
   object CurlHttpVersion extends _BindgenEnumCLong[CurlHttpVersion]:
     given Tag[CurlHttpVersion] = Tag.Size
-
-    inline def define(inline a: Long): CurlHttpVersion = a.toSize
+    private inline def define(inline a: Long): CurlHttpVersion = a.toSize
 
     /**
      * setting this means we don't care, and that we'd like the library to choose the best possible
@@ -1839,8 +1830,7 @@ private[curl] object Curl:
   opaque type CurlSSLVersion = CLong
   object CurlSSLVersion extends _BindgenEnumCLong[CurlSSLVersion]:
     given Tag[CurlSSLVersion] = Tag.Size
-
-    inline def define(inline a: Long): CurlSSLVersion = a.toSize
+    private inline def define(inline a: Long): CurlSSLVersion = a.toSize
 
     val DEFAULT = define(0L)
     val TLSv1 = define(1L) // TLS 1.x
@@ -1856,8 +1846,7 @@ private[curl] object Curl:
   opaque type CurlSslMaxVersion = CLong
   object CurlSslMaxVersion extends _BindgenEnumCLong[CurlSslMaxVersion]:
     given Tag[CurlSslMaxVersion] = Tag.Size
-
-    inline def define(inline a: Long): CurlSslMaxVersion = a.toSize
+    private inline def define(inline a: Long): CurlSslMaxVersion = a.toSize
 
     val MAX_NONE = define(0L)
     val MAX_DEFAULT = define(CurlSSLVersion.TLSv1.toLong << 16L)
@@ -1871,8 +1860,7 @@ private[curl] object Curl:
   opaque type CurlTlsAuth = CLong
   object CurlTlsAuth extends _BindgenEnumCLong[CurlTlsAuth]:
     given Tag[CurlTlsAuth] = Tag.Size
-
-    inline def define(inline a: Long): CurlTlsAuth = a.toSize
+    private inline def define(inline a: Long): CurlTlsAuth = a.toSize
 
     val NONE = define(0L)
     val SRP = define(1L)
@@ -1903,8 +1891,7 @@ private[curl] object Curl:
   opaque type CurlRedir = CLong
   object CurlRedir extends _BindgenEnumCLong[CurlRedir]:
     given Tag[CurlRedir] = Tag.Size
-
-    inline def define(inline a: Long): CurlRedir = a.toSize
+    private inline def define(inline a: Long): CurlRedir = a.toSize
 
     val GET_ALL = define(0L)
     val POST_301 = define(1L)
@@ -2007,7 +1994,7 @@ private[curl] object Curl:
   opaque type CurlSslSet = Int
   object CurlSslSet:
     given Tag[CurlSslSet] = Tag.Int
-    inline def define(inline a: Int): CurlSslSet = a
+    private inline def define(inline a: Int): CurlSslSet = a
 
     val OK = define(0)
     val UNKNOWN_BACKEND = define(1)
@@ -2088,10 +2075,10 @@ private[curl] object Curl:
       def internals_=(value: Ptr[Byte]): Unit = !struct.at2 = value
 
   // known as "CURLINFO" in C header
-  opaque type CurlInfo = Int
+  opaque type CurlInfo = CInt
   object CurlInfo extends _BindgenEnumCInt[CurlInfo]:
-
-    inline def define(a: Int): CurlInfo = a
+    given Tag[CurlInfo] = Tag.Int
+    private inline def define(a: Int): CurlInfo = a
 
     // By `#define`
     private val STRING: CurlInfo = define(0x100000)
@@ -2212,7 +2199,7 @@ private[curl] object Curl:
     val HTTP_CODE = RESPONSE_CODE
 
     extension (value: CurlInfo)
-      def getname: String =
+      inline def getname: String =
         value match
           case NONE                      => "CURLINFO_NONE"
           case EFFECTIVE_URL             => "CURLINFO_EFFECTIVE_URL"
@@ -2293,8 +2280,7 @@ private[curl] object Curl:
   opaque type CurlClosePolicy = Int
   object CurlClosePolicy extends _BindgenEnumCInt[CurlClosePolicy]:
     given Tag[CurlClosePolicy] = Tag.Int
-
-    inline def define(inline a: Int): CurlClosePolicy = a
+    private inline def define(inline a: Int): CurlClosePolicy = a
 
     val NONE = define(0) // no purpose since curl 7.57.0
     val OLDEST = define(1)
@@ -2319,7 +2305,8 @@ private[curl] object Curl:
   opaque type CurlGlobalFlag = CLong
   given Tag[CurlGlobalFlag] = Tag.Size
   object CurlGlobalFlag extends _BindgenEnumCLong[CurlGlobalFlag]:
-    inline def define(inline a: Int): CurlGlobalFlag = a.toSize
+    given Tag[CurlGlobalFlag] = Tag.Size
+    private inline def define(inline a: Int): CurlGlobalFlag = a.toSize
 
     val SSL = define(1 << 0) // no purpose since curl 7.57.0
     val WIN32 = define(1 << 1)
@@ -2334,11 +2321,60 @@ private[curl] object Curl:
   // 2. add typedef enum `curl_lock_access`
   // 3. add func `curl_lock_function`
   // 4. add func `curl_unlock_function`
-  // 5. add typedef enum `CURLSHcode`
-  // 6. add typedef enum `CURLSHoption`
-  // 7. add func `curl_share_init`
-  // 8. add func `curl_share_setopt`
-  // 9. add func `curl_share_cleanup`
+
+  // known as "CURLSHcode" in C header
+  opaque type CurlShareErrCode = CInt
+  object CurlShareErrCode extends _BindgenEnumCInt[CurlShareErrCode]:
+    given _tag: Tag[CurlShareErrCode] = Tag.Int
+    private inline def define(inline a: Int): CurlShareErrCode = a
+
+    val OK = define(0)
+    val BAD_OPTION = define(1)
+    val IN_USE = define(2)
+    val INVALID = define(3)
+    val NOMEM = define(4)
+    val NOT_BUILT_IN = define(5)
+    val LAST = define(6)
+
+    extension (value: CurlShareErrCode)
+      inline def getName: String =
+        value match
+          case OK           => "CURLSHE_OK"
+          case BAD_OPTION   => "CURLSHE_BAD_OPTION"
+          case IN_USE       => "CURLSHE_IN_USE"
+          case INVALID      => "CURLSHE_INVALID"
+          case NOMEM        => "CURLSHE_NOMEM"
+          case NOT_BUILT_IN => "CURLSHE_NOT_BUILT_IN"
+          case LAST         => "CURLSHE_LAST"
+
+  // known as "CURLSHoption" in C header
+  opaque type CurlShareOption = CInt
+  object CurlShareOption extends _BindgenEnumCInt[CurlShareOption]:
+    given _tag: Tag[CurlShareOption] = Tag.Int
+    private inline def define(inline a: Int): CurlShareOption = a
+
+    val CURLSHOPT_NONE = define(0)
+    val CURLSHOPT_SHARE = define(1)
+    val CURLSHOPT_UNSHARE = define(2)
+    val CURLSHOPT_LOCKFUNC = define(3)
+    val CURLSHOPT_UNLOCKFUNC = define(4)
+    val CURLSHOPT_USERDATA = define(5)
+    val CURLSHOPT_LAST = define(6)
+
+    // def getName(value: CurlShareOption): Option[String] =
+    //   value match
+    //     case `CURLSHOPT_NONE`       => Some("CURLSHOPT_NONE")
+    //     case `CURLSHOPT_SHARE`      => Some("CURLSHOPT_SHARE")
+    //     case `CURLSHOPT_UNSHARE`    => Some("CURLSHOPT_UNSHARE")
+    //     case `CURLSHOPT_LOCKFUNC`   => Some("CURLSHOPT_LOCKFUNC")
+    //     case `CURLSHOPT_UNLOCKFUNC` => Some("CURLSHOPT_UNLOCKFUNC")
+    //     case `CURLSHOPT_USERDATA`   => Some("CURLSHOPT_USERDATA")
+    //     case `CURLSHOPT_LAST`       => Some("CURLSHOPT_LAST")
+    //     case _                      => _root_.scala.None
+    // extension (a: CurlShareOption)
+    //   inline def &(b: CurlShareOption): CurlShareOption = a & b
+    //   inline def |(b: CurlShareOption): CurlShareOption = a | b
+    //   inline def is(b: CurlShareOption): Boolean = (a & b) == b
 
   // TODO:
   //
@@ -2353,8 +2389,7 @@ private[curl] object Curl:
   opaque type CurlPause = Int
   object CurlPause extends _BindgenEnumCInt[CurlPause]:
     given Tag[CurlPause] = Tag.Int
-
-    inline def define(inline a: Int): CurlPause = a
+    private inline def define(inline a: Int): CurlPause = a
 
     val RECV = define(1 << 0)
     val RECV_CONT = define(0)
@@ -2366,8 +2401,7 @@ private[curl] object Curl:
   opaque type SockAddrFamily = Int
   object SockAddrFamily:
     given Tag[SockAddrFamily] = Tag.Int
-
-    inline def define(inline v: Int): SockAddrFamily = v
+    private inline def define(inline v: Int): SockAddrFamily = v
 
     val AF_INET = define(socket.AF_INET)
     val AF_INET6 = define(socket.AF_INET6)

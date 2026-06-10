@@ -23,7 +23,7 @@ import scala.scalanative.unsigned.UnsignedRichInt
 import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlMultiException}
 import _root_.snhttp.experimental.curl.curl.{CurlMulti, CurlMsg, CurlEasy}
 import _root_.snhttp.experimental.curl.libcurl
-import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiCode, CurlWaitFd}
+import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiErrCode, CurlWaitFd}
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
@@ -221,7 +221,7 @@ final class HttpClientImpl(
       return isTerminated()
 
     val ret = libcurl.multiCleanup(ptr)
-    if ret == CurlMultiCode.OK
+    if ret == CurlMultiErrCode.OK
     then _terminated.compareAndExchange(false, true)
     else throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
   }
@@ -308,7 +308,7 @@ final class HttpClientImpl(
     // trigger perform until running counter becomes non-zero
     while {
       val ret = multi.perform(_runningCounter)
-      if (ret != CurlMultiCode.OK)
+      if (ret != CurlMultiErrCode.OK)
         throw new CurlMultiException(ret)
 
       isRunning
@@ -323,7 +323,7 @@ final class HttpClientImpl(
       NullPtr.asInstanceOf[Ptr[Int]],
     )
     println(s"wait returned with code: ${ret}, isRunning: ${isRunning}, timeoutMs: ${timeoutMs}")
-    ret != CurlMultiCode.OK
+    ret != CurlMultiErrCode.OK
   }
 
   private[http] def collectInfo(): Unit = {

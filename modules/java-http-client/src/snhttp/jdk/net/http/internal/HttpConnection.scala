@@ -32,12 +32,12 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlErrCodeException,
   CurlException,
   CurlFollow,
-  CurlUseSsl,
+  CurlUseSSL,
   CurlEasy,
   CurlOption,
   CurlHttpVersion,
   CurlMsgCode,
-  CurlMultiCode,
+  CurlMultiErrCode,
   CurlMsg,
   CurlErrCode,
   CurlWriteCallback,
@@ -250,11 +250,11 @@ private[http] final class HttpConnection[T](
     // val scheme = request.uri().getScheme().toLowerCase().strip()
     // if !scheme.endsWith("s")
     // then // no TLS
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSSL.NONE.value)
     // else // with TLS
     //   // TODO: Register SSL context ptr to set up custom SSL context
     //   // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSSL.TRY.value)
 
     if (client.builder._sslContext.isPresent()) {
       val ctx = {
@@ -308,7 +308,7 @@ private[http] final class HttpConnection[T](
      */
     client.connections.put(easy, this): Unit
     val ret = client.multi.addCurlEasy(easy)
-    if (ret != CurlMultiCode.OK)
+    if (ret != CurlMultiErrCode.OK)
       throw new RuntimeException(
         s"CURLM add easy failed: error code ${ret} (${ret.getname})",
       )
