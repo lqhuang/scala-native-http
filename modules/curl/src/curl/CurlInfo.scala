@@ -7,8 +7,8 @@ import scala.collection.mutable.{TreeMap, ListBuffer}
 import scala.math.Ordering.comparatorToOrdering
 import scala.scalanative.unsafe.{Ptr, CLong}
 import scala.scalanative.unsafe.{stackalloc, fromCString}
+import scala.scalanative.libc.stddef.NULL as NullPtr
 
-import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{
   CurlInfo as _CurlInfo,
   Curl,
@@ -49,7 +49,7 @@ class CurlInfo(ptr: Ptr[Curl]) extends AnyVal:
     )
     !_version // TODO: Copy?
 
-  inline def CURLINFO_NUM_CONNECTS: Long =
+  inline def numConnects: Long =
     val _numConnects = stackalloc[CLong]()
     val _ = libcurl.easyGetInfo(ptr, _CurlInfo.NUM_CONNECTS, _numConnects)
     (!_numConnects).toLong
@@ -117,7 +117,7 @@ class CurlInfo(ptr: Ptr[Curl]) extends AnyVal:
 
     while
       headerPtr = libcurl.easyNextHeader(ptr, CurlHeaderOrigin.HEADER, -1, prevHeaderPtr)
-      headerPtr != null
+      headerPtr != NullPtr
     do {
       val name = fromCString((!headerPtr).name, StandardCharsets.UTF_8)
       val value = fromCString((!headerPtr).value, StandardCharsets.UTF_8)

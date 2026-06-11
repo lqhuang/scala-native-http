@@ -49,23 +49,6 @@ import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInf
 import _root_.snhttp.jdk.net.http.internal.PropertyUtils
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 
-type CurlRecvBuffer = CStruct3[
-  AtomicBoolean, // flag for resp body received
-  Function0[Unit], // resp body received callback
-  SubmissionPublisher[JList[ByteBuffer]], // publisher for response body chunks
-]
-
-given Tag[CurlRecvBuffer] = Tag.materializeCStruct3Tag[
-  AtomicBoolean,
-  Function0[Unit],
-  SubmissionPublisher[JList[ByteBuffer]],
-]
-
-extension (inline struct: CurlRecvBuffer)
-  inline def flag: AtomicBoolean = struct._1
-  inline def callback: Function0[Unit] = struct._2
-  inline def publisher: SubmissionPublisher[JList[ByteBuffer]] = struct._3
-
 /**
  * Represents a (virtual) connection to a web server, majorly based on libcurl's easy handle.
  *
@@ -77,6 +60,8 @@ private[http] final class HttpConnection[T](
     responseBodyHandler: BodyHandler[T],
     client: HttpClientImpl,
 ) extends AutoCloseable:
+
+  import HttpConnection.*
 
   given zone: Zone = Zone.open()
 
@@ -117,7 +102,7 @@ private[http] final class HttpConnection[T](
       val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
 
       if (!(!userdata).flag.compareAndExchange(false, true))
-        (!userdata).writeNotify.apply()
+        (!userdata).callback.apply()
 
       // it's safe to cast UInt ot Int here
       // Curl guarantees that MAX_WRITE_SIZE won't exceed Int.MaxValue
@@ -189,7 +174,7 @@ private[http] final class HttpConnection[T](
 
     val httpVersion = request.version()
     if (httpVersion.isPresent()) {
-      val h3 = Version.valueOf("HTTP_3") // FIXME: avoid compile error
+      val h3 = Version.valueOf("HTTP_3")
       val version = httpVersion.get() match
         case Version.HTTP_1_1 => CurlHttpVersion.VERSION_1_1
         case Version.HTTP_2   => CurlHttpVersion.VERSION_2TLS
@@ -369,3 +354,36 @@ private[http] final class HttpConnection[T](
       maybeRespInfo = Optional.of(respInfo)
       maybeRespBodySubscriber = Optional.of(subscriber)
     }
+
+object HttpConnection:
+
+  type CurlRecvBuffer = CStruct3[
+    AtomicBoolean, // flag for resp body received
+    Function0[Unit], // resp body received callback
+    SubmissionPublisher[JList[ByteBuffer]], // publisher for response body chunks
+  ]
+
+  given Tag[CurlRecvBuffer] = Tag.materializeCStruct3Tag[
+    AtomicBoolean,
+    Function0[Unit],
+    SubmissionPublisher[JList[ByteBuffer]],
+  ]
+
+  extension (inline struct: CurlRecvBuffer)
+    inline def flag: AtomicBoolean = struct._1
+    inline def callback: Function0[Unit] = struct._2
+    inline def publisher: SubmissionPublisher[JList[ByteBuffer]] = struct._3
+
+  case class Inited()
+
+  case class Performing()
+  case class Paused()
+  type Started = Performing | Paused
+
+  case class Completed()
+  case class Failed()
+  type Done = Completed | Failed
+
+  type InternalState = Inited | Started | Done
+
+end HttpConnection

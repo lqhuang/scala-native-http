@@ -61,7 +61,10 @@ private[curl] object Curl:
   object CurlSocket:
     given Tag[CurlSocket] = Tag.Int
     private inline def define(inline v: Int): CurlSocket = v
-    val BAD = define(-1)
+
+    inline def fromSocket(s: CInt): CurlSocket = define(s)
+
+    // val BAD = define(-1)
 
   /**
    * enum for the different supported SSL backends
