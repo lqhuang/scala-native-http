@@ -3,21 +3,22 @@ package curl
 
 import scala.util.Using.Releasable
 
-import scala.scalanative.unsafe.{Ptr, Size, CString, stackalloc, CVoidPtr, CLong}
+import scala.scalanative.unsafe.{Ptr, Size, CString, stackalloc, CVoidPtr, CLong, CFuncPtr}
 import scala.scalanative.unsigned.UInt
 import scala.scalanative.libc.stddef.NULL as NullPtr
 import scala.scalanative.posix.sys.select.fd_set
 
+import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{
-  CurlMulti as _CurlMulti,
-  CurlWaitFd as _CurlWaitFd,
+  CurlMultiHandle,
+  CurlWaitFd,
   CurlMultiOption,
   CurlMultiErrCode,
   CurlSocket,
+  CurlCselect,
 }
-import _root_.snhttp.experimental.curl.libcurl
 
-class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
+class CurlMulti(val ptr: Ptr[CurlMultiHandle]) extends AnyVal:
 
   private type NullPtr = CVoidPtr
 
@@ -36,7 +37,7 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
     libcurl.multiFdSet(ptr, readFdSet, writeFdSet, excFdSet, maxFd)
 
   inline def wait(
-      extraFds: Ptr[_CurlWaitFd],
+      extraFds: Ptr[CurlWaitFd],
       extraNfds: UInt,
       timeoutMs: Int,
       ret: Ptr[Int],
@@ -44,7 +45,7 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
     libcurl.multiWait(ptr, extraFds, extraNfds, timeoutMs, ret)
 
   inline def poll(
-      extraFds: Ptr[_CurlWaitFd],
+      extraFds: Ptr[CurlWaitFd],
       extraNfds: UInt,
       timeoutMs: Int,
       ret: Ptr[Int],
@@ -66,7 +67,7 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
 
   inline def socketAction(
       s: CurlSocket,
-      evBitmask: Int,
+      evBitmask: CurlCselect,
       runningHandles: Ptr[Int],
   ): CurlMultiErrCode =
     libcurl.multiSocketAction(ptr, s, evBitmask, runningHandles)
@@ -77,12 +78,19 @@ class CurlMulti(val ptr: Ptr[_CurlMulti]) extends AnyVal:
 
   inline def setCLongOption(option: CurlMultiOption, value: CLong): Unit =
     val ret = libcurl.multiSetopt(ptr, option, value)
+    if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def setCStringOption(option: CurlMultiOption, value: CString): Unit =
     val ret = libcurl.multiSetopt(ptr, option, value)
+    if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def setPtrOption(option: CurlMultiOption, value: Ptr[?]): Unit =
     val ret = libcurl.multiSetopt(ptr, option, value)
+    if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
+
+  inline def setFuncPtrOption(option: CurlMultiOption, value: CFuncPtr): Unit =
+    val ret = libcurl.multiSetopt(ptr, option, value)
+    if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def assign(sockfd: CurlSocket, sockp: CVoidPtr): CurlMultiErrCode =
     libcurl.multiAssign(ptr, sockfd, sockp)
@@ -103,7 +111,7 @@ object CurlMulti:
       throw new RuntimeException("Failed to initialize CurlMulti")
     new CurlMulti(ptr)
 
-  def apply(ptr: Ptr[_CurlMulti]): CurlMulti =
+  def apply(ptr: Ptr[CurlMultiHandle]): CurlMulti =
     new CurlMulti(ptr)
 
 end CurlMulti

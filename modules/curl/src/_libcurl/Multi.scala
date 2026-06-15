@@ -19,7 +19,6 @@ import scalanative.unsafe.{
   Ptr,
   CLong,
   CVoidPtr,
-  Size,
   CStruct0,
   CStruct3,
   CFuncPtr3,
@@ -28,24 +27,23 @@ import scalanative.unsafe.{
 }
 import scalanative.posix.stddef.size_t
 
-import _root_.snhttp.experimental.curl._libcurl.Curl.{Curl, CurlErrCode, CurlSocket}
+import _root_.snhttp.experimental.curl._libcurl.Curl.{CurlHandle, CurlErrCode, CurlSocket}
 import _root_.snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnumCLong}
 
 private[curl] object Multi:
 
   // known as "CURLM"
-  opaque type CurlMulti = CVoidPtr
-  object CurlMulti:
-    given Tag[CurlMulti] = Tag.materializePtrWildcard
+  opaque type CurlMultiHandle = CVoidPtr
+  object CurlMultiHandle:
+    given Tag[CurlMultiHandle] = Tag.materializePtrWildcard
+  end CurlMultiHandle
 
   // known as "CURLMcode"
   type CurlMultiErrCode = Int
   object CurlMultiErrCode extends _BindgenEnumCInt[CurlMultiErrCode]:
 
     given Tag[CurlMultiErrCode] = Tag.Int
-    given CanEqual[CurlMultiErrCode, CurlMultiErrCode] = CanEqual.derived
-
-    private inline def define(inline a: Int): CurlMultiErrCode = a
+    private inline def define(a: Int): CurlMultiErrCode = a
 
     /* please call curl_multi_perform() or curl_multi_socket*() soon */
     val CALL_MULTI_PERFORM = define(-1)
@@ -97,9 +95,9 @@ private[curl] object Multi:
 
   opaque type CurlPipe = CLong
   object CurlPipe extends _BindgenEnumCLong[CurlPipe]:
-    given Tag[CurlPipe] = Tag.Size
 
-    inline def define(inline a: Long): CurlPipe = a.toSize
+    given Tag[CurlPipe] = Tag.Size
+    private inline def define(a: Long): CurlPipe = a.toSize
 
     val NOTHING = define(0L)
     val HTTP1 = define(1L)
@@ -107,11 +105,11 @@ private[curl] object Multi:
 
   /** enum CURLMSG */
   // known as "CURLMSG"
-  opaque type CurlMsgCode = Size
-  object CurlMsgCode:
-    given Tag[CurlMsgCode] = Tag.Size
+  opaque type CurlMsgCode = Int
+  object CurlMsgCode extends _BindgenEnumCInt[CurlMsgCode]:
 
-    inline def define(inline a: Long): CurlMsgCode = a.toSize
+    given Tag[CurlMsgCode] = Tag.Int
+    private inline def define(a: Int): CurlMsgCode = a
 
     /* first, not used */
     val NONE = define(0)
@@ -121,11 +119,13 @@ private[curl] object Multi:
     val LAST = define(2)
 
     extension (value: CurlMsgCode)
-      def getname: String =
+      inline def getname: String =
         value match
           case NONE => "CURLMSG_NONE"
           case DONE => "CURLMSG_DONE"
           case LAST => "CURLMSG_LAST"
+
+  end CurlMsgCode
 
   // type CurlMsgData = CurlErrCode
   type CurlMsgData = CVoidPtr | CurlErrCode
@@ -133,56 +133,54 @@ private[curl] object Multi:
     /**
      * its size must be the max of the two sizes, its alignment the max of the two alignments
      */
-    given tagCurMsgData: Tag[CurlMsgData] = Tag.Size.asInstanceOf[Tag[CurlMsgData]]
-    //   {
-    //   val tagPtr = summon[Tag[CVoidPtr]]
-    //   val tagCode = summon[Tag[CurlErrCode]]
+    given Tag[CurlMsgData] = Tag.materializePtrWildcard.asInstanceOf[Tag[CurlMsgData]]
 
-    //   if tagPtr.size >= tagCode.size
-    //   then tagPtr.asInstanceOf[Tag[CurlMsgData]]
-    //   else tagCode.asInstanceOf[Tag[CurlMsgData]]
-    // }
+  end CurlMsgData
 
   // known as "CURLMsg"
   opaque type CurlMsg = CStruct3[
     /** msg: what this message means */
     CurlMsgCode,
     /** easy_handle: the handle it concerns */
-    Ptr[Curl],
+    Ptr[CurlHandle],
     /** data: message-specific data or return code for transfer */
     CurlMsgData,
   ]
   object CurlMsg:
-    import CurlMsgData.tagCurMsgData
+    import CurlMsgData.given
 
-    given tagCurMsg: Tag[CurlMsg] = Tag
-      .materializeCStruct3Tag[CurlMsgCode, Curl, CurlMsgData]
+    given Tag[CurlMsg] = Tag
+      .materializeCStruct3Tag[CurlMsgCode, CurlHandle, CurlMsgData]
       .asInstanceOf[Tag[CurlMsg]]
 
     extension (struct: CurlMsg)
-      def msg: CurlMsgCode = struct._1
-      def msg_=(value: CurlMsgCode): Unit = !struct.at1 = value
-      def easyHandle: Ptr[Curl] = struct._2
-      def easyHandle_=(value: Ptr[Curl]): Unit = !struct.at2 = value
-      def data: CurlMsgData = struct._3
-      def data_=(value: CurlMsgData): Unit = !struct.at3 = value
+      inline def msg: CurlMsgCode = struct._1
+      inline def msg_=(value: CurlMsgCode): Unit = !struct.at1 = value
+      inline def easyHandle: Ptr[CurlHandle] = struct._2
+      inline def easyHandle_=(value: Ptr[CurlHandle]): Unit = !struct.at2 = value
+      inline def data: CurlMsgData = struct._3
+      inline def data_=(value: CurlMsgData): Unit = !struct.at3 = value
 
   /**
    * Based on poll(2) structure and values. We don't use pollfd and POLL* constants explicitly to
    * cover platforms without poll().
    */
   opaque type CurlWait = Int
-  object CurlWait:
+  object CurlWait extends _BindgenEnumCInt[CurlWait]:
+
     given Tag[CurlWait] = Tag.Int
+    private inline def define(a: Int): CurlWait = a
 
-    inline def define(inline a: Int): CurlWait = a
-
+    val POLLNONE = define(0x0000)
     val POLLIN = define(0x0001)
     val POLLPRI = define(0x0002)
     val POLLOUT = define(0x0004)
 
+  end CurlWait
+
   opaque type CurlWaitFd = CStruct3[CurlSocket, Short, Short]
   object CurlWaitFd:
+
     given Tag[CurlWaitFd] = Tag.materializeCStruct3Tag[CurlSocket, Short, Short]
 
     def apply(fd: CurlSocket, events: Short, revents: Short)(using Zone): Ptr[CurlWaitFd] =
@@ -193,12 +191,14 @@ private[curl] object Multi:
       ptr
 
     extension (struct: CurlWaitFd)
-      def fd: CurlSocket = struct._1
-      def fd_=(value: CurlSocket): Unit = !struct.at1 = value
-      def events: Short = struct._2
-      def events_=(value: Short): Unit = !struct.at2 = value
-      def revents: Short = struct._3
-      def revents_=(value: Short): Unit = !struct.at3 = value
+      inline def fd: CurlSocket = struct._1
+      inline def fd_=(value: CurlSocket): Unit = !struct.at1 = value
+      inline def events: Short = struct._2
+      inline def events_=(value: Short): Unit = !struct.at2 = value
+      inline def revents: Short = struct._3
+      inline def revents_=(value: Short): Unit = !struct.at3 = value
+
+  end CurlWaitFd
 
   /**
    * Name: curl_multi_socket() and curl_multi_socket_all()
@@ -208,30 +208,57 @@ private[curl] object Multi:
    * perform. See manpage for details.
    */
   opaque type CurlPoll = Int
-  object CurlPoll:
-    given Tag[CurlPoll] = Tag.Int
+  object CurlPoll extends _BindgenEnumCInt[CurlPoll]:
 
-    val NONE = 0
-    val IN = 1
-    val OUT = 2
-    val INOUT = 3
-    val REMOVE = 4
+    given Tag[CurlPoll] = Tag.Int
+    private inline def define(a: Int): CurlPoll = a
+
+    val NONE = define(0)
+    val IN = define(1)
+    val OUT = define(2)
+    val INOUT = define(3)
+    val REMOVE = define(4)
+
+    def unapply(value: CurlPoll): Option[CurlPoll] =
+      value match
+        case NONE   => Some(NONE)
+        case IN     => Some(IN)
+        case OUT    => Some(OUT)
+        case INOUT  => Some(INOUT)
+        case REMOVE => Some(REMOVE)
+        case _      => None
+
+    extension (a: CurlPoll)
+      inline def &(b: CurlPoll): CurlPoll = a & b
+      inline def |(b: CurlPoll): CurlPoll = a | b
+      inline infix def is(b: CurlPoll): Boolean = (a & b) == b
+
+  end CurlPoll
 
   // CURL_SOCKET_TIMEOUT = CURL_SOCKET_BAD
 
-  opaque type CurlCSelect = Int
-  object CurlCSelect:
-    given Tag[CurlCSelect] = Tag.Int
+  opaque type CurlCselect = Int
+  object CurlCselect:
 
-    val IN: CurlCSelect = 0x01
-    val OUT: CurlCSelect = 0x02
-    val ERR: CurlCSelect = 0x04
+    given Tag[CurlCselect] = Tag.Int
+
+    val NONE: CurlCselect = 0x00
+    val IN: CurlCselect = 0x01
+    val OUT: CurlCselect = 0x02
+    val ERR: CurlCselect = 0x04
+
+    extension (a: CurlCselect)
+      inline def &(b: CurlCselect): CurlCselect = a & b
+      inline def |(b: CurlCselect): CurlCselect = a | b
+      inline def is(b: CurlCselect): Boolean = (a & b) == b
+
+  end CurlCselect
 
   // known as "curl_socket_callback"
   opaque type CurlSocketCallback =
     CFuncPtr5[
       /** easy: easy handle */
-      Ptr[Curl],
+      Ptr[CurlHandle],
       /** s: socket */
       CurlSocket,
       /** what: CurlPoll */
@@ -240,15 +267,23 @@ private[curl] object Multi:
       CVoidPtr,
       /** socketp private socket pointer */
       CVoidPtr,
+      /** return */
       Int,
     ]
   object CurlSocketCallback:
-    given Tag[CurlSocketCallback] =
-      Tag.materializeCFuncPtr5[Ptr[Curl], CurlSocket, Int, CVoidPtr, CVoidPtr, Int]
 
-    inline def apply(
-        inline o: CFuncPtr5[Ptr[Curl], CurlSocket, Int, CVoidPtr, CVoidPtr, Int],
-    ): CurlSocketCallback = o
+    given Tag[CurlSocketCallback] =
+      Tag.materializeCFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int]
+
+    inline def fromScalaFunction(
+        func: (Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr) => Int,
+    ): CurlSocketCallback = CFuncPtr5.fromScalaFunction(func)
+
+    extension (callback: CurlSocketCallback)
+      inline def asFuncPtr: CFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int] =
+        callback
+
+  end CurlSocketCallback
 
   /**
    * Name: curl_multi_timer_callback
@@ -263,27 +298,35 @@ private[curl] object Multi:
   opaque type CurlMultiTimerCallback =
     CFuncPtr3[
       /** multi: multi handle */
-      Ptr[CurlMulti],
+      Ptr[CurlMultiHandle],
       /** timeout_ms: see above */
-      Long,
+      CLong,
       /** userp: private callback pointer */
       Ptr[Byte],
       Int,
     ]
   object CurlMultiTimerCallback:
-    given Tag[CurlMultiTimerCallback] =
-      Tag.materializeCFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int]
 
-    inline def apply(
-        inline o: CFuncPtr3[Ptr[CurlMulti], Long, Ptr[Byte], Int],
-    ): CurlMultiTimerCallback = o
+    given Tag[CurlMultiTimerCallback] =
+      Tag.materializeCFuncPtr3[Ptr[CurlMultiHandle], CLong, Ptr[Byte], Int]
+
+    inline def fromScalaFunction(
+        func: (Ptr[CurlMultiHandle], CLong, Ptr[Byte]) => Int,
+    ): CurlMultiTimerCallback =
+      CFuncPtr3.fromScalaFunction(func)
+
+    extension (cb: CurlMultiTimerCallback)
+      inline def asFuncPtr: CFuncPtr3[Ptr[CurlMultiHandle], CLong, Ptr[Byte], Int] =
+        cb
+
+  end CurlMultiTimerCallback
 
   // known as "CURLMoption"
   opaque type CurlMultiOption = Int
-  object CurlMultiOption:
-    given Tag[CurlMultiOption] = Tag.Int
+  object CurlMultiOption extends _BindgenEnumCInt[CurlMultiOption]:
 
-    inline def define(inline a: Int): CurlMultiOption = a.toInt
+    given Tag[CurlMultiOption] = Tag.Int
+    private inline def define(a: Int): CurlMultiOption = a
 
     /* This is the socket callback function pointer */
     val SOCKETFUNCTION = define(20001)
@@ -341,6 +384,8 @@ private[curl] object Multi:
           case MAX_CONCURRENT_STREAMS      => "CURLMOPT_MAX_CONCURRENT_STREAMS"
           case LASTENTRY                   => "CURLMOPT_LASTENTRY"
 
+  end CurlMultiOption
+
   // TODO: add CURLMinfo_offt
   // known as "CURLMinfo_offt"
 
@@ -376,24 +421,28 @@ private[curl] object Multi:
   // known as "curl_push"
   opaque type CurlPush = Int
   object CurlPush:
+
     given Tag[CurlPush] = Tag.Int
     val OK: Int = 0
     val DENY: Int = 1
     val ERROROUT: Int = 2
+
+  end CurlPush
 
   /** forward declaration only */
   // known as "curl_pushheaders"
   opaque type CurlPushHeaders = CStruct0
   object CurlPushHeaders:
     given Tag[CurlPushHeaders] = Tag.materializeCStruct0Tag
+  end CurlPushHeaders
 
   // known as "curl_push_callback"
   opaque type CurlPushCallback =
     CFuncPtr5[
       /** parent */
-      Ptr[Curl],
+      Ptr[CurlHandle],
       /** easy */
-      Ptr[Curl],
+      Ptr[CurlHandle],
       /** number_headers */
       size_t,
       /** headers */
@@ -404,21 +453,12 @@ private[curl] object Multi:
     ]
   object CurlPushCallback:
     given Tag[CurlPushCallback] = Tag.materializeCFuncPtr5[
-      Ptr[Curl],
-      Ptr[Curl],
+      Ptr[CurlHandle],
+      Ptr[CurlHandle],
       size_t,
       Ptr[CurlPushHeaders],
       CVoidPtr,
       CurlPush,
     ]
 
-    inline def apply(
-        inline o: CFuncPtr5[
-          Ptr[Curl],
-          Ptr[Curl],
-          size_t,
-          Ptr[CurlPushHeaders],
-          CVoidPtr,
-          CurlPush,
-        ],
-    ): CurlPushCallback = o
+  end CurlPushCallback

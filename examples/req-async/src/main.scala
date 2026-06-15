@@ -7,6 +7,7 @@ import javax.net.ssl.SSLContext
 object ReqAsync:
 
   def runAsync(): Unit =
+    val ctx = SSLContext.getDefault()
     val uri = URI.create("http://www.example.org")
     val client = HttpClient.newBuilder().build()
     val request = HttpRequest

@@ -14,7 +14,7 @@ package snhttp.experimental.curl
 package _libcurl
 
 import scala.scalanative.unsafe.alloc
-import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CLong, UnsafeRichLong}
+import scala.scalanative.unsafe.{CStruct5, Tag, Zone, Ptr, CLong, UnsafeRichLong, CInt}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t
 
@@ -26,7 +26,7 @@ private[curl] object Websockets:
   // known as "curl_ws_frame"
   opaque type CurlWsFrame = CStruct5[
     /** age: zero */
-    Int,
+    CInt,
     /** flags: See the `CURLWS_*` defines */
     CurlWsFrameFlag,
     /** offset: the offset of this data into the frame */

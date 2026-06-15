@@ -24,6 +24,7 @@ private[curl] object Options:
   // known as enum "curl_easytype"
   opaque type CurlEasyType = Int
   object CurlEasyType extends _BindgenEnumCInt[CurlEasyType]:
+
     given Tag[CurlEasyType] = Tag.Int
     inline def define(inline a: Int): CurlEasyType = a
 
@@ -59,6 +60,8 @@ private[curl] object Options:
           case BLOB     => "CURLOT_BLOB"
           case FUNCTION => "CURLOT_FUNCTION"
 
+  end CurlEasyType
+
   opaque type CurlEasyOption = CStruct4[
     /** name */
     CString,
@@ -70,6 +73,7 @@ private[curl] object Options:
     UInt,
   ]
   object CurlEasyOption:
+
     given Tag[CurlEasyOption] =
       Tag.materializeCStruct4Tag[CString, CurlOption, CurlEasyType, UInt]
 
@@ -92,3 +96,5 @@ private[curl] object Options:
       def type_=(value: CurlEasyType): Unit = !struct.at3 = value
       def flags: UInt = struct._4
       def flags_=(value: UInt): Unit = !struct.at4 = value
+
+  end CurlEasyOption

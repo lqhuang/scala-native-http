@@ -21,16 +21,22 @@ import snhttp.experimental.curl.curl.{
   CurlOption,
   CurlErrCode,
   CurlWriteCallback,
-  CurlData,
   CurlWriteFuncRet,
 }
 import snhttp.experimental.curl.curl.CurlErrCode.RichCurlErrCode
 
 object App:
 
+  type CurlData = CStruct2[
+    /** memory */
+    Ptr[Byte],
+    /** size */
+    size_t,
+  ]
+
   given zone: Zone = Zone.open()
 
-  val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
+  val writeDataCallback = CurlWriteCallback.fromScalaFunction {
     (payload: Ptr[Byte], nmemb: CSize, size: CSize, outstream: Ptr[?]) =>
       val userdata = outstream.asInstanceOf[Ptr[CurlData]]
       val recvSize = size * nmemb
@@ -62,7 +68,7 @@ object App:
 
       curl.setCStringOption(CurlOption.URL, c"http://httpbin.org/get")
       curl.setPtrOption(CurlOption.WRITEDATA, writeData)
-      curl.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
+      curl.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
 
       println("Performing curl request...")
       val perfRet = curl.perform()

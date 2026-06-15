@@ -11,32 +11,33 @@ package object curl:
     CurlErrCode,
     CurlShareErrCode,
     CurlHttpVersion,
+    CurlReadCallback,
     CurlWriteCallback,
-    CurlUseSSL,
+    CurlUseSsl,
     CurlFollow,
     CurlDebugCallback,
     CurlInfoType,
     CurlWriteFuncRet,
+    CurlSocket,
+    CurlGlobalFlag,
   }
-  export _root_.snhttp.experimental.curl._libcurl.Easy.CurlData
   export _root_.snhttp.experimental.curl._libcurl.Multi.{
     CurlMsgCode,
     CurlMultiErrCode,
     CurlMultiOption,
+    CurlPoll,
+    CurlCselect,
+    CurlSocketCallback,
   }
 
-  object CurlUtils:
+  def version(): String =
+    fromCString(libcurl.curlVersion())
 
-    def version(): String =
-      fromCString(libcurl.curlVersion())
+  def getStrError(code: CurlErrCode): String =
+    fromCString(libcurl.easyStrError(code))
 
-    def getStrError(code: CurlErrCode): String =
-      fromCString(libcurl.easyStrError(code))
-
-    def getMultiStrError(code: CurlMultiErrCode): String =
-      fromCString(libcurl.multiStrError(code))
-
-  end CurlUtils
+  def getMultiStrError(code: CurlMultiErrCode): String =
+    fromCString(libcurl.multiStrError(code))
 
   object CurlGlobal:
 

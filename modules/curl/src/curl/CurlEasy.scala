@@ -10,13 +10,13 @@ import scala.scalanative.libc.stddef.NULL
 import _root_.snhttp.experimental.curl.libcurl.{
   CurlOption,
   CurlErrCode,
-  Curl as _Curl,
+  CurlHandle,
   CurlPause,
   CurlBlob as _CurlBlob,
 }
 import _root_.snhttp.experimental.curl.libcurl
 
-class CurlEasy(val ptr: Ptr[_Curl]) extends AnyVal:
+class CurlEasy(val ptr: Ptr[CurlHandle]) extends AnyVal:
 
   inline def info: CurlInfo =
     CurlInfo(ptr)
@@ -82,7 +82,7 @@ object CurlEasy:
       throw new RuntimeException("Failed to initialize CurlEasy")
     new CurlEasy(ptr)
 
-  def apply(ptr: Ptr[_Curl]): CurlEasy =
+  def apply(ptr: Ptr[CurlHandle]): CurlEasy =
     new CurlEasy(ptr)
 
 end CurlEasy

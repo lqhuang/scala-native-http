@@ -7,6 +7,7 @@ import javax.net.ssl.SSLContext
 object Main:
 
   def runReqBasic(): Unit = {
+    val ctx = SSLContext.getDefault()
     val client = HttpClient.newBuilder().build()
     val request = HttpRequest
       .newBuilder()

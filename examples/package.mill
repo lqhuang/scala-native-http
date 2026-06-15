@@ -50,7 +50,8 @@ trait CurlSharedModule extends ScalaNativeModule {
 }
 
 object `curl-easy` extends CurlSharedModule
-object `curl-multi` extends CurlSharedModule
+object `curl-multi-select` extends CurlSharedModule
+object `curl-multi-epoll` extends CurlSharedModule
 
 /*
  * For libssl examples.

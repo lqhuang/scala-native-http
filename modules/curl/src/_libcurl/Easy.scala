@@ -12,35 +12,29 @@
 package snhttp.experimental.curl
 package _libcurl
 
-import scala.scalanative.unsafe.{Tag, CStruct2, CStruct3, Ptr}
+import scala.scalanative.unsafe.{Tag, CStruct2, CStruct3, Ptr, CVoidPtr}
 import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.size_t
 
-import _root_.snhttp.experimental.curl._internal._BindgenEnumUInt
+import _root_.snhttp.experimental.curl._internal._BindgenEnumCInt
 
 private[curl] object Easy:
 
-  opaque type CurlBlobFlag = UInt
-  given Tag[CurlBlobFlag] = Tag.UInt
+  opaque type CurlBlobFlag = Int
+  object CurlBlobFlag extends _BindgenEnumCInt[CurlBlobFlag]:
 
-  object CurlBlobFlag extends _BindgenEnumUInt[CurlBlobFlag]:
-    inline def define(inline a: Long): CurlBlobFlag = a.toUInt
+    given Tag[CurlBlobFlag] = Tag.Int
+    private inline def define(inline a: Int): CurlBlobFlag = a
     val Copy: CurlBlobFlag = define(0)
     val Nocopy: CurlBlobFlag = define(1)
 
+  end CurlBlobFlag
+
   type CurlBlob = CStruct3[
     /** data */
-    Unit, // CVoidPtr,
+    CVoidPtr,
     /** length */
     size_t,
     /** flags */
     CurlBlobFlag,
-  ]
-
-  /** Used by CURLOPT_WRITEDATA and more */
-  type CurlData = CStruct2[
-    /** memory */
-    Ptr[Byte],
-    /** size */
-    size_t,
   ]

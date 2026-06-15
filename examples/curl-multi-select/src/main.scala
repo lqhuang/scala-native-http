@@ -38,7 +38,7 @@ object App:
 
   given zone: Zone = Zone.open()
 
-  val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
+  val writeDataCallback = CurlWriteCallback.fromScalaFunction {
     (payload: Ptr[Byte], nmemb: CSize, size: CSize, outstream: Ptr[?]) =>
       val userdata = outstream.asInstanceOf[Ptr[CurlCustomData]]
       val recvSize = size * nmemb
@@ -78,7 +78,7 @@ object App:
       Using.resources(CurlEasy(), CurlEasy()) { (curl1, curl2) =>
         curl1.setCStringOption(CurlOption.URL, c"http://httpbin.org/get")
         curl1.setPtrOption(CurlOption.WRITEDATA, writeData)
-        curl1.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
+        curl1.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
 
         curl2.setCStringOption(CurlOption.URL, c"https://example.com/")
 

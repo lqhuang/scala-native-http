@@ -11,13 +11,13 @@ import scala.scalanative.libc.stddef.NULL as NullPtr
 
 import _root_.snhttp.experimental.curl.libcurl.{
   CurlInfo as _CurlInfo,
-  Curl,
+  CurlHandle,
   CurlHttpVersion,
   CurlHeader,
   CurlHeaderOrigin,
 }
 
-class CurlInfo(ptr: Ptr[Curl]) extends AnyVal:
+class CurlInfo(ptr: Ptr[CurlHandle]) extends AnyVal:
 
   inline def osErrNo: Int =
     val _osErrno = stackalloc[CLong]()

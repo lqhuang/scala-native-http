@@ -3,21 +3,16 @@ package curl
 
 import scala.util.Using.Releasable
 
-import scala.scalanative.unsafe.{Ptr, CString, CInt, CLong, CFuncPtr}
-import scala.scalanative.posix.stddef.size_t
+import scala.scalanative.unsafe.{Ptr, CInt}
 import scala.scalanative.libc.stddef.NULL
 
-import _root_.snhttp.experimental.curl.libcurl.{
-  CurlShareOption,
-  CurlShareErrCode,
-  CurlShare as _CurlShare,
-}
-import _root_.snhttp.experimental.curl.libcurl
+// import _root_.snhttp.experimental.curl.libcurl
+import _root_.snhttp.experimental.curl.libcurl.{CurlShareOption, CurlShareErrCode, CurlShareHandle}
 
-class CurlShare(ref: Ptr[_CurlShare]) extends AnyVal:
+class CurlShare(ref: Ptr[CurlShareHandle]) extends AnyVal:
 
   inline def setOption(option: CurlShareOption, value: CInt): Unit =
-    val ret = libcurl.shareSetopt(ref, option, value)
+    val ret = libcurl.shareSetOpt(ref, option, value)
     if ret != CurlShareErrCode.OK then throw new CurlShareSetOptionException(option, value, ret)
 
   inline def cleanup(): Unit =
@@ -35,7 +30,7 @@ object CurlShare:
       throw new RuntimeException("Failed to initialize CurlShare")
     new CurlShare(ptr)
 
-  def apply(ref: Ptr[_CurlShare]): CurlShare =
+  def apply(ref: Ptr[CurlShareHandle]): CurlShare =
     new CurlShare(ref)
 
 end CurlShare

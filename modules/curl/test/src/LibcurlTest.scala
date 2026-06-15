@@ -1,17 +1,8 @@
 import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.scalanative.unsafe.{
-  CStruct3,
-  CFuncPtr4,
-  CSize,
-  Ptr,
-  stackalloc,
-  alloc,
-  Zone,
-  CQuote,
-  sizeof,
-}
+import scala.scalanative.unsafe.{CStruct2, CStruct3, CSize, Ptr, stackalloc, alloc, Zone, CQuote, sizeof}
 import scala.scalanative.unsigned.UnsignedRichInt
+import scala.scalanative.libc.stddef.size_t
 import scala.scalanative.libc.string.memcpy
 import scala.util.Using
 
@@ -22,7 +13,6 @@ import snhttp.experimental.curl.libcurl.{
   Curl,
   CurlInfo,
   CurlHttpVersion,
-  CurlData,
   CurlWriteCallback,
 }
 import snhttp.experimental.curl.libcurl.CurlErrCode.RichCurlErrCode
@@ -30,6 +20,13 @@ import snhttp.experimental.curl.libcurl.CurlErrCode.RichCurlErrCode
 import utest.{TestSuite, Tests, test, assert}
 
 object LibcurlTest extends TestSuite:
+
+  type CurlData = CStruct2[
+    /** memory */
+    Ptr[Byte],
+    /** size */
+    size_t,
+  ]
 
   given zone: Zone = Zone.open()
 
@@ -69,7 +66,7 @@ object LibcurlTest extends TestSuite:
       (!writeData)._1 = stackalloc[Byte](8192)
       (!writeData)._2 = 0.toUSize
 
-      val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
+      val writeDataCallback = CurlWriteCallback.fromScalaFunction {
         (ptr: Ptr[Byte], nmemb: CSize, size: CSize, data: Ptr[?]) =>
           val userdata = data.asInstanceOf[Ptr[CurlData]]
           val total = size * nmemb
@@ -131,7 +128,7 @@ object LibcurlTest extends TestSuite:
       (!writeData)._2 = customFunction2
       (!writeData)._3 = customFunction3
 
-      val writeDataCallback: CurlWriteCallback = CFuncPtr4.fromScalaFunction {
+      val writeDataCallback = CurlWriteCallback.fromScalaFunction {
         (ptr: Ptr[Byte], nmemb: CSize, size: CSize, data: Ptr[?]) =>
           val userdata = data.asInstanceOf[Ptr[CurlCustomData]]
           val total = size * nmemb
