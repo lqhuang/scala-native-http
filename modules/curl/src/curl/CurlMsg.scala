@@ -7,6 +7,8 @@ import _root_.snhttp.experimental.curl.libcurl.{CurlMsg as _CurlMsg, CurlMsgCode
 
 class CurlMsg(val ptr: Ptr[_CurlMsg]) extends AnyVal:
 
+  import _CurlMsg.*
+
   inline def msg: CurlMsgCode =
     (!ptr).msg
 

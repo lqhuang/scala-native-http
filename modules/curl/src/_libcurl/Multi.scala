@@ -128,7 +128,7 @@ private[curl] object Multi:
   end CurlMsgCode
 
   // type CurlMsgData = CurlErrCode
-  type CurlMsgData = CVoidPtr | CurlErrCode
+  type CurlMsgData = CurlErrCode | CVoidPtr
   object CurlMsgData:
     /**
      * its size must be the max of the two sizes, its alignment the max of the two alignments
@@ -147,11 +147,9 @@ private[curl] object Multi:
     CurlMsgData,
   ]
   object CurlMsg:
-    import CurlMsgData.given
-
-    given Tag[CurlMsg] = Tag
-      .materializeCStruct3Tag[CurlMsgCode, CurlHandle, CurlMsgData]
-      .asInstanceOf[Tag[CurlMsg]]
+    import CurlMsgData.given_Tag_CurlMsgData
+    given Tag[CurlMsg] =
+      Tag.materializeCStruct3Tag[CurlMsgCode, CurlHandle, CurlMsgData].asInstanceOf[Tag[CurlMsg]]
 
     extension (struct: CurlMsg)
       inline def msg: CurlMsgCode = struct._1
@@ -160,6 +158,8 @@ private[curl] object Multi:
       inline def easyHandle_=(value: Ptr[CurlHandle]): Unit = !struct.at2 = value
       inline def data: CurlMsgData = struct._3
       inline def data_=(value: CurlMsgData): Unit = !struct.at3 = value
+
+  end CurlMsg
 
   /**
    * Based on poll(2) structure and values. We don't use pollfd and POLL* constants explicitly to
@@ -276,11 +276,15 @@ private[curl] object Multi:
       Tag.materializeCFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int]
 
     inline def fromScalaFunction(
-        func: (Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr) => Int,
-    ): CurlSocketCallback = CFuncPtr5.fromScalaFunction(func)
+        inline func: (Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr) => Int,
+    ): CurlSocketCallback =
+      CFuncPtr5.fromScalaFunction[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int](
+        func,
+      )
 
     extension (callback: CurlSocketCallback)
-      inline def asFuncPtr: CFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int] =
+      inline def asFuncPtr
+          : CFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int] =
         callback
 
   end CurlSocketCallback
@@ -311,11 +315,11 @@ private[curl] object Multi:
       Tag.materializeCFuncPtr3[Ptr[CurlMultiHandle], CLong, Ptr[Byte], Int]
 
     inline def fromScalaFunction(
-        func: (Ptr[CurlMultiHandle], CLong, Ptr[Byte]) => Int,
+        inline func: (Ptr[CurlMultiHandle], CLong, Ptr[Byte]) => Int,
     ): CurlMultiTimerCallback =
       CFuncPtr3.fromScalaFunction(func)
 
-    extension (cb: CurlMultiTimerCallback)
+    extension (inline cb: CurlMultiTimerCallback)
       inline def asFuncPtr: CFuncPtr3[Ptr[CurlMultiHandle], CLong, Ptr[Byte], Int] =
         cb
 

@@ -15,6 +15,7 @@ import _root_.snhttp.experimental.curl.libcurl.{
   CurlHttpVersion,
   CurlHeader,
   CurlHeaderOrigin,
+  CurlErrCode,
 }
 
 class CurlInfo(ptr: Ptr[CurlHandle]) extends AnyVal:
@@ -22,8 +23,7 @@ class CurlInfo(ptr: Ptr[CurlHandle]) extends AnyVal:
   inline def osErrNo: Int =
     val _osErrno = stackalloc[CLong]()
     val ret = libcurl.easyGetInfo(ptr, _CurlInfo.OS_ERRNO, _osErrno)
-    if ret != libcurl.CurlErrCode.OK then
-      throw new RuntimeException(s"Failed to get OS_ERRNO: ${ret}")
+    if ret != CurlErrCode.OK then throw new RuntimeException(s"Failed to get OS_ERRNO: ${ret}")
     (!_osErrno).toInt
 
   inline def responseCode: Int =

@@ -8,7 +8,6 @@ import scala.scalanative.unsigned.UInt
 import scala.scalanative.libc.stddef.NULL as NullPtr
 import scala.scalanative.posix.sys.select.fd_set
 
-import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{
   CurlMultiHandle,
   CurlWaitFd,

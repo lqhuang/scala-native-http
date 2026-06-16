@@ -14,7 +14,6 @@ import _root_.snhttp.experimental.curl.libcurl.{
   CurlPause,
   CurlBlob as _CurlBlob,
 }
-import _root_.snhttp.experimental.curl.libcurl
 
 class CurlEasy(val ptr: Ptr[CurlHandle]) extends AnyVal:
 

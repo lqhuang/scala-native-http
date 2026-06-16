@@ -4,7 +4,6 @@ package curl
 import scala.scalanative.unsafe.{Ptr, CString}
 import scala.util.Using.Releasable
 
-import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.CurlSlist as _CurlSlist
 
 class CurlSlist private (val ptr: Ptr[_CurlSlist]) extends Releasable[CurlSlist]:

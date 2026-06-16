@@ -6,7 +6,6 @@ import scala.util.Using.Releasable
 import scala.scalanative.unsafe.{Ptr, CInt}
 import scala.scalanative.libc.stddef.NULL
 
-// import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{CurlShareOption, CurlShareErrCode, CurlShareHandle}
 
 class CurlShare(ref: Ptr[CurlShareHandle]) extends AnyVal:
