@@ -5,10 +5,8 @@ import scala.scalanative.unsafe.{
   CSize,
   Ptr,
   stackalloc,
-  alloc,
   Zone,
   CQuote,
-  sizeof,
   CVoidPtr,
   Tag,
 }
@@ -17,7 +15,7 @@ import scala.scalanative.libc.stddef.NULL
 import scala.scalanative.libc.string.memcpy
 import scala.scalanative.linux.epoll
 import scala.scalanative.linux.epoll.{epoll_create1, epoll_ctl, epoll_wait}
-import scala.scalanative.posix.{unistd, poll, errno}
+import scala.scalanative.posix.{unistd, errno}
 import scala.scalanative.posix.timer.timer_create
 import scala.scalanative.unsafe.UnsafeRichInt
 import scala.util.Using
@@ -34,13 +32,13 @@ import snhttp.experimental.curl.curl.{
   CurlSocketCallback,
   CurlSocket,
   CurlCSelect,
+  CurlException,
+  CurlPoll,
 }
 import snhttp.experimental.curl.curl.CurlErrCode.RichCurlErrCode
 import snhttp.experimental.curl.curl.CurlMultiErrCode.RichCurlMultiErrCode
-import snhttp.experimental.curl.curl.CurlPoll
 import snhttp.experimental.curl.libcurl
-import snhttp.experimental.curl.libcurl.CurlHandle
-import snhttp.experimental.curl.libcurl.CurlMultiHandle
+import snhttp.experimental.curl.libcurl.{CurlHandle, CurlMultiHandle}
 
 object App:
 
@@ -70,8 +68,10 @@ object App:
     inline def timeout_=(value: CLong): Unit = !ctx.at4 = value
 
   type FileDescriptor = Int
-  type EpollData = CVoidPtr | FileDescriptor | UInt | ULong
-  given Tag[EpollData] = Tag.ULong.asInstanceOf[Tag[EpollData]]
+  type EpollData = FileDescriptor // | CVoidPtr | ULong | UInt
+  given Tag[EpollData] = Tag.Int
+  // Tag.materializePtrWildcard.asInstanceOf[Tag[EpollData]]
+  // Tag.ULong.asInstanceOf[Tag[EpollData]]
   type EpollEvent = CStruct2[
     /** events */
     Int,
@@ -81,8 +81,8 @@ object App:
   extension (inline event: EpollEvent)
     inline def events: Int = event._1
     inline def events_=(value: Int): Unit = !event.at1 = value
-    inline def data: CVoidPtr | Int | UInt | ULong = event._2
-    inline def data_=(value: CVoidPtr | Int | UInt | ULong): Unit = !event.at2 = value
+    inline def data: EpollData = event._2
+    inline def data_=(value: EpollData): Unit = !event.at2 = value
 
   given zone: Zone = Zone.open()
 
@@ -120,24 +120,39 @@ object App:
     (easy: Ptr[CurlHandle], socket: CurlSocket, what: CurlPoll, clientp: Ptr[?], socketp: Ptr[?]) =>
       val ctxptr = clientp.asInstanceOf[Ptr[MultiContext]]
 
-      var earlyReturn = false
+      if what == CurlPoll.REMOVE
+      then { // Early return
+        epoll_ctl(ctxptr.epfd, epoll.EPOLL_CTL_DEL, socket.asInt, NULL)
+        libcurl.multiAssign(ctxptr.multiRef, socket, NULL)
+        0
+      } //
+      else {
+        val events = what match
+          case CurlPoll.IN     => epoll.EPOLLIN
+          case CurlPoll.OUT    => epoll.EPOLLOUT
+          case CurlPoll.INOUT  => epoll.EPOLLIN | epoll.EPOLLOUT
+          case CurlPoll.REMOVE => epoll.EPOLLERR // Unreachable
 
-      val events = what match {
-        case CurlPoll.IN     => epoll.EPOLLIN
-        case CurlPoll.OUT    => epoll.EPOLLOUT
-        case CurlPoll.INOUT  => epoll.EPOLLIN | epoll.EPOLLOUT
-        case CurlPoll.REMOVE => epoll.EPOLL_CTL_DEL
+        if events == epoll.EPOLLERR
+        then //
+          -1
+        else {
+          val epollEvent = stackalloc[EpollEvent]()
+          epollEvent.events = events
+          epollEvent.data = socket.asInt
+
+          val op = if socketp == NULL then epoll.EPOLL_CTL_ADD else epoll.EPOLL_CTL_MOD
+          val rc = epoll_ctl(ctxptr.epfd, op, socket.asInt, epollEvent)
+          if rc < 0
+          then
+            // epoll_ctl failed, return error to libcurl,
+            // libcurl will then call the callback again with `CURL_POLL_REMOVE`
+            -1
+          else
+            libcurl.multiAssign(ctxptr.multiRef, socket, ctxptr)
+            0
+        }
       }
-
-      val epollEvent = stackalloc[EpollEvent]()
-      epollEvent.events = events
-      epollEvent.data = socket.asInt
-
-      val op = if socketp == NULL then epoll.EPOLL_CTL_ADD else epoll.EPOLL_CTL_MOD
-      epoll_ctl(ctxptr.epfd, op, socket.asInt, epollEvent)
-      libcurl.multiAssign(ctxptr.multiRef, socket, socketp)
-
-      0
   }
 
   /**
@@ -174,18 +189,17 @@ object App:
     (!writeData)._1 = stackalloc[Byte](8192)
     (!writeData)._2 = 0.toUSize
 
+    val globalEpollFd = epoll_create1(epoll.EPOLL_CLOEXEC)
+    if (globalEpollFd < 0)
+      throw new RuntimeException(s"Failed to create epoll instance")
+
     Using.resource(CurlMulti()) { multi =>
 
       val ctxptr = stackalloc[MultiContext]()
-      (!ctxptr).multiRef = multi.ref
-      (!ctxptr).epfd = {
-        val fd = epoll_create1(epoll.EPOLL_CLOEXEC)
-        if (fd < 0)
-          throw new RuntimeException(s"Failed to create epoll instance")
-        fd
-      }
-      (!ctxptr).runningHandle = stackalloc[Int]()
-      (!ctxptr).timeout = 0
+      ctxptr.multiRef = multi.ref
+      ctxptr.epfd = globalEpollFd
+      ctxptr.runningHandle = stackalloc[Int]()
+      ctxptr.timeout = -1
 
       multi.setPtrOption(CurlMultiOption.TIMERDATA, ctxptr)
       multi.setFuncPtrOption(CurlMultiOption.TIMERFUNCTION, timerCallback.asFuncPtr)
@@ -207,45 +221,40 @@ object App:
 
         val bufferSize = 64
         val buffer = stackalloc[EpollEvent](bufferSize)
-        var recvEvents = 0
         var err = CurlMultiErrCode.OK
 
-        while {
-          val msgCount = stackalloc[Int]()
-          val msg = multi.infoRead(msgCount)
-
+        while !ctxptr.runningHandle > 0 && err == CurlMultiErrCode.OK
+        do {
           val timeoutMs = toEpollTimeout(ctxptr.timeout)
-          recvEvents = epoll_wait(ctxptr.epfd, buffer, bufferSize, timeoutMs)
-          println(s"epoll_wait returns with ${recvEvents} events, timeout was ${timeoutMs} ms")
+          val recvEvents = epoll_wait(ctxptr.epfd, buffer, bufferSize, timeoutMs)
 
-          !ctxptr.runningHandle > 0 && recvEvents > 0 && err == CurlMultiErrCode.OK
+          if (recvEvents < 0)
+            if errno.errno == errno.EINTR
+            then () // Retry if interrupted by signal
+            else throw new CurlException(s"epoll_wait failed with error ${errno.errno}")
+          else if (recvEvents == 0) // timeout expired, simply kick the multi socket action again
+            ctxptr.timeout = -1
+            err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningHandle)
+          else
+            for i <- 0 until recvEvents do {
+              val event = buffer(i)
+
+              var action: CurlCSelect = CurlCSelect.NONE
+              if ((event.events & epoll.EPOLLIN) != 0)
+                action |= CurlCSelect.IN
+              if ((event.events & epoll.EPOLLOUT) != 0)
+                action |= CurlCSelect.OUT
+              if ((event.events & (epoll.EPOLLERR | epoll.EPOLLHUP)) != 0)
+                action |= CurlCSelect.ERR
+
+              val epfd = event.data.asInstanceOf[FileDescriptor]
+              err = multi.socketAction(
+                CurlSocket.fromFileDescriptor(epfd),
+                action,
+                ctxptr.runningHandle,
+              )
+            }
         }
-        do
-          for i <- 0 until recvEvents do {
-            val event = buffer(i)
-
-            val action: CurlCSelect = event.events match {
-              case e if (e & epoll.EPOLLIN) != 0                     => CurlCSelect.IN
-              case e if (e & epoll.EPOLLOUT) != 0                    => CurlCSelect.OUT
-              case e if (e & (epoll.EPOLLERR | epoll.EPOLLHUP)) != 0 => CurlCSelect.ERR
-              case _                                                 => CurlCSelect.ERR
-            }
-            val epfd = event.data.asInstanceOf[FileDescriptor]
-            println(
-              s"Received epoll event with events ${event.events}, then action is ${action}",
-            )
-
-            err = action match {
-              case CurlCSelect.IN | CurlCSelect.OUT | CurlCSelect.NONE =>
-                multi.socketAction(
-                  CurlSocket.fromFileDescriptor(epfd),
-                  action,
-                  ctxptr.runningHandle,
-                )
-              case CurlCSelect.ERR =>
-                CurlMultiErrCode.UNRECOVERABLE_POLL
-            }
-          }
 
         val respCode = curl1.info.responseCode
         println(s"Response code of first curl handle is ${respCode}")
@@ -257,9 +266,19 @@ object App:
         multi.removeCurlEasy(curl2)
       }
 
-      unistd.close(ctxptr.epfd)
-
     }
+
+    /**
+     * Clean up the global epoll instance after all multi handles are closed, otherwise the process
+     * will leak file descriptors.
+     *
+     * As curl doc suggests:
+     *
+     * The `socket_callback` may get invoked at anytime, may even happen after all transfers are
+     * done and is likely to happen during a call to `curl_multi_cleanup` when cached connections
+     * are shut down.
+     */
+    unistd.close(globalEpollFd)
 
     zone.close()
   }

@@ -253,7 +253,6 @@ private[curl] object Multi:
     extension (a: CurlCSelect)
       inline def &(b: CurlCSelect): CurlCSelect = a & b
       inline def |(b: CurlCSelect): CurlCSelect = a | b
-      inline def is(b: CurlCSelect): Boolean    = (a & b) == b
 
     def unapply(value: CurlCSelect): Option[CurlCSelect] =
       value match
