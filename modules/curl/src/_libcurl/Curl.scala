@@ -43,6 +43,7 @@ import _root_.snhttp.experimental.curl._internal.{
 }
 import _root_.snhttp.experimental.curl._libcurl.System.CurlOff
 
+// scalafmt: { maxColumn = 120, align.preset = most }
 private[curl] object Curl:
 
   // known as "CURL"
@@ -62,11 +63,13 @@ private[curl] object Curl:
   object CurlSocket extends _BindgenEnumCInt[CurlSocket]:
 
     given Tag[CurlSocket] = Tag.Int
+
     private inline def define(inline v: Int): CurlSocket = v
 
-    inline def fromSocket(s: CInt): CurlSocket = define(s)
+    final val BAD     = define(-1) // FIXME: should be extern in windows platform
+    final val TIMEOUT = CurlSocket.BAD
 
-    // val BAD = define(-1)
+    inline def fromSocket(s: CInt): CurlSocket = define(s)
 
     extension (s: CurlSocket) //
       inline def asSocket: CInt = s
@@ -81,25 +84,26 @@ private[curl] object Curl:
   object CurlSslBackendId extends _BindgenEnumCInt[CurlSslBackendId]:
 
     given Tag[CurlSslBackendId] = Tag.Int
+
     private inline def define(inline a: Int): CurlSslBackendId = a
 
     // Doesn't include the following deprecated backends
     // NSS, GSKIT, AXTLS, MESALINK
 
-    val NONE = define(0)
-    val OPENSSL = define(1)
-    val GNUTLS = define(2)
-    val OBSOLETE4 = define(4)
-    val WOLFSSL = define(7)
-    val SCHANNEL = define(8)
+    val NONE            = define(0)
+    val OPENSSL         = define(1)
+    val GNUTLS          = define(2)
+    val OBSOLETE4       = define(4)
+    val WOLFSSL         = define(7)
+    val SCHANNEL        = define(8)
     val SECURETRANSPORT = define(9)
-    val MBEDTLS = define(11)
-    val BEARSSL = define(13)
-    val RUSTLS = define(14)
+    val MBEDTLS         = define(11)
+    val BEARSSL         = define(13)
+    val RUSTLS          = define(14)
 
-    val AWSLC = OPENSSL
+    val AWSLC     = OPENSSL
     val BORINGSSL = OPENSSL
-    val LIBRESSL = OPENSSL
+    val LIBRESSL  = OPENSSL
 
     def getname(value: CurlSslBackendId): String =
       value match
@@ -120,7 +124,7 @@ private[curl] object Curl:
     extension (a: CurlSslBackendId)
       inline def &(b: CurlSslBackendId): CurlSslBackendId = a & b
       inline def |(b: CurlSslBackendId): CurlSslBackendId = a | b
-      inline def is(b: CurlSslBackendId): Boolean = (a & b) == b
+      inline def is(b: CurlSslBackendId): Boolean         = (a & b) == b
 
   end CurlSslBackendId
 
@@ -128,21 +132,16 @@ private[curl] object Curl:
   object CurlFollow extends _BindgenEnumCLong[CurlFollow]:
 
     given Tag[CurlFollow] = Tag.Size
+
     private inline def define(inline a: Long): CurlFollow = a.toSize
 
-    /** default:    disabled */
+    /* default:    disabled */
     val DISABLED = define(0L)
-
-    /** bits for the CURLOPT_FOLLOWLOCATION option */
+    /* bits for the CURLOPT_FOLLOWLOCATION option */
     val ALL = define(1L)
-
-    /**
-     * Do not use the custom method in the follow-up request if the HTTP code instructs so (301,
-     * 302, 303).
-     */
+    /* Do not use the custom method in the follow-up request if the HTTP code instructs so (301, 302, 303). */
     val OBEYCODE = define(2L)
-
-    /** Only use the custom method in the first request, always reset in the next */
+    /* Only use the custom method in the first request, always reset in the next */
     val FIRSTONLY = define(3L)
 
     implicit class RichCurlFollow(value: CurlFollow) extends AnyVal:
@@ -202,8 +201,7 @@ private[curl] object Curl:
      */
     CurlHttpPostFlag,
     /**
-     * showfilename: The filename to show. If not set, the actual filename will be used (if this is
-     * a file part)
+     * showfilename: The filename to show. If not set, the actual filename will be used (if this is a file part)
      */
     CString,
     /**
@@ -211,13 +209,13 @@ private[curl] object Curl:
      */
     CVoidPtr,
     /**
-     * contentlen: alternative length of contents field. Used if `CURL_HTTPPOST_LARGE` is set. Added
-     * in curl 7.46.0
+     * contentlen: alternative length of contents field. Used if `CURL_HTTPPOST_LARGE` is set. Added in curl 7.46.0
      */
     CurlOff,
   ]
   object CurlHttpPost:
-    given Tag[CVoidPtr] = Tag.materializePtrWildcard
+
+    given Tag[CVoidPtr]     = Tag.materializePtrWildcard
     given Tag[CurlHttpPost] = Tag.materializeCStruct14Tag[
       /**
        * just help to split lines by formatter
@@ -310,33 +308,25 @@ private[curl] object Curl:
   object CurlHttpPostFlag extends _BindgenEnumCInt[CurlHttpPostFlag]:
 
     given Tag[CurlHttpPostFlag] = Tag.Int
+
     private inline def define(inline a: Int): CurlHttpPostFlag = a
 
-    /** specified content is a file name */
+    /* specified content is a file name */
     val FILENAME = define(1 << 0)
-
-    /** specified content is a file name */
+    /* specified content is a file name */
     val READFILE = define(1 << 1)
-
-    /** name is only stored pointer do not free in formfree */
+    /* name is only stored pointer do not free in formfree */
     val PTRNAME = define(1 << 2)
-
-    /** contents is only stored pointer do not free in formfree */
+    /* contents is only stored pointer do not free in formfree */
     val PTRCONTENTS = define(1 << 3)
-
-    /** upload file from buffer */
+    /* upload file from buffer */
     val BUFFER = define(1 << 4)
-
-    /** upload file from pointer contents */
+    /* upload file from pointer contents */
     val PTRBUFFER = define(1 << 5)
-
-    /**
-     * upload file contents by using the regular read callback to get the data and pass the given
-     * pointer as custom pointer
-     */
+    /* upload file contents by using the regular read callback to get the data
+     * and pass the given pointer as custom pointer */
     val CALLBACK = define(1 << 6)
-
-    /** use size in 'contentlen', added in 7.46.0 */
+    /* use size in 'contentlen', added in 7.46.0 */
     val LARGE = define(1 << 7)
 
   end CurlHttpPostFlag
@@ -371,6 +361,7 @@ private[curl] object Curl:
   object CurlWriteFuncRet extends _BindgenEnumCSize[CurlWriteFuncRet]:
 
     given Tag[CurlWriteFuncRet] = Tag.USize
+
     private inline def define(inline a: Long): CurlWriteFuncRet = a.toUSize
 
     /* pause receiving on the current transfer. */
@@ -449,14 +440,14 @@ private[curl] object Curl:
   // 2. add func `curl_seek_callback`
 
   /**
-   * This is a return code for the read callback that, when returned, will signal libcurl to
-   * immediately abort the current transfer.
+   * This is a return code for the read callback that, when returned, will signal libcurl to immediately abort the
+   * current transfer.
    */
   val CURL_READFUNC_ABORT = 0x10000000
 
   /**
-   * This is a return code for the read callback that, when returned, will signal libcurl to pause
-   * sending data on the current transfer.
+   * This is a return code for the read callback that, when returned, will signal libcurl to pause sending data on the
+   * current transfer.
    */
   val CURL_READFUNC_PAUSE = 0x10000001
 
@@ -466,8 +457,7 @@ private[curl] object Curl:
   val CURL_TRAILERFUNC_OK = 0
 
   /**
-   * Return code for when was an error in the trailing header's list and we want to abort the
-   * request
+   * Return code for when was an error in the trailing header's list and we want to abort the request
    */
   val CURL_TRAILERFUNC_ABORT = 1
 
@@ -515,15 +505,14 @@ private[curl] object Curl:
   object CurlSockType extends _BindgenEnumCInt[CurlSockType]:
 
     given Tag[CurlSockType] = Tag.Int
+
     private inline def define(inline a: Int): CurlSockType = a
 
-    /** socket created for a specific IP connection */
+    /* socket created for a specific IP connection */
     val IPCXN = define(0)
-
-    /** socket created by accept() call */
+    /* socket created by accept() call */
     val ACCEPT = define(1)
-
-    /** never use */
+    /* never use */
     val LAST = define(2)
 
     def getname(value: CurlSockType): Option[String] =
@@ -536,7 +525,7 @@ private[curl] object Curl:
     extension (a: CurlSockType)
       inline def &(b: CurlSockType): CurlSockType = a & b
       inline def |(b: CurlSockType): CurlSockType = a | b
-      inline def is(b: CurlSockType): Boolean = (a & b) == b
+      inline def is(b: CurlSockType): Boolean     = (a & b) == b
 
   end CurlSockType
 
@@ -547,6 +536,7 @@ private[curl] object Curl:
   object CurlSockOpt extends _BindgenEnumCInt[CurlSockOpt]:
 
     given Tag[CurlSockOpt] = Tag.Int
+
     private inline def define(inline a: Int): CurlSockOpt = a
 
     val OK = define(0)
@@ -589,6 +579,7 @@ private[curl] object Curl:
     sockaddr,
   ]
   object CurlSockAddr:
+
     given Tag[CurlSockAddr] =
       Tag.materializeCStruct5Tag[SockAddrFamily, CurlSockType, Int, socklen_t, sockaddr]
 
@@ -608,16 +599,16 @@ private[curl] object Curl:
       ptr
 
     extension (struct: CurlSockAddr)
-      inline def family: SockAddrFamily = struct._1
+      inline def family: SockAddrFamily                = struct._1
       inline def family_=(value: SockAddrFamily): Unit = !struct.at1 = value
-      inline def socktype: CurlSockType = struct._2
+      inline def socktype: CurlSockType                = struct._2
       inline def socktype_=(value: CurlSockType): Unit = !struct.at2 = value
-      inline def protocol: Int = struct._3
-      inline def protocol_=(value: Int): Unit = !struct.at3 = value
-      inline def addrlen: UInt = struct._4
-      inline def addrlen_=(value: UInt): Unit = !struct.at4 = value
-      inline def addr: sockaddr = struct._5
-      inline def addr_=(value: sockaddr): Unit = !struct.at5 = value
+      inline def protocol: Int                         = struct._3
+      inline def protocol_=(value: Int): Unit          = !struct.at3 = value
+      inline def addrlen: UInt                         = struct._4
+      inline def addrlen_=(value: UInt): Unit          = !struct.at4 = value
+      inline def addr: sockaddr                        = struct._5
+      inline def addr_=(value: sockaddr): Unit         = !struct.at5 = value
 
   // known as "curl_opensocket_callback"
   opaque type CurlOpenSocketCallback =
@@ -628,15 +619,19 @@ private[curl] object Curl:
       CurlSockType,
       /** address */
       Ptr[CurlSockAddr],
+      /** return */
       CurlSocket,
     ]
   object CurlOpenSocketCallback:
+
     given Tag[CurlOpenSocketCallback] =
       Tag.materializeCFuncPtr3[CVoidPtr, CurlSockType, Ptr[CurlSockAddr], CurlSocket]
 
     inline def apply(
         inline o: CFuncPtr3[CVoidPtr, CurlSockType, Ptr[CurlSockAddr], CurlSocket],
     ): CurlOpenSocketCallback = o
+
+  end CurlOpenSocketCallback
 
   // known as "curl_closesocket_callback"
   opaque type CurlCloseSocketCallback = CFuncPtr2[CVoidPtr, CurlSocket, Int]
@@ -649,18 +644,16 @@ private[curl] object Curl:
   object CurlIoErr extends _BindgenEnumCInt[CurlIoErr]:
 
     given Tag[CurlIoErr] = Tag.Int
+
     private inline def define(inline a: Int): CurlIoErr = a
 
-    /** I/O operation successful */
+    /* I/O operation successful */
     val OK = define(0)
-
-    /** command was unknown to callback */
+    /* command was unknown to callback */
     val UNKNOWNCMD = define(1)
-
-    /** failed to restart the read */
+    /* failed to restart the read */
     val FAILRESTART = define(2)
-
-    /** never use */
+    /* never use */
     val LAST = define(3)
 
     def getname(value: CurlIoErr): Option[String] =
@@ -674,7 +667,7 @@ private[curl] object Curl:
     extension (a: CurlIoErr)
       inline def &(b: CurlIoErr): CurlIoErr = a & b
       inline def |(b: CurlIoErr): CurlIoErr = a | b
-      inline def is(b: CurlIoErr): Boolean = (a & b) == b
+      inline def is(b: CurlIoErr): Boolean  = (a & b) == b
 
   end CurlIoErr
 
@@ -682,16 +675,14 @@ private[curl] object Curl:
   opaque type CurlIoCmd = Int
   object CurlIoCmd extends _BindgenEnumCInt[CurlIoCmd]:
 
-    given Tag[CurlIoCmd] = Tag.Int
+    given Tag[CurlIoCmd]                                = Tag.Int
     private inline def define(inline a: Int): CurlIoCmd = a
 
-    /** no operation */
+    /* no operation */
     val NOP = define(0)
-
-    /** restart the read stream from start */
+    /* restart the read stream from start */
     val RESTARTREAD = define(1)
-
-    /** never use */
+    /* never use */
     val LAST = define(2)
 
     def getname(value: CurlIoCmd): Option[String] =
@@ -704,7 +695,7 @@ private[curl] object Curl:
     extension (a: CurlIoCmd)
       inline def &(b: CurlIoCmd): CurlIoCmd = a & b
       inline def |(b: CurlIoCmd): CurlIoCmd = a | b
-      inline def is(b: CurlIoCmd): Boolean = (a & b) == b
+      inline def is(b: CurlIoCmd): Boolean  = (a & b) == b
 
   end CurlIoCmd
 
@@ -716,6 +707,7 @@ private[curl] object Curl:
     CurlIoCmd,
     /** clientp */
     CVoidPtr,
+    /** return */
     CurlIoErr,
   ]
   object CurlIoCtlCallback:
@@ -730,16 +722,17 @@ private[curl] object Curl:
   object CurlInfoType extends _BindgenEnumCInt[CurlInfoType]:
 
     given Tag[CurlInfoType] = Tag.Int
+
     private inline def define(inline a: Int): CurlInfoType = a
 
-    val TEXT = define(0)
-    val HEADER_IN = define(1)
-    val HEADER_OUT = define(2)
-    val DATA_IN = define(3)
-    val DATA_OUT = define(4)
-    val SSL_DATA_IN = define(5)
+    val TEXT         = define(0)
+    val HEADER_IN    = define(1)
+    val HEADER_OUT   = define(2)
+    val DATA_IN      = define(3)
+    val DATA_OUT     = define(4)
+    val SSL_DATA_IN  = define(5)
     val SSL_DATA_OUT = define(6)
-    val END = define(7)
+    val END          = define(7)
 
     implicit class RichCurlInfoType(value: CurlInfoType) extends AnyVal:
       inline def getname: String =
@@ -772,120 +765,118 @@ private[curl] object Curl:
   ]
 
   /**
-   * All possible error codes from all sorts of curl functions. Future versions may return other
-   * values, stay prepared.
+   * All possible error codes from all sorts of curl functions. Future versions may return other values, stay prepared.
    *
-   * Always add new return codes last. Never *EVER* remove any. The return codes must remain the
-   * same!
+   * Always add new return codes last. Never *EVER* remove any. The return codes must remain the same!
    */
   // known as enum "CURLcode"
   opaque type CurlErrCode = Int
   object CurlErrCode extends _BindgenEnumCInt[CurlErrCode]:
 
-    given Tag[CurlErrCode] = Tag.Int
+    given Tag[CurlErrCode]                                = Tag.Int
     private inline def define(inline a: Int): CurlErrCode = a
 
-    val OK = define(0)
-    val UNSUPPORTED_PROTOCOL = define(1)
-    val FAILED_INIT = define(2)
-    val URL_MALFORMAT = define(3)
-    val NOT_BUILT_IN = define(4)
-    val COULDNT_RESOLVE_PROXY = define(5)
-    val COULDNT_RESOLVE_HOST = define(6)
-    val COULDNT_CONNECT = define(7)
-    val WEIRD_SERVER_REPLY = define(8)
-    val REMOTE_ACCESS_DENIED = define(9)
-    val FTP_ACCEPT_FAILED = define(10)
-    val FTP_WEIRD_PASS_REPLY = define(11)
-    val FTP_ACCEPT_TIMEOUT = define(12)
-    val FTP_WEIRD_PASV_REPLY = define(13)
-    val FTP_WEIRD_227_FORMAT = define(14)
-    val FTP_CANT_GET_HOST = define(15)
-    val HTTP2 = define(16)
-    val FTP_COULDNT_SET_TYPE = define(17)
-    val PARTIAL_FILE = define(18)
-    val FTP_COULDNT_RETR_FILE = define(19)
-    val OBSOLETE20 = define(20)
-    val QUOTE_ERROR = define(21)
-    val HTTP_RETURNED_ERROR = define(22)
-    val WRITE_ERROR = define(23)
-    val OBSOLETE24 = define(24)
-    val UPLOAD_FAILED = define(25)
-    val READ_ERROR = define(26)
-    val OUT_OF_MEMORY = define(27)
-    val OPERATION_TIMEDOUT = define(28)
-    val OBSOLETE29 = define(29)
-    val FTP_PORT_FAILED = define(30)
-    val FTP_COULDNT_USE_REST = define(31)
-    val OBSOLETE32 = define(32)
-    val RANGE_ERROR = define(33)
-    val HTTP_POST_ERROR = define(34)
-    val SSL_CONNECT_ERROR = define(35)
-    val BAD_DOWNLOAD_RESUME = define(36)
-    val FILE_COULDNT_READ_FILE = define(37)
-    val LDAP_CANNOT_BIND = define(38)
-    val LDAP_SEARCH_FAILED = define(39)
-    val OBSOLETE40 = define(40)
-    val FUNCTION_NOT_FOUND = define(41)
-    val ABORTED_BY_CALLBACK = define(42)
-    val BAD_FUNCTION_ARGUMENT = define(43)
-    val OBSOLETE44 = define(44)
-    val INTERFACE_FAILED = define(45)
-    val OBSOLETE46 = define(46)
-    val TOO_MANY_REDIRECTS = define(47)
-    val UNKNOWN_OPTION = define(48)
-    val SETOPT_OPTION_SYNTAX = define(49)
-    val OBSOLETE50 = define(50)
-    val OBSOLETE51 = define(51)
-    val GOT_NOTHING = define(52)
-    val SSL_ENGINE_NOTFOUND = define(53)
-    val SSL_ENGINE_SETFAILED = define(54)
-    val SEND_ERROR = define(55)
-    val RECV_ERROR = define(56)
-    val OBSOLETE57 = define(57)
-    val SSL_CERTPROBLEM = define(58)
-    val SSL_CIPHER = define(59)
+    val OK                       = define(0)
+    val UNSUPPORTED_PROTOCOL     = define(1)
+    val FAILED_INIT              = define(2)
+    val URL_MALFORMAT            = define(3)
+    val NOT_BUILT_IN             = define(4)
+    val COULDNT_RESOLVE_PROXY    = define(5)
+    val COULDNT_RESOLVE_HOST     = define(6)
+    val COULDNT_CONNECT          = define(7)
+    val WEIRD_SERVER_REPLY       = define(8)
+    val REMOTE_ACCESS_DENIED     = define(9)
+    val FTP_ACCEPT_FAILED        = define(10)
+    val FTP_WEIRD_PASS_REPLY     = define(11)
+    val FTP_ACCEPT_TIMEOUT       = define(12)
+    val FTP_WEIRD_PASV_REPLY     = define(13)
+    val FTP_WEIRD_227_FORMAT     = define(14)
+    val FTP_CANT_GET_HOST        = define(15)
+    val HTTP2                    = define(16)
+    val FTP_COULDNT_SET_TYPE     = define(17)
+    val PARTIAL_FILE             = define(18)
+    val FTP_COULDNT_RETR_FILE    = define(19)
+    val OBSOLETE20               = define(20)
+    val QUOTE_ERROR              = define(21)
+    val HTTP_RETURNED_ERROR      = define(22)
+    val WRITE_ERROR              = define(23)
+    val OBSOLETE24               = define(24)
+    val UPLOAD_FAILED            = define(25)
+    val READ_ERROR               = define(26)
+    val OUT_OF_MEMORY            = define(27)
+    val OPERATION_TIMEDOUT       = define(28)
+    val OBSOLETE29               = define(29)
+    val FTP_PORT_FAILED          = define(30)
+    val FTP_COULDNT_USE_REST     = define(31)
+    val OBSOLETE32               = define(32)
+    val RANGE_ERROR              = define(33)
+    val HTTP_POST_ERROR          = define(34)
+    val SSL_CONNECT_ERROR        = define(35)
+    val BAD_DOWNLOAD_RESUME      = define(36)
+    val FILE_COULDNT_READ_FILE   = define(37)
+    val LDAP_CANNOT_BIND         = define(38)
+    val LDAP_SEARCH_FAILED       = define(39)
+    val OBSOLETE40               = define(40)
+    val FUNCTION_NOT_FOUND       = define(41)
+    val ABORTED_BY_CALLBACK      = define(42)
+    val BAD_FUNCTION_ARGUMENT    = define(43)
+    val OBSOLETE44               = define(44)
+    val INTERFACE_FAILED         = define(45)
+    val OBSOLETE46               = define(46)
+    val TOO_MANY_REDIRECTS       = define(47)
+    val UNKNOWN_OPTION           = define(48)
+    val SETOPT_OPTION_SYNTAX     = define(49)
+    val OBSOLETE50               = define(50)
+    val OBSOLETE51               = define(51)
+    val GOT_NOTHING              = define(52)
+    val SSL_ENGINE_NOTFOUND      = define(53)
+    val SSL_ENGINE_SETFAILED     = define(54)
+    val SEND_ERROR               = define(55)
+    val RECV_ERROR               = define(56)
+    val OBSOLETE57               = define(57)
+    val SSL_CERTPROBLEM          = define(58)
+    val SSL_CIPHER               = define(59)
     val PEER_FAILED_VERIFICATION = define(60)
-    val BAD_CONTENT_ENCODING = define(61)
-    val OBSOLETE62 = define(62)
-    val FILESIZE_EXCEEDED = define(63)
-    val USE_SSL_FAILED = define(64)
-    val SEND_FAIL_REWIND = define(65)
-    val SSL_ENGINE_INITFAILED = define(66)
-    val LOGIN_DENIED = define(67)
-    val TFTP_NOTFOUND = define(68)
-    val TFTP_PERM = define(69)
-    val REMOTE_DISK_FULL = define(70)
-    val TFTP_ILLEGAL = define(71)
-    val TFTP_UNKNOWNID = define(72)
-    val REMOTE_FILE_EXISTS = define(73)
-    val TFTP_NOSUCHUSER = define(74)
-    val OBSOLETE75 = define(75)
-    val OBSOLETE76 = define(76)
-    val SSL_CACERT_BADFILE = define(77)
-    val REMOTE_FILE_NOT_FOUND = define(78)
-    val SSH = define(79)
-    val SSL_SHUTDOWN_FAILED = define(80)
-    val AGAIN = define(81)
-    val SSL_CRL_BADFILE = define(82)
-    val SSL_ISSUER_ERROR = define(83)
-    val FTP_PRET_FAILED = define(84)
-    val RTSP_CSEQ_ERROR = define(85)
-    val RTSP_SESSION_ERROR = define(86)
-    val FTP_BAD_FILE_LIST = define(87)
-    val CHUNK_FAILED = define(88)
-    val NO_CONNECTION_AVAILABLE = define(89)
+    val BAD_CONTENT_ENCODING     = define(61)
+    val OBSOLETE62               = define(62)
+    val FILESIZE_EXCEEDED        = define(63)
+    val USE_SSL_FAILED           = define(64)
+    val SEND_FAIL_REWIND         = define(65)
+    val SSL_ENGINE_INITFAILED    = define(66)
+    val LOGIN_DENIED             = define(67)
+    val TFTP_NOTFOUND            = define(68)
+    val TFTP_PERM                = define(69)
+    val REMOTE_DISK_FULL         = define(70)
+    val TFTP_ILLEGAL             = define(71)
+    val TFTP_UNKNOWNID           = define(72)
+    val REMOTE_FILE_EXISTS       = define(73)
+    val TFTP_NOSUCHUSER          = define(74)
+    val OBSOLETE75               = define(75)
+    val OBSOLETE76               = define(76)
+    val SSL_CACERT_BADFILE       = define(77)
+    val REMOTE_FILE_NOT_FOUND    = define(78)
+    val SSH                      = define(79)
+    val SSL_SHUTDOWN_FAILED      = define(80)
+    val AGAIN                    = define(81)
+    val SSL_CRL_BADFILE          = define(82)
+    val SSL_ISSUER_ERROR         = define(83)
+    val FTP_PRET_FAILED          = define(84)
+    val RTSP_CSEQ_ERROR          = define(85)
+    val RTSP_SESSION_ERROR       = define(86)
+    val FTP_BAD_FILE_LIST        = define(87)
+    val CHUNK_FAILED             = define(88)
+    val NO_CONNECTION_AVAILABLE  = define(89)
     val SSL_PINNEDPUBKEYNOTMATCH = define(90)
-    val SSL_INVALIDCERTSTATUS = define(91)
-    val HTTP2_STREAM = define(92)
-    val RECURSIVE_API_CALL = define(93)
-    val AUTH_ERROR = define(94)
-    val HTTP3 = define(95)
-    val QUIC_CONNECT_ERROR = define(96)
-    val PROXY = define(97)
-    val SSL_CLIENTCERT = define(98)
-    val UNRECOVERABLE_POLL = define(99)
-    val CURL_LAST = define(100)
+    val SSL_INVALIDCERTSTATUS    = define(91)
+    val HTTP2_STREAM             = define(92)
+    val RECURSIVE_API_CALL       = define(93)
+    val AUTH_ERROR               = define(94)
+    val HTTP3                    = define(95)
+    val QUIC_CONNECT_ERROR       = define(96)
+    val PROXY                    = define(97)
+    val SSL_CLIENTCERT           = define(98)
+    val UNRECOVERABLE_POLL       = define(99)
+    val CURL_LAST                = define(100)
 
     implicit class RichCurlErrCode(value: CurlErrCode) extends AnyVal:
       inline def getname: String =
@@ -999,88 +990,90 @@ private[curl] object Curl:
   object CurlProxyCode extends _BindgenEnumCInt[CurlProxyCode]:
 
     given Tag[CurlProxyCode] = Tag.Int
+
     private inline def define(inline a: Int): CurlProxyCode = a
 
-    val OK = define(0)
-    val BAD_ADDRESS_TYPE = define(1)
-    val BAD_VERSION = define(2)
-    val CLOSED = define(3)
-    val GSSAPI = define(4)
-    val GSSAPI_PERMSG = define(5)
-    val GSSAPI_PROTECTION = define(6)
-    val IDENTD = define(7)
-    val IDENTD_DIFFER = define(8)
-    val LONG_HOSTNAME = define(9)
-    val LONG_PASSWD = define(10)
-    val LONG_USER = define(11)
-    val NO_AUTH = define(12)
-    val RECV_ADDRESS = define(13)
-    val RECV_AUTH = define(14)
-    val RECV_CONNECT = define(15)
-    val RECV_REQACK = define(16)
+    val OK                               = define(0)
+    val BAD_ADDRESS_TYPE                 = define(1)
+    val BAD_VERSION                      = define(2)
+    val CLOSED                           = define(3)
+    val GSSAPI                           = define(4)
+    val GSSAPI_PERMSG                    = define(5)
+    val GSSAPI_PROTECTION                = define(6)
+    val IDENTD                           = define(7)
+    val IDENTD_DIFFER                    = define(8)
+    val LONG_HOSTNAME                    = define(9)
+    val LONG_PASSWD                      = define(10)
+    val LONG_USER                        = define(11)
+    val NO_AUTH                          = define(12)
+    val RECV_ADDRESS                     = define(13)
+    val RECV_AUTH                        = define(14)
+    val RECV_CONNECT                     = define(15)
+    val RECV_REQACK                      = define(16)
     val REPLY_ADDRESS_TYPE_NOT_SUPPORTED = define(17)
-    val REPLY_COMMAND_NOT_SUPPORTED = define(18)
-    val REPLY_CONNECTION_REFUSED = define(19)
-    val REPLY_GENERAL_SERVER_FAILURE = define(20)
-    val REPLY_HOST_UNREACHABLE = define(21)
-    val REPLY_NETWORK_UNREACHABLE = define(22)
-    val REPLY_NOT_ALLOWED = define(23)
-    val REPLY_TTL_EXPIRED = define(24)
-    val REPLY_UNASSIGNED = define(25)
-    val REQUEST_FAILED = define(26)
-    val RESOLVE_HOST = define(27)
-    val SEND_AUTH = define(28)
-    val SEND_CONNECT = define(29)
-    val SEND_REQUEST = define(30)
-    val UNKNOWN_FAIL = define(31)
-    val UNKNOWN_MODE = define(32)
-    val USER_REJECTED = define(33)
-    val LAST = define(34)
+    val REPLY_COMMAND_NOT_SUPPORTED      = define(18)
+    val REPLY_CONNECTION_REFUSED         = define(19)
+    val REPLY_GENERAL_SERVER_FAILURE     = define(20)
+    val REPLY_HOST_UNREACHABLE           = define(21)
+    val REPLY_NETWORK_UNREACHABLE        = define(22)
+    val REPLY_NOT_ALLOWED                = define(23)
+    val REPLY_TTL_EXPIRED                = define(24)
+    val REPLY_UNASSIGNED                 = define(25)
+    val REQUEST_FAILED                   = define(26)
+    val RESOLVE_HOST                     = define(27)
+    val SEND_AUTH                        = define(28)
+    val SEND_CONNECT                     = define(29)
+    val SEND_REQUEST                     = define(30)
+    val UNKNOWN_FAIL                     = define(31)
+    val UNKNOWN_MODE                     = define(32)
+    val USER_REJECTED                    = define(33)
+    val LAST                             = define(34)
 
+    // scalafmt: { maxColumn = 150, align.preset = most }
     def getname(value: CurlProxyCode): Option[String] =
       value match
-        case OK                => Some("CURLPX_OK")
-        case BAD_ADDRESS_TYPE  => Some("CURLPX_BAD_ADDRESS_TYPE")
-        case BAD_VERSION       => Some("CURLPX_BAD_VERSION")
-        case CLOSED            => Some("CURLPX_CLOSED")
-        case GSSAPI            => Some("CURLPX_GSSAPI")
-        case GSSAPI_PERMSG     => Some("CURLPX_GSSAPI_PERMSG")
-        case GSSAPI_PROTECTION => Some("CURLPX_GSSAPI_PROTECTION")
-        case IDENTD            => Some("CURLPX_IDENTD")
-        case IDENTD_DIFFER     => Some("CURLPX_IDENTD_DIFFER")
-        case LONG_HOSTNAME     => Some("CURLPX_LONG_HOSTNAME")
-        case LONG_PASSWD       => Some("CURLPX_LONG_PASSWD")
-        case LONG_USER         => Some("CURLPX_LONG_USER")
-        case NO_AUTH           => Some("CURLPX_NO_AUTH")
-        case RECV_ADDRESS      => Some("CURLPX_RECV_ADDRESS")
-        case RECV_AUTH         => Some("CURLPX_RECV_AUTH")
-        case RECV_CONNECT      => Some("CURLPX_RECV_CONNECT")
-        case RECV_REQACK       => Some("CURLPX_RECV_REQACK")
-        case REPLY_ADDRESS_TYPE_NOT_SUPPORTED =>
-          Some("CURLPX_REPLY_ADDRESS_TYPE_NOT_SUPPORTED")
-        case REPLY_COMMAND_NOT_SUPPORTED  => Some("CURLPX_REPLY_COMMAND_NOT_SUPPORTED")
-        case REPLY_CONNECTION_REFUSED     => Some("CURLPX_REPLY_CONNECTION_REFUSED")
-        case REPLY_GENERAL_SERVER_FAILURE => Some("CURLPX_REPLY_GENERAL_SERVER_FAILURE")
-        case REPLY_HOST_UNREACHABLE       => Some("CURLPX_REPLY_HOST_UNREACHABLE")
-        case REPLY_NETWORK_UNREACHABLE    => Some("CURLPX_REPLY_NETWORK_UNREACHABLE")
-        case REPLY_NOT_ALLOWED            => Some("CURLPX_REPLY_NOT_ALLOWED")
-        case REPLY_TTL_EXPIRED            => Some("CURLPX_REPLY_TTL_EXPIRED")
-        case REPLY_UNASSIGNED             => Some("CURLPX_REPLY_UNASSIGNED")
-        case REQUEST_FAILED               => Some("CURLPX_REQUEST_FAILED")
-        case RESOLVE_HOST                 => Some("CURLPX_RESOLVE_HOST")
-        case SEND_AUTH                    => Some("CURLPX_SEND_AUTH")
-        case SEND_CONNECT                 => Some("CURLPX_SEND_CONNECT")
-        case SEND_REQUEST                 => Some("CURLPX_SEND_REQUEST")
-        case UNKNOWN_FAIL                 => Some("CURLPX_UNKNOWN_FAIL")
-        case UNKNOWN_MODE                 => Some("CURLPX_UNKNOWN_MODE")
-        case USER_REJECTED                => Some("CURLPX_USER_REJECTED")
-        case LAST                         => Some("CURLPX_LAST")
-        case _                            => None
+        case OK                               => Some("CURLPX_OK")
+        case BAD_ADDRESS_TYPE                 => Some("CURLPX_BAD_ADDRESS_TYPE")
+        case BAD_VERSION                      => Some("CURLPX_BAD_VERSION")
+        case CLOSED                           => Some("CURLPX_CLOSED")
+        case GSSAPI                           => Some("CURLPX_GSSAPI")
+        case GSSAPI_PERMSG                    => Some("CURLPX_GSSAPI_PERMSG")
+        case GSSAPI_PROTECTION                => Some("CURLPX_GSSAPI_PROTECTION")
+        case IDENTD                           => Some("CURLPX_IDENTD")
+        case IDENTD_DIFFER                    => Some("CURLPX_IDENTD_DIFFER")
+        case LONG_HOSTNAME                    => Some("CURLPX_LONG_HOSTNAME")
+        case LONG_PASSWD                      => Some("CURLPX_LONG_PASSWD")
+        case LONG_USER                        => Some("CURLPX_LONG_USER")
+        case NO_AUTH                          => Some("CURLPX_NO_AUTH")
+        case RECV_ADDRESS                     => Some("CURLPX_RECV_ADDRESS")
+        case RECV_AUTH                        => Some("CURLPX_RECV_AUTH")
+        case RECV_CONNECT                     => Some("CURLPX_RECV_CONNECT")
+        case RECV_REQACK                      => Some("CURLPX_RECV_REQACK")
+        case REPLY_ADDRESS_TYPE_NOT_SUPPORTED => Some("CURLPX_REPLY_ADDRESS_TYPE_NOT_SUPPORTED")
+        case REPLY_COMMAND_NOT_SUPPORTED      => Some("CURLPX_REPLY_COMMAND_NOT_SUPPORTED")
+        case REPLY_CONNECTION_REFUSED         => Some("CURLPX_REPLY_CONNECTION_REFUSED")
+        case REPLY_GENERAL_SERVER_FAILURE     => Some("CURLPX_REPLY_GENERAL_SERVER_FAILURE")
+        case REPLY_HOST_UNREACHABLE           => Some("CURLPX_REPLY_HOST_UNREACHABLE")
+        case REPLY_NETWORK_UNREACHABLE        => Some("CURLPX_REPLY_NETWORK_UNREACHABLE")
+        case REPLY_NOT_ALLOWED                => Some("CURLPX_REPLY_NOT_ALLOWED")
+        case REPLY_TTL_EXPIRED                => Some("CURLPX_REPLY_TTL_EXPIRED")
+        case REPLY_UNASSIGNED                 => Some("CURLPX_REPLY_UNASSIGNED")
+        case REQUEST_FAILED                   => Some("CURLPX_REQUEST_FAILED")
+        case RESOLVE_HOST                     => Some("CURLPX_RESOLVE_HOST")
+        case SEND_AUTH                        => Some("CURLPX_SEND_AUTH")
+        case SEND_CONNECT                     => Some("CURLPX_SEND_CONNECT")
+        case SEND_REQUEST                     => Some("CURLPX_SEND_REQUEST")
+        case UNKNOWN_FAIL                     => Some("CURLPX_UNKNOWN_FAIL")
+        case UNKNOWN_MODE                     => Some("CURLPX_UNKNOWN_MODE")
+        case USER_REJECTED                    => Some("CURLPX_USER_REJECTED")
+        case LAST                             => Some("CURLPX_LAST")
+        case _                                => None
+    // scalafmt: { maxColumn = 120, align.preset = most }
 
     extension (a: CurlProxyCode)
       inline def &(b: CurlProxyCode): CurlProxyCode = a & b
       inline def |(b: CurlProxyCode): CurlProxyCode = a | b
-      inline def is(b: CurlProxyCode): Boolean = (a & b) == b
+      inline def is(b: CurlProxyCode): Boolean      = (a & b) == b
 
   end CurlProxyCode
 
@@ -1091,16 +1084,16 @@ private[curl] object Curl:
   // known as "CURLPROXY_*"
   opaque type CurlProxyType = CLong
   object CurlProxyType extends _BindgenEnumCLong[CurlProxyType]:
-    given Tag[CurlProxyType] = Tag.Size
+    given Tag[CurlProxyType]                                 = Tag.Size
     private inline def define(inline a: Long): CurlProxyType = a.toSize
 
-    val HTTP = define(0L)
-    val HTTP_1_0 = define(1L)
-    val HTTPS = define(2L)
-    val HTTPS2 = define(3L)
-    val SOCKS4 = define(4L)
-    val SOCKS5 = define(5L)
-    val SOCKS4A = define(6L)
+    val HTTP            = define(0L)
+    val HTTP_1_0        = define(1L)
+    val HTTPS           = define(2L)
+    val HTTPS2          = define(3L)
+    val SOCKS4          = define(4L)
+    val SOCKS5          = define(5L)
+    val SOCKS4A         = define(6L)
     val SOCKS5_HOSTNAME = define(7L)
 
     def getname(value: CurlProxyType): String =
@@ -1133,13 +1126,14 @@ private[curl] object Curl:
   object CurlUseSsl extends _BindgenEnumCLong[CurlUseSsl]:
 
     given Tag[CurlUseSsl] = Tag.Size
+
     private inline def define(inline a: Long): CurlUseSsl = a.toSize
 
-    val NONE = define(0L) // do not attempt to use SSL
-    val TRY = define(1L) // try using SSL, proceed anyway otherwise
+    val NONE    = define(0L) // do not attempt to use SSL
+    val TRY     = define(1L) // try using SSL, proceed anyway otherwise
     val CONTROL = define(2L) // SSL for the control connection or fail
-    val ALL = define(3L) // SSL for all communication or fail
-    val LAST = define(4L) // not an option, never use
+    val ALL     = define(3L) // SSL for all communication or fail
+    val LAST    = define(4L) // not an option, never use
 
   end CurlUseSsl
 
@@ -1158,7 +1152,7 @@ private[curl] object Curl:
 
     private inline def define(inline v: Long): CurlHeaderOpt = v.toSize
 
-    val UNIFIED = define(0L)
+    val UNIFIED  = define(0L)
     val SEPARATE = define(1L << 0)
 
   end CurlHeaderOpt
@@ -1169,12 +1163,13 @@ private[curl] object Curl:
   object CurlAltSvc extends _BindgenEnumCLong[CurlAltSvc]:
 
     given Tag[CurlAltSvc] = Tag.Size
+
     private inline def define(inline v: Long): CurlAltSvc = v.toSize
 
     val READONLYFILE = define(1L << 2)
-    val H1 = define(1L << 3)
-    val H2 = define(1L << 4)
-    val H3 = define(1L << 5)
+    val H1           = define(1L << 3)
+    val H2           = define(1L << 4)
+    val H3           = define(1L << 5)
 
   end CurlAltSvc
 
@@ -1192,329 +1187,330 @@ private[curl] object Curl:
   object CurlOption extends _BindgenEnumCInt[CurlOption]:
 
     given Tag[CurlOption] = Tag.Int
+
     private inline def define(inline a: Int): CurlOption = a
 
     // CurlOptType
     private object cot {
-      val LONG = 0
-      val OBJECTPOINT = 10000
+      val LONG          = 0
+      val OBJECTPOINT   = 10000
       val FUNCTIONPOINT = 20000
-      val OFF_T = 30000
-      val BLOB = 40000
+      val OFF_T         = 30000
+      val BLOB          = 40000
 
       // alias
       val STRINGPOINT = OBJECTPOINT
-      val SLISTPOINT = OBJECTPOINT
-      val CBPOINT = OBJECTPOINT
-      val VALUES = LONG
+      val SLISTPOINT  = OBJECTPOINT
+      val CBPOINT     = OBJECTPOINT
+      val VALUES      = LONG
     }
 
-    val WRITEDATA = define(cot.CBPOINT + 1)
-    val URL = define(cot.STRINGPOINT + 2)
-    val PORT = define(cot.LONG + 3)
-    val PROXY = define(cot.STRINGPOINT + 4)
-    val USERPWD = define(10005)
-    val PROXYUSERPWD = define(10006)
-    val RANGE = define(10007)
-    val READDATA = define(10009)
-    val ERRORBUFFER = define(10010)
-    val WRITEFUNCTION = define(20011)
-    val READFUNCTION = define(20012)
-    val TIMEOUT = define(13)
-    val INFILESIZE = define(14)
-    val POSTFIELDS = define(10015)
-    val REFERER = define(10016)
-    val FTPPORT = define(10017)
-    val USERAGENT = define(10018)
-    val LOW_SPEED_LIMIT = define(19)
-    val LOW_SPEED_TIME = define(20)
-    val RESUME_FROM = define(21)
-    val COOKIE = define(10022)
-    val HTTPHEADER = define(10023)
-    val HTTPPOST = define(10024)
-    val SSLCERT = define(10025)
-    val KEYPASSWD = define(10026)
-    val CRLF = define(27)
-    val QUOTE = define(10028)
-    val HEADERDATA = define(10029)
-    val COOKIEFILE = define(10031)
-    val SSLVERSION = define(32)
-    val TIMECONDITION = define(33)
-    val TIMEVALUE = define(34)
-    val CUSTOMREQUEST = define(10036)
-    val STDERR = define(10037)
-    val POSTQUOTE = define(10039)
-    val OBSOLETE40 = define(10040)
-    val VERBOSE = define(41)
-    val HEADER = define(42)
-    val NOPROGRESS = define(43)
-    val NOBODY = define(44) // HTTP HEAD
-    val FAILONERROR = define(45)
-    val UPLOAD = define(46)
-    val POST = define(47)
-    val DIRLISTONLY = define(48)
-    val APPEND = define(50)
-    val NETRC = define(51)
-    val FOLLOWLOCATION = define(52)
-    val TRANSFERTEXT = define(53)
-    val PUT = define(54)
-    val PROGRESSFUNCTION = define(20056)
-    val XFERINFODATA = define(10057)
-    val AUTOREFERER = define(58)
-    val PROXYPORT = define(59)
-    val POSTFIELDSIZE = define(60)
-    val HTTPPROXYTUNNEL = define(61)
-    val INTERFACE = define(10062)
-    val KRBLEVEL = define(10063)
-    val SSL_VERIFYPEER = define(64)
-    val CAINFO = define(10065)
-    val MAXREDIRS = define(68)
-    val FILETIME = define(69)
-    val TELNETOPTIONS = define(10070)
-    val MAXCONNECTS = define(71)
-    val OBSOLETE72 = define(72)
-    val FRESH_CONNECT = define(74)
-    val FORBID_REUSE = define(75)
-    val RANDOM_FILE = define(10076)
-    val EGDSOCKET = define(10077)
-    val CONNECTTIMEOUT = define(78)
-    val HEADERFUNCTION = define(20079)
-    val HTTPGET = define(80)
-    val SSL_VERIFYHOST = define(81)
-    val COOKIEJAR = define(10082)
-    val SSL_CIPHER_LIST = define(10083)
-    val HTTP_VERSION = define(84)
-    val FTP_USE_EPSV = define(85)
-    val SSLCERTTYPE = define(10086)
-    val SSLKEY = define(10087)
-    val SSLKEYTYPE = define(10088)
-    val SSLENGINE = define(10089)
-    val SSLENGINE_DEFAULT = define(90)
-    val DNS_USE_GLOBAL_CACHE = define(91)
-    val DNS_CACHE_TIMEOUT = define(92)
-    val PREQUOTE = define(10093)
-    val DEBUGFUNCTION = define(20094)
-    val DEBUGDATA = define(10095)
-    val COOKIESESSION = define(96)
-    val CAPATH = define(10097)
-    val BUFFERSIZE = define(98)
-    val NOSIGNAL = define(99)
-    val SHARE = define(10100)
-    val PROXYTYPE = define(101)
-    val ACCEPT_ENCODING = define(10102)
-    val PRIVATE = define(10103)
-    val HTTP200ALIASES = define(10104)
-    val UNRESTRICTED_AUTH = define(105)
-    val FTP_USE_EPRT = define(106)
-    val HTTPAUTH = define(107)
-    val SSL_CTX_FUNCTION = define(20108)
-    val SSL_CTX_DATA = define(10109)
-    val FTP_CREATE_MISSING_DIRS = define(110)
-    val PROXYAUTH = define(111)
-    val SERVER_RESPONSE_TIMEOUT = define(112)
-    val IPRESOLVE = define(113)
-    val MAXFILESIZE = define(114)
-    val INFILESIZE_LARGE = define(30115)
-    val RESUME_FROM_LARGE = define(30116)
-    val MAXFILESIZE_LARGE = define(30117)
-    val NETRC_FILE = define(10118)
-    val USE_SSL = define(119)
-    val POSTFIELDSIZE_LARGE = define(30120)
-    val TCP_NODELAY = define(121)
-    val FTPSSLAUTH = define(129)
-    val IOCTLFUNCTION = define(20130)
-    val IOCTLDATA = define(10131)
-    val FTP_ACCOUNT = define(10134)
-    val COOKIELIST = define(10135)
-    val IGNORE_CONTENT_LENGTH = define(136)
-    val FTP_SKIP_PASV_IP = define(137)
-    val FTP_FILEMETHOD = define(138)
-    val LOCALPORT = define(139)
-    val LOCALPORTRANGE = define(140)
-    val CONNECT_ONLY = define(141)
+    val WRITEDATA                  = define(cot.CBPOINT + 1)
+    val URL                        = define(cot.STRINGPOINT + 2)
+    val PORT                       = define(cot.LONG + 3)
+    val PROXY                      = define(cot.STRINGPOINT + 4)
+    val USERPWD                    = define(10005)
+    val PROXYUSERPWD               = define(10006)
+    val RANGE                      = define(10007)
+    val READDATA                   = define(10009)
+    val ERRORBUFFER                = define(10010)
+    val WRITEFUNCTION              = define(20011)
+    val READFUNCTION               = define(20012)
+    val TIMEOUT                    = define(13)
+    val INFILESIZE                 = define(14)
+    val POSTFIELDS                 = define(10015)
+    val REFERER                    = define(10016)
+    val FTPPORT                    = define(10017)
+    val USERAGENT                  = define(10018)
+    val LOW_SPEED_LIMIT            = define(19)
+    val LOW_SPEED_TIME             = define(20)
+    val RESUME_FROM                = define(21)
+    val COOKIE                     = define(10022)
+    val HTTPHEADER                 = define(10023)
+    val HTTPPOST                   = define(10024)
+    val SSLCERT                    = define(10025)
+    val KEYPASSWD                  = define(10026)
+    val CRLF                       = define(27)
+    val QUOTE                      = define(10028)
+    val HEADERDATA                 = define(10029)
+    val COOKIEFILE                 = define(10031)
+    val SSLVERSION                 = define(32)
+    val TIMECONDITION              = define(33)
+    val TIMEVALUE                  = define(34)
+    val CUSTOMREQUEST              = define(10036)
+    val STDERR                     = define(10037)
+    val POSTQUOTE                  = define(10039)
+    val OBSOLETE40                 = define(10040)
+    val VERBOSE                    = define(41)
+    val HEADER                     = define(42)
+    val NOPROGRESS                 = define(43)
+    val NOBODY                     = define(44) // HTTP HEAD
+    val FAILONERROR                = define(45)
+    val UPLOAD                     = define(46)
+    val POST                       = define(47)
+    val DIRLISTONLY                = define(48)
+    val APPEND                     = define(50)
+    val NETRC                      = define(51)
+    val FOLLOWLOCATION             = define(52)
+    val TRANSFERTEXT               = define(53)
+    val PUT                        = define(54)
+    val PROGRESSFUNCTION           = define(20056)
+    val XFERINFODATA               = define(10057)
+    val AUTOREFERER                = define(58)
+    val PROXYPORT                  = define(59)
+    val POSTFIELDSIZE              = define(60)
+    val HTTPPROXYTUNNEL            = define(61)
+    val INTERFACE                  = define(10062)
+    val KRBLEVEL                   = define(10063)
+    val SSL_VERIFYPEER             = define(64)
+    val CAINFO                     = define(10065)
+    val MAXREDIRS                  = define(68)
+    val FILETIME                   = define(69)
+    val TELNETOPTIONS              = define(10070)
+    val MAXCONNECTS                = define(71)
+    val OBSOLETE72                 = define(72)
+    val FRESH_CONNECT              = define(74)
+    val FORBID_REUSE               = define(75)
+    val RANDOM_FILE                = define(10076)
+    val EGDSOCKET                  = define(10077)
+    val CONNECTTIMEOUT             = define(78)
+    val HEADERFUNCTION             = define(20079)
+    val HTTPGET                    = define(80)
+    val SSL_VERIFYHOST             = define(81)
+    val COOKIEJAR                  = define(10082)
+    val SSL_CIPHER_LIST            = define(10083)
+    val HTTP_VERSION               = define(84)
+    val FTP_USE_EPSV               = define(85)
+    val SSLCERTTYPE                = define(10086)
+    val SSLKEY                     = define(10087)
+    val SSLKEYTYPE                 = define(10088)
+    val SSLENGINE                  = define(10089)
+    val SSLENGINE_DEFAULT          = define(90)
+    val DNS_USE_GLOBAL_CACHE       = define(91)
+    val DNS_CACHE_TIMEOUT          = define(92)
+    val PREQUOTE                   = define(10093)
+    val DEBUGFUNCTION              = define(20094)
+    val DEBUGDATA                  = define(10095)
+    val COOKIESESSION              = define(96)
+    val CAPATH                     = define(10097)
+    val BUFFERSIZE                 = define(98)
+    val NOSIGNAL                   = define(99)
+    val SHARE                      = define(10100)
+    val PROXYTYPE                  = define(101)
+    val ACCEPT_ENCODING            = define(10102)
+    val PRIVATE                    = define(10103)
+    val HTTP200ALIASES             = define(10104)
+    val UNRESTRICTED_AUTH          = define(105)
+    val FTP_USE_EPRT               = define(106)
+    val HTTPAUTH                   = define(107)
+    val SSL_CTX_FUNCTION           = define(20108)
+    val SSL_CTX_DATA               = define(10109)
+    val FTP_CREATE_MISSING_DIRS    = define(110)
+    val PROXYAUTH                  = define(111)
+    val SERVER_RESPONSE_TIMEOUT    = define(112)
+    val IPRESOLVE                  = define(113)
+    val MAXFILESIZE                = define(114)
+    val INFILESIZE_LARGE           = define(30115)
+    val RESUME_FROM_LARGE          = define(30116)
+    val MAXFILESIZE_LARGE          = define(30117)
+    val NETRC_FILE                 = define(10118)
+    val USE_SSL                    = define(119)
+    val POSTFIELDSIZE_LARGE        = define(30120)
+    val TCP_NODELAY                = define(121)
+    val FTPSSLAUTH                 = define(129)
+    val IOCTLFUNCTION              = define(20130)
+    val IOCTLDATA                  = define(10131)
+    val FTP_ACCOUNT                = define(10134)
+    val COOKIELIST                 = define(10135)
+    val IGNORE_CONTENT_LENGTH      = define(136)
+    val FTP_SKIP_PASV_IP           = define(137)
+    val FTP_FILEMETHOD             = define(138)
+    val LOCALPORT                  = define(139)
+    val LOCALPORTRANGE             = define(140)
+    val CONNECT_ONLY               = define(141)
     val CONV_FROM_NETWORK_FUNCTION = define(20142)
-    val CONV_TO_NETWORK_FUNCTION = define(20143)
-    val CONV_FROM_UTF8_FUNCTION = define(20144)
-    val MAX_SEND_SPEED_LARGE = define(30145)
-    val MAX_RECV_SPEED_LARGE = define(30146)
-    val FTP_ALTERNATIVE_TO_USER = define(10147)
-    val SOCKOPTFUNCTION = define(20148)
-    val SOCKOPTDATA = define(10149)
-    val SSL_SESSIONID_CACHE = define(150)
-    val SSH_AUTH_TYPES = define(151)
-    val SSH_PUBLIC_KEYFILE = define(10152)
-    val SSH_PRIVATE_KEYFILE = define(10153)
-    val FTP_SSL_CCC = define(154)
-    val TIMEOUT_MS = define(155)
-    val CONNECTTIMEOUT_MS = define(156)
-    val HTTP_TRANSFER_DECODING = define(157)
-    val HTTP_CONTENT_DECODING = define(158)
-    val NEW_FILE_PERMS = define(159)
-    val NEW_DIRECTORY_PERMS = define(160)
-    val POSTREDIR = define(161)
-    val SSH_HOST_PUBLIC_KEY_MD5 = define(10162)
-    val OPENSOCKETFUNCTION = define(20163)
-    val OPENSOCKETDATA = define(10164)
-    val COPYPOSTFIELDS = define(10165)
-    val PROXY_TRANSFER_MODE = define(166)
-    val SEEKFUNCTION = define(20167)
-    val SEEKDATA = define(10168)
-    val CRLFILE = define(10169)
-    val ISSUERCERT = define(10170)
-    val ADDRESS_SCOPE = define(171)
-    val CERTINFO = define(172)
-    val USERNAME = define(10173)
-    val PASSWORD = define(10174)
-    val PROXYUSERNAME = define(10175)
-    val PROXYPASSWORD = define(10176)
-    val NOPROXY = define(10177)
-    val TFTP_BLKSIZE = define(178)
-    val SOCKS5_GSSAPI_SERVICE = define(10179)
-    val SOCKS5_GSSAPI_NEC = define(180)
-    val PROTOCOLS = define(181)
-    val REDIR_PROTOCOLS = define(182)
-    val SSH_KNOWNHOSTS = define(10183)
-    val SSH_KEYFUNCTION = define(20184)
-    val SSH_KEYDATA = define(10185)
-    val MAIL_FROM = define(10186)
-    val MAIL_RCPT = define(10187)
-    val FTP_USE_PRET = define(188)
-    val RTSP_REQUEST = define(189)
-    val RTSP_SESSION_ID = define(10190)
-    val RTSP_STREAM_URI = define(10191)
-    val RTSP_TRANSPORT = define(10192)
-    val RTSP_CLIENT_CSEQ = define(193)
-    val RTSP_SERVER_CSEQ = define(194)
-    val INTERLEAVEDATA = define(10195)
-    val INTERLEAVEFUNCTION = define(20196)
-    val WILDCARDMATCH = define(197)
-    val CHUNK_BGN_FUNCTION = define(20198)
-    val CHUNK_END_FUNCTION = define(20199)
-    val FNMATCH_FUNCTION = define(20200)
-    val CHUNK_DATA = define(10201)
-    val FNMATCH_DATA = define(10202)
-    val RESOLVE = define(10203)
-    val TLSAUTH_USERNAME = define(10204)
-    val TLSAUTH_PASSWORD = define(10205)
-    val TLSAUTH_TYPE = define(10206)
-    val TRANSFER_ENCODING = define(207)
-    val CLOSESOCKETFUNCTION = define(20208)
-    val CLOSESOCKETDATA = define(10209)
-    val GSSAPI_DELEGATION = define(210)
-    val DNS_SERVERS = define(10211)
-    val ACCEPTTIMEOUT_MS = define(212)
-    val TCP_KEEPALIVE = define(213)
-    val TCP_KEEPIDLE = define(214)
-    val TCP_KEEPINTVL = define(215)
-    val SSL_OPTIONS = define(216)
-    val MAIL_AUTH = define(10217)
-    val SASL_IR = define(218)
-    val XFERINFOFUNCTION = define(20219)
-    val XOAUTH2_BEARER = define(10220)
-    val DNS_INTERFACE = define(10221)
-    val DNS_LOCAL_IP4 = define(10222)
-    val DNS_LOCAL_IP6 = define(10223)
-    val LOGIN_OPTIONS = define(10224)
-    val SSL_ENABLE_NPN = define(225)
-    val SSL_ENABLE_ALPN = define(226)
-    val EXPECT_100_TIMEOUT_MS = define(227)
-    val PROXYHEADER = define(10228)
-    val HEADEROPT = define(229)
-    val PINNEDPUBLICKEY = define(10230)
-    val UNIX_SOCKET_PATH = define(10231)
-    val SSL_VERIFYSTATUS = define(232)
-    val SSL_FALSESTART = define(233)
-    val PATH_AS_IS = define(234)
-    val PROXY_SERVICE_NAME = define(10235)
-    val SERVICE_NAME = define(10236)
-    val PIPEWAIT = define(237)
-    val DEFAULT_PROTOCOL = define(10238)
-    val STREAM_WEIGHT = define(239)
-    val STREAM_DEPENDS = define(10240)
-    val STREAM_DEPENDS_E = define(10241)
-    val TFTP_NO_OPTIONS = define(242)
-    val CONNECT_TO = define(10243)
-    val TCP_FASTOPEN = define(244)
-    val KEEP_SENDING_ON_ERROR = define(245)
-    val PROXY_CAINFO = define(10246)
-    val PROXY_CAPATH = define(10247)
-    val PROXY_SSL_VERIFYPEER = define(248)
-    val PROXY_SSL_VERIFYHOST = define(249)
-    val PROXY_SSLVERSION = define(250)
-    val PROXY_TLSAUTH_USERNAME = define(10251)
-    val PROXY_TLSAUTH_PASSWORD = define(10252)
-    val PROXY_TLSAUTH_TYPE = define(10253)
-    val PROXY_SSLCERT = define(10254)
-    val PROXY_SSLCERTTYPE = define(10255)
-    val PROXY_SSLKEY = define(10256)
-    val PROXY_SSLKEYTYPE = define(10257)
-    val PROXY_KEYPASSWD = define(10258)
-    val PROXY_SSL_CIPHER_LIST = define(10259)
-    val PROXY_CRLFILE = define(10260)
-    val PROXY_SSL_OPTIONS = define(261)
-    val PRE_PROXY = define(10262)
-    val PROXY_PINNEDPUBLICKEY = define(10263)
-    val ABSTRACT_UNIX_SOCKET = define(10264)
-    val SUPPRESS_CONNECT_HEADERS = define(265)
-    val REQUEST_TARGET = define(10266)
-    val SOCKS5_AUTH = define(267)
-    val SSH_COMPRESSION = define(268)
-    val MIMEPOST = define(10269)
-    val TIMEVALUE_LARGE = define(30270)
-    val HAPPY_EYEBALLS_TIMEOUT_MS = define(271)
-    val RESOLVER_START_FUNCTION = define(20272)
-    val RESOLVER_START_DATA = define(10273)
-    val HAPROXYPROTOCOL = define(274)
-    val DNS_SHUFFLE_ADDRESSES = define(275)
-    val TLS13_CIPHERS = define(10276)
-    val PROXY_TLS13_CIPHERS = define(10277)
-    val DISALLOW_USERNAME_IN_URL = define(278)
-    val DOH_URL = define(10279)
-    val UPLOAD_BUFFERSIZE = define(280)
-    val UPKEEP_INTERVAL_MS = define(281)
-    val CURLU = define(10282)
-    val TRAILERFUNCTION = define(20283)
-    val TRAILERDATA = define(10284)
-    val HTTP09_ALLOWED = define(285)
-    val ALTSVC_CTRL = define(286)
-    val ALTSVC = define(10287)
-    val MAXAGE_CONN = define(288)
-    val SASL_AUTHZID = define(10289)
-    val MAIL_RCPT_ALLOWFAILS = define(290)
-    val SSLCERT_BLOB = define(40291)
-    val SSLKEY_BLOB = define(40292)
-    val PROXY_SSLCERT_BLOB = define(40293)
-    val PROXY_SSLKEY_BLOB = define(40294)
-    val ISSUERCERT_BLOB = define(40295)
-    val PROXY_ISSUERCERT = define(10296)
-    val PROXY_ISSUERCERT_BLOB = define(40297)
-    val SSL_EC_CURVES = define(10298)
-    val HSTS_CTRL = define(299)
-    val HSTS = define(10300)
-    val HSTSREADFUNCTION = define(20301)
-    val HSTSREADDATA = define(10302)
-    val HSTSWRITEFUNCTION = define(20303)
-    val HSTSWRITEDATA = define(10304)
-    val AWS_SIGV4 = define(10305)
-    val DOH_SSL_VERIFYPEER = define(306)
-    val DOH_SSL_VERIFYHOST = define(307)
-    val DOH_SSL_VERIFYSTATUS = define(308)
-    val CAINFO_BLOB = define(40309)
-    val PROXY_CAINFO_BLOB = define(40310)
+    val CONV_TO_NETWORK_FUNCTION   = define(20143)
+    val CONV_FROM_UTF8_FUNCTION    = define(20144)
+    val MAX_SEND_SPEED_LARGE       = define(30145)
+    val MAX_RECV_SPEED_LARGE       = define(30146)
+    val FTP_ALTERNATIVE_TO_USER    = define(10147)
+    val SOCKOPTFUNCTION            = define(20148)
+    val SOCKOPTDATA                = define(10149)
+    val SSL_SESSIONID_CACHE        = define(150)
+    val SSH_AUTH_TYPES             = define(151)
+    val SSH_PUBLIC_KEYFILE         = define(10152)
+    val SSH_PRIVATE_KEYFILE        = define(10153)
+    val FTP_SSL_CCC                = define(154)
+    val TIMEOUT_MS                 = define(155)
+    val CONNECTTIMEOUT_MS          = define(156)
+    val HTTP_TRANSFER_DECODING     = define(157)
+    val HTTP_CONTENT_DECODING      = define(158)
+    val NEW_FILE_PERMS             = define(159)
+    val NEW_DIRECTORY_PERMS        = define(160)
+    val POSTREDIR                  = define(161)
+    val SSH_HOST_PUBLIC_KEY_MD5    = define(10162)
+    val OPENSOCKETFUNCTION         = define(20163)
+    val OPENSOCKETDATA             = define(10164)
+    val COPYPOSTFIELDS             = define(10165)
+    val PROXY_TRANSFER_MODE        = define(166)
+    val SEEKFUNCTION               = define(20167)
+    val SEEKDATA                   = define(10168)
+    val CRLFILE                    = define(10169)
+    val ISSUERCERT                 = define(10170)
+    val ADDRESS_SCOPE              = define(171)
+    val CERTINFO                   = define(172)
+    val USERNAME                   = define(10173)
+    val PASSWORD                   = define(10174)
+    val PROXYUSERNAME              = define(10175)
+    val PROXYPASSWORD              = define(10176)
+    val NOPROXY                    = define(10177)
+    val TFTP_BLKSIZE               = define(178)
+    val SOCKS5_GSSAPI_SERVICE      = define(10179)
+    val SOCKS5_GSSAPI_NEC          = define(180)
+    val PROTOCOLS                  = define(181)
+    val REDIR_PROTOCOLS            = define(182)
+    val SSH_KNOWNHOSTS             = define(10183)
+    val SSH_KEYFUNCTION            = define(20184)
+    val SSH_KEYDATA                = define(10185)
+    val MAIL_FROM                  = define(10186)
+    val MAIL_RCPT                  = define(10187)
+    val FTP_USE_PRET               = define(188)
+    val RTSP_REQUEST               = define(189)
+    val RTSP_SESSION_ID            = define(10190)
+    val RTSP_STREAM_URI            = define(10191)
+    val RTSP_TRANSPORT             = define(10192)
+    val RTSP_CLIENT_CSEQ           = define(193)
+    val RTSP_SERVER_CSEQ           = define(194)
+    val INTERLEAVEDATA             = define(10195)
+    val INTERLEAVEFUNCTION         = define(20196)
+    val WILDCARDMATCH              = define(197)
+    val CHUNK_BGN_FUNCTION         = define(20198)
+    val CHUNK_END_FUNCTION         = define(20199)
+    val FNMATCH_FUNCTION           = define(20200)
+    val CHUNK_DATA                 = define(10201)
+    val FNMATCH_DATA               = define(10202)
+    val RESOLVE                    = define(10203)
+    val TLSAUTH_USERNAME           = define(10204)
+    val TLSAUTH_PASSWORD           = define(10205)
+    val TLSAUTH_TYPE               = define(10206)
+    val TRANSFER_ENCODING          = define(207)
+    val CLOSESOCKETFUNCTION        = define(20208)
+    val CLOSESOCKETDATA            = define(10209)
+    val GSSAPI_DELEGATION          = define(210)
+    val DNS_SERVERS                = define(10211)
+    val ACCEPTTIMEOUT_MS           = define(212)
+    val TCP_KEEPALIVE              = define(213)
+    val TCP_KEEPIDLE               = define(214)
+    val TCP_KEEPINTVL              = define(215)
+    val SSL_OPTIONS                = define(216)
+    val MAIL_AUTH                  = define(10217)
+    val SASL_IR                    = define(218)
+    val XFERINFOFUNCTION           = define(20219)
+    val XOAUTH2_BEARER             = define(10220)
+    val DNS_INTERFACE              = define(10221)
+    val DNS_LOCAL_IP4              = define(10222)
+    val DNS_LOCAL_IP6              = define(10223)
+    val LOGIN_OPTIONS              = define(10224)
+    val SSL_ENABLE_NPN             = define(225)
+    val SSL_ENABLE_ALPN            = define(226)
+    val EXPECT_100_TIMEOUT_MS      = define(227)
+    val PROXYHEADER                = define(10228)
+    val HEADEROPT                  = define(229)
+    val PINNEDPUBLICKEY            = define(10230)
+    val UNIX_SOCKET_PATH           = define(10231)
+    val SSL_VERIFYSTATUS           = define(232)
+    val SSL_FALSESTART             = define(233)
+    val PATH_AS_IS                 = define(234)
+    val PROXY_SERVICE_NAME         = define(10235)
+    val SERVICE_NAME               = define(10236)
+    val PIPEWAIT                   = define(237)
+    val DEFAULT_PROTOCOL           = define(10238)
+    val STREAM_WEIGHT              = define(239)
+    val STREAM_DEPENDS             = define(10240)
+    val STREAM_DEPENDS_E           = define(10241)
+    val TFTP_NO_OPTIONS            = define(242)
+    val CONNECT_TO                 = define(10243)
+    val TCP_FASTOPEN               = define(244)
+    val KEEP_SENDING_ON_ERROR      = define(245)
+    val PROXY_CAINFO               = define(10246)
+    val PROXY_CAPATH               = define(10247)
+    val PROXY_SSL_VERIFYPEER       = define(248)
+    val PROXY_SSL_VERIFYHOST       = define(249)
+    val PROXY_SSLVERSION           = define(250)
+    val PROXY_TLSAUTH_USERNAME     = define(10251)
+    val PROXY_TLSAUTH_PASSWORD     = define(10252)
+    val PROXY_TLSAUTH_TYPE         = define(10253)
+    val PROXY_SSLCERT              = define(10254)
+    val PROXY_SSLCERTTYPE          = define(10255)
+    val PROXY_SSLKEY               = define(10256)
+    val PROXY_SSLKEYTYPE           = define(10257)
+    val PROXY_KEYPASSWD            = define(10258)
+    val PROXY_SSL_CIPHER_LIST      = define(10259)
+    val PROXY_CRLFILE              = define(10260)
+    val PROXY_SSL_OPTIONS          = define(261)
+    val PRE_PROXY                  = define(10262)
+    val PROXY_PINNEDPUBLICKEY      = define(10263)
+    val ABSTRACT_UNIX_SOCKET       = define(10264)
+    val SUPPRESS_CONNECT_HEADERS   = define(265)
+    val REQUEST_TARGET             = define(10266)
+    val SOCKS5_AUTH                = define(267)
+    val SSH_COMPRESSION            = define(268)
+    val MIMEPOST                   = define(10269)
+    val TIMEVALUE_LARGE            = define(30270)
+    val HAPPY_EYEBALLS_TIMEOUT_MS  = define(271)
+    val RESOLVER_START_FUNCTION    = define(20272)
+    val RESOLVER_START_DATA        = define(10273)
+    val HAPROXYPROTOCOL            = define(274)
+    val DNS_SHUFFLE_ADDRESSES      = define(275)
+    val TLS13_CIPHERS              = define(10276)
+    val PROXY_TLS13_CIPHERS        = define(10277)
+    val DISALLOW_USERNAME_IN_URL   = define(278)
+    val DOH_URL                    = define(10279)
+    val UPLOAD_BUFFERSIZE          = define(280)
+    val UPKEEP_INTERVAL_MS         = define(281)
+    val CURLU                      = define(10282)
+    val TRAILERFUNCTION            = define(20283)
+    val TRAILERDATA                = define(10284)
+    val HTTP09_ALLOWED             = define(285)
+    val ALTSVC_CTRL                = define(286)
+    val ALTSVC                     = define(10287)
+    val MAXAGE_CONN                = define(288)
+    val SASL_AUTHZID               = define(10289)
+    val MAIL_RCPT_ALLOWFAILS       = define(290)
+    val SSLCERT_BLOB               = define(40291)
+    val SSLKEY_BLOB                = define(40292)
+    val PROXY_SSLCERT_BLOB         = define(40293)
+    val PROXY_SSLKEY_BLOB          = define(40294)
+    val ISSUERCERT_BLOB            = define(40295)
+    val PROXY_ISSUERCERT           = define(10296)
+    val PROXY_ISSUERCERT_BLOB      = define(40297)
+    val SSL_EC_CURVES              = define(10298)
+    val HSTS_CTRL                  = define(299)
+    val HSTS                       = define(10300)
+    val HSTSREADFUNCTION           = define(20301)
+    val HSTSREADDATA               = define(10302)
+    val HSTSWRITEFUNCTION          = define(20303)
+    val HSTSWRITEDATA              = define(10304)
+    val AWS_SIGV4                  = define(10305)
+    val DOH_SSL_VERIFYPEER         = define(306)
+    val DOH_SSL_VERIFYHOST         = define(307)
+    val DOH_SSL_VERIFYSTATUS       = define(308)
+    val CAINFO_BLOB                = define(40309)
+    val PROXY_CAINFO_BLOB          = define(40310)
     val SSH_HOST_PUBLIC_KEY_SHA256 = define(10311)
-    val PREREQFUNCTION = define(20312)
-    val PREREQDATA = define(10313)
-    val MAXLIFETIME_CONN = define(314)
-    val MIME_OPTIONS = define(315)
-    val SSH_HOSTKEYFUNCTION = define(20316)
-    val SSH_HOSTKEYDATA = define(10317)
-    val PROTOCOLS_STR = define(10318)
-    val REDIR_PROTOCOLS_STR = define(10319)
-    val WS_OPTIONS = define(320)
-    val CA_CACHE_TIMEOUT = define(321)
-    val QUICK_EXIT = define(322)
-    val HAPROXY_CLIENT_IP = define(10323)
-    val LASTENTRY = define(10324)
+    val PREREQFUNCTION             = define(20312)
+    val PREREQDATA                 = define(10313)
+    val MAXLIFETIME_CONN           = define(314)
+    val MIME_OPTIONS               = define(315)
+    val SSH_HOSTKEYFUNCTION        = define(20316)
+    val SSH_HOSTKEYDATA            = define(10317)
+    val PROTOCOLS_STR              = define(10318)
+    val REDIR_PROTOCOLS_STR        = define(10319)
+    val WS_OPTIONS                 = define(320)
+    val CA_CACHE_TIMEOUT           = define(321)
+    val QUICK_EXIT                 = define(322)
+    val HAPROXY_CLIENT_IP          = define(10323)
+    val LASTENTRY                  = define(10324)
 
     extension (value: CurlOption)
       inline def getname: String =
@@ -1829,24 +1825,22 @@ private[curl] object Curl:
   end CurlOption
 
   /**
-   * Below here follows defines for the CURLOPT_IPRESOLVE option. If a host name resolves addresses
-   * using more than one IP protocol version, this option might be handy to force libcurl to use a
-   * specific IP version.
+   * Below here follows defines for the CURLOPT_IPRESOLVE option. If a host name resolves addresses using more than one
+   * IP protocol version, this option might be handy to force libcurl to use a specific IP version.
    */
   // known as "CURL_IPRESOLVE_*"
   opaque type CurlIpResolve = CLong
   object CurlIpResolve extends _BindgenEnumCLong[CurlIpResolve]:
 
     given Tag[CurlIpResolve] = Tag.Size
+
     private inline def define(inline a: Long): CurlIpResolve = a.toSize
 
-    /** default, uses addresses to all IP versions that your system allows */
+    /* default, uses addresses to all IP versions that your system allows */
     val WHATEVER = define(0L)
-
-    /** uses only IPv4 addresses/connections */
+    /* uses only IPv4 addresses/connections */
     val V4 = define(1L)
-
-    /** uses only IPv6 addresses/connections */
+    /* uses only IPv6 addresses/connections */
     val V6 = define(2L)
 
   end CurlIpResolve
@@ -1859,41 +1853,28 @@ private[curl] object Curl:
   object CurlHttpVersion extends _BindgenEnumCLong[CurlHttpVersion]:
 
     given Tag[CurlHttpVersion] = Tag.Size
+
     private inline def define(inline a: Long): CurlHttpVersion = a.toSize
 
-    /**
-     * setting this means we don't care, and that we'd like the library to choose the best possible
-     * for us!
-     */
+    /* setting this means we don't care, and that we'd like the library to
+       choose the best possible for us! */
     val VERSION_NONE = define(0L)
-
-    /** please use HTTP 1.0 in the request */
+    /* please use HTTP 1.0 in the request */
     val VERSION_1_0 = define(1L)
-
-    /** please use HTTP 1.1 in the request */
+    /* please use HTTP 1.1 in the request */
     val VERSION_1_1 = define(2L)
-
-    /** please use HTTP 2 in the request */
+    /* please use HTTP 2 in the request */
     val VERSION_2_0 = define(3L)
-
-    /** use version 2 for HTTPS, version 1.1 for HTTP */
+    /* use version 2 for HTTPS, version 1.1 for HTTP */
     val VERSION_2TLS = define(4L)
-
-    /** please use HTTP 2 without HTTP/1.1 Upgrade */
+    /* please use HTTP 2 without HTTP/1.1 Upgrade */
     val VERSION_2_PRIOR_KNOWLEDGE = define(5L)
-
-    /**
-     * Use HTTP/3, fallback to HTTP/2 or HTTP/1 if needed. For HTTPS only. For HTTP, this option
-     * makes libcurl return error.
-     */
+    /* Use HTTP/3, fallback to HTTP/2 or HTTP/1 if needed. For HTTPS only.
+       For HTTP, this option makes libcurl return error. */
     val VERSION_3 = define(30L)
-
-    /**
-     * Use HTTP/3 without fallback. For HTTPS only. For HTTP, this makes libcurl return error.
-     */
+    /* Use HTTP/3 without fallback. For HTTPS only. For HTTP, this makes libcurl return error. */
     val VERSION_3ONLY = define(31L)
-
-    /** ILLEGAL http version */
+    /* ILLEGAL http version */
     val VERSION_LAST = define(32L)
 
   end CurlHttpVersion
@@ -1907,17 +1888,18 @@ private[curl] object Curl:
   object CurlSslVersion extends _BindgenEnumCLong[CurlSslVersion]:
 
     given Tag[CurlSslVersion] = Tag.Size
+
     private inline def define(inline a: Long): CurlSslVersion = a.toSize
 
     val DEFAULT = define(0L)
-    val TLSv1 = define(1L) // TLS 1.x
-    val SSLv2 = define(2L)
-    val SSLv3 = define(3L)
+    val TLSv1   = define(1L) // TLS 1.x
+    val SSLv2   = define(2L)
+    val SSLv3   = define(3L)
     val TLSv1_0 = define(4L)
     val TLSv1_1 = define(5L)
     val TLSv1_2 = define(6L)
     val TLSv1_3 = define(7L)
-    val LAST = define(8L) // never use, keep last
+    val LAST    = define(8L) // never use, keep last
 
   end CurlSslVersion
 
@@ -1926,15 +1908,16 @@ private[curl] object Curl:
   object CurlSslMaxVersion extends _BindgenEnumCLong[CurlSslMaxVersion]:
 
     given Tag[CurlSslMaxVersion] = Tag.Size
+
     private inline def define(inline a: Long): CurlSslMaxVersion = a.toSize
 
-    val MAX_NONE = define(0L)
+    val MAX_NONE    = define(0L)
     val MAX_DEFAULT = define(CurlSslVersion.TLSv1.toLong << 16L)
     val MAX_TLSv1_0 = define(CurlSslVersion.TLSv1_0.toLong << 16L)
     val MAX_TLSv1_1 = define(CurlSslVersion.TLSv1_1.toLong << 16L)
     val MAX_TLSv1_2 = define(CurlSslVersion.TLSv1_2.toLong << 16L)
     val MAX_TLSv1_3 = define(CurlSslVersion.TLSv1_3.toLong << 16L)
-    val MAX_LAST = define(CurlSslVersion.LAST.toLong << 16L) // never use, keep last
+    val MAX_LAST    = define(CurlSslVersion.LAST.toLong << 16L) // never use, keep last
 
   end CurlSslMaxVersion
 
@@ -1943,14 +1926,13 @@ private[curl] object Curl:
   object CurlTlsAuth extends _BindgenEnumCLong[CurlTlsAuth]:
 
     given Tag[CurlTlsAuth] = Tag.Size
+
     private inline def define(inline a: Long): CurlTlsAuth = a.toSize
 
     val NONE = define(0L)
-    val SRP = define(1L)
-
-    /**
-     * we set a single member here, just to make sure we still provide the enum, but the values to
-     * use are defined above with L suffixes
+    val SRP  = define(1L)
+    /* we set a single member here, just to make sure we still provide the enum,
+     * but the values to use are defined above with L suffixes
      */
     val LAST = define(2)
 
@@ -1977,9 +1959,10 @@ private[curl] object Curl:
   object CurlRedir extends _BindgenEnumCLong[CurlRedir]:
 
     given Tag[CurlRedir] = Tag.Size
+
     private inline def define(inline a: Long): CurlRedir = a.toSize
 
-    val GET_ALL = define(0L)
+    val GET_ALL  = define(0L)
     val POST_301 = define(1L)
     val POST_302 = define(2L)
     val POST_303 = define(4L)
@@ -2010,8 +1993,8 @@ private[curl] object Curl:
   // 17. add struct `curl_forms`
   // 18. add typedef enum `CURLFORMcode`
 
-  /** linked-list structure for the CURLOPT_QUOTE option (and other) */
   // known as "curl_slist"
+  /** linked-list structure for the CURLOPT_QUOTE option (and other) */
   opaque type CurlSlist = CStruct2[
     /** data */
     CString,
@@ -2020,7 +2003,7 @@ private[curl] object Curl:
   ]
   object CurlSlist:
 
-    given Tag[CVoidPtr] = Tag.materializePtrWildcard
+    given Tag[CVoidPtr]  = Tag.materializePtrWildcard
     given Tag[CurlSlist] = Tag.materializeCStruct2Tag[CString, CVoidPtr]
 
     def apply(data: CString, next: Ptr[CurlSlist])(using Zone): Ptr[CurlSlist] =
@@ -2030,9 +2013,9 @@ private[curl] object Curl:
       ptr
 
     extension (struct: CurlSlist)
-      inline def data: CString = struct._1
-      inline def data_=(value: CString): Unit = !struct.at1 = value
-      inline def next: Ptr[CurlSlist] = struct._2.asInstanceOf[Ptr[CurlSlist]]
+      inline def data: CString                       = struct._1
+      inline def data_=(value: CString): Unit        = !struct.at1 = value
+      inline def next: Ptr[CurlSlist]                = struct._2.asInstanceOf[Ptr[CurlSlist]]
       inline def next_=(value: Ptr[CurlSlist]): Unit = !struct.at2 = value.asInstanceOf[Ptr[Byte]]
 
   end CurlSlist
@@ -2042,24 +2025,22 @@ private[curl] object Curl:
    *
    * DESCRIPTION
    *
-   * When built with multiple SSL backends, curl_global_sslset() allows to choose one. This function
-   * can only be called once, and it must be called *before* curl_global_init().
+   * When built with multiple SSL backends, curl_global_sslset() allows to choose one. This function can only be called
+   * once, and it must be called *before* curl_global_init().
    *
-   * The backend can be identified by the id (e.g. CURLSSLBACKEND_OPENSSL). The backend can also be
-   * specified via the name parameter (passing -1 as id). If both id and name are specified, the
-   * name will be ignored. If neither id nor name are specified, the function will fail with
-   * CURLSSLSET_UNKNOWN_BACKEND and set the "avail" pointer to the NULL-terminated list of available
-   * backends.
+   * The backend can be identified by the id (e.g. CURLSSLBACKEND_OPENSSL). The backend can also be specified via the
+   * name parameter (passing -1 as id). If both id and name are specified, the name will be ignored. If neither id nor
+   * name are specified, the function will fail with CURLSSLSET_UNKNOWN_BACKEND and set the "avail" pointer to the
+   * NULL-terminated list of available backends.
    *
    * Upon success, the function returns CURLSSLSET_OK.
    *
-   * If the specified SSL backend is not available, the function returns CURLSSLSET_UNKNOWN_BACKEND
-   * and sets the "avail" pointer to a NULL-terminated list of available SSL backends.
+   * If the specified SSL backend is not available, the function returns CURLSSLSET_UNKNOWN_BACKEND and sets the "avail"
+   * pointer to a NULL-terminated list of available SSL backends.
    *
-   * The SSL backend can be set only once. If it has already been set, a subsequent attempt to
-   * change it will result in a CURLSSLSET_TOO_LATE.
+   * The SSL backend can be set only once. If it has already been set, a subsequent attempt to change it will result in
+   * a CURLSSLSET_TOO_LATE.
    */
-
   // known as "curl_ssl_backend"
   opaque type CurlSslBackend = CStruct2[
     /** id */
@@ -2078,10 +2059,10 @@ private[curl] object Curl:
       ptr
 
     extension (struct: CurlSslBackend)
-      inline def id: CurlSslBackendId = struct._1
+      inline def id: CurlSslBackendId                = struct._1
       inline def id_=(value: CurlSslBackendId): Unit = !struct.at1 = value
-      inline def name: CString = struct._2
-      inline def name_=(value: CString): Unit = !struct.at2 = value
+      inline def name: CString                       = struct._2
+      inline def name_=(value: CString): Unit        = !struct.at2 = value
 
   end CurlSslBackend
 
@@ -2090,12 +2071,13 @@ private[curl] object Curl:
   object CurlSslSet extends _BindgenEnumCInt[CurlSslSet]:
 
     given Tag[CurlSslSet] = Tag.Int
+
     private inline def define(inline a: Int): CurlSslSet = a
 
-    val OK = define(0)
+    val OK              = define(0)
     val UNKNOWN_BACKEND = define(1)
-    val TOO_LATE = define(2)
-    val NO_BACKENDS = define(3) /* libcurl was built without any SSL support */
+    val TOO_LATE        = define(2)
+    val NO_BACKENDS     = define(3) /* libcurl was built without any SSL support */
 
     def getname(value: CurlSslSet): Option[String] =
       value match
@@ -2108,13 +2090,13 @@ private[curl] object Curl:
     extension (a: CurlSslSet)
       inline def &(b: CurlSslSet): CurlSslSet = a & b
       inline def |(b: CurlSslSet): CurlSslSet = a | b
-      inline def is(b: CurlSslSet): Boolean = (a & b) == b
+      inline def is(b: CurlSslSet): Boolean   = (a & b) == b
 
   end CurlSslSet
 
   /**
-   * info about the certificate chain, for SSL backends that support it. Asked for with
-   * CURLOPT_CERTINFO / CURLINFO_CERTINFO
+   * info about the certificate chain, for SSL backends that support it. Asked for with CURLOPT_CERTINFO /
+   * CURLINFO_CERTINFO
    */
   // known as "curl_certinfo"
   opaque type CurlCertInfo = CStruct2[
@@ -2123,8 +2105,8 @@ private[curl] object Curl:
      */
     Int,
     /**
-     * certinfo: for each index in this array, there's a linked list with textual information for a
-     * certificate in the format "name:content". eg "Subject:foo", "Issuer:bar", etc.
+     * certinfo: for each index in this array, there's a linked list with textual information for a certificate in the
+     * format "name:content". eg "Subject:foo", "Issuer:bar", etc.
      */
     Ptr[Byte],
   ]
@@ -2139,18 +2121,16 @@ private[curl] object Curl:
       ptr
 
     extension (struct: CurlCertInfo)
-      inline def num_of_certs: Int = struct._1
-      inline def num_of_certs_=(value: Int): Unit = !struct.at1 = value
-      inline def certinfo: Ptr[Ptr[CurlSlist]] = struct._2.asInstanceOf[Ptr[Ptr[CurlSlist]]]
-      inline def certinfo_=(value: Ptr[Ptr[CurlSlist]]): Unit = !struct.at2 =
-        value.asInstanceOf[Ptr[Byte]]
+      inline def num_of_certs: Int                            = struct._1
+      inline def num_of_certs_=(value: Int): Unit             = !struct.at1 = value
+      inline def certinfo: Ptr[Ptr[CurlSlist]]                = struct._2.asInstanceOf[Ptr[Ptr[CurlSlist]]]
+      inline def certinfo_=(value: Ptr[Ptr[CurlSlist]]): Unit = !struct.at2 = value.asInstanceOf[Ptr[Byte]]
 
   end CurlCertInfo
 
   /**
-   * Information about the SSL library used and the respective internal SSL handle, which can be
-   * used to obtain further information regarding the connection. Asked for with
-   * CURLINFO_TLS_SSL_PTR or CURLINFO_TLS_SESSION.
+   * Information about the SSL library used and the respective internal SSL handle, which can be used to obtain further
+   * information regarding the connection. Asked for with CURLINFO_TLS_SSL_PTR or CURLINFO_TLS_SESSION.
    */
   // known as "curl_tlssessioninfo" in C header
   opaque type CurlTlsSessionInfo = CStruct2[
@@ -2172,10 +2152,10 @@ private[curl] object Curl:
       ptr
 
     extension (struct: CurlTlsSessionInfo)
-      inline def backend: CurlSslBackendId = struct._1
+      inline def backend: CurlSslBackendId                = struct._1
       inline def backend_=(value: CurlSslBackendId): Unit = !struct.at1 = value
-      inline def internals: Ptr[Byte] = struct._2
-      inline def internals_=(value: Ptr[Byte]): Unit = !struct.at2 = value
+      inline def internals: Ptr[Byte]                     = struct._2
+      inline def internals_=(value: Ptr[Byte]): Unit      = !struct.at2 = value
 
   end CurlTlsSessionInfo
 
@@ -2184,122 +2164,123 @@ private[curl] object Curl:
   object CurlInfo extends _BindgenEnumCInt[CurlInfo]:
 
     given Tag[CurlInfo] = Tag.Int
+
     private inline def define(a: Int): CurlInfo = a
 
     // By `#define`
-    private val STRING: CurlInfo = define(0x100000)
-    private val LONG: CurlInfo = define(0x200000)
-    private val DOUBLE: CurlInfo = define(0x300000)
-    private val SLIST: CurlInfo = define(0x400000)
-    private val PTR: CurlInfo = define(0x400000)
-    private val SOCKET: CurlInfo = define(0x500000)
-    private val OFF_T: CurlInfo = define(0x600000)
-    private val MASK: CurlInfo = define(0x0fffff)
+    private val STRING: CurlInfo   = define(0x100000)
+    private val LONG: CurlInfo     = define(0x200000)
+    private val DOUBLE: CurlInfo   = define(0x300000)
+    private val SLIST: CurlInfo    = define(0x400000)
+    private val PTR: CurlInfo      = define(0x400000)
+    private val SOCKET: CurlInfo   = define(0x500000)
+    private val OFF_T: CurlInfo    = define(0x600000)
+    private val MASK: CurlInfo     = define(0x0fffff)
     private val TYPEMASK: CurlInfo = define(0xf00000)
 
     // By typedef enum
-    val NONE = define(0)
-    val EFFECTIVE_URL = define(STRING + 1)
-    val RESPONSE_CODE = define(LONG + 2)
-    val TOTAL_TIME = define(DOUBLE + 3)
-    val NAMELOOKUP_TIME = define(DOUBLE + 4)
-    val CONNECT_TIME = define(DOUBLE + 5)
+    val NONE             = define(0)
+    val EFFECTIVE_URL    = define(STRING + 1)
+    val RESPONSE_CODE    = define(LONG + 2)
+    val TOTAL_TIME       = define(DOUBLE + 3)
+    val NAMELOOKUP_TIME  = define(DOUBLE + 4)
+    val CONNECT_TIME     = define(DOUBLE + 5)
     val PRETRANSFER_TIME = define(DOUBLE + 6)
 
     @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SIZE_UPLOAD_T")
-    val SIZE_UPLOAD = define(DOUBLE + 7)
+    val SIZE_UPLOAD   = define(DOUBLE + 7)
     val SIZE_UPLOAD_T = define(OFF_T + 7)
 
     @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SIZE_DOWNLOAD_T")
-    val SIZE_DOWNLOAD = define(DOUBLE + 8)
+    val SIZE_DOWNLOAD   = define(DOUBLE + 8)
     val SIZE_DOWNLOAD_T = define(OFF_T + 8)
 
     @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SPEED_DOWNLOAD_T")
-    val SPEED_DOWNLOAD = define(DOUBLE + 9)
+    val SPEED_DOWNLOAD   = define(DOUBLE + 9)
     val SPEED_DOWNLOAD_T = define(OFF_T + 9)
 
     @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.SPEED_UPLOAD_T")
-    val SPEED_UPLOAD = define(DOUBLE + 10)
+    val SPEED_UPLOAD   = define(DOUBLE + 10)
     val SPEED_UPLOAD_T = define(OFF_T + 10)
 
-    val HEADER_SIZE = define(LONG + 11)
-    val REQUEST_SIZE = define(LONG + 12)
+    val HEADER_SIZE      = define(LONG + 11)
+    val REQUEST_SIZE     = define(LONG + 12)
     val SSL_VERIFYRESULT = define(LONG + 13)
-    val FILETIME = define(LONG + 14)
-    val FILETIME_T = define(OFF_T + 14)
+    val FILETIME         = define(LONG + 14)
+    val FILETIME_T       = define(OFF_T + 14)
 
     @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.CONTENT_LENGTH_DOWNLOAD_T")
-    val CONTENT_LENGTH_DOWNLOAD = define(DOUBLE + 15)
+    val CONTENT_LENGTH_DOWNLOAD   = define(DOUBLE + 15)
     val CONTENT_LENGTH_DOWNLOAD_T = define(OFF_T + 15)
 
     @deprecated("deprecated since libcurl 7.55.0. Use CurlInfo.CONTENT_LENGTH_UPLOAD_T")
-    val CONTENT_LENGTH_UPLOAD = define(DOUBLE + 16)
+    val CONTENT_LENGTH_UPLOAD   = define(DOUBLE + 16)
     val CONTENT_LENGTH_UPLOAD_T = define(OFF_T + 16)
 
     val STARTTRANSFER_TIME = define(DOUBLE + 17)
-    val CONTENT_TYPE = define(STRING + 18)
-    val REDIRECT_TIME = define(DOUBLE + 19)
-    val REDIRECT_COUNT = define(LONG + 20)
-    val PRIVATE = define(STRING + 21)
-    val HTTP_CONNECTCODE = define(LONG + 22)
-    val HTTPAUTH_AVAIL = define(LONG + 23)
-    val PROXYAUTH_AVAIL = define(LONG + 24)
-    val OS_ERRNO = define(LONG + 25)
-    val NUM_CONNECTS = define(LONG + 26)
-    val SSL_ENGINES = SLIST + define(27)
-    val COOKIELIST = SLIST + define(28)
+    val CONTENT_TYPE       = define(STRING + 18)
+    val REDIRECT_TIME      = define(DOUBLE + 19)
+    val REDIRECT_COUNT     = define(LONG + 20)
+    val PRIVATE            = define(STRING + 21)
+    val HTTP_CONNECTCODE   = define(LONG + 22)
+    val HTTPAUTH_AVAIL     = define(LONG + 23)
+    val PROXYAUTH_AVAIL    = define(LONG + 24)
+    val OS_ERRNO           = define(LONG + 25)
+    val NUM_CONNECTS       = define(LONG + 26)
+    val SSL_ENGINES        = SLIST + define(27)
+    val COOKIELIST         = SLIST + define(28)
 
     @deprecated("deprecated since libcurl 7.45.0. Use CurlInfo.ACTIVESOCKET")
     val LASTSOCKET = define(LONG + 29)
 
-    val FTP_ENTRY_PATH = define(STRING + 30)
-    val REDIRECT_URL = define(STRING + 31)
-    val PRIMARY_IP = define(STRING + 32)
-    val APPCONNECT_TIME = define(DOUBLE + 33)
-    val CERTINFO = define(PTR + 34)
-    val CONDITION_UNMET = define(LONG + 35)
-    val RTSP_SESSION_ID = define(STRING + 36)
+    val FTP_ENTRY_PATH   = define(STRING + 30)
+    val REDIRECT_URL     = define(STRING + 31)
+    val PRIMARY_IP       = define(STRING + 32)
+    val APPCONNECT_TIME  = define(DOUBLE + 33)
+    val CERTINFO         = define(PTR + 34)
+    val CONDITION_UNMET  = define(LONG + 35)
+    val RTSP_SESSION_ID  = define(STRING + 36)
     val RTSP_CLIENT_CSEQ = define(LONG + 37)
     val RTSP_SERVER_CSEQ = define(LONG + 38)
-    val RTSP_CSEQ_RECV = define(LONG + 39)
-    val PRIMARY_PORT = define(LONG + 40)
-    val LOCAL_IP = define(STRING + 41)
-    val LOCAL_PORT = define(LONG + 42)
+    val RTSP_CSEQ_RECV   = define(LONG + 39)
+    val PRIMARY_PORT     = define(LONG + 40)
+    val LOCAL_IP         = define(STRING + 41)
+    val LOCAL_PORT       = define(LONG + 42)
 
     @deprecated("deprecated since libcurl 7.48.0. Use CurlInfo.TLS_SSL_PTR")
     val TLS_SESSION = define(PTR + 43)
 
-    val ACTIVESOCKET = define(SOCKET + 44)
-    val TLS_SSL_PTR = define(PTR + 45)
-    val HTTP_VERSION = define(LONG + 46)
+    val ACTIVESOCKET           = define(SOCKET + 44)
+    val TLS_SSL_PTR            = define(PTR + 45)
+    val HTTP_VERSION           = define(LONG + 46)
     val PROXY_SSL_VERIFYRESULT = define(LONG + 47)
 
     @deprecated("deprecated since libcurl 7.85.0. Use CurlInfo.SCHEME")
     val PROTOCOL = define(STRING + 48)
 
-    val SCHEME = define(STRING + 49)
-    val TOTAL_TIME_T = define(OFF_T + 50)
-    val NAMELOOKUP_TIME_T = define(OFF_T + 51)
-    val CONNECT_TIME_T = define(OFF_T + 52)
-    val PRETRANSFER_TIME_T = define(OFF_T + 53)
+    val SCHEME               = define(STRING + 49)
+    val TOTAL_TIME_T         = define(OFF_T + 50)
+    val NAMELOOKUP_TIME_T    = define(OFF_T + 51)
+    val CONNECT_TIME_T       = define(OFF_T + 52)
+    val PRETRANSFER_TIME_T   = define(OFF_T + 53)
     val STARTTRANSFER_TIME_T = define(OFF_T + 54)
-    val REDIRECT_TIME_T = define(OFF_T + 55)
-    val APPCONNECT_TIME_T = define(OFF_T + 56)
-    val RETRY_AFTER = define(OFF_T + 57)
-    val EFFECTIVE_METHOD = define(STRING + 58)
-    val PROXY_ERROR = define(LONG + 59)
-    val REFERER = define(STRING + 60)
-    val CAINFO = define(STRING + 61)
-    val CAPATH = define(STRING + 62)
-    val XFER_ID = define(OFF_T + 63)
-    val CONN_ID = define(OFF_T + 64)
-    val QUEUE_TIME_T = define(OFF_T + 65)
-    val USED_PROXY = define(LONG + 66)
-    val POSTTRANSFER_TIME_T = define(OFF_T + 67)
-    val EARLYDATA_SENT_T = define(OFF_T + 68)
-    val HTTPAUTH_USED = define(LONG + 69)
-    val PROXYAUTH_USED = define(LONG + 70)
-    val LASTONE = define(70)
+    val REDIRECT_TIME_T      = define(OFF_T + 55)
+    val APPCONNECT_TIME_T    = define(OFF_T + 56)
+    val RETRY_AFTER          = define(OFF_T + 57)
+    val EFFECTIVE_METHOD     = define(STRING + 58)
+    val PROXY_ERROR          = define(LONG + 59)
+    val REFERER              = define(STRING + 60)
+    val CAINFO               = define(STRING + 61)
+    val CAPATH               = define(STRING + 62)
+    val XFER_ID              = define(OFF_T + 63)
+    val CONN_ID              = define(OFF_T + 64)
+    val QUEUE_TIME_T         = define(OFF_T + 65)
+    val USED_PROXY           = define(LONG + 66)
+    val POSTTRANSFER_TIME_T  = define(OFF_T + 67)
+    val EARLYDATA_SENT_T     = define(OFF_T + 68)
+    val HTTPAUTH_USED        = define(LONG + 69)
+    val PROXYAUTH_USED       = define(LONG + 70)
+    val LASTONE              = define(70)
 
     /** alias */
     val HTTP_CODE = RESPONSE_CODE
@@ -2387,16 +2368,18 @@ private[curl] object Curl:
   // known as enum "curl_closepolicy"
   opaque type CurlClosePolicy = Int
   object CurlClosePolicy extends _BindgenEnumCInt[CurlClosePolicy]:
+
     given Tag[CurlClosePolicy] = Tag.Int
+
     private inline def define(inline a: Int): CurlClosePolicy = a
 
-    val NONE = define(0) // no purpose since curl 7.57.0
-    val OLDEST = define(1)
+    val NONE                = define(0) // no purpose since curl 7.57.0
+    val OLDEST              = define(1)
     val LEAST_RECENTLY_USED = define(2)
-    val LEAST_TRAFFIC = define(3)
-    val SLOWEST = define(4)
-    val CALLBACK = define(5)
-    val LAST = define(6)
+    val LEAST_TRAFFIC       = define(3)
+    val SLOWEST             = define(4)
+    val CALLBACK            = define(5)
+    val LAST                = define(6)
 
     def getname(value: CurlClosePolicy): Option[String] =
       value match
@@ -2416,13 +2399,14 @@ private[curl] object Curl:
   object CurlGlobalFlag extends _BindgenEnumCLong[CurlGlobalFlag]:
 
     given Tag[CurlGlobalFlag] = Tag.Size
+
     private inline def define(inline a: Int): CurlGlobalFlag = a.toSize
 
-    val SSL = define(1 << 0) // no purpose since curl 7.57.0
-    val WIN32 = define(1 << 1)
-    val ALL = SSL | WIN32
-    val NOTHING = define(0)
-    val DEFAULT = SSL
+    val SSL       = define(1 << 0) // no purpose since curl 7.57.0
+    val WIN32     = define(1 << 1)
+    val ALL       = SSL | WIN32
+    val NOTHING   = define(0)
+    val DEFAULT   = SSL
     val ACK_EINTR = define(1 << 2)
 
   end CurlGlobalFlag
@@ -2439,15 +2423,16 @@ private[curl] object Curl:
   object CurlShareErrCode extends _BindgenEnumCInt[CurlShareErrCode]:
 
     given Tag[CurlShareErrCode] = Tag.Int
+
     private inline def define(inline a: Int): CurlShareErrCode = a
 
-    val OK = define(0)
-    val BAD_OPTION = define(1)
-    val IN_USE = define(2)
-    val INVALID = define(3)
-    val NOMEM = define(4)
+    val OK           = define(0)
+    val BAD_OPTION   = define(1)
+    val IN_USE       = define(2)
+    val INVALID      = define(3)
+    val NOMEM        = define(4)
     val NOT_BUILT_IN = define(5)
-    val LAST = define(6)
+    val LAST         = define(6)
 
     extension (value: CurlShareErrCode)
       inline def getName: String =
@@ -2467,15 +2452,16 @@ private[curl] object Curl:
   object CurlShareOption extends _BindgenEnumCInt[CurlShareOption]:
 
     given _tag: Tag[CurlShareOption] = Tag.Int
+
     private inline def define(inline a: Int): CurlShareOption = a
 
-    val CURLSHOPT_NONE = define(0)
-    val CURLSHOPT_SHARE = define(1)
-    val CURLSHOPT_UNSHARE = define(2)
-    val CURLSHOPT_LOCKFUNC = define(3)
+    val CURLSHOPT_NONE       = define(0)
+    val CURLSHOPT_SHARE      = define(1)
+    val CURLSHOPT_UNSHARE    = define(2)
+    val CURLSHOPT_LOCKFUNC   = define(3)
     val CURLSHOPT_UNLOCKFUNC = define(4)
-    val CURLSHOPT_USERDATA = define(5)
-    val CURLSHOPT_LAST = define(6)
+    val CURLSHOPT_USERDATA   = define(5)
+    val CURLSHOPT_LAST       = define(6)
 
     // def getName(value: CurlShareOption): Option[String] =
     //   value match
@@ -2508,24 +2494,26 @@ private[curl] object Curl:
   object CurlPause extends _BindgenEnumCInt[CurlPause]:
 
     given Tag[CurlPause] = Tag.Int
+
     private inline def define(inline a: Int): CurlPause = a
 
-    val RECV = define(1 << 0)
+    val RECV      = define(1 << 0)
     val RECV_CONT = define(0)
-    val SEND = define(1 << 2)
+    val SEND      = define(1 << 2)
     val SEND_CONT = define(0)
-    val ALL = RECV | SEND
-    val CONT = RECV_CONT | SEND_CONT
+    val ALL       = RECV | SEND
+    val CONT      = RECV_CONT | SEND_CONT
 
   opaque type SockAddrFamily = Int
   object SockAddrFamily:
 
     given Tag[SockAddrFamily] = Tag.Int
+
     private inline def define(inline v: Int): SockAddrFamily = v
 
-    val AF_INET = define(socket.AF_INET)
-    val AF_INET6 = define(socket.AF_INET6)
-    val AF_UNIX = define(socket.AF_UNIX)
+    val AF_INET   = define(socket.AF_INET)
+    val AF_INET6  = define(socket.AF_INET6)
+    val AF_UNIX   = define(socket.AF_UNIX)
     val AF_UNSPEC = define(socket.AF_UNSPEC)
 
   end SockAddrFamily

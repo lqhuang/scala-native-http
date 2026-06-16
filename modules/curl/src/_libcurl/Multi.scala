@@ -30,6 +30,7 @@ import scalanative.posix.stddef.size_t
 import _root_.snhttp.experimental.curl._libcurl.Curl.{CurlHandle, CurlErrCode, CurlSocket}
 import _root_.snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnumCLong}
 
+// scalafmt: { maxColumn = 120, align.preset = most }
 private[curl] object Multi:
 
   // known as "CURLM"
@@ -43,11 +44,12 @@ private[curl] object Multi:
   object CurlMultiErrCode extends _BindgenEnumCInt[CurlMultiErrCode]:
 
     given Tag[CurlMultiErrCode] = Tag.Int
+
     private inline def define(a: Int): CurlMultiErrCode = a
 
     /* please call curl_multi_perform() or curl_multi_socket*() soon */
     val CALL_MULTI_PERFORM = define(-1)
-    val OK = define(0)
+    val OK                 = define(0)
     /* the passed-in handle is not a valid CURLM handle */
     val BAD_HANDLE = define(1)
     /* an easy handle was not good/valid */
@@ -68,9 +70,9 @@ private[curl] object Multi:
     val WAKEUP_FAILURE = define(9)
     /* function called with a bad parameter */
     val BAD_FUNCTION_ARGUMENT = define(10)
-    val ABORTED_BY_CALLBACK = define(11)
-    val UNRECOVERABLE_POLL = define(12)
-    val LAST = define(13)
+    val ABORTED_BY_CALLBACK   = define(11)
+    val UNRECOVERABLE_POLL    = define(12)
+    val LAST                  = define(13)
 
     implicit class RichCurlMultiErrCode(value: CurlMultiErrCode) extends AnyVal:
       inline def getname: String =
@@ -97,10 +99,11 @@ private[curl] object Multi:
   object CurlPipe extends _BindgenEnumCLong[CurlPipe]:
 
     given Tag[CurlPipe] = Tag.Size
+
     private inline def define(a: Long): CurlPipe = a.toSize
 
-    val NOTHING = define(0L)
-    val HTTP1 = define(1L)
+    val NOTHING   = define(0L)
+    val HTTP1     = define(1L)
     val MULTIPLEX = define(2L)
 
   /** enum CURLMSG */
@@ -109,6 +112,7 @@ private[curl] object Multi:
   object CurlMsgCode extends _BindgenEnumCInt[CurlMsgCode]:
 
     given Tag[CurlMsgCode] = Tag.Int
+
     private inline def define(a: Int): CurlMsgCode = a
 
     /* first, not used */
@@ -130,6 +134,7 @@ private[curl] object Multi:
   // type CurlMsgData = CurlErrCode
   type CurlMsgData = CurlErrCode | CVoidPtr // ??? successed in cli compile, failed in IDE
   object CurlMsgData:
+
     /**
      * its size must be the max of the two sizes, its alignment the max of the two alignments
      */
@@ -147,34 +152,36 @@ private[curl] object Multi:
     CurlMsgData,
   ]
   object CurlMsg:
+
     import CurlMsgData.given_Tag_CurlMsgData
     given Tag[CurlMsg] =
       Tag.materializeCStruct3Tag[CurlMsgCode, CurlHandle, CurlMsgData].asInstanceOf[Tag[CurlMsg]]
 
     extension (struct: CurlMsg)
-      inline def msg: CurlMsgCode = !struct.at1
-      inline def msg_=(value: CurlMsgCode): Unit = !struct.at1 = value
-      inline def easyHandle: Ptr[CurlHandle] = !struct.at2
+      inline def msg: CurlMsgCode                           = !struct.at1
+      inline def msg_=(value: CurlMsgCode): Unit            = !struct.at1 = value
+      inline def easyHandle: Ptr[CurlHandle]                = !struct.at2
       inline def easyHandle_=(value: Ptr[CurlHandle]): Unit = !struct.at2 = value
-      inline def data: CurlMsgData = !struct.at3
-      inline def data_=(value: CurlMsgData): Unit = !struct.at3 = value
+      inline def data: CurlMsgData                          = !struct.at3
+      inline def data_=(value: CurlMsgData): Unit           = !struct.at3 = value
 
   end CurlMsg
 
   /**
-   * Based on poll(2) structure and values. We don't use pollfd and POLL* constants explicitly to
-   * cover platforms without poll().
+   * Based on poll(2) structure and values. We don't use pollfd and POLL* constants explicitly to cover platforms
+   * without poll().
    */
   opaque type CurlWait = Int
   object CurlWait extends _BindgenEnumCInt[CurlWait]:
 
     given Tag[CurlWait] = Tag.Int
+
     private inline def define(a: Int): CurlWait = a
 
     val POLLNONE = define(0x0000)
-    val POLLIN = define(0x0001)
-    val POLLPRI = define(0x0002)
-    val POLLOUT = define(0x0004)
+    val POLLIN   = define(0x0001)
+    val POLLPRI  = define(0x0002)
+    val POLLOUT  = define(0x0004)
 
   end CurlWait
 
@@ -191,11 +198,11 @@ private[curl] object Multi:
       ptr
 
     extension (struct: CurlWaitFd)
-      inline def fd: CurlSocket = struct._1
+      inline def fd: CurlSocket                = struct._1
       inline def fd_=(value: CurlSocket): Unit = !struct.at1 = value
-      inline def events: Short = struct._2
-      inline def events_=(value: Short): Unit = !struct.at2 = value
-      inline def revents: Short = struct._3
+      inline def events: Short                 = struct._2
+      inline def events_=(value: Short): Unit  = !struct.at2 = value
+      inline def revents: Short                = struct._3
       inline def revents_=(value: Short): Unit = !struct.at3 = value
 
   end CurlWaitFd
@@ -203,20 +210,20 @@ private[curl] object Multi:
   /**
    * Name: curl_multi_socket() and curl_multi_socket_all()
    *
-   * Desc: An alternative version of curl_multi_perform() that allows the application to pass in one
-   * of the file descriptors that have been detected to have "action" on them and let libcurl
-   * perform. See manpage for details.
+   * Desc: An alternative version of curl_multi_perform() that allows the application to pass in one of the file
+   * descriptors that have been detected to have "action" on them and let libcurl perform. See manpage for details.
    */
   opaque type CurlPoll = Int
   object CurlPoll extends _BindgenEnumCInt[CurlPoll]:
 
     given Tag[CurlPoll] = Tag.Int
+
     private inline def define(a: Int): CurlPoll = a
 
-    val NONE = define(0)
-    val IN = define(1)
-    val OUT = define(2)
-    val INOUT = define(3)
+    val NONE   = define(0)
+    val IN     = define(1)
+    val OUT    = define(2)
+    val INOUT  = define(3)
     val REMOVE = define(4)
 
     def unapply(value: CurlPoll): Option[CurlPoll] =
@@ -229,30 +236,28 @@ private[curl] object Multi:
         case _      => None
 
     extension (a: CurlPoll)
-      inline def &(b: CurlPoll): CurlPoll = a & b
-      inline def |(b: CurlPoll): CurlPoll = a | b
+      inline def &(b: CurlPoll): CurlPoll       = a & b
+      inline def |(b: CurlPoll): CurlPoll       = a | b
       inline infix def is(b: CurlPoll): Boolean = (a & b) == b
 
   end CurlPoll
 
-  // CURL_SOCKET_TIMEOUT = CURL_SOCKET_BAD
+  opaque type CurlCSelect = Int
+  object CurlCSelect:
 
-  opaque type CurlCselect = Int
-  object CurlCselect:
+    given Tag[CurlCSelect] = Tag.Int
 
-    given Tag[CurlCselect] = Tag.Int
+    val NONE: CurlCSelect = 0x00
+    val IN: CurlCSelect   = 0x01
+    val OUT: CurlCSelect  = 0x02
+    val ERR: CurlCSelect  = 0x04
 
-    val NONE: CurlCselect = 0x00
-    val IN: CurlCselect = 0x01
-    val OUT: CurlCselect = 0x02
-    val ERR: CurlCselect = 0x04
+    extension (a: CurlCSelect)
+      inline def &(b: CurlCSelect): CurlCSelect = a & b
+      inline def |(b: CurlCSelect): CurlCSelect = a | b
+      inline def is(b: CurlCSelect): Boolean    = (a & b) == b
 
-    extension (a: CurlCselect)
-      inline def &(b: CurlCselect): CurlCselect = a & b
-      inline def |(b: CurlCselect): CurlCselect = a | b
-      inline def is(b: CurlCselect): Boolean = (a & b) == b
-
-  end CurlCselect
+  end CurlCSelect
 
   // known as "curl_socket_callback"
   opaque type CurlSocketCallback =
@@ -283,8 +288,7 @@ private[curl] object Multi:
       )
 
     extension (callback: CurlSocketCallback)
-      inline def asFuncPtr
-          : CFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int] =
+      inline def asFuncPtr: CFuncPtr5[Ptr[CurlHandle], CurlSocket, CurlPoll, CVoidPtr, CVoidPtr, Int] =
         callback
 
   end CurlSocketCallback
@@ -292,9 +296,9 @@ private[curl] object Multi:
   /**
    * Name: curl_multi_timer_callback
    *
-   * Desc: Called by libcurl whenever the library detects a change in the maximum number of
-   * milliseconds the app is allowed to wait before curl_multi_socket() or curl_multi_perform() must
-   * be called (to allow libcurl's timed events to take place).
+   * Desc: Called by libcurl whenever the library detects a change in the maximum number of milliseconds the app is
+   * allowed to wait before curl_multi_socket() or curl_multi_perform() must be called (to allow libcurl's timed events
+   * to take place).
    *
    * Returns: The callback should return zero.
    */
@@ -312,8 +316,7 @@ private[curl] object Multi:
     ]
   object CurlMultiTimerCallback:
 
-    given Tag[CurlMultiTimerCallback] =
-      Tag.materializeCFuncPtr3[Ptr[CurlMultiHandle], CLong, Ptr[Byte], Int]
+    given Tag[CurlMultiTimerCallback] = Tag.materializeCFuncPtr3[Ptr[CurlMultiHandle], CLong, Ptr[Byte], Int]
 
     inline def fromScalaFunction(
         inline func: (Ptr[CurlMultiHandle], CLong, Ptr[Byte]) => Int,
@@ -331,6 +334,7 @@ private[curl] object Multi:
   object CurlMultiOption extends _BindgenEnumCInt[CurlMultiOption]:
 
     given Tag[CurlMultiOption] = Tag.Int
+
     private inline def define(a: Int): CurlMultiOption = a
 
     /* This is the socket callback function pointer */
@@ -417,8 +421,8 @@ private[curl] object Multi:
   /**
    * Name: curl_push_callback
    *
-   * Desc: This callback gets called when a new stream is being pushed by the server. It approves or
-   * denies the new stream. It can also decide to completely fail the connection.
+   * Desc: This callback gets called when a new stream is being pushed by the server. It approves or denies the new
+   * stream. It can also decide to completely fail the connection.
    *
    * Returns: CURL_PUSH_OK, CURL_PUSH_DENY or CURL_PUSH_ERROROUT
    */
@@ -428,9 +432,10 @@ private[curl] object Multi:
   object CurlPush:
 
     given Tag[CurlPush] = Tag.Int
-    val OK: Int = 0
-    val DENY: Int = 1
-    val ERROROUT: Int = 2
+
+    final val OK: Int       = 0
+    final val DENY: Int     = 1
+    final val ERROROUT: Int = 2
 
   end CurlPush
 
@@ -454,6 +459,7 @@ private[curl] object Multi:
       Ptr[CurlPushHeaders],
       /** userp */
       CVoidPtr,
+      /** return */
       CurlPush,
     ]
   object CurlPushCallback:

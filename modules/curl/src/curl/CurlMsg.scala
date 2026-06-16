@@ -5,15 +5,15 @@ import scala.scalanative.unsafe.Ptr
 
 import _root_.snhttp.experimental.curl.libcurl.{CurlMsg as _CurlMsg, CurlMsgCode, CurlMsgData}
 
-class CurlMsg(val ptr: Ptr[_CurlMsg]) extends AnyVal:
+class CurlMsg(val ref: Ptr[_CurlMsg]) extends AnyVal:
 
   import _CurlMsg.*
 
   inline def msg: CurlMsgCode =
-    (!ptr).msg
+    (!ref).msg
 
   inline def curl: CurlEasy =
-    CurlEasy((!ptr).easyHandle)
+    CurlEasy((!ref).easyHandle)
 
   inline def data: CurlMsgData =
-    (!ptr).data
+    (!ref).data

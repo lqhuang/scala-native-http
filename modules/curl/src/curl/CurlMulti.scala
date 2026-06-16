@@ -14,18 +14,18 @@ import _root_.snhttp.experimental.curl.libcurl.{
   CurlMultiOption,
   CurlMultiErrCode,
   CurlSocket,
-  CurlCselect,
+  CurlCSelect,
 }
 
-class CurlMulti(val ptr: Ptr[CurlMultiHandle]) extends AnyVal:
+class CurlMulti(val ref: Ptr[CurlMultiHandle]) extends AnyVal:
 
   private type NullPtr = CVoidPtr
 
   inline def addCurlEasy(easy: CurlEasy): CurlMultiErrCode =
-    libcurl.multiAddHandle(ptr, easy.ptr)
+    libcurl.multiAddHandle(ref, easy.ref)
 
   inline def removeCurlEasy(easy: CurlEasy): CurlMultiErrCode =
-    libcurl.multiRemoveHandle(ptr, easy.ptr)
+    libcurl.multiRemoveHandle(ref, easy.ref)
 
   inline def fdset(
       readFdSet: Ptr[fd_set],
@@ -33,7 +33,7 @@ class CurlMulti(val ptr: Ptr[CurlMultiHandle]) extends AnyVal:
       excFdSet: Ptr[fd_set],
       maxFd: Ptr[Int],
   ): CurlMultiErrCode =
-    libcurl.multiFdSet(ptr, readFdSet, writeFdSet, excFdSet, maxFd)
+    libcurl.multiFdSet(ref, readFdSet, writeFdSet, excFdSet, maxFd)
 
   inline def wait(
       extraFds: Ptr[CurlWaitFd],
@@ -41,7 +41,7 @@ class CurlMulti(val ptr: Ptr[CurlMultiHandle]) extends AnyVal:
       timeoutMs: Int,
       ret: Ptr[Int],
   ): CurlMultiErrCode =
-    libcurl.multiWait(ptr, extraFds, extraNfds, timeoutMs, ret)
+    libcurl.multiWait(ref, extraFds, extraNfds, timeoutMs, ret)
 
   inline def poll(
       extraFds: Ptr[CurlWaitFd],
@@ -49,50 +49,51 @@ class CurlMulti(val ptr: Ptr[CurlMultiHandle]) extends AnyVal:
       timeoutMs: Int,
       ret: Ptr[Int],
   ): CurlMultiErrCode =
-    libcurl.multiPoll(ptr, extraFds, extraNfds, timeoutMs, ret)
+    libcurl.multiPoll(ref, extraFds, extraNfds, timeoutMs, ret)
 
   inline def wakeup(): CurlMultiErrCode =
-    libcurl.multiWakeup(ptr)
+    libcurl.multiWakeup(ref)
 
-  inline def perform(runningHandles: Ptr[Int]): CurlMultiErrCode =
-    libcurl.multiPerform(ptr, runningHandles)
+  inline def perform(runningHandle: Ptr[Int]): CurlMultiErrCode =
+    libcurl.multiPerform(ref, runningHandle)
 
   inline def cleanup(): CurlMultiErrCode =
-    libcurl.multiCleanup(ptr)
+    libcurl.multiCleanup(ref)
 
   inline def infoRead(msgsInQueue: Ptr[Int]): CurlMsg | NullPtr =
-    val msg = libcurl.multiInfoRead(ptr, msgsInQueue)
+    val msg = libcurl.multiInfoRead(ref, msgsInQueue)
     if msg == NullPtr then NullPtr else CurlMsg(msg)
 
   inline def socketAction(
       s: CurlSocket,
-      evBitmask: CurlCselect,
-      runningHandles: Ptr[Int],
-  ): CurlMultiErrCode =
-    libcurl.multiSocketAction(ptr, s, evBitmask, runningHandles)
+      evBitmask: CurlCSelect,
+      runningHandle: Ptr[Int],
+  ): Unit =
+    val ret = libcurl.multiSocketAction(ref, s, evBitmask, runningHandle)
+    if ret != CurlMultiErrCode.OK then throw new CurlMultiException(ret)
 
   inline def timeout(milliseconds: Int): Int =
     val ms = stackalloc[Size]()
-    libcurl.multiTimeout(ptr, ms)
+    libcurl.multiTimeout(ref, ms)
 
   inline def setCLongOption(option: CurlMultiOption, value: CLong): Unit =
-    val ret = libcurl.multiSetopt(ptr, option, value)
+    val ret = libcurl.multiSetOpt(ref, option, value)
     if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def setCStringOption(option: CurlMultiOption, value: CString): Unit =
-    val ret = libcurl.multiSetopt(ptr, option, value)
+    val ret = libcurl.multiSetOpt(ref, option, value)
     if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def setPtrOption(option: CurlMultiOption, value: Ptr[?]): Unit =
-    val ret = libcurl.multiSetopt(ptr, option, value)
+    val ret = libcurl.multiSetOpt(ref, option, value)
     if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def setFuncPtrOption(option: CurlMultiOption, value: CFuncPtr): Unit =
-    val ret = libcurl.multiSetopt(ptr, option, value)
+    val ret = libcurl.multiSetOpt(ref, option, value)
     if ret != CurlMultiErrCode.OK then throw new CurlMultiSetOptionException(option, value, ret)
 
   inline def assign(sockfd: CurlSocket, sockp: CVoidPtr): CurlMultiErrCode =
-    libcurl.multiAssign(ptr, sockfd, sockp)
+    libcurl.multiAssign(ref, sockfd, sockp)
 
   // Should we expose this?
   // inline def getHandles(): Ptr[Ptr[_Curl]] =

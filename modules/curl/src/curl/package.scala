@@ -26,7 +26,7 @@ package object curl:
     CurlMultiErrCode,
     CurlMultiOption,
     CurlPoll,
-    CurlCselect,
+    CurlCSelect,
     CurlSocketCallback,
   }
 

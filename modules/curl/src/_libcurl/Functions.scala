@@ -32,7 +32,7 @@ import snhttp.experimental.curl._libcurl.Multi.{
   CurlMsg,
   CurlMultiOption,
   CurlPushHeaders,
-  CurlCselect,
+  CurlCSelect,
 }
 import snhttp.experimental.curl._libcurl.Options.CurlEasyOption
 import snhttp.experimental.curl._libcurl.System.CurlOff
@@ -204,7 +204,7 @@ trait Functions:
   def easyInit(): Ptr[CurlHandle] = extern
 
   @name("curl_easy_setopt")
-  def easySetopt(
+  def easySetOpt(
       handle: Ptr[CurlHandle],
       option: CurlOption,
       params: Any*, // CVarArgList
@@ -438,7 +438,7 @@ trait Functions:
    * transfers even when this returns OK.
    */
   @name("curl_multi_perform")
-  def multiPerform(handle: Ptr[CurlMultiHandle], runningHandles: Ptr[Int]): CurlMultiErrCode =
+  def multiPerform(handle: Ptr[CurlMultiHandle], runningHandle: Ptr[Int]): CurlMultiErrCode =
     extern
 
   /**
@@ -495,8 +495,8 @@ trait Functions:
   def multiSocketAction(
       handle: Ptr[CurlMultiHandle],
       socket: CurlSocket,
-      evBitmask: CurlCselect,
-      runningHandles: Ptr[Int],
+      evBitmask: CurlCSelect,
+      runningHandle: Ptr[Int],
   ): CurlMultiErrCode = extern
 
   // func `curl_multi_socket_all` is DEPRECATED since curl 7.19.5
@@ -522,7 +522,7 @@ trait Functions:
    * Returns: CURLM error code.
    */
   @name("curl_multi_setopt")
-  def multiSetopt(
+  def multiSetOpt(
       handle: Ptr[CurlMultiHandle],
       option: CurlMultiOption,
       params: Any*, // CVarArgList,

@@ -53,7 +53,7 @@ object LibcurlTest extends TestSuite:
 
         Using.resource(libcurl.easyInit()) { curl =>
           assert(curl != null)
-          val _ = libcurl.easySetopt(curl, CurlOption.URL, c"http://httpbin.org/get")
+          val _ = libcurl.easySetOpt(curl, CurlOption.URL, c"http://httpbin.org/get")
           val res = libcurl.easyPerform(curl)
           if (res != CurlErrCode.OK)
             println(s" Failed with code ${res} (str err: ${res.getname})")
@@ -98,9 +98,9 @@ object LibcurlTest extends TestSuite:
       Using.resource(libcurl.easyInit()) { curl =>
         assert(curl != null)
 
-        val _ = libcurl.easySetopt(curl, CurlOption.URL, c"http://httpbin.org/get")
-        val _ = libcurl.easySetopt(curl, CurlOption.WRITEDATA, writeData)
-        val _ = libcurl.easySetopt(curl, CurlOption.WRITEFUNCTION, writeDataCallback)
+        val _ = libcurl.easySetOpt(curl, CurlOption.URL, c"http://httpbin.org/get")
+        val _ = libcurl.easySetOpt(curl, CurlOption.WRITEDATA, writeData)
+        val _ = libcurl.easySetOpt(curl, CurlOption.WRITEFUNCTION, writeDataCallback)
         val res = libcurl.easyPerform(curl)
 
         assert((!writeData)._2 > 0.toUInt)
@@ -157,9 +157,9 @@ object LibcurlTest extends TestSuite:
         assert(flag2.get() == false)
         assert(flag3.get() == false)
 
-        val _ = libcurl.easySetopt(curl, CurlOption.URL, c"http://httpbin.org/get")
-        val _ = libcurl.easySetopt(curl, CurlOption.WRITEDATA, writeData)
-        val _ = libcurl.easySetopt(curl, CurlOption.WRITEFUNCTION, writeDataCallback)
+        val _ = libcurl.easySetOpt(curl, CurlOption.URL, c"http://httpbin.org/get")
+        val _ = libcurl.easySetOpt(curl, CurlOption.WRITEDATA, writeData)
+        val _ = libcurl.easySetOpt(curl, CurlOption.WRITEFUNCTION, writeDataCallback)
         val res = libcurl.easyPerform(curl)
 
         assert(flag1.get() == true)
