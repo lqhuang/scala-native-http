@@ -1,6 +1,16 @@
 import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.scalanative.unsafe.{CStruct2, CStruct3, CSize, Ptr, stackalloc, alloc, Zone, CQuote, sizeof}
+import scala.scalanative.unsafe.{
+  CStruct2,
+  CStruct3,
+  CSize,
+  Ptr,
+  stackalloc,
+  alloc,
+  Zone,
+  CQuote,
+  sizeof,
+}
 import scala.scalanative.unsigned.UnsignedRichInt
 import scala.scalanative.libc.stddef.size_t
 import scala.scalanative.libc.string.memcpy
@@ -10,7 +20,7 @@ import snhttp.experimental.curl.libcurl
 import snhttp.experimental.curl.libcurl.{
   CurlOption,
   CurlErrCode,
-  Curl,
+  CurlHandle,
   CurlInfo,
   CurlHttpVersion,
   CurlWriteCallback,
@@ -33,7 +43,7 @@ object LibcurlTest extends TestSuite:
   override def utestAfterAll(): Unit =
     zone.close()
 
-  given Using.Releasable[Ptr[Curl]] = curlPtr => libcurl.easyCleanup(curlPtr)
+  given Using.Releasable[Ptr[CurlHandle]] = curlPtr => libcurl.easyCleanup(curlPtr)
 
   def tests = Tests:
 

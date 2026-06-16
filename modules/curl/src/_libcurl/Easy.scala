@@ -12,8 +12,7 @@
 package snhttp.experimental.curl
 package _libcurl
 
-import scala.scalanative.unsafe.{Tag, CStruct2, CStruct3, Ptr, CVoidPtr}
-import scala.scalanative.unsigned.{UInt, UnsignedRichLong}
+import scala.scalanative.unsafe.{Tag, CStruct3, CVoidPtr}
 import scala.scalanative.libc.stddef.size_t
 
 import _root_.snhttp.experimental.curl._internal._BindgenEnumCInt

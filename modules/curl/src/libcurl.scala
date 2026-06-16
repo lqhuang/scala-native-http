@@ -15,12 +15,12 @@ export _root_.snhttp.experimental.curl._libcurl.System.*
 export _root_.snhttp.experimental.curl._libcurl.Websockets.*
 
 @link("libcurl")
+@link("libcrypto")
+@link("libssl")
+@link("zlib")
 @link("Crypt32")
 @link("Secur32") // required after curl 8.15.0
 @link("Iphlpapi") // required after curl 8.15.0
-@link("zlib")
-@link("libcrypto")
-@link("libssl")
 @extern
 private object CurlFunctionsWindows extends Functions
 

@@ -15,7 +15,7 @@ import _root_.snhttp.experimental.curl.libcurl.{
   CurlBlob as _CurlBlob,
 }
 
-class CurlEasy(val ptr: Ptr[CurlHandle]) extends AnyVal:
+class CurlEasy(val ptr: Ptr[CurlHandle]) extends AnyVal derives CanEqual:
 
   inline def info: CurlInfo =
     CurlInfo(ptr)

@@ -105,21 +105,21 @@ private[curl] object Multi:
 
   /** enum CURLMSG */
   // known as "CURLMSG"
-  opaque type CurlMsgCode = Int
+  type CurlMsgCode = Int
   object CurlMsgCode extends _BindgenEnumCInt[CurlMsgCode]:
 
     given Tag[CurlMsgCode] = Tag.Int
     private inline def define(a: Int): CurlMsgCode = a
 
     /* first, not used */
-    val NONE = define(0)
+    final val NONE = define(0)
     /* This easy handle has completed. 'result' contains the CurlErrCode of the transfer */
-    val DONE = define(1)
+    final val DONE = define(1)
     /* last, not used */
-    val LAST = define(2)
+    final val LAST = define(2)
 
     extension (value: CurlMsgCode)
-      inline def getname: String =
+      def getname: String =
         value match
           case NONE => "CURLMSG_NONE"
           case DONE => "CURLMSG_DONE"
@@ -128,7 +128,7 @@ private[curl] object Multi:
   end CurlMsgCode
 
   // type CurlMsgData = CurlErrCode
-  type CurlMsgData = CurlErrCode | CVoidPtr
+  type CurlMsgData = CurlErrCode | CVoidPtr // ??? successed in cli compile, failed in IDE
   object CurlMsgData:
     /**
      * its size must be the max of the two sizes, its alignment the max of the two alignments
@@ -152,11 +152,11 @@ private[curl] object Multi:
       Tag.materializeCStruct3Tag[CurlMsgCode, CurlHandle, CurlMsgData].asInstanceOf[Tag[CurlMsg]]
 
     extension (struct: CurlMsg)
-      inline def msg: CurlMsgCode = struct._1
+      inline def msg: CurlMsgCode = !struct.at1
       inline def msg_=(value: CurlMsgCode): Unit = !struct.at1 = value
-      inline def easyHandle: Ptr[CurlHandle] = struct._2
+      inline def easyHandle: Ptr[CurlHandle] = !struct.at2
       inline def easyHandle_=(value: Ptr[CurlHandle]): Unit = !struct.at2 = value
-      inline def data: CurlMsgData = struct._3
+      inline def data: CurlMsgData = !struct.at3
       inline def data_=(value: CurlMsgData): Unit = !struct.at3 = value
 
   end CurlMsg
@@ -307,6 +307,7 @@ private[curl] object Multi:
       CLong,
       /** userp: private callback pointer */
       Ptr[Byte],
+      /** Returns: The callback should return zero */
       Int,
     ]
   object CurlMultiTimerCallback:
