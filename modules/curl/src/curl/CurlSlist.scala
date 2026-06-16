@@ -6,7 +6,7 @@ import scala.util.Using.Releasable
 
 import _root_.snhttp.experimental.curl.libcurl.CurlSlist as _CurlSlist
 
-class CurlSlist private (val ref: Ptr[_CurlSlist]) extends Releasable[CurlSlist]:
+class CurlSlist private (val ref: Ptr[_CurlSlist]) extends AnyVal:
 
   // private var _curr: Ptr[_CurlSlist] = null
   // private var _last: Ptr[_CurlSlist] = null
@@ -19,10 +19,11 @@ class CurlSlist private (val ref: Ptr[_CurlSlist]) extends Releasable[CurlSlist]
 
   // def ptr: Ptr[_CurlSlist] = _curr
 
-  def release(resource: CurlSlist): Unit =
-    resource.freeAll()
-
 object CurlSlist:
+
+  given Releasable[CurlSlist] with
+    def release(slist: CurlSlist): Unit =
+      slist.freeAll()
 
   def apply(elem: CString*): CurlSlist = {
     var ptr: Ptr[_CurlSlist] = null

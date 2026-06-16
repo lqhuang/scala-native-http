@@ -20,13 +20,13 @@ class CurlShare(ref: Ptr[CurlShareHandle]) extends AnyVal:
 object CurlShare:
 
   given Releasable[CurlShare] with
-    inline def release(easy: CurlShare): Unit =
-      easy.cleanup()
+    def release(share: CurlShare): Unit =
+      share.cleanup()
 
   def apply(): CurlShare =
     val ptr = libcurl.shareInit()
     if (ptr == NULL)
-      throw new RuntimeException("Failed to initialize CurlShare")
+      throw new CurlException("Failed to initialize CurlShare")
     new CurlShare(ptr)
 
   def apply(ref: Ptr[CurlShareHandle]): CurlShare =

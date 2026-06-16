@@ -220,7 +220,6 @@ private[curl] object Multi:
 
     private inline def define(a: Int): CurlPoll = a
 
-    val NONE   = define(0)
     val IN     = define(1)
     val OUT    = define(2)
     val INOUT  = define(3)
@@ -228,7 +227,6 @@ private[curl] object Multi:
 
     def unapply(value: CurlPoll): Option[CurlPoll] =
       value match
-        case NONE   => Some(NONE)
         case IN     => Some(IN)
         case OUT    => Some(OUT)
         case INOUT  => Some(INOUT)
@@ -256,6 +254,14 @@ private[curl] object Multi:
       inline def &(b: CurlCSelect): CurlCSelect = a & b
       inline def |(b: CurlCSelect): CurlCSelect = a | b
       inline def is(b: CurlCSelect): Boolean    = (a & b) == b
+
+    def unapply(value: CurlCSelect): Option[CurlCSelect] =
+      value match
+        case NONE => Some(NONE)
+        case IN   => Some(IN)
+        case OUT  => Some(OUT)
+        case ERR  => Some(ERR)
+        case _    => None
 
   end CurlCSelect
 

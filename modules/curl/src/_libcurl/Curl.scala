@@ -69,10 +69,11 @@ private[curl] object Curl:
     final val BAD     = define(-1) // FIXME: should be extern in windows platform
     final val TIMEOUT = CurlSocket.BAD
 
-    inline def fromSocket(s: CInt): CurlSocket = define(s)
+    inline def fromSocket(s: CInt): CurlSocket         = define(s)
+    inline def fromFileDescriptor(s: CInt): CurlSocket = define(s)
 
-    extension (s: CurlSocket) //
-      inline def asSocket: CInt = s
+    extension (inline s: CurlSocket) //
+      inline def asInt: CInt = s
 
   end CurlSocket
 
