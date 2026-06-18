@@ -16,14 +16,46 @@ import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
-import scala.scalanative.unsafe.{Ptr, stackalloc, CVoidPtr}
+import scala.scalanative.linux.epoll
+import scala.scalanative.linux.epoll.{epoll_create1, epoll_ctl, epoll_wait}
 import scala.scalanative.libc.stddef.NULL as NullPtr
+import scala.scalanative.posix.{unistd, errno}
+import scala.scalanative.posix.timer.timer_create
+import scala.scalanative.unsafe.{
+  Ptr,
+  Tag,
+  CVoidPtr,
+  CStruct2,
+  CStruct3,
+  CStruct4,
+  CStruct5,
+  CLong,
+  UnsafeRichInt,
+  Zone,
+}
+import scala.scalanative.unsafe.{stackalloc, alloc}
 import scala.scalanative.unsigned.UnsignedRichInt
 
-import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlMultiException}
-import _root_.snhttp.experimental.curl.curl.{CurlMulti, CurlMsg, CurlEasy}
+import _root_.snhttp.experimental.curl.curl.{
+  CurlErrCodeException,
+  CurlMultiException,
+  CurlException,
+}
+import _root_.snhttp.experimental.curl.curl.{
+  CurlMulti,
+  CurlMsg,
+  CurlEasy,
+  CurlMultiTimerCallback,
+  CurlSocketCallback,
+  CurlSocket,
+  CurlCSelect,
+  CurlPoll,
+  CurlMultiErrCode,
+  CurlWaitFd,
+  CurlMultiOption,
+}
 import _root_.snhttp.experimental.curl.libcurl
-import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiErrCode, CurlWaitFd}
+import _root_.snhttp.experimental.curl.libcurl.{CurlMultiHandle, CurlHandle}
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
@@ -108,28 +140,7 @@ final class HttpClientImpl(
     private[http] val builder: HttpClientBuilderImpl,
 ) extends HttpClient:
 
-  private type NullPtr = CVoidPtr
-
-  private[http] val ptr: Ptr[_CurlMulti] = libcurl.multiInit()
-  if (ptr == null)
-    throw new RuntimeException("Failed to initialize CURLM pointer")
-  PointerCleaner.register(
-    this,
-    ptr,
-    _ptr => {
-      val ret = libcurl.multiCleanup(_ptr)
-      // if (ret != 0)
-      //   throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
-    },
-  ): Unit
-
-  private val _runningCounter = stackalloc[Int]()
-  private[http] val multi = CurlMulti(ptr)
-  private[http] val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
-
-  private val _terminated = new AtomicBoolean(false)
-  private val _terminable = new AtomicBoolean(false)
-  private val _shutdown = new AtomicBoolean(false)
+  import HttpClientImpl.*
 
   private[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
@@ -137,6 +148,31 @@ final class HttpClientImpl(
     builder._sslParams.orElse(_sslContext.getDefaultSSLParameters())
   private[http] lazy val _executor: Executor =
     builder._executor.orElse(ExecutionContext.global)
+
+  private[http] given zone: Zone = Zone.open()
+
+  private[http] val multi = CurlMulti()
+
+  private[http] val epfd = epoll_create1(epoll.EPOLL_CLOEXEC)
+  if (epfd < 0)
+    throw new RuntimeException(s"Failed to create epoll instance")
+  private[http] val ctxptr = alloc[MultiContext]()
+  ctxptr.multiRef = multi.ref
+  ctxptr.epfd = epfd
+  ctxptr.running = 0
+  ctxptr.timeout = -1.toSize
+
+  private[http] val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
+
+  private val _terminated = new AtomicBoolean(false)
+  private val _terminable = new AtomicBoolean(false)
+  private val _shutdown = new AtomicBoolean(false)
+
+  multi.setPtrOption(CurlMultiOption.TIMERDATA, ctxptr)
+  multi.setFuncPtrOption(CurlMultiOption.TIMERFUNCTION, timerCallback.asFuncPtr)
+
+  multi.setPtrOption(CurlMultiOption.SOCKETDATA, ctxptr)
+  multi.setFuncPtrOption(CurlMultiOption.SOCKETFUNCTION, socketCallback.asFuncPtr)
 
   /**
    * Main methods of HttpClient
@@ -182,19 +218,20 @@ final class HttpClientImpl(
     CompletableFuture.supplyAsync(
       () => {
         val conn = HttpConnection(request, responseBodyHandler, this)
-        try {
-          val response = conn.fetchResponse()
-          response
-        } //
+        try
+          conn.fetchResponse()
         catch {
           case exc: CurlErrCodeException =>
             if Set(5, 6, 7).contains(exc.code.value.toInt)
-            then throw new ConnectException(s"HTTP request failed: ${exc.getMessage()}")
-            else throw exc
+            then //
+              throw new ConnectException(s"HTTP request failed: ${exc.getMessage()}")
+            else //
+              throw exc
           case exc: Throwable =>
             throw exc
         } //
-        finally conn.close()
+        finally //
+          conn.close()
       },
       _executor,
     )
@@ -220,10 +257,20 @@ final class HttpClientImpl(
     if (duration.isNegative() || duration.isZero())
       return isTerminated()
 
-    val ret = libcurl.multiCleanup(ptr)
-    if ret == CurlMultiErrCode.OK
-    then _terminated.compareAndExchange(false, true)
-    else throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${ret}")
+    if !_terminable.get()
+    then
+      try
+        multi.cleanup()
+        _terminated.compareAndExchange(false, true)
+        true
+      catch {
+        case exc: CurlMultiException =>
+          throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${exc.code}")
+      }
+    else //
+      ???
+      false
+
   }
 
   /**
@@ -233,14 +280,16 @@ final class HttpClientImpl(
    * first.
    */
   override def isTerminated(): Boolean =
-    _terminated.get()
+    _shutdown.get()
 
   override def shutdownNow(): Unit =
     shutdown()
 
-  override def close(): Unit =
+  override def close(): Unit = {
     val interrupted = new AtomicBoolean(false)
-    while !isTerminated() do {
+
+    while !isTerminated()
+    do {
       shutdown()
       try
         awaitTermination(Duration.ofSeconds(3L)): Unit
@@ -249,8 +298,15 @@ final class HttpClientImpl(
           interrupted.compareAndSet(false, true): Unit
       }
     }
+
+    if (connections.nonEmpty)
+      connections.valuesIterator.foreach(_.close())
+    multi.cleanup()
+    unistd.close(epfd): Unit
+
     if (interrupted.get())
       Thread.currentThread().interrupt()
+  }
 
   /*
    * Getters for HttpClient properties
@@ -297,41 +353,24 @@ final class HttpClientImpl(
     requireNonShutdown()
     ???
 
-  /**
+  /*
    * Non-JDK public methods
    */
 
-  private[http] inline def isRunning: Boolean =
-    !_runningCounter != 0
+  private[http] def isRunning: Boolean =
+    ctxptr.running > 0
 
-  private[http] inline def performUntilWakeupOrDone(timeoutMs: Int): Boolean = {
-    // trigger perform until running counter becomes non-zero
-    while {
-      val ret = multi.perform(_runningCounter)
-      if (ret != CurlMultiErrCode.OK)
-        throw new CurlMultiException(ret)
-
-      isRunning
-    }
-    do ()
-
-    // get poll result
-    val ret = multi.poll(
-      NullPtr.asInstanceOf[Ptr[CurlWaitFd]],
-      0.toUInt,
-      timeoutMs,
-      NullPtr.asInstanceOf[Ptr[Int]],
-    )
-    println(s"wait returned with code: ${ret}, isRunning: ${isRunning}, timeoutMs: ${timeoutMs}")
-    ret != CurlMultiErrCode.OK
-  }
+  private[http] def tryStart(): Unit =
+    if !isRunning
+    then mainLoop()
+    else ()
 
   private[http] def collectInfo(): Unit = {
     val msgCount = stackalloc[Int]()
     while {
       val msg = multi.infoRead(msgCount)
 
-      if msg == NullPtr
+      if !msgCount == 0 && msg == NullPtr
       then //
         false // break the loop
       else {
@@ -350,11 +389,167 @@ final class HttpClientImpl(
   }
 
   /*
-   * Private helpers
+   * Private methods
    */
 
-  private def requireNonShutdown(): Unit =
+  private inline def requireNonShutdown(): Unit =
     if (_shutdown.get())
       throw new IllegalStateException(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
+
+  private inline def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
+    Math.clamp(curlSocketActionTimeout.toInt, -1, Int.MaxValue)
+
+  private def mainLoop(): Unit = {
+    var err = CurlMultiErrCode.OK
+
+    val bufferSize = 64
+    val events = alloc[EpollEvent](bufferSize)
+
+    // first kickstart
+    err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
+    collectInfo()
+    // main loop, will be waken up by either socket events or timer events
+    while ctxptr.running > 0 && err == CurlMultiErrCode.OK
+    do {
+      val timeout = toEpollTimeout(ctxptr.timeout)
+      val recvEvents = epoll_wait(ctxptr.epfd, events, bufferSize, timeout)
+
+      if (recvEvents < 0)
+        println(s"epoll_wait failed with error ${errno.errno}")
+        if errno.errno == errno.EINTR
+        then () // Retry if interrupted by signal
+        else throw new CurlException(s"epoll_wait failed with error ${errno.errno}")
+      else if (recvEvents == 0) // timeout expired, simply kick the multi socket action again
+        ctxptr.timeout = -1
+        err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
+        collectInfo()
+      else
+        println(
+          s"Received ${recvEvents} events from epoll, processing them with curl_multi_socket_action",
+        )
+        for i <- 0 until recvEvents do {
+          val event = events(i)
+
+          var action: CurlCSelect = CurlCSelect.NONE
+          if ((event.events & epoll.EPOLLIN) != 0)
+            action |= CurlCSelect.IN
+          if ((event.events & epoll.EPOLLOUT) != 0)
+            action |= CurlCSelect.OUT
+          if ((event.events & (epoll.EPOLLERR | epoll.EPOLLHUP)) != 0)
+            action |= CurlCSelect.ERR
+
+          println(
+            s"Received epoll event with events ${event.events}, then action is ${action}",
+          )
+
+          val epfd = event.data.asInstanceOf[FileDescriptor]
+          err = multi.socketAction(
+            CurlSocket.fromFileDescriptor(epfd),
+            action,
+            ctxptr.runningPtr,
+          )
+        }
+
+      collectInfo()
+    }
+  }
+
+private[http] object HttpClientImpl:
+
+  type NullPtr = CVoidPtr
+  type FileDescriptor = Int
+
+  type EpollData = FileDescriptor // | CVoidPtr | ULong | UInt
+  given Tag[EpollData] = Tag.Int
+  // Tag.materializePtrWildcard.asInstanceOf[Tag[EpollData]]
+  // Tag.ULong.asInstanceOf[Tag[EpollData]]
+
+  type EpollEvent = CStruct2[
+    /** events */
+    Int,
+    /** data */
+    EpollData,
+  ]
+  extension (inline event: EpollEvent)
+    inline def events: Int = event._1
+    inline def events_=(value: Int): Unit = !event.at1 = value
+    inline def data: EpollData = event._2
+    inline def data_=(value: EpollData): Unit = !event.at2 = value
+
+  /** Used as share data for multi callback functions */
+  type MultiContext = CStruct4[
+    Ptr[CurlMultiHandle],
+    Int,
+    Int,
+    CLong,
+  ]
+  extension (inline ctx: MultiContext)
+    inline def multiRef: Ptr[CurlMultiHandle] = ctx._1
+    inline def multiRef_=(value: Ptr[CurlMultiHandle]): Unit = !ctx.at1 = value
+    inline def epfd: Int = ctx._2
+    inline def epfd_=(value: Int): Unit = !ctx.at2 = value
+    inline def running: Int = ctx._3
+    inline def running_=(value: Int): Unit = !ctx.at3 = value
+    inline def runningPtr: Ptr[Int] = ctx.at3 // low level pointer getter
+    inline def timeout: CLong = ctx._4
+    inline def timeout_=(value: CLong): Unit = !ctx.at4 = value
+
+  final val socketCallback = CurlSocketCallback.fromScalaFunction {
+    (easy: Ptr[CurlHandle], socket: CurlSocket, what: CurlPoll, clientp: Ptr[?], socketp: Ptr[?]) =>
+      val ctxptr = clientp.asInstanceOf[Ptr[MultiContext]]
+
+      if what == CurlPoll.REMOVE
+      then { // Early return
+        val eprc = epoll_ctl(ctxptr.epfd, epoll.EPOLL_CTL_DEL, socket.value, NullPtr)
+        val err = libcurl.multiAssign(ctxptr.multiRef, socket, NullPtr)
+        0
+      } //
+      else {
+        val events = what match
+          case CurlPoll.IN    => epoll.EPOLLIN
+          case CurlPoll.OUT   => epoll.EPOLLOUT
+          case CurlPoll.INOUT => epoll.EPOLLIN | epoll.EPOLLOUT
+          case _              => -1
+          // case CurlPoll.REMOVE => epoll.EPOLLERR // Unreachable
+
+        if events == -1
+        then //
+          -1
+        else {
+          val epollEvent = stackalloc[EpollEvent]()
+          epollEvent.events = events
+          epollEvent.data = socket.value
+          val op = if socketp == NullPtr then epoll.EPOLL_CTL_ADD else epoll.EPOLL_CTL_MOD
+
+          var eprc = epoll_ctl(ctxptr.epfd, op, socket.value, epollEvent)
+          if (eprc < 0 && op == epoll.EPOLL_CTL_ADD && errno.errno == errno.EEXIST)
+            eprc = epoll_ctl(ctxptr.epfd, epoll.EPOLL_CTL_MOD, socket.value, epollEvent)
+          if eprc < 0 && op == epoll.EPOLL_CTL_MOD && errno.errno == errno.ENOENT then
+            eprc = epoll_ctl(ctxptr.epfd, epoll.EPOLL_CTL_ADD, socket.value, epollEvent)
+
+          val ret =
+            if eprc < 0 && errno.errno != errno.EINTR // retryable
+            then
+              // epoll_ctl failed, return error to libcurl,
+              // libcurl will then call the callback again with `CURL_POLL_REMOVE`
+              -1
+            else
+              val err = libcurl.multiAssign(ctxptr.multiRef, socket, ctxptr)
+              0
+
+          ret
+        }
+      }
+  }
+
+  final val timerCallback = CurlMultiTimerCallback.fromScalaFunction {
+    (multi: Ptr[CurlMultiHandle], timeoutMs: CLong, clientp: CVoidPtr) =>
+      val _ = printf(c"Timer callback called with timeoutMs = %ld\n", timeoutMs)
+      val ctxptr = !clientp.asInstanceOf[Ptr[MultiContext]]
+      ctxptr.timeout = timeoutMs
+      0
+  }
+
+end HttpClientImpl

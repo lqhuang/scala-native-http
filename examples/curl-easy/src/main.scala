@@ -37,7 +37,7 @@ object App:
   given zone: Zone = Zone.open()
 
   val writeDataCallback = CurlWriteCallback.fromScalaFunction {
-    (payload: Ptr[Byte], nmemb: CSize, size: CSize, outstream: Ptr[?]) =>
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
       val userdata = outstream.asInstanceOf[Ptr[CurlData]]
       val recvSize = size * nmemb
 

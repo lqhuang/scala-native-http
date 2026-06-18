@@ -468,6 +468,7 @@ private[curl] object Multi:
       CurlPush,
     ]
   object CurlPushCallback:
+
     given Tag[CurlPushCallback] = Tag.materializeCFuncPtr5[
       Ptr[CurlHandle],
       Ptr[CurlHandle],
@@ -476,5 +477,16 @@ private[curl] object Multi:
       CVoidPtr,
       CurlPush,
     ]
+
+    inline def fromScalaFunction(
+        inline func: (
+            Ptr[CurlHandle],
+            Ptr[CurlHandle],
+            size_t,
+            Ptr[CurlPushHeaders],
+            CVoidPtr,
+        ) => CurlPush,
+    ): CurlPushCallback =
+      CFuncPtr5.fromScalaFunction(func)
 
   end CurlPushCallback

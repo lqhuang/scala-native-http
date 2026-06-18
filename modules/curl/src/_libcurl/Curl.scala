@@ -72,9 +72,6 @@ private[curl] object Curl:
     inline def fromSocket(s: CInt): CurlSocket         = define(s)
     inline def fromFileDescriptor(s: CInt): CurlSocket = define(s)
 
-    extension (inline s: CurlSocket) //
-      inline def asInt: CInt = s
-
   end CurlSocket
 
   /**
@@ -334,7 +331,7 @@ private[curl] object Curl:
 
   // val CURL_PROGRESSFUNC_CONTINUE = 0x10000001
 
-  type CurlXferInfoCallback = CFuncPtr5[
+  opaque type CurlXferInfoCallback = CFuncPtr5[
     /** clientp */
     CVoidPtr,
     /** dltotal */
@@ -391,9 +388,9 @@ private[curl] object Curl:
       Tag.materializeCFuncPtr4[Ptr[Byte], CSize, CSize, CVoidPtr, CSize]
 
     inline def fromScalaFunction(
-        inline f: (Ptr[Byte], CSize, CSize, CVoidPtr) => CurlWriteFuncRet,
+        inline func: (Ptr[Byte], CSize, CSize, CVoidPtr) => CurlWriteFuncRet,
     ): CurlWriteCallback =
-      CFuncPtr4.fromScalaFunction(f)
+      CFuncPtr4.fromScalaFunction(func)
 
     extension (func: CurlWriteCallback)
       inline def asFuncPtr: CFuncPtr4[Ptr[Byte], CSize, CSize, CVoidPtr, CurlWriteFuncRet] =
@@ -402,7 +399,7 @@ private[curl] object Curl:
   end CurlWriteCallback
 
   /** This callback will be called when a new resolver request is made */
-  type CurlResolverStartCallback = CFuncPtr3[
+  opaque type CurlResolverStartCallback = CFuncPtr3[
     /** resolver_state */
     CVoidPtr,
     /** hostname */
@@ -412,6 +409,20 @@ private[curl] object Curl:
     /** return */
     CInt,
   ]
+  object CurlResolverStartCallback:
+
+    given Tag[CurlResolverStartCallback] =
+      Tag.materializeCFuncPtr3[CVoidPtr, CString, CInt, CInt]
+
+    inline def fromScalaFunction(
+        inline func: (CVoidPtr, CString, CInt) => CInt,
+    ): CurlResolverStartCallback =
+      CFuncPtr3.fromScalaFunction(func)
+
+    extension (func: CurlResolverStartCallback) //
+      inline def asFuncPtr: CFuncPtr3[CVoidPtr, CString, CInt, CInt] = func
+
+  end CurlResolverStartCallback
 
   // TODO:
   //
@@ -463,7 +474,7 @@ private[curl] object Curl:
   val CURL_TRAILERFUNC_ABORT = 1
 
   // known as "curl_read_callback"
-  type CurlReadCallback = CFuncPtr4[
+  opaque type CurlReadCallback = CFuncPtr4[
     /** buffer */
     CString,
     /** size */
@@ -481,9 +492,9 @@ private[curl] object Curl:
       Tag.materializeCFuncPtr4[CString, CSize, CSize, CVoidPtr, CSize]
 
     inline def fromScalaFunction(
-        inline f: (CString, CSize, CSize, CVoidPtr) => CSize,
+        inline func: (CString, CSize, CSize, CVoidPtr) => CSize,
     ): CurlReadCallback =
-      CFuncPtr4.fromScalaFunction(f)
+      CFuncPtr4.fromScalaFunction(func)
 
     extension (func: CurlReadCallback)
       inline def asFuncPtr: CFuncPtr4[CString, CSize, CSize, CVoidPtr, CSize] =
@@ -492,7 +503,7 @@ private[curl] object Curl:
   end CurlReadCallback
 
   // known as "curl_trailer_callback"
-  type CurlTrailerCallback = CFuncPtr2[
+  opaque type CurlTrailerCallback = CFuncPtr2[
     /** instream */
     Ptr[CurlSlist],
     /** userdata */
@@ -564,6 +575,15 @@ private[curl] object Curl:
     given Tag[CurlSockOptCallback] =
       Tag.materializeCFuncPtr3[CVoidPtr, CurlSocket, CurlSockType, CurlSockOpt]
 
+    inline def fromScalaFunction(
+        inline func: (CVoidPtr, CurlSocket, CurlSockType) => CurlSockOpt,
+    ): CurlSockOptCallback =
+      CFuncPtr3.fromScalaFunction(func)
+
+    extension (func: CurlSockOptCallback)
+      inline def asFuncPtr: CFuncPtr3[CVoidPtr, CurlSocket, CurlSockType, CurlSockOpt] =
+        func
+
   end CurlSockOptCallback
 
   // known as "curl_sockaddr"
@@ -628,17 +648,33 @@ private[curl] object Curl:
     given Tag[CurlOpenSocketCallback] =
       Tag.materializeCFuncPtr3[CVoidPtr, CurlSockType, Ptr[CurlSockAddr], CurlSocket]
 
-    inline def apply(
-        inline o: CFuncPtr3[CVoidPtr, CurlSockType, Ptr[CurlSockAddr], CurlSocket],
-    ): CurlOpenSocketCallback = o
+    inline def fromScalaFunction(
+        inline func: (CVoidPtr, CurlSockType, Ptr[CurlSockAddr]) => CurlSocket,
+    ): CurlOpenSocketCallback =
+      CFuncPtr3.fromScalaFunction(func)
+
+    extension (func: CurlOpenSocketCallback) //
+      inline def asFuncPtr: CFuncPtr3[CVoidPtr, CurlSockType, Ptr[CurlSockAddr], CurlSocket] =
+        func
 
   end CurlOpenSocketCallback
 
   // known as "curl_closesocket_callback"
   opaque type CurlCloseSocketCallback = CFuncPtr2[CVoidPtr, CurlSocket, Int]
   object CurlCloseSocketCallback:
+
     given Tag[CurlCloseSocketCallback] =
       Tag.materializeCFuncPtr2[CVoidPtr, CurlSocket, Int]
+
+    inline def fromScalaFunction(
+        inline func: (CVoidPtr, CurlSocket) => Int,
+    ): CurlCloseSocketCallback =
+      CFuncPtr2.fromScalaFunction(func)
+
+    extension (func: CurlCloseSocketCallback) //
+      inline def asFuncPtr: CFuncPtr2[CVoidPtr, CurlSocket, Int] = func
+
+  end CurlCloseSocketCallback
 
   // known as enum "curlioerr"
   opaque type CurlIoErr = Int
@@ -716,6 +752,15 @@ private[curl] object Curl:
     given Tag[CurlIoCtlCallback] =
       Tag.materializeCFuncPtr3[Ptr[CurlHandle], CurlIoCmd, CVoidPtr, CurlIoErr]
 
+    inline def fromScalaFunction(
+        inline func: (Ptr[CurlHandle], CurlIoCmd, CVoidPtr) => CurlIoErr,
+    ): CurlIoCtlCallback =
+      CFuncPtr3.fromScalaFunction(func)
+
+    extension (func: CurlIoCtlCallback) //
+      inline def asFuncPtr: CFuncPtr3[Ptr[CurlHandle], CurlIoCmd, CVoidPtr, CurlIoErr] =
+        func
+
   end CurlIoCtlCallback
 
   // known as enum curl_infotype
@@ -750,7 +795,7 @@ private[curl] object Curl:
   end CurlInfoType
 
   // known as "curl_debug_callback"
-  type CurlDebugCallback = CFuncPtr5[
+  opaque type CurlDebugCallback = CFuncPtr5[
     /** handle */
     Ptr[CurlHandle],
     /** type */

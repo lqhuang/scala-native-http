@@ -1,15 +1,5 @@
-import scala.scalanative.unsafe.{
-  CStruct2,
-  CStruct4,
-  CLong,
-  CSize,
-  Ptr,
-  stackalloc,
-  Zone,
-  CQuote,
-  CVoidPtr,
-  Tag,
-}
+import scala.scalanative.unsafe.{CStruct2, CStruct4, CLong, CSize, Ptr, Zone, CQuote, CVoidPtr, Tag}
+import scala.scalanative.unsafe.{stackalloc, alloc}
 import scala.scalanative.unsigned.{USize, UnsignedRichInt, UInt, ULong}
 import scala.scalanative.libc.stddef.NULL
 import scala.scalanative.libc.string.memcpy
@@ -50,11 +40,11 @@ object App:
     USize,
   ]
 
-  /** Used as share data among easy and multi handle */
+  /** Used as share data for multi callback functions */
   type MultiContext = CStruct4[
     Ptr[CurlMultiHandle],
     Int,
-    Ptr[Int],
+    Int,
     CLong,
   ]
   extension (inline ctx: MultiContext)
@@ -62,8 +52,9 @@ object App:
     inline def multiRef_=(value: Ptr[CurlMultiHandle]): Unit = !ctx.at1 = value
     inline def epfd: Int = ctx._2
     inline def epfd_=(value: Int): Unit = !ctx.at2 = value
-    inline def runningHandle: Ptr[Int] = ctx._3
-    inline def runningHandle_=(value: Ptr[Int]): Unit = !ctx.at3 = value
+    inline def running: Int = ctx._3
+    inline def running_=(value: Int): Unit = !ctx.at3 = value
+    inline def runningPtr: Ptr[Int] = ctx.at3 // low level pointer access
     inline def timeout: CLong = ctx._4
     inline def timeout_=(value: CLong): Unit = !ctx.at4 = value
 
@@ -87,7 +78,7 @@ object App:
   given zone: Zone = Zone.open()
 
   val writeDataCallback = CurlWriteCallback.fromScalaFunction {
-    (payload: Ptr[Byte], nmemb: CSize, size: CSize, outstream: CVoidPtr) =>
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: CVoidPtr) =>
       val userdata = outstream.asInstanceOf[Ptr[CurlWriteData]]
       val recvSize = size * nmemb
 
@@ -131,18 +122,18 @@ object App:
           case CurlPoll.IN     => epoll.EPOLLIN
           case CurlPoll.OUT    => epoll.EPOLLOUT
           case CurlPoll.INOUT  => epoll.EPOLLIN | epoll.EPOLLOUT
-          case CurlPoll.REMOVE => epoll.EPOLLERR // Unreachable
+          case CurlPoll.REMOVE => -1 // Unreachable
 
-        if events == epoll.EPOLLERR
+        if events == -1
         then //
           -1
         else {
           val epollEvent = stackalloc[EpollEvent]()
           epollEvent.events = events
-          epollEvent.data = socket.asInt
+          epollEvent.data = socket.value
 
           val op = if socketp == NULL then epoll.EPOLL_CTL_ADD else epoll.EPOLL_CTL_MOD
-          val rc = epoll_ctl(ctxptr.epfd, op, socket.asInt, epollEvent)
+          val rc = epoll_ctl(ctxptr.epfd, op, socket.value, epollEvent)
           if rc < 0
           then
             // epoll_ctl failed, return error to libcurl,
@@ -171,22 +162,14 @@ object App:
   }
 
   def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
-    if curlSocketActionTimeout < 0 then //
-      -1
-    else if curlSocketActionTimeout == 0 then //
-      0
-    else if curlSocketActionTimeout > Int.MaxValue.toCSSize then //
-      Int.MaxValue
-    else //
-      curlSocketActionTimeout.toInt
+    Math.clamp(curlSocketActionTimeout.toInt, -1, Int.MaxValue)
 
   @main
   def main(): Unit = {
-
     println("Curl multi epoll example started")
 
-    val writeData = stackalloc[CurlWriteData]()
-    (!writeData)._1 = stackalloc[Byte](8192)
+    val writeData = alloc[CurlWriteData]()
+    (!writeData)._1 = alloc[Byte](8192)
     (!writeData)._2 = 0.toUSize
 
     val globalEpollFd = epoll_create1(epoll.EPOLL_CLOEXEC)
@@ -195,10 +178,10 @@ object App:
 
     Using.resource(CurlMulti()) { multi =>
 
-      val ctxptr = stackalloc[MultiContext]()
+      val ctxptr = alloc[MultiContext]()
       ctxptr.multiRef = multi.ref
       ctxptr.epfd = globalEpollFd
-      ctxptr.runningHandle = stackalloc[Int]()
+      ctxptr.running = 0
       ctxptr.timeout = -1
 
       multi.setPtrOption(CurlMultiOption.TIMERDATA, ctxptr)
@@ -223,7 +206,7 @@ object App:
         val buffer = stackalloc[EpollEvent](bufferSize)
         var err = CurlMultiErrCode.OK
 
-        while !ctxptr.runningHandle > 0 && err == CurlMultiErrCode.OK
+        while ctxptr.running > 0 && err == CurlMultiErrCode.OK
         do {
           val timeoutMs = toEpollTimeout(ctxptr.timeout)
           val recvEvents = epoll_wait(ctxptr.epfd, buffer, bufferSize, timeoutMs)
@@ -234,7 +217,7 @@ object App:
             else throw new CurlException(s"epoll_wait failed with error ${errno.errno}")
           else if (recvEvents == 0) // timeout expired, simply kick the multi socket action again
             ctxptr.timeout = -1
-            err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningHandle)
+            err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
           else
             for i <- 0 until recvEvents do {
               val event = buffer(i)
@@ -251,7 +234,7 @@ object App:
               err = multi.socketAction(
                 CurlSocket.fromFileDescriptor(epfd),
                 action,
-                ctxptr.runningHandle,
+                ctxptr.runningPtr,
               )
             }
         }

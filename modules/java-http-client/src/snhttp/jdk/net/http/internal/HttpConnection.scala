@@ -14,9 +14,6 @@ import scala.jdk.javaapi.CollectionConverters.asScala
 import scala.scalanative.unsafe.{
   Ptr,
   Zone,
-  toCString,
-  fromCString,
-  alloc,
   CSize,
   CStruct3,
   CFuncPtr4,
@@ -25,26 +22,29 @@ import scala.scalanative.unsafe.{
   UnsafeRichInt,
   Tag,
 }
+import scala.scalanative.unsafe.{toCString, fromCString, alloc}
 import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
 import scala.scalanative.libc.stddef.NULL
+import scala.scalanative.libc.stdio.{stdout, printf}
 
+import _root_.snhttp.experimental.curl.libcurl
+import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlException}
 import _root_.snhttp.experimental.curl.curl.{
-  CurlErrCodeException,
-  CurlException,
-  CurlFollow,
-  CurlUseSSL,
   CurlEasy,
+  CurlMsg,
+  CurlSlist,
+  CurlFollow,
+  CurlUseSsl,
   CurlOption,
   CurlHttpVersion,
   CurlMsgCode,
-  CurlMultiErrCode,
-  CurlMsg,
   CurlErrCode,
+  CurlMultiErrCode,
+  CurlSocket,
+  CurlReadCallback,
   CurlWriteCallback,
-  CurlSlist,
-  CurlWriteFuncRet,
 }
-import _root_.snhttp.experimental.curl.curl.CurlMultiCode.RichCurlMultiCode
+import _root_.snhttp.experimental.curl.curl.CurlMultiErrCode.RichCurlMultiErrCode
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.net.http.internal.PropertyUtils
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
@@ -63,7 +63,7 @@ private[http] final class HttpConnection[T](
 
   import HttpConnection.*
 
-  given zone: Zone = Zone.open()
+  given Zone = client.zone
 
   private[snhttp] val easy = CurlEasy()
 
@@ -84,36 +84,6 @@ private[http] final class HttpConnection[T](
 
   private var maybeRespInfo: Optional[ResponseInfoImpl] = Optional.empty()
   private var maybeRespBodySubscriber: Optional[BodySubscriber[T]] = Optional.empty()
-
-  /**
-   * Callback function for writing response body data.
-   *
-   * Implementation notes:
-   *
-   * The main purpose of this function is to adapt the curl write data to our BodySubscriber.
-   *
-   * Refs:
-   *
-   *   1. [CURLOPT_WRITEFUNCTION](https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html)
-   *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
-   */
-  val writeDataCallback: CurlWriteCallback = CurlWriteCallback.fromScalaFunction {
-    (payload: Ptr[Byte], nmemb: CSize, size: CSize, outstream: Ptr[?]) =>
-      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
-
-      if (!(!userdata).flag.compareAndExchange(false, true))
-        (!userdata).callback.apply()
-
-      // it's safe to cast UInt ot Int here
-      // Curl guarantees that MAX_WRITE_SIZE won't exceed Int.MaxValue
-      val ssize = size.toInt
-      val bb = ByteBuffer.allocate(ssize)
-      for i <- 0 until ssize do bb.put(!(payload + i))
-      bb.flip()
-
-      val offered = (!userdata).publisher.submit(JList.of(bb))
-      size
-  }
 
   val writeBufferSize = PropertyUtils.RECEIVE_BUFFER_SIZE // won't change after init
 
@@ -136,7 +106,7 @@ private[http] final class HttpConnection[T](
   }
 
   def fetchResponse(): HttpResponse[T] = {
-    blockUntilPerformDone()
+    client.tryStart()
     handleError()
     assert(respBodyReceived.get() == true)
 
@@ -155,16 +125,16 @@ private[http] final class HttpConnection[T](
 
   def close(): Unit =
     if (!closed.compareAndExchange(false, true)) {
-      client.connections.remove(easy): Unit
       respBodyPublisher.close()
+      client.connections.remove(easy): Unit
+      client.multi.removeCurlEasy(easy): Unit
       easy.cleanup()
       slist.map(_.freeAll()): Unit
-      zone.close()
     }
 
-  //
-  // Private methods
-  //
+  /*
+   * Private methods
+   */
 
   /**
    * Setup options for this connection based on the `request` and `client` config.
@@ -227,7 +197,7 @@ private[http] final class HttpConnection[T](
      * Set data write callback and data pointer
      */
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
-    easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
+    easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
 
     // /**
     //  * TLS options
@@ -235,18 +205,17 @@ private[http] final class HttpConnection[T](
     // val scheme = request.uri().getScheme().toLowerCase().strip()
     // if !scheme.endsWith("s")
     // then // no TLS
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSSL.NONE.value)
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
     // else // with TLS
     //   // TODO: Register SSL context ptr to set up custom SSL context
     //   // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSSL.TRY.value)
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
 
     if (client.builder._sslContext.isPresent()) {
       val ctx = {
         val ctx = client.builder._sslContext.get()
         if (!ctx.isInstanceOf[SSLContextImpl])
           throw new RuntimeException(s"Expected internal SSLContextImpl but got ${ctx.getClass()}")
-
         ctx.asInstanceOf[SSLContextImpl]
       }
       easy.setPtrOption(CurlOption.SSL_CTX_DATA, ctx.ref)
@@ -292,21 +261,12 @@ private[http] final class HttpConnection[T](
      * Register connection to the client
      */
     client.connections.put(easy, this): Unit
-    val ret = client.multi.addCurlEasy(easy)
-    if (ret != CurlMultiErrCode.OK)
-      throw new RuntimeException(
-        s"CURLM add easy failed: error code ${ret} (${ret.getname})",
-      )
+    client.multi.addCurlEasy(easy): Unit
   }
 
   private inline def requireNonShutdown(): Unit =
     if (closed.get())
       throw new IllegalStateException("HttpConnection has been Closed")
-
-  private inline def blockUntilPerformDone(): Unit = {
-    while !client.performUntilWakeupOrDone(3000) do ()
-    client.collectInfo()
-  }
 
   private inline def handleError(): Unit =
     // TODO: If `CURLOPT_ERRORBUFFER` was set with `curl_easy_setopt` there can
@@ -316,6 +276,7 @@ private[http] final class HttpConnection[T](
       val err = msg.data
       code match
         case CurlMsgCode.DONE => // data is CurlErrCode
+          respBodyPublisher.close()
           val errCode = err.asInstanceOf[CurlErrCode]
           if (errCode != CurlErrCode.OK)
             throw new CurlErrCodeException(errCode)
@@ -355,7 +316,7 @@ private[http] final class HttpConnection[T](
       maybeRespBodySubscriber = Optional.of(subscriber)
     }
 
-object HttpConnection:
+private[http] object HttpConnection:
 
   type CurlRecvBuffer = CStruct3[
     AtomicBoolean, // flag for resp body received
@@ -385,5 +346,45 @@ object HttpConnection:
   type Done = Completed | Failed
 
   type InternalState = Inited | Started | Done
+
+  /**
+   * Callback function for writing response body data.
+   *
+   * Implementation notes:
+   *
+   * The main purpose of this function is to adapt the curl write data to our BodySubscriber.
+   *
+   * Refs:
+   *
+   *   1. [CURLOPT_WRITEFUNCTION](https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html)
+   *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
+   */
+  final val writeDataCallback = CurlWriteCallback.fromScalaFunction {
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
+      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
+
+      if (!(!userdata).flag.compareAndExchange(false, true))
+        printf(
+          c"First time receiving response body, invoking callback to initialize BodySubscriber...",
+        ): Unit
+        (!userdata).callback.apply()
+
+      printf(c"Received response body chunk of size %d bytes\n", (nmemb * size).toInt): Unit
+
+      // it's safe to cast UInt ot Int here
+      // Curl guarantees that MAX_WRITE_SIZE won't exceed Int.MaxValue
+      val ssize = size.toInt
+      val bb = ByteBuffer.allocate(ssize)
+      for i <- 0 until ssize do bb.put(!(payload + i))
+      bb.flip()
+
+      val offered = (!userdata).publisher.submit(JList.of(bb))
+      size
+  }
+
+  final val readDataCallback = CurlReadCallback.fromScalaFunction {
+    (buffer: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
+      ???
+  }
 
 end HttpConnection
