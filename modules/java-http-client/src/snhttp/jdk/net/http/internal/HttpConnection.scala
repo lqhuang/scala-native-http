@@ -32,7 +32,6 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlErrCodeException,
   CurlException,
   CurlFollow,
-  CurlUseSSL,
   CurlEasy,
   CurlOption,
   CurlHttpVersion,
@@ -44,7 +43,6 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlSlist,
   CurlWriteFuncRet,
 }
-import _root_.snhttp.experimental.curl.curl.CurlMultiCode.RichCurlMultiCode
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.net.http.internal.PropertyUtils
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
@@ -227,7 +225,7 @@ private[http] final class HttpConnection[T](
      * Set data write callback and data pointer
      */
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
-    easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback)
+    easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
 
     // /**
     //  * TLS options
@@ -235,11 +233,11 @@ private[http] final class HttpConnection[T](
     // val scheme = request.uri().getScheme().toLowerCase().strip()
     // if !scheme.endsWith("s")
     // then // no TLS
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSSL.NONE.value)
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
     // else // with TLS
     //   // TODO: Register SSL context ptr to set up custom SSL context
     //   // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSSL.TRY.value)
+    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
 
     if (client.builder._sslContext.isPresent()) {
       val ctx = {
@@ -292,11 +290,7 @@ private[http] final class HttpConnection[T](
      * Register connection to the client
      */
     client.connections.put(easy, this): Unit
-    val ret = client.multi.addCurlEasy(easy)
-    if (ret != CurlMultiErrCode.OK)
-      throw new RuntimeException(
-        s"CURLM add easy failed: error code ${ret} (${ret.getname})",
-      )
+    client.multi.addCurlEasy(easy)
   }
 
   private inline def requireNonShutdown(): Unit =

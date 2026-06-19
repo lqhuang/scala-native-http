@@ -37,8 +37,6 @@ import utest.{TestSuite, Tests, test}
 
 import org.conscrypt.utils.{FakeSSLSession, FakeSSLSocket, KeyStoreUtils}
 
-import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
-
 import _root_.snhttp.jdk.net.ssl.X509TrustManagerKeyStoreImpl
 
 class X509TrustManagerKeyStoreImplSuite extends TestSuite:
@@ -46,12 +44,7 @@ class X509TrustManagerKeyStoreImplSuite extends TestSuite:
   private def trustManager(ca: X509Certificate): X509TrustManager = {
     val keyStore = KeyStoreUtils.createKeyStore()
     keyStore.setCertificateEntry("alias", ca)
-    if (keyStore.isInstanceOf[OpenSSLKeyStore])
-      new X509TrustManagerKeyStoreImpl(keyStore.asInstanceOf[OpenSSLKeyStore])
-    else
-      throw new IllegalArgumentException(
-        s"Unsupported KeyStore type: ${keyStore.getClass()}. Only OpenSSLKeyStore is supported.",
-      )
+    new X509TrustManagerKeyStoreImpl(keyStore)
   }
 
   private def assertValid(chain: Array[X509Certificate], tm: X509TrustManager): Unit =

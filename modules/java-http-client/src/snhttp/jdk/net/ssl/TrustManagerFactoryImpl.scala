@@ -12,8 +12,6 @@ import javax.net.ssl.{
 }
 import java.security.InvalidAlgorithmParameterException
 
-import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
-
 private[snhttp] class TrustManagerFactoryImpl(provider: Provider, algorithm: String)
     extends TrustManagerFactory(new TrustManagerFactorySpiImpl(), provider, algorithm)
 
@@ -28,14 +26,7 @@ private[snhttp] class TrustManagerFactorySpiImpl extends TrustManagerFactorySpi:
       _tm =
         if ks == null
         then X509TrustManagerNullImpl.fromDefaultPath()
-        else {
-          if (ks.isInstanceOf[OpenSSLKeyStore])
-            new X509TrustManagerKeyStoreImpl(ks.asInstanceOf[OpenSSLKeyStore])
-          else
-            throw new IllegalArgumentException(
-              s"Unsupported KeyStore type: ${ks.getClass()}. Only OpenSSLKeyStore is supported.",
-            )
-        }
+        else new X509TrustManagerKeyStoreImpl(ks)
     else //
       throw new IllegalStateException("TrustManagerFactory is already initialized")
 

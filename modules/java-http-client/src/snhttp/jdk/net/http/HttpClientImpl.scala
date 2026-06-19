@@ -23,7 +23,7 @@ import scala.scalanative.unsigned.UnsignedRichInt
 import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlMultiException}
 import _root_.snhttp.experimental.curl.curl.{CurlMulti, CurlMsg, CurlEasy}
 import _root_.snhttp.experimental.curl.libcurl
-import _root_.snhttp.experimental.curl.libcurl.{CurlMulti as _CurlMulti, CurlMultiErrCode, CurlWaitFd}
+import _root_.snhttp.experimental.curl.libcurl.{CurlMultiHandle, CurlMultiErrCode, CurlWaitFd}
 import _root_.snhttp.jdk.net.http.internal.HttpConnection
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
@@ -110,7 +110,7 @@ final class HttpClientImpl(
 
   private type NullPtr = CVoidPtr
 
-  private[http] val ptr: Ptr[_CurlMulti] = libcurl.multiInit()
+  private[http] val ptr: Ptr[CurlMultiHandle] = libcurl.multiInit()
   if (ptr == null)
     throw new RuntimeException("Failed to initialize CURLM pointer")
   PointerCleaner.register(

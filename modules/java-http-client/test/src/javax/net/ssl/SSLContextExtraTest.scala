@@ -5,7 +5,7 @@ import java.security.{SecureRandom, KeyStore}
 import java.security.cert.X509Certificate
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManager, X509TrustManager}
 
-import utest.{TestSuite, Tests, test, assert}
+import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class SSLContextExtraTest extends TestSuite:
 
@@ -30,7 +30,7 @@ class SSLContextExtraTest extends TestSuite:
       }
     }
 
-    test("verify") {
+    test("verify key manager registration is unsupported") {
       val pass = password.toCharArray()
       val keyManagers = {
         val ks = KeyStore.getInstance("PKCS12")
@@ -41,6 +41,6 @@ class SSLContextExtraTest extends TestSuite:
       }
 
       val sc = SSLContext.getInstance("TLS")
-      sc.init(keyManagers, null, new SecureRandom())
-      sc
+      assertThrows[UnsupportedOperationException]:
+        sc.init(keyManagers, null, new SecureRandom())
     }
