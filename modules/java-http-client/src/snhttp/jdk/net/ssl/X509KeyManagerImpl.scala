@@ -8,15 +8,11 @@ import java.util.Objects.requireNonNull
 import javax.net.ssl.X509KeyManager
 
 import scala.jdk.CollectionConverters.ListHasAsScala
-import scala.scalanative.unsafe.{Ptr, fromCString}
-
-import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
+import scala.scalanative.unsafe.Ptr
 
 import snhttp.experimental.openssl.libssl.SSL_CTX
-import snhttp.experimental.openssl.libcrypto.{X509, EVP_PKEY, stack_st_X509}
-import snhttp.experimental.openssl.{libssl, libcrypto}
 
-private[snhttp] class X509KeyManagerImpl(ks: OpenSSLKeyStore, password: Array[Char])
+private[snhttp] class X509KeyManagerImpl(ks: KeyStore, password: Array[Char])
     extends X509KeyManager:
 
   private val _passwd = password.clone()
@@ -44,17 +40,9 @@ private[snhttp] class X509KeyManagerImpl(ks: OpenSSLKeyStore, password: Array[Ch
    */
 
   def registerToSSLContext(sslCtxPtr: Ptr[SSL_CTX]): Unit = {
-    val ret = libssl.SSL_CTX_use_cert_and_key(
-      sslCtxPtr,
-      ks.cert.asInstanceOf[Ptr[X509]],
-      ks.pkey.asInstanceOf[Ptr[EVP_PKEY]],
-      ks.stackOfCA.asInstanceOf[Ptr[stack_st_X509]],
-      0,
+    throw new UnsupportedOperationException(
+      "Registering KeyStore-backed client certificates with OpenSSL is not implemented yet",
     )
-    if (ret != 1)
-      val code = libcrypto.ERR_get_error()
-      val msg = fromCString(libcrypto.ERR_error_string(code, null))
-      throw new RuntimeException(s"Failed to register X509KeyManager to SSL_CTX: ${msg}")
   }
 
   /*
