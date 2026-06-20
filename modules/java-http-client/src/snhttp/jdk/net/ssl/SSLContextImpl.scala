@@ -98,10 +98,10 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
     if (!inited.compareAndExchange(false, true)) {
       if (kms != null) {
         kms.foreach(km =>
-          if (km != null && km.isInstanceOf[X509KeyManagerImpl]) {
-            val key = km.asInstanceOf[X509KeyManagerImpl]
-            key.registerToSSLContext(this.ptr)
-          },
+          if (km != null)
+            throw new UnsupportedOperationException(
+              "Registering client KeyManagers with OpenSSL is not implemented yet",
+            ),
         )
       }
 

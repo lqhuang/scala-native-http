@@ -310,7 +310,7 @@ private[http] final class HttpConnection[T](
       val err = msg.data
       code match
         case CurlMsgCode.DONE => // data is CurlErrCode
-          val errCode = err.asInstanceOf[CurlErrCode]
+          val errCode = err.asInstanceOf[Ptr[?]].toInt.asInstanceOf[CurlErrCode]
           if (errCode != CurlErrCode.OK)
             throw new CurlErrCodeException(errCode)
         case _ => // data is CVoidPtr

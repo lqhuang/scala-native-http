@@ -305,25 +305,22 @@ final class HttpClientImpl(
     !_runningCounter != 0
 
   private[http] inline def performUntilWakeupOrDone(timeoutMs: Int): Boolean = {
-    // trigger perform until running counter becomes non-zero
-    while {
-      val ret = multi.perform(_runningCounter)
-      if (ret != CurlMultiErrCode.OK)
-        throw new CurlMultiException(ret)
+    val performRet = multi.perform(_runningCounter)
+    if (performRet != CurlMultiErrCode.OK)
+      throw new CurlMultiException(performRet)
 
-      isRunning
+    if (!isRunning) true
+    else {
+      val pollRet = multi.poll(
+        NullPtr.asInstanceOf[Ptr[CurlWaitFd]],
+        0.toUInt,
+        timeoutMs,
+        NullPtr.asInstanceOf[Ptr[Int]],
+      )
+      if (pollRet != CurlMultiErrCode.OK)
+        throw new CurlMultiException(pollRet)
+      false
     }
-    do ()
-
-    // get poll result
-    val ret = multi.poll(
-      NullPtr.asInstanceOf[Ptr[CurlWaitFd]],
-      0.toUInt,
-      timeoutMs,
-      NullPtr.asInstanceOf[Ptr[Int]],
-    )
-    println(s"wait returned with code: ${ret}, isRunning: ${isRunning}, timeoutMs: ${timeoutMs}")
-    ret != CurlMultiErrCode.OK
   }
 
   private[http] def collectInfo(): Unit = {

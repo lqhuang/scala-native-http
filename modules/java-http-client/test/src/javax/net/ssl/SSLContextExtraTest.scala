@@ -1,9 +1,9 @@
 package snhttp.test.javax.net.ssl
 
-import java.io.FileInputStream
-import java.security.{SecureRandom, KeyStore}
+import java.net.Socket
+import java.security.{PrivateKey, Principal, SecureRandom}
 import java.security.cert.X509Certificate
-import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManager, X509TrustManager}
+import javax.net.ssl.{SSLContext, TrustManager, X509KeyManager, X509TrustManager}
 
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
@@ -14,10 +14,6 @@ class SSLContextExtraTest extends TestSuite:
     def checkClientTrusted(chain: Array[X509Certificate], authType: String) = {}
     def checkServerTrusted(chain: Array[X509Certificate], authType: String) = {}
   })
-
-  val path: String = s"${sys.env("MILL_TEST_RESOURCE_DIR")}/test-data/pkcs12-ca/test-trust.p12"
-  println(s"Using PKCS12 file at path: ${path}")
-  val password: String = "test-password"
 
   def tests: Tests = Tests:
 
@@ -31,16 +27,20 @@ class SSLContextExtraTest extends TestSuite:
     }
 
     test("verify key manager registration is unsupported") {
-      val pass = password.toCharArray()
-      val keyManagers = {
-        val ks = KeyStore.getInstance("PKCS12")
-        ks.load(new FileInputStream(path), pass)
-        val keyManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
-        keyManager.init(ks, pass)
-        keyManager.getKeyManagers()
+      val keyManager = new X509KeyManager() {
+        def getClientAliases(keyType: String, issuers: Array[Principal]) = null
+        def chooseClientAlias(
+            keyType: Array[String],
+            issuers: Array[Principal],
+            socket: Socket,
+        ) = null
+        def getServerAliases(keyType: String, issuers: Array[Principal]) = null
+        def chooseServerAlias(keyType: String, issuers: Array[Principal], socket: Socket) = null
+        def getCertificateChain(alias: String) = Array.empty[X509Certificate]
+        def getPrivateKey(alias: String): PrivateKey = null
       }
 
       val sc = SSLContext.getInstance("TLS")
       assertThrows[UnsupportedOperationException]:
-        sc.init(keyManagers, null, new SecureRandom())
+        sc.init(Array(keyManager), null, new SecureRandom())
     }
