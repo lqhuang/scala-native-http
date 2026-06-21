@@ -19,6 +19,7 @@ import scala.scalanative.posix.stddef.size_t
 
 import snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnumUInt}
 
+// scalafmt: { align.preset = most }
 private[curl] object Header:
 
   // known as "curl_header"
@@ -59,18 +60,18 @@ private[curl] object Header:
       ptr
 
     extension (struct: CurlHeader)
-      def name: CString = struct._1
-      def name_=(value: CString): Unit = !struct.at1 = value
-      def value: CString = struct._2
-      def value_=(value: CString): Unit = !struct.at2 = value
-      def amount: size_t = struct._3
-      def amount_=(value: size_t): Unit = !struct.at3 = value
-      def index: size_t = struct._4
-      def index_=(value: size_t): Unit = !struct.at4 = value
-      def origin: CurlHeaderOrigin = struct._5
+      def name: CString                           = struct._1
+      def name_=(value: CString): Unit            = !struct.at1 = value
+      def value: CString                          = struct._2
+      def value_=(value: CString): Unit           = !struct.at2 = value
+      def amount: size_t                          = struct._3
+      def amount_=(value: size_t): Unit           = !struct.at3 = value
+      def index: size_t                           = struct._4
+      def index_=(value: size_t): Unit            = !struct.at4 = value
+      def origin: CurlHeaderOrigin                = struct._5
       def origin_=(value: CurlHeaderOrigin): Unit = !struct.at5 = value
-      def anchor: Ptr[?] = struct._6
-      def anchor_=(value: Ptr[?]): Unit = !struct.at6 = value
+      def anchor: Ptr[?]                          = struct._6
+      def anchor_=(value: Ptr[?]): Unit           = !struct.at6 = value
 
   end CurlHeader
 
@@ -80,13 +81,14 @@ private[curl] object Header:
   object CurlHeaderOrigin extends _BindgenEnumUInt[CurlHeaderOrigin]:
 
     given _tag: Tag[CurlHeaderOrigin] = Tag.UInt
+
     inline def define(inline a: Long): CurlHeaderOrigin = a.toUInt
 
-    val HEADER = define(1 << 0) // plain server header
+    val HEADER  = define(1 << 0) // plain server header
     val TRAILER = define(1 << 1) // trailers
     val CONNECT = define(1 << 2) // CONNECT headers
-    val `1XX` = define(1 << 3) // 1xx headers
-    val PSEUDO = define(1 << 4) // pseudo headers
+    val `1XX`   = define(1 << 3) // 1xx headers
+    val PSEUDO  = define(1 << 4) // pseudo headers
 
     extension (value: CurlHeaderOrigin)
       inline def getName: String =
@@ -104,16 +106,17 @@ private[curl] object Header:
   object CurlHeaderErrCode extends _BindgenEnumCInt[CurlHeaderErrCode]:
 
     given _tag: Tag[CurlHeaderErrCode] = Tag.Int
+
     inline def define(inline a: Long): CurlHeaderErrCode = a.toInt
 
-    val OK = define(0)
-    val BADINDEX = define(1)
-    val MISSING = define(2)
-    val NOHEADERS = define(3)
-    val NOREQUEST = define(4)
+    val OK            = define(0)
+    val BADINDEX      = define(1)
+    val MISSING       = define(2)
+    val NOHEADERS     = define(3)
+    val NOREQUEST     = define(4)
     val OUT_OF_MEMORY = define(5)
-    val BAD_ARGUMENT = define(6)
-    val NOT_BUILT_IN = define(7)
+    val BAD_ARGUMENT  = define(6)
+    val NOT_BUILT_IN  = define(7)
 
     extension (value: CurlHeaderErrCode)
       def getName: String =

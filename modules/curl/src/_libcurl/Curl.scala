@@ -346,9 +346,10 @@ private[curl] object Curl:
     CInt,
   ]
 
-  // val CURL_MAX_READ_SIZE = (10 * 1024 * 1024).toUSize
-  // val CURL_MAX_WRITE_SIZE = (16384).toUSize
-  // val CURL_MAX_HTTP_HEADER = (100*1024).toUSize
+  // TODO: Fix with `extern` mark
+  val CURL_MAX_READ_SIZE   = (10 * 1024 * 1024).toSize
+  val CURL_MAX_WRITE_SIZE  = (16 * 1024).toSize
+  val CURL_MAX_HTTP_HEADER = (100 * 1024).toSize
 
   /**
    * known as "CURL_WRITEFUNC_*"
@@ -397,6 +398,35 @@ private[curl] object Curl:
         func
 
   end CurlWriteCallback
+
+  /** known as "curl_header_callback" */
+  opaque type CurlHeaderCallback = CFuncPtr4[
+    /** buffer */
+    Ptr[Byte],
+    /** size */
+    CSize,
+    /** nitems */
+    CSize,
+    /** outstream */
+    CVoidPtr,
+    /** return */
+    CurlWriteFuncRet,
+  ]
+  object CurlHeaderCallback:
+
+    given Tag[CurlHeaderCallback] =
+      Tag.materializeCFuncPtr4[Ptr[Byte], CSize, CSize, CVoidPtr, CSize]
+
+    inline def fromScalaFunction(
+        inline func: (Ptr[Byte], CSize, CSize, CVoidPtr) => CurlWriteFuncRet,
+    ): CurlWriteCallback =
+      CFuncPtr4.fromScalaFunction(func)
+
+    extension (func: CurlWriteCallback)
+      inline def asFuncPtr: CFuncPtr4[Ptr[Byte], CSize, CSize, CVoidPtr, CurlWriteFuncRet] =
+        func
+
+  end CurlHeaderCallback
 
   /** This callback will be called when a new resolver request is made */
   opaque type CurlResolverStartCallback = CFuncPtr3[

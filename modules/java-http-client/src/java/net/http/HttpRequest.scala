@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Path
 import java.time.Duration
 import java.util.List as JList
-import java.util.Optional
+import java.util.{Locale, Optional}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow
 import java.util.function.{BiConsumer, BiPredicate, Consumer, Supplier}
@@ -52,7 +52,13 @@ object HttpRequest:
 
   def newBuilder(): Builder = new HttpRequestBuilderImpl()
 
-  def newBuilder(uri: URI): Builder = new HttpRequestBuilderImpl(Some(uri))
+  def newBuilder(uri: URI): Builder = {
+    requireNonNull(uri)
+    val scheme = uri.getScheme().toLowerCase(Locale.US)
+    require(scheme == "http" || scheme == "https", s"invalid URI scheme ${scheme}")
+    requireNonNull(uri.getHost())
+    new HttpRequestBuilderImpl(Optional.of(uri))
+  }
 
   /// since 16
   def newBuilder(request: HttpRequest, filter: BiPredicate[String, String]): Builder = {

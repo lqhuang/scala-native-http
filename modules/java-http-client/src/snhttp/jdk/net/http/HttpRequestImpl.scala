@@ -16,12 +16,12 @@ import snhttp.core.Method
 import snhttp.jdk.net.http.internal.PropertyUtils
 
 case class HttpRequestBuilderImpl(
-    protected[http] var _uri: Option[URI] = None,
+    protected[http] var _uri: Optional[URI] = Optional.empty(),
     protected[http] var _expectContinue: Boolean = false,
     protected[http] var _method: Method = "GET",
-    protected[http] var _version: Option[Version] = None,
-    protected[http] var _timeout: Option[Duration] = None,
-    protected[http] var _bodyPublisher: Option[BodyPublisher] = None,
+    protected[http] var _version: Optional[Version] = Optional.empty(),
+    protected[http] var _timeout: Optional[Duration] = Optional.empty(),
+    protected[http] var _bodyPublisher: Optional[BodyPublisher] = Optional.empty(),
     protected[http] val _headerMap: TreeMap[String, JList[String]] = //
       new TreeMap(String.CASE_INSENSITIVE_ORDER),
 ) extends HttpRequest.Builder:
@@ -30,9 +30,8 @@ case class HttpRequestBuilderImpl(
     requireNonNull(uri)
     val scheme = uri.getScheme().toLowerCase(Locale.US)
     require(scheme == "http" || scheme == "https", s"invalid URI scheme ${scheme}")
-    val host = uri.getHost()
-    requireNonNull(host)
-    this._uri = Some(uri)
+    requireNonNull(uri.getHost())
+    this._uri = Optional.of(uri)
     this
 
   def expectContinue(enable: Boolean): Builder = {
@@ -43,7 +42,7 @@ case class HttpRequestBuilderImpl(
 
   def version(version: HttpClient.Version): Builder = {
     requireNonNull(version)
-    this._version = Some(version)
+    this._version = Optional.of(version)
     this
   }
 
@@ -75,7 +74,7 @@ case class HttpRequestBuilderImpl(
   def timeout(duration: Duration): Builder =
     requireNonNull(duration)
     require(!duration.isNegative && !duration.isZero, "Duration must be positive")
-    this._timeout = Some(duration)
+    this._timeout = Optional.of(duration)
     this
 
   def method(method: String, bodyPublisher: BodyPublisher): Builder = {
@@ -87,7 +86,7 @@ case class HttpRequestBuilderImpl(
         throw new IllegalArgumentException(s"Invalid HTTP method: ${method}")
       case Some(m) =>
         this._method = m
-        this._bodyPublisher = Some(bodyPublisher)
+        this._bodyPublisher = Optional.of(bodyPublisher)
     }
 
     this
@@ -95,27 +94,27 @@ case class HttpRequestBuilderImpl(
 
   def GET(): Builder =
     this._method = "GET"
-    this._bodyPublisher = None
+    this._bodyPublisher = Optional.empty()
     this
 
   def POST(bodyPublisher: BodyPublisher): Builder =
     this._method = "POST"
-    this._bodyPublisher = Some(bodyPublisher)
+    this._bodyPublisher = Optional.of(bodyPublisher)
     this
 
   def PUT(bodyPublisher: BodyPublisher): Builder =
     this._method = "PUT"
-    this._bodyPublisher = Some(bodyPublisher)
+    this._bodyPublisher = Optional.of(bodyPublisher)
     this
 
   def DELETE(): Builder =
     this._method = "DELETE"
-    this._bodyPublisher = None
+    this._bodyPublisher = Optional.empty()
     this
 
   override def HEAD(): Builder =
     this._method = "HEAD"
-    this._bodyPublisher = None
+    this._bodyPublisher = Optional.empty()
     this
 
   def build(): HttpRequest =
@@ -165,29 +164,23 @@ case class HttpRequestImpl(private val builder: HttpRequestBuilderImpl) extends 
   def close(): Unit = ()
 
   override def bodyPublisher(): Optional[BodyPublisher] =
-    builder._bodyPublisher match
-      case Some(publisher) => Optional.ofNullable(publisher)
-      case None            => Optional.empty()
+    builder._bodyPublisher
 
   override def method(): String = builder._method
 
   override def timeout(): Optional[Duration] =
-    builder._timeout match
-      case Some(duration) => Optional.of(duration)
-      case None           => Optional.empty()
+    builder._timeout
 
   override def expectContinue(): Boolean =
     builder._expectContinue
 
   override def uri(): URI =
-    builder._uri match
-      case Some(uri) => uri
-      case None => throw new IllegalStateException("Unreachable. URI must be set in the builder")
+    builder._uri.orElseThrow(() =>
+      new IllegalStateException("Unreachable. URI must be set in the builder"),
+    )
 
   override def version(): Optional[Version] =
-    builder._version match
-      case Some(version) => Optional.of(version)
-      case None          => Optional.empty()
+    builder._version
 
   override def headers(): HttpHeaders =
     HttpHeaders.of(builder._headerMap, PropertyUtils.allowedHeadersPredicate)

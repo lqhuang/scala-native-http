@@ -6,26 +6,28 @@ import java.net.http.HttpResponse.{BodyHandler, BodySubscribers, ResponseInfo, B
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.{Map as JMap, List as JList, Optional}
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.SubmissionPublisher
+import java.util.concurrent.Flow.Subscription
+import java.util.concurrent.{CompletableFuture, SubmissionPublisher, ConcurrentLinkedQueue}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.jdk.javaapi.CollectionConverters.asScala
+import scala.scalanative.libc.stdatomic.AtomicBool
+import scala.scalanative.libc.stddef.NULL
 import scala.scalanative.unsafe.{
   Ptr,
   Zone,
   CSize,
+  CStruct1,
   CStruct3,
+  CFuncPtr0,
+  CFuncPtr2,
   CFuncPtr4,
-  CQuote,
   UnsafeRichLong,
   UnsafeRichInt,
   Tag,
 }
-import scala.scalanative.unsafe.{toCString, fromCString, alloc}
+import scala.scalanative.unsafe.{toCString, fromCString, fromCStringSlice, alloc}
 import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
-import scala.scalanative.libc.stddef.NULL
-import scala.scalanative.libc.stdio.{stdout, printf}
 
 import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlException}
@@ -33,6 +35,7 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlEasy,
   CurlMsg,
   CurlSlist,
+  CurlWriteFuncRet,
   CurlFollow,
   CurlUseSsl,
   CurlOption,
@@ -43,6 +46,7 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlSocket,
   CurlReadCallback,
   CurlWriteCallback,
+  CurlHeaderCallback,
 }
 import _root_.snhttp.experimental.curl.curl.CurlMultiErrCode.RichCurlMultiErrCode
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
@@ -70,7 +74,7 @@ private[http] final class HttpConnection[T](
   @volatile
   private var errMsg: Optional[CurlMsg] = Optional.empty()
   private val errMsgLock = new ReentrantLock()
-  private val closed = new AtomicBoolean(false)
+  private val closed = AtomicBool(false)
 
   /**
    * When `CurlSlist`(alias `curl_slist`) option is passed to `curl_easy_setopt`, libcurl does not
@@ -79,25 +83,61 @@ private[http] final class HttpConnection[T](
    */
   private var slist: Optional[CurlSlist] = Optional.empty()
 
-  private val respBodyReceived = new AtomicBoolean(false)
-  private val respBodyPublisher = new SubmissionPublisher[JList[ByteBuffer]]()
+  private val respBodyReceived: AtomicBool = AtomicBool(false)
+  private var respInfo: ResponseInfoImpl = _
+  private var respBodySubscriber: BodySubscriber[T] = _
+  private var respBodyPublisher: SubmissionPublisher[JList[ByteBuffer]] = _
 
-  private var maybeRespInfo: Optional[ResponseInfoImpl] = Optional.empty()
-  private var maybeRespBodySubscriber: Optional[BodySubscriber[T]] = Optional.empty()
+  val response = new CompletableFuture[HttpResponse[T]]()
 
-  val writeBufferSize = PropertyUtils.RECEIVE_BUFFER_SIZE // won't change after init
+  // case exc: CurlErrCodeException =>
+  //   if Set(5, 6, 7).contains(exc.code.value.toInt)
+  //   then //
+  //     throw new ConnectException(s"HTTP request failed: ${exc.getMessage()}")
+  //   else //
+  //     throw exc
+  // case exc: Throwable =>
+  //   throw exc
+
+  /**
+   * invoke when receiving header data, this callback will be invoked to assemble necessary response
+   * info and initialize the `BodyHandler` to transform the response body.
+   */
+  private final def onHeaderCompleted() = {
+    val version = easy.info.version match
+      case CurlHttpVersion.VERSION_3   => Version.valueOf("HTTP_3")
+      case CurlHttpVersion.VERSION_2_0 => Version.HTTP_2
+      case CurlHttpVersion.VERSION_1_1 => Version.HTTP_1_1
+      case _                           => Version.HTTP_1_1
+
+    val statusCode = easy.info.responseCode
+    val jmap = JMap.ofEntries(
+      easy.info.headers
+        .mapValues(xs => JList.of(xs.toSeq*))
+        .map((k, v) => JMap.entry(k, v))
+        .toSeq*,
+    )
+    val headers = HttpHeaders.of(jmap, (_, _) => true)
+    val respInfo = new ResponseInfoImpl(statusCode, version, headers)
+    val respBodySubscriber = responseBodyHandler(respInfo)
+    respBodyPublisher.subscribe(respBodySubscriber)
+
+    response.complete(HttpResponseImpl(request, respInfo, respBodySubscriber.getBody())): Unit
+
+    ()
+  }
 
   val writeData = alloc[CurlRecvBuffer]()
   if (writeData == NULL)
     throw new CurlException("Failed to allocate memory for CurlData")
-  (!writeData)._1 = respBodyReceived
-  (!writeData)._2 = firstRespCallback
-  (!writeData)._3 = respBodyPublisher
+  writeData.isBodyReceived = respBodyReceived
+  writeData.onHeaderCompleted = onHeaderCompleted
+  writeData.publisher = respBodyPublisher
 
   init()
 
   def assignCurlErrMsg(msg: CurlMsg): Unit = {
-    if (errMsg.isPresent() || closed.get())
+    if (errMsg.isPresent() || closed.load())
       throw new IllegalStateException("CurlMsg has already been assigned/done")
 
     val lock = errMsgLock.lock()
@@ -105,31 +145,13 @@ private[http] final class HttpConnection[T](
     finally errMsgLock.unlock()
   }
 
-  def fetchResponse(): HttpResponse[T] = {
-    client.tryStart()
-    handleError()
-    assert(respBodyReceived.get() == true)
-
-    new HttpResponseImpl(
-      request,
-      maybeRespInfo.orElseThrow(() =>
-        new IllegalStateException(s"${maybeRespInfo} is not initialized"),
-      ),
-      maybeRespBodySubscriber
-        .orElseThrow(() =>
-          new IllegalStateException(s"${maybeRespBodySubscriber} is not initialized"),
-        )
-        .getBody(),
-    )
-  }
-
   def close(): Unit =
-    if (!closed.compareAndExchange(false, true)) {
+    if (!closed.compareExchangeStrong(false, true)) {
       respBodyPublisher.close()
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
-      easy.cleanup()
       slist.map(_.freeAll()): Unit
+      easy.cleanup()
     }
 
   /*
@@ -257,15 +279,10 @@ private[http] final class HttpConnection[T](
      * TODO: set error buffer? https://curl.se/libcurl/c/CURLOPT_ERRORBUFFER.html
      */
 
-    /**
-     * Register connection to the client
-     */
-    client.connections.put(easy, this): Unit
-    client.multi.addCurlEasy(easy): Unit
   }
 
   private inline def requireNonShutdown(): Unit =
-    if (closed.get())
+    if (closed.load())
       throw new IllegalStateException("HttpConnection has been Closed")
 
   private inline def handleError(): Unit =
@@ -287,53 +304,28 @@ private[http] final class HttpConnection[T](
           ),
     ): Unit
 
-  /**
-   * When receiving response body for the first time, this callback will be invoked to assemble
-   * necessary response info and initialize the `BodyHandler` to transform the response body.
-   */
-  private def firstRespCallback(): Unit =
-    if (!respBodyReceived.compareAndExchange(false, true)) {
-      val version = easy.info.version match
-        case CurlHttpVersion.VERSION_3   => Version.valueOf("HTTP_3")
-        case CurlHttpVersion.VERSION_2_0 => Version.HTTP_2
-        case CurlHttpVersion.VERSION_1_1 => Version.HTTP_1_1
-        case _                           => Version.HTTP_1_1
-
-      val statusCode = easy.info.responseCode
-      val jmap = JMap.ofEntries(
-        easy.info.headers
-          .mapValues(xs => JList.of(xs.toSeq*))
-          .map((k, v) => JMap.entry(k, v))
-          .toSeq*,
-      )
-      val headers = HttpHeaders.of(jmap, (_, _) => true)
-
-      val respInfo = new ResponseInfoImpl(statusCode, version, headers)
-      val subscriber = responseBodyHandler(respInfo)
-      respBodyPublisher.subscribe(subscriber)
-
-      maybeRespInfo = Optional.of(respInfo)
-      maybeRespBodySubscriber = Optional.of(subscriber)
-    }
-
 private[http] object HttpConnection:
 
   type CurlRecvBuffer = CStruct3[
-    AtomicBoolean, // flag for resp body received
+    AtomicBool, // Ptr[atomic_bool] // flag for resp body received
     Function0[Unit], // resp body received callback
     SubmissionPublisher[JList[ByteBuffer]], // publisher for response body chunks
   ]
-
+  given Tag[AtomicBool] = Tag.materializePtrWildcard.asInstanceOf[Tag[AtomicBool]]
   given Tag[CurlRecvBuffer] = Tag.materializeCStruct3Tag[
-    AtomicBoolean,
+    AtomicBool,
     Function0[Unit],
     SubmissionPublisher[JList[ByteBuffer]],
   ]
-
+  // scalafmt: { maxColumn = 150 }
   extension (inline struct: CurlRecvBuffer)
-    inline def flag: AtomicBoolean = struct._1
-    inline def callback: Function0[Unit] = struct._2
+    inline def isBodyReceived: AtomicBool = struct._1
+    inline def isBodyReceived_=(value: AtomicBool): Unit = !struct.at1 = value
+    inline def onHeaderCompleted: Function0[Unit] = struct._2
+    inline def onHeaderCompleted_=(value: Function0[Unit]): Unit = !struct.at2 = value
     inline def publisher: SubmissionPublisher[JList[ByteBuffer]] = struct._3
+    inline def publisher_=(value: SubmissionPublisher[JList[ByteBuffer]]): Unit = !struct.at3 = value
+  // scalafmt: { maxColumn = 120 }
 
   case class Inited()
 
@@ -360,14 +352,16 @@ private[http] object HttpConnection:
    *   2. [libcurl example - getinmemory.c](https://curl.se/libcurl/c/getinmemory.html)
    */
   final val writeDataCallback = CurlWriteCallback.fromScalaFunction {
-    (payload: Ptr[Byte], size: CSize, nmemb: CSize, outstream: Ptr[?]) =>
-      val userdata = outstream.asInstanceOf[Ptr[CurlRecvBuffer]]
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
+      val writedata = userdata.asInstanceOf[Ptr[CurlRecvBuffer]]
 
-      if (!(!userdata).flag.compareAndExchange(false, true))
+      // only invoke on the first time receiving body data,
+      // which means header has been received and processed
+      if (!writedata.isBodyReceived.compareExchangeWeak(false, true))
         printf(
           c"First time receiving response body, invoking callback to initialize BodySubscriber...",
         ): Unit
-        (!userdata).callback.apply()
+        writedata.onHeaderCompleted()
 
       printf(c"Received response body chunk of size %d bytes\n", (nmemb * size).toInt): Unit
 
@@ -378,7 +372,7 @@ private[http] object HttpConnection:
       for i <- 0 until ssize do bb.put(!(payload + i))
       bb.flip()
 
-      val offered = (!userdata).publisher.submit(JList.of(bb))
+      val offered = writedata.publisher.submit(JList.of(bb))
       size
   }
 

@@ -156,6 +156,7 @@ final class HttpClientImpl(
   private[http] val epfd = epoll_create1(epoll.EPOLL_CLOEXEC)
   if (epfd < 0)
     throw new RuntimeException(s"Failed to create epoll instance")
+
   private[http] val ctxptr = alloc[MultiContext]()
   ctxptr.multiRef = multi.ref
   ctxptr.epfd = epfd
@@ -357,11 +358,11 @@ final class HttpClientImpl(
    * Non-JDK public methods
    */
 
-  private[http] def isRunning: Boolean =
+  private[http] def isStillRunning: Boolean =
     ctxptr.running > 0
 
   private[http] def tryStart(): Unit =
-    if !isRunning
+    if !isStillRunning
     then mainLoop()
     else ()
 
@@ -392,11 +393,16 @@ final class HttpClientImpl(
    * Private methods
    */
 
-  private inline def requireNonShutdown(): Unit =
+  private transparent inline def requireNonShutdown(): Unit =
     if (_shutdown.get())
       throw new IllegalStateException(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
+
+  private inline def submitConnReq(conn: HttpConnection[?]): Unit =
+    connections.put(conn.easy, conn): Unit
+    multi.addCurlEasy(conn.easy): Unit
+    tryStart()
 
   private inline def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
     Math.clamp(curlSocketActionTimeout.toInt, -1, Int.MaxValue)
@@ -417,7 +423,6 @@ final class HttpClientImpl(
       val recvEvents = epoll_wait(ctxptr.epfd, events, bufferSize, timeout)
 
       if (recvEvents < 0)
-        println(s"epoll_wait failed with error ${errno.errno}")
         if errno.errno == errno.EINTR
         then () // Retry if interrupted by signal
         else throw new CurlException(s"epoll_wait failed with error ${errno.errno}")
@@ -426,9 +431,6 @@ final class HttpClientImpl(
         err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
         collectInfo()
       else
-        println(
-          s"Received ${recvEvents} events from epoll, processing them with curl_multi_socket_action",
-        )
         for i <- 0 until recvEvents do {
           val event = events(i)
 
@@ -439,10 +441,6 @@ final class HttpClientImpl(
             action |= CurlCSelect.OUT
           if ((event.events & (epoll.EPOLLERR | epoll.EPOLLHUP)) != 0)
             action |= CurlCSelect.ERR
-
-          println(
-            s"Received epoll event with events ${event.events}, then action is ${action}",
-          )
 
           val epfd = event.data.asInstanceOf[FileDescriptor]
           err = multi.socketAction(
