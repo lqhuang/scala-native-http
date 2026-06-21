@@ -12,8 +12,11 @@
 package snhttp.experimental.curl
 package _libcurl
 
-import scalanative.unsafe.alloc
-import scalanative.unsafe.{
+import scala.scalanative.posix.stddef.size_t
+import scala.scalanative.runtime.toRawPtr
+import scala.scalanative.runtime.Intrinsics.castRawPtrToInt
+import scala.scalanative.unsafe.alloc
+import scala.scalanative.unsafe.{
   Zone,
   Tag,
   Ptr,
@@ -25,7 +28,6 @@ import scalanative.unsafe.{
   CFuncPtr5,
   UnsafeRichLong,
 }
-import scalanative.posix.stddef.size_t
 
 import _root_.snhttp.experimental.curl._libcurl.Curl.{CurlHandle, CurlErrCode, CurlSocket}
 import _root_.snhttp.experimental.curl._internal.{_BindgenEnumCInt, _BindgenEnumCLong}
@@ -122,8 +124,8 @@ private[curl] object Multi:
     /* last, not used */
     final val LAST = define(2)
 
-    extension (value: CurlMsgCode)
-      def getname: String =
+    extension (inline value: CurlMsgCode)
+      inline def toName: String =
         value match
           case NONE => "CURLMSG_NONE"
           case DONE => "CURLMSG_DONE"
@@ -132,13 +134,17 @@ private[curl] object Multi:
   end CurlMsgCode
 
   // type CurlMsgData = CurlErrCode
-  type CurlMsgData = CurlErrCode | CVoidPtr // ??? successed in cli compile, failed in IDE
+  type CurlMsgData = CVoidPtr // | CurlErrCode // ??? successed in cli compile, failed in IDE
   object CurlMsgData:
 
     /**
      * its size must be the max of the two sizes, its alignment the max of the two alignments
      */
-    given Tag[CurlMsgData] = Tag.materializePtrWildcard.asInstanceOf[Tag[CurlMsgData]]
+    given Tag[CurlMsgData] = Tag.materializePtrWildcard
+
+    extension (inline data: CurlMsgData) //
+      inline def asErrCode = CurlErrCode.fromInt(castRawPtrToInt(toRawPtr(data)))
+      inline def asCString = data.asInstanceOf[Ptr[Byte]]
 
   end CurlMsgData
 
@@ -153,17 +159,16 @@ private[curl] object Multi:
   ]
   object CurlMsg:
 
-    import CurlMsgData.given_Tag_CurlMsgData
     given Tag[CurlMsg] =
-      Tag.materializeCStruct3Tag[CurlMsgCode, CurlHandle, CurlMsgData].asInstanceOf[Tag[CurlMsg]]
+      Tag.materializeCStruct3Tag[CurlMsgCode, Ptr[CurlHandle], CurlMsgData]
 
-    extension (struct: CurlMsg)
-      inline def msg: CurlMsgCode                           = !struct.at1
-      inline def msg_=(value: CurlMsgCode): Unit            = !struct.at1 = value
-      inline def easyHandle: Ptr[CurlHandle]                = !struct.at2
-      inline def easyHandle_=(value: Ptr[CurlHandle]): Unit = !struct.at2 = value
-      inline def data: CurlMsgData                          = !struct.at3
-      inline def data_=(value: CurlMsgData): Unit           = !struct.at3 = value
+    extension (inline struct: CurlMsg)
+      inline def msg: CurlMsgCode            = struct._1
+      inline def easyHandle: Ptr[CurlHandle] = struct._2
+      inline def data: CurlMsgData           = struct._3
+      // inline def msg_=(value: CurlMsgCode): Unit            = !struct.at1 = value
+      // inline def easyHandle_=(value: Ptr[CurlHandle]): Unit = !struct.at2 = value
+      // inline def data_=(value: CurlMsgData): Unit           = !struct.at3 = value
 
   end CurlMsg
 
@@ -178,10 +183,10 @@ private[curl] object Multi:
 
     private inline def define(a: Int): CurlWait = a
 
-    val POLLNONE = define(0x0000)
-    val POLLIN   = define(0x0001)
-    val POLLPRI  = define(0x0002)
-    val POLLOUT  = define(0x0004)
+    final val POLLNONE = define(0x0000)
+    final val POLLIN   = define(0x0001)
+    final val POLLPRI  = define(0x0002)
+    final val POLLOUT  = define(0x0004)
 
   end CurlWait
 
@@ -197,12 +202,12 @@ private[curl] object Multi:
       (!ptr).revents = revents
       ptr
 
-    extension (struct: CurlWaitFd)
-      inline def fd: CurlSocket                = struct._1
+    extension (inline struct: CurlWaitFd)
+      inline def fd: CurlSocket                = !struct.at1
       inline def fd_=(value: CurlSocket): Unit = !struct.at1 = value
-      inline def events: Short                 = struct._2
+      inline def events: Short                 = !struct.at2
       inline def events_=(value: Short): Unit  = !struct.at2 = value
-      inline def revents: Short                = struct._3
+      inline def revents: Short                = !struct.at3
       inline def revents_=(value: Short): Unit = !struct.at3 = value
 
   end CurlWaitFd
@@ -220,10 +225,10 @@ private[curl] object Multi:
 
     private inline def define(a: Int): CurlPoll = a
 
-    val IN     = define(1)
-    val OUT    = define(2)
-    val INOUT  = define(3)
-    val REMOVE = define(4)
+    final val IN     = define(1)
+    final val OUT    = define(2)
+    final val INOUT  = define(3)
+    final val REMOVE = define(4)
 
     def unapply(value: CurlPoll): Option[CurlPoll] =
       value match
@@ -233,10 +238,9 @@ private[curl] object Multi:
         case REMOVE => Some(REMOVE)
         case _      => None
 
-    extension (a: CurlPoll)
-      inline def &(b: CurlPoll): CurlPoll       = a & b
-      inline def |(b: CurlPoll): CurlPoll       = a | b
-      inline infix def is(b: CurlPoll): Boolean = (a & b) == b
+    extension (inline a: CurlPoll)
+      inline def &(b: CurlPoll): CurlPoll = a & b
+      inline def |(b: CurlPoll): CurlPoll = a | b
 
   end CurlPoll
 

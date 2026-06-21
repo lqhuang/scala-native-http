@@ -3,7 +3,7 @@ package curl
 
 import scala.util.Using.Releasable
 
-import scala.scalanative.unsafe.{Ptr, CString, CInt, CLong, CFuncPtr}
+import scala.scalanative.unsafe.{Ptr, CString, CLong, CFuncPtr}
 import scala.scalanative.posix.stddef.size_t
 import scala.scalanative.libc.stddef.NULL
 
@@ -22,10 +22,6 @@ class CurlEasy(val ref: Ptr[CurlHandle]) extends AnyVal derives CanEqual:
 
   inline def info: CurlInfo =
     CurlInfo(ref)
-
-  inline def setCIntOption(option: CurlOption, value: CInt): Unit =
-    val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value, err)
 
   inline def setCLongOption(option: CurlOption, value: CLong): Unit =
     val err = libcurl.easySetOpt(ref, option, value)

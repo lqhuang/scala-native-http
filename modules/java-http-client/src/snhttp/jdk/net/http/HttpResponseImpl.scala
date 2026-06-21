@@ -27,7 +27,7 @@ class HttpResponseImpl[T] private[http] (
 
   def headers(): HttpHeaders = _responseInfo.headers()
 
-  def body(): T = _body.toCompletableFuture().join()
+  def body(): T = _body.toCompletableFuture().get()
 
   def sslSession(): Optional[SSLSession] = _sslSession
 

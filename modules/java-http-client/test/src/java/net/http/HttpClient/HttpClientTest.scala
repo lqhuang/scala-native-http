@@ -5,8 +5,10 @@ import java.net.{URI, InetAddress, InetSocketAddress, Proxy, ProxySelector}
 import java.net.ConnectException
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.http.HttpClient.{Redirect, Version}
+import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
 import java.time.Duration
 import java.util.{List as JList, Optional}
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.{
   ConcurrentHashMap,
   Executors,
@@ -91,6 +93,36 @@ class HttpClientTest extends TestSuite:
 
       assertThrows[ConnectException]:
         client.send(request, bodyHandler): Unit
+    }
+
+    test("HttpClient sendAsync should raise ConnectException for invalid host") {
+      val client = HttpClient.newHttpClient()
+      val request = HttpRequest
+        .newBuilder(URI.create("http://nonexistent.invalid"))
+        .GET()
+        .build()
+      val bodyHandler = HttpResponse.BodyHandlers.ofString()
+      val future = client.sendAsync(request, bodyHandler)
+
+      val exc = assertThrows[ExecutionException]:
+        future.get(): Unit
+      assert(exc.getCause().isInstanceOf[ConnectException])
+      // assert(exc.getCause().getCause().isInstanceOf[UnresolvedAddressException])
+    }
+
+    test("HttpClient sendAsync should raise ConnectException for unreachable address") {
+      val client = HttpClient.newHttpClient()
+      val request = HttpRequest
+        .newBuilder(URI.create("http://127.0.0.1:10")) // resolved but unreachable port
+        .GET()
+        .build()
+      val bodyHandler = HttpResponse.BodyHandlers.ofString()
+      val future = client.sendAsync(request, bodyHandler)
+
+      val exc = assertThrows[ExecutionException]:
+        future.get(): Unit
+      assert(exc.getCause().isInstanceOf[ConnectException])
+      // assert(exc.getCause().getCause().isInstanceOf[ClosedChannelException])
     }
 
     // test("HttpClient should handle basic request/response cycle") {

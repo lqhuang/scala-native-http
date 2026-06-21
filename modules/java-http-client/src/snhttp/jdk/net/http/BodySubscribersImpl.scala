@@ -365,7 +365,7 @@ private[snhttp] class ConsumerBodySubscriber(consumer: Consumer[Optional[Array[B
 
 end ConsumerBodySubscriber
 
-private[snhttp] class InputStreamBodySubscriber(capacity: Int = 2)
+private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
     extends InputStream
     with BodySubscriber[InputStream]:
 
@@ -410,7 +410,8 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 2)
         iter.hasNext()
       do
         queue.put(iter.next()); ()
-      subscription.request(queue.remainingCapacity() - 1)
+
+      subscription.request(Math.max(1, queue.remainingCapacity() - 1))
     }
   }
 
@@ -504,6 +505,7 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 2)
     else
       n + 1
   }
+
 end InputStreamBodySubscriber
 
 private[snhttp] class PublishingBodySubscriber extends BodySubscriber[Publisher[JList[ByteBuffer]]]:

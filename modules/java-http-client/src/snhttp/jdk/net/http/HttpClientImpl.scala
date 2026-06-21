@@ -216,26 +216,9 @@ final class HttpClientImpl(
       throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
     requireNonShutdown()
 
-    CompletableFuture.supplyAsync(
-      () => {
-        val conn = HttpConnection(request, responseBodyHandler, this)
-        try
-          conn.fetchResponse()
-        catch {
-          case exc: CurlErrCodeException =>
-            if Set(5, 6, 7).contains(exc.code.value.toInt)
-            then //
-              throw new ConnectException(s"HTTP request failed: ${exc.getMessage()}")
-            else //
-              throw exc
-          case exc: Throwable =>
-            throw exc
-        } //
-        finally //
-          conn.close()
-      },
-      _executor,
-    )
+    val conn = HttpConnection(request, responseBodyHandler, this)
+    submitConnReq(conn)
+    conn.response
   }
 
   override def shutdown(): Unit =
@@ -544,8 +527,7 @@ private[http] object HttpClientImpl:
 
   final val timerCallback = CurlMultiTimerCallback.fromScalaFunction {
     (multi: Ptr[CurlMultiHandle], timeoutMs: CLong, clientp: CVoidPtr) =>
-      val _ = printf(c"Timer callback called with timeoutMs = %ld\n", timeoutMs)
-      val ctxptr = !clientp.asInstanceOf[Ptr[MultiContext]]
+      val ctxptr = clientp.asInstanceOf[Ptr[MultiContext]]
       ctxptr.timeout = timeoutMs
       0
   }

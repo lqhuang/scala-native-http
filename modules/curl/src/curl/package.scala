@@ -34,6 +34,7 @@ package object curl:
   export _root_.snhttp.experimental.curl._libcurl.Multi.{
     CurlWaitFd,
     CurlMsgCode,
+    CurlMsgData,
     CurlMultiErrCode,
     CurlMultiOption,
     CurlPoll,
