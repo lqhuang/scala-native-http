@@ -57,7 +57,7 @@ import _root_.snhttp.experimental.curl.curl.{
 }
 import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{CurlMultiHandle, CurlHandle}
-import _root_.snhttp.jdk.net.http.internal.HttpConnection
+import _root_.snhttp.jdk.net.http.internal.{HttpConnection, Utils}
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
 
@@ -65,7 +65,7 @@ class HttpClientBuilderImpl() extends Builder:
 
   protected[http] var _cookieHandler: Optional[CookieHandler] = Optional.empty()
   protected[http] var _connectTimeout: Optional[Duration] = Optional.empty()
-  protected[http] var _redirect: Redirect = Redirect.NORMAL
+  protected[http] var _redirect: Redirect = Redirect.NEVER
   protected[http] var _proxy: Optional[ProxySelector] = Optional.empty()
   protected[http] var _authenticator: Optional[Authenticator] = Optional.empty()
   // default to HTTP/2 for TLS, fallback to HTTP/1.1 for non-TLS
@@ -94,7 +94,7 @@ class HttpClientBuilderImpl() extends Builder:
 
   def sslParameters(sslParams: SSLParameters): Builder =
     requireNonNull(sslParams)
-    this._sslParams = Optional.of(sslParams)
+    this._sslParams = Optional.of(Utils.cloneSSLParameters(sslParams))
     this
 
   def executor(executor: Executor): Builder =
@@ -327,7 +327,7 @@ final class HttpClientImpl(
    * set of parameters, that the client will use, is returned.
    */
   def sslParameters(): SSLParameters =
-    _sslParams
+    Utils.cloneSSLParameters(_sslParams)
 
   def authenticator(): Optional[Authenticator] =
     builder._authenticator

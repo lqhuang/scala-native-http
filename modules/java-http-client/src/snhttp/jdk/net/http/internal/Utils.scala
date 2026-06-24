@@ -7,6 +7,7 @@ import java.net.http.HttpHeaders
 import java.util.Optional
 import java.util.regex.Pattern
 import java.util.regex.Pattern.CASE_INSENSITIVE
+import javax.net.ssl.SSLParameters
 
 object Utils:
 
@@ -130,4 +131,27 @@ object Utils:
         else Optional.of(rawValue)
       }
     }
+  }
+
+  private[http] def cloneSSLParameters(params: SSLParameters): SSLParameters = {
+    val clone = new SSLParameters(params.getCipherSuites(), params.getProtocols())
+
+    if (params.getNeedClientAuth() == true)
+      clone.setNeedClientAuth(params.getNeedClientAuth())
+    if (params.getWantClientAuth() == true)
+      clone.setWantClientAuth(params.getWantClientAuth())
+    clone.setAlgorithmConstraints(params.getAlgorithmConstraints())
+    if (params.getEndpointIdentificationAlgorithm() != null)
+      clone.setEndpointIdentificationAlgorithm(params.getEndpointIdentificationAlgorithm())
+    clone.setServerNames(params.getServerNames())
+    clone.setSNIMatchers(params.getSNIMatchers())
+    clone.setUseCipherSuitesOrder(params.getUseCipherSuitesOrder())
+    clone.setEnableRetransmissions(params.getEnableRetransmissions())
+    clone.setMaximumPacketSize(params.getMaximumPacketSize())
+    // FIXME: remove comment if `getApplicationProtocols` is implemented in `SSLParameters`
+    // clone.setApplicationProtocols(params.getApplicationProtocols())
+    clone.setSignatureSchemes(params.getSignatureSchemes())
+    clone.setNamedGroups(params.getNamedGroups())
+
+    clone
   }

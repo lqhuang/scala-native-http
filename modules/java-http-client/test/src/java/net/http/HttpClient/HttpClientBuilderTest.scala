@@ -1,11 +1,19 @@
 package snhttp.test.java.net.http
 
-import java.net.{CookieManager, ProxySelector, URI, InetAddress}
+import java.net.{
+  Authenticator,
+  CookieManager,
+  InetAddress,
+  PasswordAuthentication,
+  ProxySelector,
+  URI,
+}
 import java.net.http.HttpClient
 import java.net.http.HttpClient.{Redirect, Version}
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.Executors
+import javax.net.ssl.{SSLContext, SSLParameters}
 
 import scala.util.Properties
 
@@ -124,6 +132,72 @@ class HttpClientBuilderTest extends TestSuite:
       }
     }
 
+    test("HttpClient builder should configure proxy selector") {
+      val proxy = HttpClient.Builder.NO_PROXY
+      val client = HttpClient.newBuilder().proxy(proxy).build()
+
+      assert(client.proxy() == Optional.of(proxy))
+    }
+
+    test("HttpClient builder should reject null proxy selector") {
+      val builder = HttpClient.newBuilder()
+      assertThrows[NullPointerException] {
+        builder.proxy(null): Unit
+      }
+    }
+
+    test("HttpClient builder should configure authenticator") {
+      val authenticator = new Authenticator:
+        override protected def getPasswordAuthentication(): PasswordAuthentication =
+          PasswordAuthentication("user", "password".toCharArray())
+
+      val client = HttpClient.newBuilder().authenticator(authenticator).build()
+
+      assert(client.authenticator() == Optional.of(authenticator))
+    }
+
+    test("HttpClient builder should reject null authenticator") {
+      val builder = HttpClient.newBuilder()
+      assertThrows[NullPointerException] {
+        builder.authenticator(null): Unit
+      }
+    }
+
+    test("HttpClient builder should configure SSL context") {
+      val context = SSLContext.getDefault()
+      val client = HttpClient.newBuilder().sslContext(context).build()
+
+      assert(client.sslContext() == context)
+    }
+
+    test("HttpClient builder should reject null SSL context") {
+      val builder = HttpClient.newBuilder()
+      assertThrows[NullPointerException] {
+        builder.sslContext(null): Unit
+      }
+    }
+
+    test("HttpClient builder should defensively copy SSL parameters") {
+      val params = SSLParameters(null, Array("TLSv1.2"))
+
+      val client = HttpClient.newBuilder().sslParameters(params).build()
+      params.setProtocols(Array("TLSv1.3"))
+
+      val firstRead = client.sslParameters()
+      val secondRead = client.sslParameters()
+      firstRead.setProtocols(Array("TLSv1.1"))
+
+      assert(secondRead.getProtocols().sameElements(Seq("TLSv1.2")))
+      assert(client.sslParameters().getProtocols().sameElements(Seq("TLSv1.2")))
+    }
+
+    test("HttpClient builder should reject null SSL parameters") {
+      val builder = HttpClient.newBuilder()
+      assertThrows[NullPointerException] {
+        builder.sslParameters(null): Unit
+      }
+    }
+
     test("HttpClient builder should configure priority") {
       val builder = HttpClient.newBuilder()
 
@@ -225,14 +299,12 @@ class HttpClientBuilderTest extends TestSuite:
     }
 
     test("HttpClient.Builder.NO_PROXY should be available") {
-      val builder = HttpClient.newBuilder()
       val noProxy = HttpClient.Builder.NO_PROXY
 
       assert(noProxy != null)
 
       val exampleUri = URI.create("http://example.com")
-      val defaultProxySelector = ProxySelector.getDefault()
-      val client = builder.proxy(defaultProxySelector).build()
+      val client = HttpClient.newBuilder().proxy(noProxy).build()
 
       assert(client.proxy().isPresent())
       assert(
