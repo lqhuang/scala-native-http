@@ -1,6 +1,6 @@
 package snhttp.test.java.net.http
 
-import java.lang.Thread
+import java.io.IOException
 import java.net.{URI, InetAddress, InetSocketAddress, Proxy, ProxySelector}
 import java.net.ConnectException
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
@@ -125,132 +125,141 @@ class HttpClientTest extends TestSuite:
       // assert(exc.getCause().getCause().isInstanceOf[ClosedChannelException])
     }
 
-    // test("HttpClient should handle basic request/response cycle") {
-    //   val client = HttpClient.newHttpClient()
-    //   val request = HttpRequest
-    //     .newBuilder(URI.create("http://example.com"))
-    //     .GET()
-    //     .build()
-    //   val bodyHandler = HttpResponse.BodyHandlers.ofString()
+    test("HttpClient should handle basic request/response cycle") {
+      val client = HttpClient.newHttpClient()
+      val request = HttpRequest
+        .newBuilder(URI.create("http://example.com"))
+        .GET()
+        .build()
+      val bodyHandler = HttpResponse.BodyHandlers.ofString()
 
-    //   // This should complete without throwing exceptions
-    //   val future = client.sendAsync(request, bodyHandler)
-    //   assert(future != null)
+      // This should complete without throwing exceptions
+      val future = client.sendAsync(request, bodyHandler)
+      assert(future != null)
 
-    //   // The future should complete (even if with a mock response)
-    //   val response = future.get(5, TimeUnit.SECONDS)
-    //   assert(response != null)
-    //   assert(response.request() == request)
-    // }
+      // The future should complete (even if with a mock response)
+      val response = future.get(5, TimeUnit.SECONDS)
+      assert(response != null)
+      assert(response.request() == request)
+    }
 
-    // test("HttpClient should handle various URI schemes") {
-    //   val client = HttpClient.newHttpClient()
-    //   val bodyHandler = HttpResponse.BodyHandlers.ofString()
+    test("HttpClient should handle various URI schemes") {
+      val client = HttpClient.newHttpClient()
+      val bodyHandler = HttpResponse.BodyHandlers.ofString()
 
-    //   val schemes = List("http", "https")
+      val schemes = List("http", "https")
 
-    //   schemes.foreach { scheme =>
-    //     val request = HttpRequest
-    //       .newBuilder(URI.create(s"${scheme}://example.com"))
-    //       .GET()
-    //       .build()
+      schemes.foreach { scheme =>
+        val request = HttpRequest
+          .newBuilder(URI.create(s"${scheme}://example.com"))
+          .GET()
+          .build()
 
-    //     val future = client.sendAsync(request, bodyHandler)
-    //     val response = future.get(5, TimeUnit.SECONDS)
-    //     assert(response.uri().getScheme() == scheme)
-    //   }
-    // }
+        val future = client.sendAsync(request, bodyHandler)
+        val response = future.get(5, TimeUnit.SECONDS)
+        assert(response.uri().getScheme() == scheme)
+      }
+    }
 
-    // test("HttpClient should handle different HTTP methods") {
-    //   val client = HttpClient.newHttpClient()
-    //   val bodyHandler = HttpResponse.BodyHandlers.ofString()
-    //   val uri = URI.create("http://example.com")
+    test("HttpClient should handle different HTTP methods") {
+      val client = HttpClient.newHttpClient()
+      val bodyHandler = HttpResponse.BodyHandlers.ofString()
+      val uri = URI.create("http://example.com")
 
-    //   val methods = List("GET", "POST", "PUT", "DELETE", "HEAD")
+      val methods = List("GET", "POST", "PUT", "DELETE", "HEAD")
 
-    //   methods.foreach { method =>
-    //     val requestBuilder = HttpRequest.newBuilder(uri)
-    //     val request = method match {
-    //       case "GET"    => requestBuilder.GET().build()
-    //       case "POST"   => requestBuilder.POST(HttpRequest.BodyPublishers.ofString("test")).build()
-    //       case "PUT"    => requestBuilder.PUT(HttpRequest.BodyPublishers.ofString("test")).build()
-    //       case "DELETE" => requestBuilder.DELETE().build()
-    //       case "HEAD" => requestBuilder.method("HEAD", HttpRequest.BodyPublishers.noBody()).build()
-    //     }
+      methods.foreach { method =>
+        val requestBuilder = HttpRequest.newBuilder(uri)
+        val request = method match {
+          case "GET"    => requestBuilder.GET().build()
+          case "POST"   => requestBuilder.POST(HttpRequest.BodyPublishers.ofString("test")).build()
+          case "PUT"    => requestBuilder.PUT(HttpRequest.BodyPublishers.ofString("test")).build()
+          case "DELETE" => requestBuilder.DELETE().build()
+          case "HEAD" => requestBuilder.method("HEAD", HttpRequest.BodyPublishers.noBody()).build()
+        }
 
-    //     val future = client.sendAsync(request, bodyHandler)
-    //     val response = future.get(5, TimeUnit.SECONDS)
-    //     assert(response.request().method() == method)
-    //   }
-    // }
+        val future = client.sendAsync(request, bodyHandler)
+        val response = future.get(5, TimeUnit.SECONDS)
+        assert(response.request().method() == method)
+      }
+    }
 
-    // test("HttpClient shutdown lifecycle") {
-    //   val client = HttpClient.newHttpClient()
+    test("HttpClient shutdown lifecycle") {
+      val client = HttpClient.newHttpClient()
+      assert(client.isTerminated() == false)
 
-    //   // Initially not terminated
-    //   assert(client.isTerminated() == false)
+      // Shutdown
+      client.shutdown()
 
-    //   // Shutdown
-    //   client.shutdown()
+      // Further requests should fail
+      val request = HttpRequest.newBuilder(URI.create("http://example.com")).build()
+      val bodyHandler = HttpResponse.BodyHandlers.ofString()
 
-    //   // Further requests should fail
-    //   val request = HttpRequest.newBuilder(URI.create("http://example.com")).build()
-    //   val bodyHandler = HttpResponse.BodyHandlers.ofString()
+      val _ = assertThrows[IOException] {
+        client.send(request, bodyHandler): Unit
+      }
 
-    //   val _ = assertThrows[IllegalStateException] {
-    //     client.send(request, bodyHandler): Unit
-    //   }
+      val cf = client.sendAsync(request, bodyHandler)
+      val exc = assertThrows[ExecutionException] {
+        cf.get(): Unit
+      }
+      assert(exc.getCause().isInstanceOf[IOException])
+    }
 
-    //   val _ = assertThrows[IllegalStateException] {
-    //     client.sendAsync(request, bodyHandler): Unit
-    //   }
-    // }
+    test("HttpClient awaitTermination should respect timeout") {
+      val client = HttpClient.newHttpClient()
 
-    // test("HttpClient awaitTermination should respect timeout") {
-    //   val client = HttpClient.newHttpClient()
+      client.sendAsync(
+        HttpRequest.newBuilder(URI.create("https://example.org")).build(),
+        HttpResponse.BodyHandlers.ofString(),
+      )
 
-    //   // Should return false immediately since not shutdown
-    //   val result1 = client.awaitTermination(Duration.ofMillis(100))
-    //   assert(result1, false)
+      val result1 = client.awaitTermination(Duration.ofMillis(50))
+      assert(result1 == false)
 
-    //   // Shutdown and wait
-    //   client.shutdownNow()
-    //   val result2 = client.awaitTermination(Duration.ofSeconds(1))
-    //   assert(result2, true)
-    // }
+      // Shutdown and wait
+      client.shutdownNow()
+      val result2 = client.awaitTermination(Duration.ofSeconds(1))
+      assert(result2 == true)
+    }
 
-    // test("HttpClient awaitTermination should reject null duration") {
-    //   val client = HttpClient.newHttpClient()
-    //   assertThrows[NullPointerException] {
-    //     client.awaitTermination(null): Unit
-    //   }
-    // }
+    test("HttpClient awaitTermination should reject null duration") {
+      val client = HttpClient.newHttpClient()
+      assertThrows[NullPointerException] {
+        client.awaitTermination(null): Unit
+      }
+    }
 
-    // test("HttpClient close() should shutdown gracefully") {
-    //   val client = HttpClient.newHttpClient()
+    test("HttpClient awaitTermination should handle non-null but invalid duration") {
+      val client = HttpClient.newHttpClient()
+      assert(client.awaitTermination(Duration.ofSeconds(-1)) == false)
+      assert(client.awaitTermination(Duration.ofSeconds(0)) == false)
+    }
 
-    //   // This should not throw
-    //   client.close()
+    test("HttpClient close() should shutdown gracefully") {
+      val client = HttpClient.newHttpClient()
+      assert(client.isTerminated() == false)
+      // This should not throw
+      client.close()
+      // Should be terminated after close
+      assert(client.isTerminated() == true)
+    }
 
-    //   // Should be terminated after close
-    //   assert(client.isTerminated() == true)
-    // }
+    test("HttpClient should handle interrupted threads during close") {
+      val client = HttpClient.newHttpClient()
+      val interrupted = new AtomicBoolean(false)
 
-    // test("HttpClient should handle interrupted threads during close") {
-    //   val client = HttpClient.newHttpClient()
-    //   val interrupted = new AtomicBoolean(false)
+      val thread = new Thread(() =>
+        try client.close()
+        catch case _: InterruptedException => interrupted.set(true),
+      )
 
-    //   val thread = new Thread(() =>
-    //     try client.close()
-    //     catch case _: InterruptedException => interrupted.set(true),
-    //   )
+      thread.start()
+      // Give it a moment to start, then interrupt
+      Thread.sleep(50)
+      thread.interrupt()
+      thread.join(1000)
 
-    //   thread.start()
-    //   // Give it a moment to start, then interrupt
-    //   Thread.sleep(50)
-    //   thread.interrupt()
-    //   thread.join(1000)
-
-    //   // The thread should have been interrupted
-    //   assert(thread.isInterrupted() || interrupted.get())
-    // }
+      // The thread should have been interrupted
+      assert(thread.isInterrupted() || interrupted.get())
+    }

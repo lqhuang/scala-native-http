@@ -2082,15 +2082,15 @@ private[curl] object Curl:
 
     private inline def define(inline a: Long): CurlSslVersion = a.toSize
 
-    val DEFAULT = define(0L)
-    val TLSv1   = define(1L) // TLS 1.x
-    val SSLv2   = define(2L)
-    val SSLv3   = define(3L)
-    val TLSv1_0 = define(4L)
-    val TLSv1_1 = define(5L)
-    val TLSv1_2 = define(6L)
-    val TLSv1_3 = define(7L)
-    val LAST    = define(8L) // never use, keep last
+    final val DEFAULT = define(0L)
+    final val TLSv1   = define(1L) // TLS 1.x
+    final val SSLv2   = define(2L)
+    final val SSLv3   = define(3L)
+    final val TLSv1_0 = define(4L)
+    final val TLSv1_1 = define(5L)
+    final val TLSv1_2 = define(6L)
+    final val TLSv1_3 = define(7L)
+    final val LAST    = define(8L) // never use, keep last
 
   end CurlSslVersion
 
@@ -2564,13 +2564,13 @@ private[curl] object Curl:
 
     private inline def define(inline a: Int): CurlClosePolicy = a
 
-    val NONE                = define(0) // no purpose since curl 7.57.0
-    val OLDEST              = define(1)
-    val LEAST_RECENTLY_USED = define(2)
-    val LEAST_TRAFFIC       = define(3)
-    val SLOWEST             = define(4)
-    val CALLBACK            = define(5)
-    val LAST                = define(6)
+    final val NONE                = define(0) // no purpose since curl 7.57.0
+    final val OLDEST              = define(1)
+    final val LEAST_RECENTLY_USED = define(2)
+    final val LEAST_TRAFFIC       = define(3)
+    final val SLOWEST             = define(4)
+    final val CALLBACK            = define(5)
+    final val LAST                = define(6)
 
     def getname(value: CurlClosePolicy): Option[String] =
       value match
@@ -2593,12 +2593,12 @@ private[curl] object Curl:
 
     private inline def define(inline a: Int): CurlGlobalFlag = a.toSize
 
-    val SSL       = define(1 << 0) // no purpose since curl 7.57.0
-    val WIN32     = define(1 << 1)
-    val ALL       = SSL | WIN32
-    val NOTHING   = define(0)
-    val DEFAULT   = SSL
-    val ACK_EINTR = define(1 << 2)
+    final val SSL       = define(1 << 0) // no purpose since curl 7.57.0
+    final val WIN32     = define(1 << 1)
+    final val ALL       = define(SSL.int | WIN32.int)
+    final val NOTHING   = define(0)
+    final val DEFAULT   = SSL
+    final val ACK_EINTR = define(1 << 2)
 
   end CurlGlobalFlag
 
@@ -2646,13 +2646,13 @@ private[curl] object Curl:
 
     private inline def define(inline a: Int): CurlShareOption = a
 
-    val CURLSHOPT_NONE       = define(0)
-    val CURLSHOPT_SHARE      = define(1)
-    val CURLSHOPT_UNSHARE    = define(2)
-    val CURLSHOPT_LOCKFUNC   = define(3)
-    val CURLSHOPT_UNLOCKFUNC = define(4)
-    val CURLSHOPT_USERDATA   = define(5)
-    val CURLSHOPT_LAST       = define(6)
+    final val CURLSHOPT_NONE       = define(0)
+    final val CURLSHOPT_SHARE      = define(1)
+    final val CURLSHOPT_UNSHARE    = define(2)
+    final val CURLSHOPT_LOCKFUNC   = define(3)
+    final val CURLSHOPT_UNLOCKFUNC = define(4)
+    final val CURLSHOPT_USERDATA   = define(5)
+    final val CURLSHOPT_LAST       = define(6)
 
     // def getName(value: CurlShareOption): Option[String] =
     //   value match
@@ -2688,12 +2688,12 @@ private[curl] object Curl:
 
     private inline def define(inline a: Int): CurlPause = a
 
-    val RECV      = define(1 << 0)
-    val RECV_CONT = define(0)
-    val SEND      = define(1 << 2)
-    val SEND_CONT = define(0)
-    val ALL       = RECV | SEND
-    val CONT      = RECV_CONT | SEND_CONT
+    final val RECV      = define(1 << 0)
+    final val RECV_CONT = define(0)
+    final val SEND      = define(1 << 2)
+    final val SEND_CONT = define(0)
+    final val ALL       = define(RECV.value | SEND.value)
+    final val CONT      = define(RECV_CONT.value | SEND_CONT.value)
 
   opaque type SockAddrFamily = Int
   object SockAddrFamily:
@@ -2702,9 +2702,9 @@ private[curl] object Curl:
 
     private inline def define(inline v: Int): SockAddrFamily = v
 
-    val AF_INET   = define(socket.AF_INET)
-    val AF_INET6  = define(socket.AF_INET6)
-    val AF_UNIX   = define(socket.AF_UNIX)
-    val AF_UNSPEC = define(socket.AF_UNSPEC)
+    final val AF_INET   = define(socket.AF_INET)
+    final val AF_INET6  = define(socket.AF_INET6)
+    final val AF_UNIX   = define(socket.AF_UNIX)
+    final val AF_UNSPEC = define(socket.AF_UNSPEC)
 
   end SockAddrFamily

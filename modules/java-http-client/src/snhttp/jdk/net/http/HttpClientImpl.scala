@@ -11,6 +11,7 @@ import java.util.Optional
 import java.util.Objects.requireNonNull
 import java.util.concurrent.{CompletableFuture, Executor}
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
 
@@ -165,9 +166,10 @@ final class HttpClientImpl(
 
   private[http] val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
 
-  private val _terminated = new AtomicBoolean(false)
-  private val _terminable = new AtomicBoolean(false)
-  private val _shutdown = new AtomicBoolean(false)
+  private val _shutdownCalled = new AtomicBoolean(false)
+  @volatile
+  private var _terminated = false
+  private val _lock = new ReentrantLock()
 
   multi.setPtrOption(CurlMultiOption.TIMERDATA, ctxptr)
   multi.setFuncPtrOption(CurlMultiOption.TIMERFUNCTION, timerCallback.asFuncPtr)
@@ -185,6 +187,7 @@ final class HttpClientImpl(
   ): HttpResponse[T] = {
     requireNonNull(request, "request cannot be null")
     requireNonNull(responseBodyHandler, "responseBodyHandler cannot be null")
+    requireNonShutdown()
 
     try
       sendAsync(request, responseBodyHandler).get()
@@ -214,16 +217,30 @@ final class HttpClientImpl(
     requireNonNull(responseBodyHandler, "`responseBodyHandler: BodyHandler[T]` cannot be null")
     if (pushPromiseHandler != null)
       throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
-    requireNonShutdown()
 
-    val conn = HttpConnection(request, responseBodyHandler, this)
-    submitConnReq(conn)
-    conn.response
+    if (!_shutdownCalled.get())
+      val conn = HttpConnection(request, responseBodyHandler, this)
+      submitConnReq(conn)
+      conn.response
+    else
+      CompletableFuture.failedFuture(
+        new IOException(
+          "HttpClient has been shutdown, no new request will be accepted.",
+        ),
+      )
   }
 
   override def shutdown(): Unit =
-    _terminable.compareAndExchange(false, true): Unit
-    _shutdown.compareAndExchange(false, true): Unit
+    if (!_shutdownCalled.compareAndExchange(false, true))
+      _lock.lock()
+      try
+        if (connections.nonEmpty)
+          connections.valuesIterator.foreach(_.close())
+        multi.cleanup()
+        unistd.close(epfd): Unit
+        _terminated = true
+      finally //
+        _lock.unlock()
 
   /**
    * Note from JDK docs:
@@ -239,22 +256,15 @@ final class HttpClientImpl(
     requireNonNull(duration, "duration cannot be null")
 
     if (duration.isNegative() || duration.isZero())
-      return isTerminated()
+      return false
 
-    if !_terminable.get()
-    then
-      try
-        multi.cleanup()
-        _terminated.compareAndExchange(false, true)
-        true
-      catch {
-        case exc: CurlMultiException =>
-          throw new RuntimeException(s"Failed to cleanup CURLM pointer: error code ${exc.code}")
+    CompletableFuture[Boolean]
+      .newIncompleteFuture()
+      .completeAsync { () =>
+        Thread.sleep(duration.toMillis())
+        isTerminated()
       }
-    else //
-      ???
-      false
-
+      .join()
   }
 
   /**
@@ -264,31 +274,26 @@ final class HttpClientImpl(
    * first.
    */
   override def isTerminated(): Boolean =
-    _shutdown.get()
+    _shutdownCalled.get() && _terminated
 
   override def shutdownNow(): Unit =
     shutdown()
 
   override def close(): Unit = {
-    val interrupted = new AtomicBoolean(false)
+    var interrupted = false
 
     while !isTerminated()
     do {
       shutdown()
       try
-        awaitTermination(Duration.ofSeconds(3L)): Unit
+        awaitTermination(Duration.ofSeconds(1L)): Unit
       catch {
         case e: InterruptedException =>
-          interrupted.compareAndSet(false, true): Unit
+          interrupted = true
       }
     }
 
-    if (connections.nonEmpty)
-      connections.valuesIterator.foreach(_.close())
-    multi.cleanup()
-    unistd.close(epfd): Unit
-
-    if (interrupted.get())
+    if (interrupted)
       Thread.currentThread().interrupt()
   }
 
@@ -377,17 +382,18 @@ final class HttpClientImpl(
    */
 
   private transparent inline def requireNonShutdown(): Unit =
-    if (_shutdown.get())
-      throw new IllegalStateException(
+    if (_shutdownCalled.get())
+      throw new IOException(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
 
   private inline def submitConnReq(conn: HttpConnection[?]): Unit =
-    connections.put(conn.easy, conn): Unit
-    multi.addCurlEasy(conn.easy): Unit
-    tryStart()
+    if (!isTerminated())
+      connections.put(conn.easy, conn): Unit
+      multi.addCurlEasy(conn.easy): Unit
+      tryStart()
 
-  private inline def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
+  private transparent inline def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
     Math.clamp(curlSocketActionTimeout.toInt, -1, Int.MaxValue)
 
   private def mainLoop(): Unit = {

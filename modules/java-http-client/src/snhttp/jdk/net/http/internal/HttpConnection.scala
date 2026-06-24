@@ -177,7 +177,7 @@ private[http] final class HttpConnection[T](
    * Setup options for this connection based on the `request` and `client` config.
    */
   private def init(): Unit = {
-    easy.setCLongOption(CurlOption.VERBOSE, 1.toSize)
+    // easy.setCLongOption(CurlOption.VERBOSE, 1.toSize)
 
     easy.setCStringOption(CurlOption.USERAGENT, c"sn-java-http-client/0.0.0")
     easy.setCStringOption(CurlOption.URL, toCString(request.uri().toString()))

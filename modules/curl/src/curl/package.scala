@@ -27,6 +27,7 @@ package object curl:
     CurlCloseSocketCallback,
     CurlIoCtlCallback,
     CurlHeaderCallback,
+    CurlPause,
     CURL_MAX_READ_SIZE,
     CURL_MAX_WRITE_SIZE,
     CURL_MAX_HTTP_HEADER,
