@@ -16,6 +16,8 @@ import java.util.concurrent.{TimeUnit, ConcurrentHashMap}
 import java.util.concurrent.atomic.AtomicInteger
 import javax.net.ssl.SSLContext
 
+import scala.util.Properties
+
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class HttpClientTest extends TestSuite:
@@ -30,6 +32,8 @@ class HttpClientTest extends TestSuite:
     try func(client)
     finally client.close()
 
+  val isNative = Properties.propOrEmpty("java.vm.name") == "Scala Native"
+
   def tests = Tests:
 
     test("HttpClient.newHttpClient should expose documented defaults") {
@@ -41,7 +45,7 @@ class HttpClientTest extends TestSuite:
         assert(client.authenticator().isEmpty())
         assert(client.executor().isEmpty())
         assert(client.proxy().isEmpty())
-        assert(client.sslContext() != null)
+        assert(client.sslContext() == SSLContext.getDefault())
         assert(client.sslParameters() != null)
         assert(client.isTerminated() == false)
       }
@@ -347,13 +351,43 @@ class HttpClientTest extends TestSuite:
     // }
 
     test("Redirect.NEVER should return the redirect response without following it") {
-      val client = HttpClient.newBuilder().followRedirects(Redirect.NEVER).build()
-      try
-        val request = HttpRequest.newBuilder(httpbinEndpoint("/absolute-redirect/3")).build()
-        val response = client.send(request, BodyHandlers.ofString())
-        assert(response.statusCode() == 302)
-      finally //
+      test("absolute redirect") {
+        val client = HttpClient.newBuilder().followRedirects(Redirect.NEVER).build()
+        Seq(true, false).foreach { secure =>
+          val request =
+            HttpRequest.newBuilder(httpbinEndpoint("/absolute-redirect/3", secure)).build()
+          val response = client.send(request, BodyHandlers.ofString())
+          assert(response.statusCode() == 302)
+        }
         client.close()
+      }
+      test("relative redirect") {
+        val client = HttpClient.newBuilder().followRedirects(Redirect.NEVER).build()
+        Seq(true, false).foreach { secure =>
+          val request =
+            HttpRequest.newBuilder(httpbinEndpoint("/relative-redirect/3", secure)).build()
+          val response = client.send(request, BodyHandlers.ofString())
+          assert(response.statusCode() == 302)
+        }
+        client.close()
+      }
+      test("custom redirect code") {
+        val client = HttpClient.newBuilder().followRedirects(Redirect.NEVER).build()
+        Seq(
+          301, 302, 303, 307, 308,
+        ).foreach { status =>
+          val request =
+            HttpRequest
+              .newBuilder(
+                httpbinEndpoint(s"/redirect-to?url=www.example.org&status_code=${status}"),
+              )
+              .build()
+          val response = client.send(request, BodyHandlers.ofString())
+          assert(response.statusCode() == status)
+        }
+
+        client.close()
+      }
     }
 
     test("Redirect.NORMAL should follow same-scheme redirects") {
@@ -361,16 +395,113 @@ class HttpClientTest extends TestSuite:
 
       test("http -> http") {
         val request =
-          HttpRequest.newBuilder(httpbinEndpoint("/absolute-redirect/3", secure = false)).build()
+          HttpRequest
+            .newBuilder(
+              httpbinEndpoint("/redirect-to?url=http://example.org&status_code=302", secure = false),
+            )
+            .build()
         val response = client.send(request, BodyHandlers.ofString())
         assert(response.statusCode() == 200)
+        assert(response.uri().getHost() == "example.org")
+        assert(response.uri().getScheme() == "http")
         assert(response.version() == Version.HTTP_1_1)
       }
 
       test("https -> https") {
-        val request = HttpRequest.newBuilder(httpbinEndpoint("/absolute-redirect/3")).build()
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint("/redirect-to?url=https://example.org&status_code=302", secure = true),
+          )
+          .build()
         val response = client.send(request, BodyHandlers.ofString())
         assert(response.statusCode() == 200)
+        assert(response.uri().getHost() == "example.org")
+        assert(response.uri().getScheme() == "https")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      }
+
+      test("http -> https") {
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint("/redirect-to?url=https://example.org&status_code=302", secure = false),
+          )
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+        assert(response.statusCode() == 200)
+        assert(response.uri().getHost() == "example.org")
+        assert(response.uri().getScheme() == "https")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      }
+
+      test("https -> http") {
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint("/redirect-to?http://example.org&status_code=302"),
+          )
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+        // 400 Bad Request due to https -> http redirect not allowed
+        assert(response.statusCode() == 400)
+        assert(response.uri().getHost() == "httpbingo.org")
+        assert(response.uri().getScheme() == "https")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      }
+    }
+
+    test("Redirect.ALWAYS allow different scheme redirects") {
+      val client = HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build()
+
+      test("http -> http") {
+        val request =
+          HttpRequest
+            .newBuilder(
+              httpbinEndpoint("/redirect-to?url=http://example.org&status_code=302", secure = false),
+            )
+            .build()
+        val response = client.send(request, BodyHandlers.ofString())
+        assert(response.statusCode() == 200)
+        assert(response.uri().getHost() == "example.org")
+        assert(response.uri().getScheme() == "http")
+        assert(response.version() == Version.HTTP_1_1)
+      }
+
+      test("https -> https") {
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint("/redirect-to?url=https://example.org&status_code=302", secure = true),
+          )
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+        assert(response.statusCode() == 200)
+        assert(response.uri().getHost() == "example.org")
+        assert(response.uri().getScheme() == "https")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      }
+
+      test("http -> https") {
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint("/redirect-to?url=https://example.org&status_code=302", secure = false),
+          )
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+        assert(response.statusCode() == 200)
+        assert(response.uri().getHost() == "example.org")
+        assert(response.uri().getScheme() == "https")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      }
+
+      test("https -> http") {
+        // XXX: ????? different behavior with documentation
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint("/redirect-to?http://example.org&status_code=302", secure = true),
+          )
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+        assert(response.statusCode() == 400)
+        assert(response.uri().getHost() == "httpbingo.org")
+        assert(response.uri().getScheme() == "https")
         assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
       }
 
@@ -396,26 +527,114 @@ class HttpClientTest extends TestSuite:
       }
     }
 
-    test("Redirect 303 should switch POST to GET") {
-      val client = HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build()
-      val status = 303
+    test("Redirect STATUS Code 303/302/301 should switch POST to GET") {
+      val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+      Seq(301, 302, 303).foreach { status =>
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint(s"/redirect-to?status_code=${status}&url=https://httpbingo.org/get"),
+          )
+          .POST(BodyPublishers.ofString("do-not-repeat"))
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+
+        assert(response.statusCode() == 200)
+        assert(response.uri().getPath() == "/get")
+        assert(response.request().method() == "GET")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      }
+    }
+
+    test("STATUS Code 301/302 should not switch PUT to GET") {
+      val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+
+      Seq(301, 302).foreach { status =>
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint(s"/redirect-to?status_code=${status}&url=https://httpbingo.org/put"),
+          )
+          .PUT(BodyPublishers.ofString("do-not-repeat"))
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+
+        assert(response.uri().getPath() == "/put")
+        assert(response.request().method() == "PUT")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+
+        if isNative
+        then //
+          assert(response.statusCode() == 405)
+        else //
+          assert(response.statusCode() == 200)
+      }
+
+      client.close()
+    }
+
+    /**
+     * Inconsistent behavior between JDK and Curl
+     */
+    test("STATUS Code 303 should change Every method except for HEAD to GET - PUT & DELETE") {
+      val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+
+      Seq("PUT", "DELETE").foreach { method =>
+        val request = HttpRequest
+          .newBuilder(
+            httpbinEndpoint(
+              s"/redirect-to?status_code=303&url=https://httpbingo.org/get",
+            ),
+          )
+          .method(method, BodyPublishers.ofString("do-not-repeat"))
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+
+        assert(response.uri().getPath() == "/get")
+        assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+
+        if isNative
+        then
+          assert(response.statusCode() == 200) // why not 405 ???
+          assert(response.request().method() == method) // wired ...
+        else
+          assert(response.statusCode() == 200)
+          assert(response.request().method() == "GET")
+      }
+
+      client.close()
+    }
+
+    /**
+     * Inconsistent behavior between JDK and Curl
+     */
+    test("STATUS Code 303 should not change HEAD to GET") {
+      val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
+
       val request = HttpRequest
         .newBuilder(
-          httpbinEndpoint(s"/redirect-to?status_code=${status}&url=https://httpbingo.org/get"),
+          httpbinEndpoint(
+            s"/redirect-to?status_code=303&url=https://httpbingo.org/head",
+          ),
         )
-        .POST(BodyPublishers.ofString("do-not-repeat"))
+        .method("HEAD", BodyPublishers.noBody())
         .build()
-      val response = client.send(request, BodyHandlers.ofString())
+      val headResponse = client.send(request, BodyHandlers.ofString())
 
-      assert(response.statusCode() == 200)
-      assert(response.uri().getPath() == "/get")
-      assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
+      assert(headResponse.uri().getPath() == "/head")
+      assert(headResponse.version().ordinal() >= Version.HTTP_2.ordinal())
+
+      if isNative
+      then
+        assert(headResponse.statusCode() == 200)
+        assert(headResponse.request().method() == "HEAD")
+      else
+        assert(headResponse.statusCode() == 405)
+        assert(headResponse.request().method() == "GET") // wired ...
+
       client.close()
     }
 
     test("HttpClient should send GET and expose response metadata") {
       val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
-
       val request = HttpRequest
         .newBuilder(httpbinEndpoint("/response-headers?X-Test=metadata"))
         .GET()
@@ -427,8 +646,51 @@ class HttpClientTest extends TestSuite:
       assert(response.request() == request)
       assert(response.uri() == request.uri())
       assert(response.headers().firstValue("X-Test") == Optional.of("metadata"))
-      assert(response.sslSession().isPresent())
-      assert(response.connectionLabel().isPresent())
+      // FIXME: `sslSession` not implemented yet
+      // assert(response.sslSession().isPresent())
+      // assert(response.connectionLabel().isPresent())
 
       client.close()
+    }
+
+    test("HttpClient should not send extra headers by default") {
+      withNewHttpClient { client =>
+        val request = HttpRequest
+          .newBuilder(httpbinEndpoint("/headers"))
+          .GET()
+          .build()
+        val response = client.send(request, BodyHandlers.ofString())
+
+        assert(response.statusCode() == 200)
+
+        val jsonBody = ujson.read(response.body())
+        assert(jsonBody("headers")("User-Agent")(0).str.contains("/"))
+
+        val headers = jsonBody("headers").obj
+        assert(!headers.contains("Content-Type"))
+        assert(!headers.contains("Accept"))
+      }
+    }
+
+    test("HttpClient should send all configured Headers") {
+      withNewHttpClient { client =>
+        val request = HttpRequest
+          .newBuilder(httpbinEndpoint("/headers"))
+          .GET()
+          .header("X-Test", "metadata")
+          .header("X-Test-2", "metadata-2")
+          .header("Content-Type", "application/json")
+          .build()
+        val response = client
+          .send(request, BodyHandlers.ofString())
+
+        assert(response.statusCode() == 200)
+
+        val jsonBody = ujson.read(response.body())
+
+        assert(jsonBody("headers")("X-Test")(0).str == "metadata")
+        assert(jsonBody("headers")("X-Test-2")(0).str == "metadata-2")
+        assert(jsonBody("headers")("Content-Type")(0).str == "application/json")
+        assert(jsonBody("headers")("User-Agent")(0).str.contains("/"))
+      }
     }

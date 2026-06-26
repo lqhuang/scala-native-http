@@ -27,6 +27,7 @@ object CurlSlist:
 
   def apply(elem: CString*): CurlSlist = {
     var ptr: Ptr[_CurlSlist] = null
+
     for e <- elem do
       libcurl.slistAppend(ptr, e) match
         case null   => throw new OutOfMemoryError("Failed to allocate CurlSlist")

@@ -22,91 +22,93 @@ class CurlInfo(ref: Ptr[CurlHandle]) extends AnyVal:
 
   inline def osErrNo: Int =
     val _osErrno = stackalloc[CLong]()
-    val ret = libcurl.easyGetInfo(ref, _CurlInfo.OS_ERRNO, _osErrno)
-    if ret != CurlErrCode.OK then throw new RuntimeException(s"Failed to get OS_ERRNO: ${ret}")
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.OS_ERRNO, _osErrno))
     (!_osErrno).toInt
 
   inline def responseCode: Int =
     val _respCode = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(
-      ref,
-      _CurlInfo.RESPONSE_CODE,
-      _respCode,
-    )
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.RESPONSE_CODE, _respCode))
     (!_respCode).toInt
 
   inline def requestSize: Long =
     val _reqSize = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.REQUEST_SIZE, _reqSize)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.REQUEST_SIZE, _reqSize))
     (!_reqSize).toLong
 
   inline def version: CurlHttpVersion =
     val _version = stackalloc[CurlHttpVersion]()
-    val _ = libcurl.easyGetInfo(
-      ref,
-      _CurlInfo.HTTP_VERSION,
-      _version,
-    )
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.HTTP_VERSION, _version))
     !_version // TODO: Copy?
 
   inline def numConnects: Long =
     val _numConnects = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.NUM_CONNECTS, _numConnects)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.NUM_CONNECTS, _numConnects))
     (!_numConnects).toLong
 
   inline def connID: Long =
     val _connId = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(
-      ref,
-      _CurlInfo.CONN_ID,
-      _connId,
-    )
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.CONN_ID, _connId))
     (!_connId).toLong
 
   inline def headerSize: Long =
     val _hs = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.HEADER_SIZE, _hs)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.HEADER_SIZE, _hs))
     (!_hs).toLong
 
   inline def httpConnectCode: Int =
     val _httpConnectCode = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.HTTP_CONNECTCODE, _httpConnectCode)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.HTTP_CONNECTCODE, _httpConnectCode))
     (!_httpConnectCode).toInt
 
   inline def proxyAuthAvail: Long =
     val _proxyAuthAvail = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.PROXYAUTH_AVAIL, _proxyAuthAvail)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.PROXYAUTH_AVAIL, _proxyAuthAvail))
     (!_proxyAuthAvail).toLong
 
   inline def proxyAuthUsed: Long =
     val _proxyAuthUsed = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.PROXYAUTH_USED, _proxyAuthUsed)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.PROXYAUTH_USED, _proxyAuthUsed))
     (!_proxyAuthUsed).toLong
 
   inline def proxyError: Int =
     val _proxyError = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.PROXY_ERROR, _proxyError)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.PROXY_ERROR, _proxyError))
     (!_proxyError).toInt
 
   inline def proxySSLVerifyResult: Int =
     val _proxySSLVerifyResult = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.PROXY_SSL_VERIFYRESULT, _proxySSLVerifyResult)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.PROXY_SSL_VERIFYRESULT, _proxySSLVerifyResult))
     (!_proxySSLVerifyResult).toInt
 
   inline def redirectCount: Int =
     val _redirectCount = stackalloc[CLong]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.REDIRECT_COUNT, _redirectCount)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.REDIRECT_COUNT, _redirectCount))
     (!_redirectCount).toInt
 
   inline def redirectURL: String =
     val _redirectUrlPtr = stackalloc[Ptr[Byte]]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.REDIRECT_URL, _redirectUrlPtr)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.REDIRECT_URL, _redirectUrlPtr))
     fromCString(!_redirectUrlPtr)
 
   inline def redirectTime: Long =
     val _redirectTime = stackalloc[Long]()
-    val _ = libcurl.easyGetInfo(ref, _CurlInfo.REDIRECT_TIME_T, _redirectTime)
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.REDIRECT_TIME_T, _redirectTime))
     !_redirectTime
+
+  inline def effectiveURL: String =
+    var buffer = stackalloc[Ptr[Byte]]()
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.EFFECTIVE_URL, buffer))
+    fromCString(!buffer)
+
+  inline def effectiveMethod: String =
+    var buffer = stackalloc[Ptr[Byte]]()
+    assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.EFFECTIVE_METHOD, buffer))
+    fromCString(!buffer)
+
+  // inline def tlsSession: Ptr[?] =
+  //   val _tlsSession = stackalloc[Ptr[?]]()
+  //   assertErrCode(libcurl.easyGetInfo(ref, _CurlInfo.TLS_SSL_PTR, _tlsSession))
+  //   !_tlsSession
 
   inline def headers: Map[String, List[String]] = {
     var headerPtr: Ptr[CurlHeader] = null
@@ -134,3 +136,7 @@ class CurlInfo(ref: Ptr[CurlHandle]) extends AnyVal:
 
     _map.view.mapValues(_.toList).toMap
   }
+
+  private transparent inline def assertErrCode(err: CurlErrCode): Unit =
+    if (err != CurlErrCode.OK)
+      throw new CurlErrCodeException(err)

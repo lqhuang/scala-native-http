@@ -21,31 +21,41 @@ class CurlEasy(val ref: Ptr[CurlHandle]) extends AnyVal derives CanEqual:
     if (err != CurlErrCode.OK) throw new CurlErrCodeException(err)
 
   inline def info: CurlInfo =
-    CurlInfo(ref)
+    if ref == NULL
+    then //
+      throw new IllegalStateException("CurlHandle is null or already cleaned up, cannot get info.")
+    else //
+      CurlInfo(ref)
 
   inline def setCLongOption(option: CurlOption, value: CLong): Unit =
     val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value, err)
+    if (err != CurlErrCode.OK)
+      throw new CurlSetOptionException(option, value, err)
 
   inline def setCStringOption(option: CurlOption, value: CString): Unit =
     val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value, err)
+    if (err != CurlErrCode.OK)
+      throw new CurlSetOptionException(option, value, err)
 
   inline def setPtrOption(option: CurlOption, value: Ptr[?]): Unit =
     val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value, err)
+    if (err != CurlErrCode.OK)
+      throw new CurlSetOptionException(option, value, err)
 
   inline def setSlistOption(option: CurlOption, value: CurlSlist): Unit =
-    val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value.ref, err)
+    val err = libcurl.easySetOpt(ref, option, value.ref)
+    if (err != CurlErrCode.OK)
+      throw new CurlSetOptionException(option, value.ref, err)
 
   inline def setBlobOption(option: CurlOption, value: Ptr[_CurlBlob]): Unit =
     val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value, err)
+    if (err != CurlErrCode.OK)
+      throw new CurlSetOptionException(option, value, err)
 
   inline def setFuncPtrOption(option: CurlOption, value: CFuncPtr): Unit =
     val err = libcurl.easySetOpt(ref, option, value)
-    if err != CurlErrCode.OK then throw new CurlSetOptionException(option, value, err)
+    if (err != CurlErrCode.OK)
+      throw new CurlSetOptionException(option, value, err)
 
   inline def perform(): CurlErrCode =
     libcurl.easyPerform(ref)

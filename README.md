@@ -129,9 +129,12 @@ Serveral convenient recipes have been provided by `Makefile`, for example
 
 Check `Makefile` for more.
 
-## Known Issues
+## Known Inconsistencies
 
-### Fixable (not supported yet)
+- `curl` will not change `HEAD` / `PUT` to `GET` when redirecting with 303 status code, which is different from Java Http Client's behavior.
+  - So the test case `STATUS Code 303 should not change HEAD to GET` will fail.
+
+## Known Fixable Issues (not supported yet)
 
 - Client session resumption
 - Custom SSL providers
@@ -139,8 +142,7 @@ Check `Makefile` for more.
 - `java.net.IDN` is not implemented yet, so non-ASCII hostnames (ponycode) may not work as expected
   - influence `SNIHostName` then `SNIMatcher`
 - Streaming responses
-
-### Unfixable
+- `PushPromiseHandler`
 
 ### Properties support
 

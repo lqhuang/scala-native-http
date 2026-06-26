@@ -1,28 +1,11 @@
-import scala.scalanative.unsafe.{
-  CStruct2,
-  CFuncPtr2,
-  CFuncPtr4,
-  CSize,
-  Ptr,
-  alloc,
-  Zone,
-  CQuote,
-  sizeof,
-  fromCString,
-}
-import scala.scalanative.unsigned.{USize, UnsignedRichInt}
+import scala.scalanative.unsafe.{CStruct2, CSize, Ptr, Zone, CQuote}
+import scala.scalanative.unsafe.{alloc, fromCString}
+import scala.scalanative.unsigned.UnsignedRichInt
 import scala.scalanative.libc.string.memcpy
 import scala.scalanative.libc.stddef.size_t
-import scala.scalanative.libc.stdlib.realloc
 import scala.util.Using
 
-import snhttp.experimental.curl.curl.{
-  CurlEasy,
-  CurlOption,
-  CurlErrCode,
-  CurlWriteCallback,
-  CurlWriteFuncRet,
-}
+import snhttp.experimental.curl.curl.{CurlEasy, CurlOption, CurlErrCode, CurlWriteCallback}
 import snhttp.experimental.curl.curl.CurlErrCode.RichCurlErrCode
 
 object App:

@@ -21,11 +21,19 @@ object `package` extends build.CommonModule:
     mvn"com.github.lolgab::scala-native-crypto::0.0.0-65-ee25bf-DIRTYd35a9930",
   )
 
-  object test extends CommonTestModule:
+  object test extends ScalaNativeTests with build.UTestModule:
+
+    def mvnDeps = Seq(
+      mvn"com.lihaoyi::ujson::4.4.3",
+      mvn"com.lihaoyi::os-lib::0.11.8",
+    )
+
     def sources = Task.Sources(
       moduleDir / "src", // modules/java-http-client/test/src
       moduleDir / "src-native", // modules/java-http-client/test/src-native
     )
+
+  end test
 
   val upperModuleTestDir = test.moduleDir
 
@@ -37,6 +45,8 @@ object `package` extends build.CommonModule:
     object test extends ScalaTests with build.UTestModule:
 
       def mvnDeps = Seq(
+        mvn"com.lihaoyi::ujson::4.4.3",
+        mvn"com.lihaoyi::os-lib::0.11.8",
         // BC kits are Java only deps
         mvn"org.bouncycastle:bcutil-jdk18on:1.83",
         mvn"org.bouncycastle:bcpkix-jdk18on:1.83",
@@ -50,3 +60,7 @@ object `package` extends build.CommonModule:
       def resources = Task.Sources(
         upperModuleTestDir / "resources", // modules/java-http-client/test/resources
       )
+
+  end jvm
+
+end `package`

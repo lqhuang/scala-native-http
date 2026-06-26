@@ -6,6 +6,7 @@ import _root_.snhttp.experimental.curl._libcurl.Curl.CurlGlobalFlag
 
 package object curl:
 
+  export _root_.snhttp.experimental.curl._libcurl.System.CurlOff
   export _root_.snhttp.experimental.curl._libcurl.Curl.{
     CurlOption,
     CurlErrCode,
@@ -13,8 +14,12 @@ package object curl:
     CurlHttpVersion,
     CurlUseSsl,
     CurlFollow,
+    CurlRedir,
     CurlInfoType,
-    CurlWriteFuncRet,
+    CurlReadFunc,
+    CurlWriteFunc,
+    CurlSeekFunc,
+    CurlSeekCallback,
     CurlSocket,
     CurlGlobalFlag,
     CurlReadCallback,
