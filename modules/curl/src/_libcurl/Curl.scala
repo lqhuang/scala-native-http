@@ -479,7 +479,7 @@ private[curl] object Curl:
   // 2. add func `curl_fnmatch_callback`
 
   // known as `CURL_SEEKFUNC_*`
-  type CurlSeekFunc = Int
+  opaque type CurlSeekFunc = Int
   object CurlSeekFunc extends _BindgenEnumCInt[CurlSeekFunc]:
 
     given Tag[CurlSeekFunc] = Tag.Int

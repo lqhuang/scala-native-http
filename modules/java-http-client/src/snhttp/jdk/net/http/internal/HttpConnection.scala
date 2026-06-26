@@ -197,6 +197,8 @@ private[http] final class HttpConnection[T](
 
   def close(): Unit =
     if (!closed.compareAndExchange(false, true)) {
+      if (readData != null)
+        readData.instream.close(): Unit
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
       slist.map(_.freeAll()): Unit
@@ -207,6 +209,9 @@ private[http] final class HttpConnection[T](
     if (!closed.compareAndExchange(false, true)) {
       if (!response.isDone())
         response.completeExceptionally(exc): Unit
+      if (readData != null)
+        readData.instream.close(): Unit
+
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
       slist.map(_.freeAll()): Unit
@@ -482,7 +487,7 @@ private[http] object HttpConnection:
       do //
         !(buffer + i) = loaded(i)
 
-      size * nmemb
+      loaded.size.toUSize
   }
 
   final val seekCallback = CurlSeekCallback.fromScalaFunction { (userdata: Ptr[?], offset: CurlOff, origin: Int) =>
@@ -496,20 +501,15 @@ private[http] object HttpConnection:
     val ret =
       if (origin != SEEK_SET)
         CurlSeekFunc.FAIL
-      else if (
-        offset >= 0
-        && offset <= MAX_SEEKABLE_Bytes
-        && instream.isSeekable()
-      ) {
+      else {
         try
-          instream.seek(offset)
-          CurlSeekFunc.OK
+          if instream.seek(offset)
+          then CurlSeekFunc.OK
+          else CurlSeekFunc.CANTSEEK
         catch
           case exc: Throwable =>
             CurlSeekFunc.CANTSEEK
-      } //
-      else //
-        CurlSeekFunc.CANTSEEK
+      }
 
     ret
   }

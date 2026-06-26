@@ -517,12 +517,15 @@ class HttpClientTest extends TestSuite:
           .POST(BodyPublishers.ofString("keep-me"))
           .build()
         val response = client.send(request, BodyHandlers.ofString())
+
         assert(response.statusCode() == 200)
         assert(response.uri().getPath() == "/post")
-
-        val jsonBody = ujson.read(response.body())
+        assert(response.request().method() == "POST")
         // a2VlcC1tZQ== -> base64("keep-me")
-        assert(jsonBody("data").str == "data:application/octet-stream;base64,a2VlcC1tZQ==")
+        assert(
+          ujson.read(response.body()).str == "data:application/octet-stream;base64,a2VlcC1tZQ==",
+        )
+
         client.close()
       }
     }
@@ -560,12 +563,7 @@ class HttpClientTest extends TestSuite:
         assert(response.uri().getPath() == "/put")
         assert(response.request().method() == "PUT")
         assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
-
-        if isNative
-        then //
-          assert(response.statusCode() == 405)
-        else //
-          assert(response.statusCode() == 200)
+        assert(response.statusCode() == 200)
       }
 
       client.close()

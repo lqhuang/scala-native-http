@@ -39,11 +39,11 @@ class SeekableInputStreamTest extends TestSuite:
       assert(stream.readNBytes(3).sameElements(genBytesFrom("abc")))
       assert(stream.position() == 3L)
 
-      stream.seek(0L)
+      assert(stream.seek(0L))
       assert(stream.position() == 0L)
       assert(stream.readNBytes(2).sameElements(genBytesFrom("ab")))
 
-      stream.seek(3L)
+      assert(stream.seek(3L))
       assert(stream.readNBytes(3).sameElements(genBytesFrom("def")))
       assert(stream.read() == -1)
       assert(stream.size() == 6L)
@@ -55,10 +55,10 @@ class SeekableInputStreamTest extends TestSuite:
         ByteArrayInputStream(genBytesFrom("abcdef")),
       )
 
-      stream.seek(4L)
+      assert(stream.seek(4L))
       assert(stream.position() == 4L)
 
-      stream.seek(1L)
+      assert(stream.seek(1L))
       assert(stream.readNBytes(4).sameElements(genBytesFrom("bcde")))
     }
 
@@ -74,7 +74,7 @@ class SeekableInputStreamTest extends TestSuite:
       assert(stream.isSeekable())
       assert(stream.readNBytes(3).sameElements(genBytesFrom("abc")))
 
-      stream.seek(0L)
+      assert(stream.seek(0L))
       assert(stream.readNBytes(6).sameElements(genBytesFrom("abcdef")))
     }
 
@@ -82,7 +82,7 @@ class SeekableInputStreamTest extends TestSuite:
       val stream = seekableBodyFrom(BodyPublishers.ofString("abcdef"))
 
       assert(stream.readNBytes(4).sameElements(genBytesFrom("abcd")))
-      stream.seek(0L)
+      assert(stream.seek(0L))
       assert(stream.readNBytes(6).sameElements(genBytesFrom("abcdef")))
       assert(stream.read() == -1)
       assert(stream.size() == 6L)
@@ -93,7 +93,7 @@ class SeekableInputStreamTest extends TestSuite:
       val stream = seekableBodyFrom(BodyPublishers.ofByteArray(source, 2, 5))
 
       assert(stream.readNBytes(3).sameElements(genBytesFrom("234")))
-      stream.seek(1L)
+      assert(stream.seek(1L))
       assert(stream.readNBytes(4).sameElements(genBytesFrom("3456")))
     }
 
@@ -109,7 +109,7 @@ class SeekableInputStreamTest extends TestSuite:
       )
 
       assert(stream.readNBytes(5).sameElements(genBytesFrom("abcde")))
-      stream.seek(2L)
+      assert(stream.seek(2L))
       assert(stream.readNBytes(4).sameElements(genBytesFrom("cdef")))
     }
 
@@ -121,7 +121,7 @@ class SeekableInputStreamTest extends TestSuite:
 
       assert(stream.readNBytes(6).sameElements(genBytesFrom("abcdef")))
       assert(!stream.isSeekable())
-      val _ = assertThrows[IOException](stream.seek(0L))
+      assert(!stream.seek(0L))
     }
 
     test("CurlBodyUploader should expose seekable body from BodyPublishers.ofInputStream") {
@@ -130,7 +130,7 @@ class SeekableInputStreamTest extends TestSuite:
       )
 
       assert(stream.readNBytes(2).sameElements(genBytesFrom("ab")))
-      stream.seek(0L)
+      assert(stream.seek(0L))
       assert(stream.readNBytes(6).sameElements(genBytesFrom("abcdef")))
     }
 
@@ -140,7 +140,7 @@ class SeekableInputStreamTest extends TestSuite:
       assert(stream.read() == -1)
       assert(stream.position() == 0L)
       assert(stream.size() == 0L)
-      stream.seek(0L)
+      assert(stream.seek(0L))
       assert(stream.read() == -1)
     }
 
@@ -152,7 +152,7 @@ class SeekableInputStreamTest extends TestSuite:
 
       assert(!stream.isSeekable())
       assert(stream.readNBytes(3).sameElements(genBytesFrom("abc")))
-      val _ = assertThrows[IOException](stream.seek(0L))
+      assert(!stream.seek(0L))
       assert(stream.readNBytes(3).sameElements(genBytesFrom("def")))
     }
 
@@ -162,22 +162,18 @@ class SeekableInputStreamTest extends TestSuite:
         ByteArrayInputStream(genBytesFrom("abcdef")),
       )
 
-      val _ = assertThrows[IOException](stream.seek(-1L))
+      assert(!stream.seek(-1L))
       assert(stream.position() == 0L)
     }
 
-    test("DelegateSeekableInputStream should reject reads after close") {
+    test("DelegateSeekableInputStream should reject reads after upstream close") {
       val stream = DelegateSeekableInputStream(
         defaultMaxCachedBytes,
         ByteArrayInputStream(genBytesFrom("abcdef")),
       )
-
       stream.close()
-
-      assert(stream.isClosed())
       val _ = assertThrows[IOException] {
         val _ = stream.read()
-        ()
       }
-      val _ = assertThrows[IOException](stream.seek(0L))
+      assert(!stream.seek(0L))
     }
