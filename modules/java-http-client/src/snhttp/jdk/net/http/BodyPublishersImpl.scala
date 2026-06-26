@@ -17,7 +17,7 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.Try
 import scala.util.control.NonFatal
 
-import snhttp.jdk.net.http.internal.{ConcatPublisher, PullPublisher, PropertyUtils}
+import _root_.snhttp.jdk.net.http.internal.{ConcatPublisher, PullPublisher, PropertyUtils}
 
 type ByteBufferSubscriber = Subscriber[? >: ByteBuffer]
 
@@ -213,18 +213,16 @@ private[snhttp] class FileBodyPublisher(
   override def contentLength(): Long =
     Try(Files.size(path)).getOrElse(-1)
 
-  override def subscribe(subscriber: ByteBufferSubscriber): Unit = {
-    val publisher =
-      if Files.isRegularFile(path) && Files.isReadable(path)
-      then {
-        println(s"Creating InputStreamBodyPublisher for file: $path")
-        val publisher = new InputStreamBodyPublisher(() => Files.newInputStream(path), bufSize)
-        publisher.subscribe(subscriber)
-      } else {
-        val publisher = new PullPublisher(Iterator.empty[ByteBuffer], () => ())
-        publisher.subscribe(subscriber)
-        subscriber.onError(new FileNotFoundException(s"File not found or is not redable: ${path}"))
-      }
-  }
+  override def subscribe(subscriber: ByteBufferSubscriber): Unit =
+    if Files.isRegularFile(path) && Files.isReadable(path)
+    then {
+      val publisher = new InputStreamBodyPublisher(() => Files.newInputStream(path), bufSize)
+      publisher.subscribe(subscriber)
+    } //
+    else {
+      val publisher = new PullPublisher(Iterator.empty[ByteBuffer], () => ())
+      publisher.subscribe(subscriber)
+      subscriber.onError(new FileNotFoundException(s"File not found or is not redable: ${path}"))
+    }
 
 end FileBodyPublisher

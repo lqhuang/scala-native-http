@@ -462,19 +462,57 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
     else { //
       currBufferLock.lock()
       try
-        if (currBuffer == lastBuffer) //
+        if (currBuffer eq lastBuffer) //
           -1
         else {
           if (currBuffer == null || !currBuffer.hasRemaining())
             currBuffer = queue.take()
 
-          if currBuffer == lastBuffer
+          if currBuffer eq lastBuffer
           then -1
           else currBuffer.get().toInt
         }
       finally //
         currBufferLock.unlock()
     }
+
+  override def read(bytes: Array[Byte], offset: Int, length: Int): Int = {
+    requireNonNull(bytes, "bytes must not be null")
+    if (offset < 0 || length < 0 || length > bytes.length - offset)
+      throw new IndexOutOfBoundsException()
+
+    if (length == 0)
+      0
+    else if (error != null)
+      throw new IOException("Error occurred in InputStreamBodySubscriber", error)
+    else if (closed.get())
+      throw new IOException("InputStream is closed")
+    else {
+      currBufferLock.lock()
+      try {
+        var totalRead = 0
+
+        while totalRead < length && !queue.isEmpty()
+        do {
+          if (currBuffer == null || !currBuffer.hasRemaining())
+            currBuffer = queue.take()
+
+          val readBytes = currBuffer.remaining().min(length - totalRead)
+          currBuffer.get(bytes, offset + totalRead, readBytes)
+          totalRead += readBytes
+        }
+
+        val readed =
+          if (currBuffer eq lastBuffer) && totalRead == 0
+          then -1
+          else totalRead
+
+        readed
+      } //
+      finally //
+        currBufferLock.unlock()
+    }
+  }
 
   override def close(): Unit =
     if (!closed.compareAndExchange(false, true)) {

@@ -167,7 +167,6 @@ class BodyHandlersTest extends TestSuite:
       bodySubscriber.onComplete()
 
       val result = bodySubscriber.getBody().toCompletableFuture().get()
-      println(s"Received lines: ${mocker.received}")
       assert(result == 3)
       assert(mocker.received.contains("line1"))
       assert(mocker.received.contains("line2"))
@@ -631,7 +630,6 @@ class BodyHandlersTest extends TestSuite:
         "attachment; filename=(document.txt",
         "attachment; filename=)document.txt",
       ).foreach { contentDisposition =>
-        println(s"!!!!!! !!!! Testing Content-Disposition: ${contentDisposition}")
         val tempDir = Files.createTempDirectory("test-downloads")
         try {
           val responseInfo = createResponseInfo(

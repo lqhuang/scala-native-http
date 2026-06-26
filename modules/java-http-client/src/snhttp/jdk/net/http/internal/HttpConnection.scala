@@ -6,7 +6,7 @@ import java.net.ConnectException
 import java.net.http.{HttpRequest, HttpHeaders, HttpResponse}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpClient.{Version, Redirect}
-import java.net.http.HttpResponse.{BodyHandler, BodySubscribers, ResponseInfo, BodySubscriber}
+import java.net.http.HttpResponse.{BodyHandler, ResponseInfo, BodySubscriber}
 import java.nio.ByteBuffer
 import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
 import java.nio.charset.StandardCharsets
@@ -339,11 +339,13 @@ private[http] final class HttpConnection[T](
       && request.bodyPublisher().get() != BodyPublishers.noBody()
     ) {
       val bodyPublisher = request.bodyPublisher().get()
-
-      // bodyPublisher.subscribe(postfieldSubscriber)
-      val subscriber = CurlBodySubscriber(BodySubscribers.ofInputStream())
+      val contentLength = bodyPublisher.contentLength()
+      // cache 4MB of data to make seekable input stream
+      val subscriber =
+        if contentLength > 0 && contentLength <= MAX_SEEKABLE_Bytes
+        then new CurlBodyUploader(maxCachedBytes = MAX_SEEKABLE_Bytes)
+        else new CurlBodyUploader(maxCachedBytes = 0)
       bodyPublisher.subscribe(subscriber)
-      val inputstream = subscriber.getBody().toCompletableFuture().get()
 
       readData = alloc[CurlSendBuffer]()
       if (readData == NullPtr) {
@@ -351,12 +353,11 @@ private[http] final class HttpConnection[T](
           closeExceptionally(new CurlException("Failed to allocate memory for CurlData"))
         return ()
       }
-      readData.inputStream = inputstream
+      readData.instream = subscriber.getBody().toCompletableFuture().get()
 
       easy.setCLongOption(CurlOption.UPLOAD, 1.toSize)
       easy.setPtrOption(CurlOption.READDATA, readData)
       easy.setFuncPtrOption(CurlOption.READFUNCTION, readDataCallback.asFuncPtr)
-      val contentLength = bodyPublisher.contentLength()
       if (contentLength > 0)
         easy.setCLongOption(CurlOption.INFILESIZE_LARGE, contentLength.toSize)
 
@@ -394,6 +395,8 @@ private[http] final class HttpConnection[T](
 
 private[http] object HttpConnection:
 
+  private final val MAX_SEEKABLE_Bytes = 4 * 1024 * 1024L
+
   final inline def throwStructuredException(err: CurlErrCode): Throwable =
     if (err == CurlErrCode.COULDNT_RESOLVE_HOST)
       // TODO cannot set UnresolvedAddressException() as cause
@@ -405,16 +408,16 @@ private[http] object HttpConnection:
       ConnectException(s"Failed to connect to host: ${curl.getStrError(err)}")
 
   type CurlSendBuffer = CStruct1[
-    InputStream,
+    SeekableInputStream,
   ]
   given Tag[CurlSendBuffer] = Tag.materializeCStruct1Tag[
-    InputStream,
+    SeekableInputStream,
     // Function0[Unit],
   ]
   // scalafmt: { maxColumn = 150 }
   extension (inline struct: CurlSendBuffer)
-    inline def inputStream: InputStream = struct._1
-    inline def inputStream_=(value: InputStream): Unit = !struct.at1 = value
+    inline def instream: SeekableInputStream = struct._1
+    inline def instream_=(value: SeekableInputStream): Unit = !struct.at1 = value
   // scalafmt: { maxColumn = 120 }
 
   type CurlRecvBuffer = CStruct3[
@@ -472,9 +475,8 @@ private[http] object HttpConnection:
   final val readDataCallback = CurlReadCallback.fromScalaFunction {
     (buffer: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
       val readdata = userdata.asInstanceOf[Ptr[CurlSendBuffer]]
-      val is = readdata.inputStream
-      val readBytes = (size * nmemb).toInt
-      val loaded = is.readNBytes(readBytes)
+      val is = readdata.instream
+      val loaded = is.readNBytes((size * nmemb).toInt)
 
       for i <- 0 until loaded.size
       do //
@@ -485,23 +487,29 @@ private[http] object HttpConnection:
 
   final val seekCallback = CurlSeekCallback.fromScalaFunction { (userdata: Ptr[?], offset: CurlOff, origin: Int) =>
     val readdata = userdata.asInstanceOf[Ptr[CurlSendBuffer]]
-    val is = readdata.inputStream
+    val instream = readdata.instream
 
     // From curl documentation <https://curl.se/libcurl/c/CURLOPT_SEEKFUNCTION.html>
     //
     // origin gets `SEEK_SET`, `SEEK_CUR` or `SEEK_END`,
     // although libcurl currently only passes SEEK_SET.
     val ret =
-      if origin == SEEK_SET
-      then
+      if (origin != SEEK_SET)
+        CurlSeekFunc.FAIL
+      else if (
+        offset >= 0
+        && offset <= MAX_SEEKABLE_Bytes
+        && instream.isSeekable()
+      ) {
         try
-          is.skip(offset)
+          instream.seek(offset)
           CurlSeekFunc.OK
         catch
           case exc: Throwable =>
             CurlSeekFunc.CANTSEEK
+      } //
       else //
-        CurlSeekFunc.FAIL
+        CurlSeekFunc.CANTSEEK
 
     ret
   }
