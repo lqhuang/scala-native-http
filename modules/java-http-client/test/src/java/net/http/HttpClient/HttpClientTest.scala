@@ -10,7 +10,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.nio.charset.StandardCharsets
 import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
 import java.time.Duration
-import java.util.Optional
+import java.util.{Base64, Optional}
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap}
 import java.util.concurrent.atomic.AtomicInteger
@@ -22,6 +22,8 @@ import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class HttpClientTest extends TestSuite:
 
+  val isNative = Properties.propOrEmpty("java.vm.name") == "Scala Native"
+
   inline def httpbinEndpoint(path: String, secure: Boolean = true): URI =
     if secure
     then URI.create(s"https://httpbingo.org${path}")
@@ -32,7 +34,49 @@ class HttpClientTest extends TestSuite:
     try func(client)
     finally client.close()
 
-  val isNative = Properties.propOrEmpty("java.vm.name") == "Scala Native"
+  def postEchoJson(
+      client: HttpClient,
+      contentType: String,
+      publisher: HttpRequest.BodyPublisher,
+  ): ujson.Value = {
+    val request = HttpRequest
+      .newBuilder(httpbinEndpoint("/post"))
+      .header("Content-Type", contentType)
+      .POST(publisher)
+      .build()
+    val response = client.send(request, BodyHandlers.ofString())
+    assert(response.statusCode() == 200)
+    assert(response.request() == request)
+    ujson.read(response.body())
+  }
+
+  def multipartBody(boundary: String): String =
+    Seq(
+      s"--${boundary}",
+      "Content-Disposition: form-data; name=\"field\"",
+      "",
+      "value",
+      s"--${boundary}",
+      "Content-Disposition: form-data; name=\"tag\"",
+      "",
+      "alpha",
+      s"--${boundary}",
+      "Content-Disposition: form-data; name=\"tag\"",
+      "",
+      "beta",
+      s"--${boundary}",
+      "Content-Disposition: form-data; name=\"meta\"",
+      "Content-Type: application/json; charset=utf-8",
+      "",
+      "{\"ok\":true}",
+      s"--${boundary}",
+      "Content-Disposition: form-data; name=\"upload\"; filename=\"hello.txt\"",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "hello file",
+      s"--${boundary}--",
+      "",
+    ).mkString("\r\n")
 
   def tests = Tests:
 
@@ -523,7 +567,9 @@ class HttpClientTest extends TestSuite:
         assert(response.request().method() == "POST")
         // a2VlcC1tZQ== -> base64("keep-me")
         assert(
-          ujson.read(response.body()).str == "data:application/octet-stream;base64,a2VlcC1tZQ==",
+          ujson
+            .read(response.body())("data")
+            .str == "data:application/octet-stream;base64,a2VlcC1tZQ==",
         )
 
         client.close()
@@ -690,5 +736,80 @@ class HttpClientTest extends TestSuite:
         assert(jsonBody("headers")("X-Test-2")(0).str == "metadata-2")
         assert(jsonBody("headers")("Content-Type")(0).str == "application/json")
         assert(jsonBody("headers")("User-Agent")(0).str.contains("/"))
+      }
+    }
+
+    test("HttpClient should send application/json body with explicit MIME type") {
+      withNewHttpClient { client =>
+        val body = """{"message":"hello","count":2}"""
+        val jsonBody = postEchoJson(
+          client,
+          "application/json; charset=utf-8",
+          BodyPublishers.ofString(body, StandardCharsets.UTF_8),
+        )
+
+        assert(jsonBody("method").str == "POST")
+        assert(jsonBody("headers")("Content-Type")(0).str == "application/json; charset=utf-8")
+        assert(jsonBody("data").str == body)
+        assert(jsonBody("json")("message").str == "hello")
+        assert(jsonBody("json")("count").num == 2)
+      }
+    }
+
+    test("HttpClient should send text/plain body with charset MIME type") {
+      withNewHttpClient { client =>
+        val body = "plain text payload"
+        val jsonBody = postEchoJson(
+          client,
+          "text/plain; charset=us-ascii",
+          BodyPublishers.ofString(body, StandardCharsets.US_ASCII),
+        )
+
+        assert(jsonBody("method").str == "POST")
+        assert(jsonBody("headers")("Content-Type")(0).str == "text/plain; charset=us-ascii")
+        assert(jsonBody("data").str == body)
+        assert(jsonBody("form").obj.isEmpty)
+        assert(jsonBody("json").isNull)
+      }
+    }
+
+    test("HttpClient should send application/octet-stream body as raw bytes") {
+      withNewHttpClient { client =>
+        val body = "opaque-bytes".getBytes(StandardCharsets.UTF_8)
+        val jsonBody = postEchoJson(
+          client,
+          "application/octet-stream",
+          BodyPublishers.ofByteArray(body),
+        )
+
+        val expectedData =
+          s"data:application/octet-stream;base64,${Base64.getEncoder().encodeToString(body)}"
+
+        assert(jsonBody("method").str == "POST")
+        assert(jsonBody("headers")("Content-Type")(0).str == "application/octet-stream")
+        assert(jsonBody("data").str == expectedData)
+        assert(jsonBody("json").isNull)
+      }
+    }
+
+    test("HttpClient should send multipart/form-data with fields and files") {
+      withNewHttpClient { client =>
+        val boundary = "snhttp-test-boundary"
+        val contentType = s"multipart/form-data; boundary=${boundary}"
+        val body = multipartBody(boundary)
+        val jsonBody = postEchoJson(
+          client,
+          contentType,
+          BodyPublishers.ofString(body, StandardCharsets.UTF_8),
+        )
+
+        assert(jsonBody("method").str == "POST")
+        assert(jsonBody("headers")("Content-Type")(0).str == contentType)
+        assert(jsonBody("data").str == body)
+        assert(jsonBody("form")("field")(0).str == "value")
+        assert(jsonBody("form")("tag")(0).str == "alpha")
+        assert(jsonBody("form")("tag")(1).str == "beta")
+        assert(jsonBody("form")("meta")(0).str == """{"ok":true}""")
+        assert(jsonBody("files")("upload")(0).str == "hello file")
       }
     }

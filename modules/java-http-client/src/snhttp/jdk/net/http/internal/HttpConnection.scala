@@ -154,12 +154,15 @@ private[http] final class HttpConnection[T](
 
   val writeData = alloc[CurlRecvBuffer]()
   if (writeData == NullPtr)
-    closeExceptionally(new CurlException("Failed to allocate memory for CurlData"))
+    closeExceptionally(new CurlException("Failed to allocate memory for CurlWriteData"))
   writeData.isBodyReceived = respBodyReceived
   writeData.ensureResponseFutureCompleted = ensureResponseFutureCompleted
   writeData.publisher = respBodyPublisher
 
   var readData: Ptr[CurlSendBuffer] = null
+  // alloc[CurlSendBuffer]()
+  // if (readData == NullPtr)
+  //   closeExceptionally(new CurlException("Failed to allocate memory for CurlReadData"))
 
   init()
 
@@ -197,8 +200,12 @@ private[http] final class HttpConnection[T](
 
   def close(): Unit =
     if (!closed.compareAndExchange(false, true)) {
-      if (readData != null)
-        readData.instream.close(): Unit
+      // if (
+      //   request.bodyPublisher().isPresent()
+      //   && request.bodyPublisher().get().contentLength() != 0
+      // )
+      //   readData.instream.close(): Unit
+
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
       slist.map(_.freeAll()): Unit
@@ -209,8 +216,11 @@ private[http] final class HttpConnection[T](
     if (!closed.compareAndExchange(false, true)) {
       if (!response.isDone())
         response.completeExceptionally(exc): Unit
-      if (readData != null)
-        readData.instream.close(): Unit
+      // if (
+      //   request.bodyPublisher().isPresent()
+      //   && request.bodyPublisher().get() != BodyPublishers.noBody()
+      // )
+      //   readData.instream.close(): Unit
 
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
@@ -341,7 +351,7 @@ private[http] final class HttpConnection[T](
      */
     if (
       request.bodyPublisher().isPresent()
-      && request.bodyPublisher().get() != BodyPublishers.noBody()
+      && request.bodyPublisher().get().contentLength() != 0
     ) {
       val bodyPublisher = request.bodyPublisher().get()
       val contentLength = bodyPublisher.contentLength()
@@ -355,7 +365,7 @@ private[http] final class HttpConnection[T](
       readData = alloc[CurlSendBuffer]()
       if (readData == NullPtr) {
         if (!response.isDone())
-          closeExceptionally(new CurlException("Failed to allocate memory for CurlData"))
+          closeExceptionally(new CurlException("Failed to allocate memory for CurlReadData"))
         return ()
       }
       readData.instream = subscriber.getBody().toCompletableFuture().get()
@@ -363,11 +373,11 @@ private[http] final class HttpConnection[T](
       easy.setCLongOption(CurlOption.UPLOAD, 1.toSize)
       easy.setPtrOption(CurlOption.READDATA, readData)
       easy.setFuncPtrOption(CurlOption.READFUNCTION, readDataCallback.asFuncPtr)
-      if (contentLength > 0)
-        easy.setCLongOption(CurlOption.INFILESIZE_LARGE, contentLength.toSize)
-
       easy.setPtrOption(CurlOption.SEEKDATA, readData)
       easy.setFuncPtrOption(CurlOption.SEEKFUNCTION, seekCallback.asFuncPtr)
+
+      if (contentLength > 0)
+        easy.setCLongOption(CurlOption.INFILESIZE_LARGE, contentLength.toSize)
     }
 
     // NOTES:
@@ -412,18 +422,12 @@ private[http] object HttpConnection:
     else
       ConnectException(s"Failed to connect to host: ${curl.getStrError(err)}")
 
-  type CurlSendBuffer = CStruct1[
-    SeekableInputStream,
-  ]
-  given Tag[CurlSendBuffer] = Tag.materializeCStruct1Tag[
-    SeekableInputStream,
-    // Function0[Unit],
-  ]
-  // scalafmt: { maxColumn = 150 }
+  type CurlSendBuffer = CStruct1[DelegateSeekableInputStream]
+  given Tag[DelegateSeekableInputStream] = Tag.materializeClassTag[DelegateSeekableInputStream]
+  given Tag[CurlSendBuffer] = Tag.materializeCStruct1Tag[DelegateSeekableInputStream]
   extension (inline struct: CurlSendBuffer)
-    inline def instream: SeekableInputStream = struct._1
-    inline def instream_=(value: SeekableInputStream): Unit = !struct.at1 = value
-  // scalafmt: { maxColumn = 120 }
+    inline def instream: DelegateSeekableInputStream = struct._1
+    inline def instream_=(value: DelegateSeekableInputStream): Unit = !struct.at1 = value
 
   type CurlRecvBuffer = CStruct3[
     AtomicBoolean, // Ptr[atomic_bool] // flag for resp body received

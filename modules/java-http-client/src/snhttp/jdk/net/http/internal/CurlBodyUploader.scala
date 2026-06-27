@@ -28,5 +28,5 @@ class CurlBodyUploader(maxCachedBytes: Long) extends Subscriber[ByteBuffer]:
   override def onComplete(): Unit =
     stream.onComplete()
 
-  def getBody(): CompletionStage[SeekableInputStream] =
+  def getBody(): CompletionStage[DelegateSeekableInputStream] =
     CompletableFuture.completedStage(DelegateSeekableInputStream(maxCachedBytes, stream))
