@@ -370,13 +370,13 @@ class CookieManagerTests extends TestSuite:
       val manager = new CookieManager()
       val requestHeaders = new HashMap[String, JList[String]]()
       val uri = new URI("http://example.com/")
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         manager.get(null, requestHeaders): Unit
       }
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         manager.get(uri, null): Unit
       }
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         manager.get(null, null): Unit
       }
     }
@@ -385,13 +385,13 @@ class CookieManagerTests extends TestSuite:
       val manager = new CookieManager()
       val uri = new URI("http://example.com/")
       val responseHeaders = new HashMap[String, JList[String]]()
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         manager.put(null, responseHeaders): Unit
       }
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         manager.put(uri, null): Unit
       }
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         manager.put(null, null): Unit
       }
     }

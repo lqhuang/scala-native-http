@@ -1,3 +1,3 @@
 package javax.net.ssl
 
-abstract class KeyManager {}
+abstract trait KeyManager {}

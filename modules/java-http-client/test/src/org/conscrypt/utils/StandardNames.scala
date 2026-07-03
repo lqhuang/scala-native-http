@@ -85,7 +85,7 @@ object StandardNames:
 
   val SSL_CONTEXT_GET_PROTOCOLS_DEFAULT: "Default" = "Default"
   val SSL_CONTEXT_GET_PROTOCOLS =
-    Set["Default" | "TLS" | "TLSv1.2" | "TLSv1.3"](
+    Set["Default" | "SSL" | "TLS" | "TLSv1.2" | "TLSv1.3"](
       SSL_CONTEXT_GET_PROTOCOLS_DEFAULT,
       "TLS",
       "TLSv1.2",

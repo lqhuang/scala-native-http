@@ -226,6 +226,7 @@ object SSLContextSpiImpl:
     "TLSv1.2",
     "TLSv1.3",
     "TLS",
+    "SSL",
     "Default",
   )(using comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
 

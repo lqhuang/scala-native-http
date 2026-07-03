@@ -132,7 +132,7 @@ class CookieStoreTests extends TestSuite:
       store.add(uri, cookie)
 
       val cookies = store.getCookies()
-      assertThrows[UnsupportedOperationException] {
+      val _ = assertThrows[UnsupportedOperationException] {
         cookies.add(new HttpCookie("new", "value")): Unit
       }
       assert(store.getCookies().size() == 1)
