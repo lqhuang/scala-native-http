@@ -3,16 +3,20 @@ package java.net
 import java.io.IOException
 import java.io.{InputStream, ObjectInputStream, ObjectOutputStream, Serializable}
 import java.net.InetAddress
+import java.net.URISyntaxException
+import java.util.Optional
 import java.util.Objects.requireNonNull
 
 import snhttp.jdk.net.URLStreamHandlerFactoryImpl
 
-/// ## Refs
-///
-/// - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URL.html
+/**
+ * Refs
+ *
+ *   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URL.html
+ */
 final class URL private (
     uri: URI,
-    handler: Option[URLStreamHandler],
+    handler: Optional[URLStreamHandler],
 ) extends Serializable:
 
   @deprecated(
@@ -20,82 +24,92 @@ final class URL private (
     since = "20",
   )
   def this(protocol: String, host: String, port: Int, path: String) =
-    this(URI.create(s"${protocol}://${host}:${port}/${path}"), None)
+    this(URL.creatURI(s"${protocol}://${host}:${port}/${path}"), Optional.empty())
 
   @deprecated(
     "Use URI.toURL() to construct an instance of URL.",
     since = "20",
   )
   def this(protocol: String, host: String, path: String) =
-    this(URI.create(s"${protocol}://${host}/${path}"), None)
+    this(URL.creatURI(s"${protocol}://${host}/${path}"), Optional.empty())
 
   @deprecated(
     "Use URL.of() to construct an instance of URL with URLStreamHandler.",
     since = "20",
   )
   def this(protocol: String, host: String, port: Int, path: String, handler: URLStreamHandler) =
-    this(
-      URI.create(s"$protocol://$host:$port/$path"),
-      if handler != null then Some(handler) else None,
-    )
+    this(URL.creatURI(s"$protocol://$host:$port/$path"), Optional.ofNullable(handler))
 
   @deprecated(
     "Use URI.toURL() to construct an instance of URL.",
     since = "20",
   )
-  def this(spec: String) = this(URI.create(spec), None)
+  def this(spec: String) =
+    this(URL.creatURI(spec), Optional.empty())
 
   @deprecated(
     "Use URI.toURL() to construct an instance of URL.",
     since = "20",
   )
-  def this(context: URL, spec: String) = this(URI.create(spec), None)
+  def this(context: URL, spec: String) =
+    this(URI.create(context.toURI().resolve(spec).toString()), Optional.empty())
 
   @deprecated(
     "Use URL.of() to construct an instance of URL with URLStreamHandler.",
     since = "20",
   )
   def this(context: URL, spec: String, handler: URLStreamHandler) =
-    this(URI.create(spec), if handler != null then Some(handler) else None)
+    this(URL.creatURI(spec), Optional.ofNullable(handler))
 
-  lazy val _handler: URLStreamHandler = handler match {
-    case Some(h) => h
-    case None =>
-      val protocol = getProtocol()
-      val handlerInstance = URL.handlerFactory.createURLStreamHandler(protocol)
+  def getQuery(): String =
+    uri.getQuery()
 
-      if handlerInstance != null
-      then handlerInstance
-      else throw new IOException(s"No handler found for protocol: $protocol")
-  }
+  def getPath(): String =
+    uri.getPath()
 
-  def getQuery(): String = uri.getQuery()
+  def getUserInfo(): String =
+    uri.getUserInfo()
 
-  def getPath(): String = uri.getPath()
+  def getAuthority(): String =
+    uri.getAuthority()
 
-  def getUserInfo(): String = uri.getUserInfo()
-
-  def getAuthority(): String = uri.getAuthority()
-
-  def getPort(): Int = uri.getPort()
+  def getPort(): Int =
+    uri.getPort()
 
   /// Gets the default port number of the protocol associated with this URL.
   /// If the URL scheme or the URLStreamHandler for the URL do not define
   /// a default port number, then -1 is returned.
   def getDefaultPort(): Int =
     if getPort() != -1
-    then getPort()
-    else _handler.getDefaultPort()
+    then //
+      getPort()
+    else
+      handler
+        .map(_.getDefaultPort())
+        .orElseGet(() =>
+          if (getProtocol() == "http")
+            80
+          else if (getProtocol() == "https")
+            443
+          else //
+            throw new NotImplementedError(
+              s"Default port for protocol ${getProtocol()} is not implemented",
+            ),
+        )
 
-  def getProtocol(): String = uri.getScheme()
+  def getProtocol(): String =
+    uri.getScheme()
 
-  def getHost(): String = uri.getHost()
+  def getHost(): String =
+    uri.getHost()
 
-  def getFile(): String = uri.getQuery() match
-    case null => uri.getPath()
-    case q    => s"${uri.getPath()}?${q}"
+  def getFile(): String =
+    uri.getQuery() match
+      case null => uri.getPath()
+      case q    => s"${uri.getPath()}?${q}"
 
-  def getRef(): String = uri.getFragment()
+  def getRef(): String =
+    uri.getFragment()
 
   def sameFile(other: URL): Boolean =
     this.getProtocol() == other.getProtocol()
@@ -105,9 +119,13 @@ final class URL private (
       && this.getFile() == other.getFile()
       && this.getQuery() == other.getQuery()
 
-  def toExternalForm(): String = _handler.toExternalForm(this)
+  def toExternalForm(): String =
+    handler
+      .orElseThrow(() => new NotImplementedError())
+      .toExternalForm(this)
 
-  def toURI(): URI = uri
+  def toURI(): URI =
+    uri
 
   def openConnection(): URLConnection =
     throw new NotImplementedError()
@@ -135,9 +153,11 @@ final class URL private (
     //     else throw new IOException(s"No handler found for protocol: $protocol")
     // }
 
-  def openStream(): InputStream = openConnection().getInputStream()
+  def openStream(): InputStream =
+    openConnection().getInputStream()
 
-  def getContent(): Any = openConnection().getContent()
+  def getContent(): Any =
+    openConnection().getContent()
 
   def getContent(classes: Array[Class[_]]): Any =
     throw new UnsupportedOperationException()
@@ -193,29 +213,32 @@ final class URL private (
       }
   }
 
-  /// Constructs a string representation of this URL.
-  /// The string is created by calling the toExternalForm method of
-  /// the stream protocol handler for this object.
-  override def toString(): String = toExternalForm()
+  override def toString(): String =
+    uri.toString()
 
 object URL:
+
+  private inline def creatURI(spec: String): URI =
+    try
+      URI.create(spec)
+    catch {
+      case e: URISyntaxException =>
+        throw new MalformedURLException(e.getMessage())
+    }
 
   def of(uri: URI, handler: URLStreamHandler): URL = {
     requireNonNull(uri, "URI cannot be null")
     val scheme = uri.getScheme()
     require(scheme != null && scheme.nonEmpty)
-    require(handler != null)
 
     try
-      new URL(uri, Some(handler))
+      new URL(uri, Optional.ofNullable(handler))
     catch {
       case e: IOException => throw new MalformedURLException(e.getMessage())
     }
   }
 
-  val handlerFactory: URLStreamHandlerFactory = ???
-
   def setURLStreamHandlerFactory(factory: URLStreamHandlerFactory): Unit =
-    throw new Error("factory already defined")
+    throw new NotImplementedError()
 
 end URL
