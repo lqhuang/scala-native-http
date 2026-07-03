@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.net.URI
 import java.net.ConnectException
 import java.net.http.{HttpRequest, HttpHeaders, HttpResponse}
+import java.net.http.HttpConnectTimeoutException
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpClient.{Version, Redirect}
 import java.net.http.HttpResponse.{BodyHandler, ResponseInfo, BodySubscriber}
@@ -15,6 +16,18 @@ import java.util.concurrent.Flow.Subscription
 import java.util.concurrent.{CompletableFuture, SubmissionPublisher, ConcurrentLinkedQueue}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
+import javax.net.ssl.{
+  SSLException,
+  SSLHandshakeException,
+  SSLKeyException,
+  SSLPeerUnverifiedException,
+  SSLProtocolException,
+}
+import java.security.cert.{
+  CertificateExpiredException,
+  CertificateEncodingException,
+  CertificateNotYetValidException,
+}
 
 import scala.jdk.javaapi.CollectionConverters.asScala
 import scala.scalanative.libc.stddef.NULL as NullPtr
@@ -349,16 +362,14 @@ private[http] final class HttpConnection[T](
     /**
      * set up request method and body for POST, etc.
      */
-    if (
-      request.bodyPublisher().isPresent()
-      && request.bodyPublisher().get().contentLength() != 0
-    ) {
+    if (request.bodyPublisher().isPresent()) {
+      // && request.bodyPublisher().get().contentLength() != 0
       val bodyPublisher = request.bodyPublisher().get()
       val contentLength = bodyPublisher.contentLength()
       // cache 4MB of data to make seekable input stream
       val subscriber =
-        if contentLength > 0 && contentLength <= MAX_SEEKABLE_Bytes
-        then new CurlBodyUploader(maxCachedBytes = MAX_SEEKABLE_Bytes)
+        if contentLength >= 0 && contentLength <= MAX_SEEKABLE_BYTES
+        then new CurlBodyUploader(maxCachedBytes = MAX_SEEKABLE_BYTES)
         else new CurlBodyUploader(maxCachedBytes = 0)
       bodyPublisher.subscribe(subscriber)
 
@@ -376,8 +387,7 @@ private[http] final class HttpConnection[T](
       easy.setPtrOption(CurlOption.SEEKDATA, readData)
       easy.setFuncPtrOption(CurlOption.SEEKFUNCTION, seekCallback.asFuncPtr)
 
-      if (contentLength > 0)
-        easy.setCLongOption(CurlOption.INFILESIZE_LARGE, contentLength.toSize)
+      easy.setCLongOption(CurlOption.INFILESIZE_LARGE, contentLength.toSize)
     }
 
     // NOTES:
@@ -410,17 +420,47 @@ private[http] final class HttpConnection[T](
 
 private[http] object HttpConnection:
 
-  private final val MAX_SEEKABLE_Bytes = 4 * 1024 * 1024L
+  final val MAX_SEEKABLE_BYTES = 4 * 1024 * 1024L
+
+  final val CURL_ERR_CODE_TO_JAVA_EXC_MAP = Map(
+    CurlErrCode.COULDNT_RESOLVE_HOST -> {
+      val exc = ConnectException(
+        s"Failed to resolve host address: ${curl.getStrError(CurlErrCode.COULDNT_RESOLVE_HOST)}",
+      )
+      exc.initCause(UnresolvedAddressException())
+    },
+    CurlErrCode.COULDNT_CONNECT -> {
+      val exc = ConnectException(
+        s"Unreachable host or port: ${curl.getStrError(CurlErrCode.COULDNT_CONNECT)}",
+      )
+      exc.initCause(ClosedChannelException())
+      exc
+    },
+    CurlErrCode.OPERATION_TIMEDOUT -> HttpConnectTimeoutException(
+      s"Connection timed out: ${curl.getStrError(CurlErrCode.OPERATION_TIMEDOUT)}",
+    ),
+    CurlErrCode.PEER_FAILED_VERIFICATION -> SSLHandshakeException(
+      s"SSL error: ${curl.getStrError(CurlErrCode.PEER_FAILED_VERIFICATION)}",
+    ),
+    /*
+     * Unverified mapping
+     */
+    CurlErrCode.SSL_CONNECT_ERROR -> SSLException(
+      s"SSL connection error: ${curl.getStrError(CurlErrCode.SSL_CONNECT_ERROR)}",
+    ),
+    CurlErrCode.SSL_INVALIDCERTSTATUS -> SSLPeerUnverifiedException(
+      s"SSL invalid certificate status: ${curl.getStrError(CurlErrCode.SSL_INVALIDCERTSTATUS)}",
+    ),
+    CurlErrCode.SSL_CLIENTCERT -> SSLKeyException(
+      s"SSL client certificate error: ${curl.getStrError(CurlErrCode.SSL_CLIENTCERT)}",
+    ),
+  )
 
   final inline def throwStructuredException(err: CurlErrCode): Throwable =
-    if (err == CurlErrCode.COULDNT_RESOLVE_HOST)
-      // TODO cannot set UnresolvedAddressException() as cause
-      ConnectException(s"Failed to resolve host address: ${curl.getStrError(err)}")
-    else if (err == CurlErrCode.COULDNT_CONNECT)
-      // TODO: ClosedChannelException
-      ConnectException(s"Unreachable host or port: ${curl.getStrError(err)}")
-    else
-      ConnectException(s"Failed to connect to host: ${curl.getStrError(err)}")
+    CURL_ERR_CODE_TO_JAVA_EXC_MAP.getOrElse(
+      err,
+      ConnectException(s"Failed to connect to host: code ${err} (${curl.getStrError(err)})"),
+    )
 
   type CurlSendBuffer = CStruct1[DelegateSeekableInputStream]
   given Tag[DelegateSeekableInputStream] = Tag.materializeClassTag[DelegateSeekableInputStream]

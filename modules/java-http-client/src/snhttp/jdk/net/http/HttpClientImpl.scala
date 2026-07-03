@@ -2,10 +2,12 @@ package snhttp.jdk.net.http
 
 import java.io.IOException
 import java.net.{Authenticator, CookieHandler, InetAddress, ProxySelector}
-import java.net.ConnectException
+import java.net.{ConnectException, UnknownHostException}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket}
 import java.net.http.HttpClient.{Builder, Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
+import java.net.http.HttpTimeoutException
+import java.nio.channels.UnresolvedAddressException
 import java.time.Duration
 import java.util.Optional
 import java.util.Objects.requireNonNull
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
+import javax.net.ssl.SSLException
 
 import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext
@@ -193,11 +196,7 @@ final class HttpClientImpl(
       sendAsync(request, responseBodyHandler).get()
     catch {
       case exc: ExecutionException =>
-        val cause = exc.getCause()
-        cause match {
-          case e: ConnectException => throw e
-          case _                   => throw exc
-        }
+        throw exc.getCause()
     }
   }
 
@@ -286,7 +285,7 @@ final class HttpClientImpl(
     do {
       shutdown()
       try
-        awaitTermination(Duration.ofSeconds(1L)): Unit
+        awaitTermination(Duration.ofMillis(3L)): Unit
       catch {
         case e: InterruptedException =>
           interrupted = true
