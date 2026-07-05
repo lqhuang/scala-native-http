@@ -1,7 +1,7 @@
 package snhttp.test.java.net.http
 
 import java.io.IOException
-import java.io.ByteArrayInputStream
+import java.io.{FileInputStream, ByteArrayInputStream}
 import java.net.URI
 import java.net.ConnectException
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
@@ -11,7 +11,7 @@ import java.net.http.HttpResponse.{BodyHandlers, BodySubscribers, PushPromiseHan
 import java.net.http.HttpRequest.BodyPublishers
 import java.nio.charset.StandardCharsets
 import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
-import java.security.SecureRandom
+import java.security.{KeyStore, SecureRandom}
 import java.security.cert.X509Certificate
 import java.time.Duration
 import java.util.{Base64, Optional}
@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap}
 import java.util.concurrent.atomic.AtomicInteger
 
-import javax.net.ssl.{SSLContext, TrustManager, X509TrustManager}
+import javax.net.ssl.{SSLContext, TrustManager, KeyManager, KeyManagerFactory, X509TrustManager}
 import javax.net.ssl.SSLHandshakeException
 
 import scala.util.Properties
@@ -958,7 +958,7 @@ class HttpClientTest extends TestSuite:
           do
             val request = HttpRequest
               .newBuilder()
-              .uri(URI.create("url"))
+              .uri(URI.create(url))
               .GET()
               .build()
             val response = client.send(request, BodyHandlers.ofString())
@@ -966,5 +966,52 @@ class HttpClientTest extends TestSuite:
             assert(response.statusCode() == 200)
         finally //
           client.close()
+      }
+
+      test("HttpClient should allow custom client cert") {
+        val url = "https://client.badssl.com"
+        val base = s"${sys.env("MILL_TEST_RESOURCE_DIR")}/test-data/badssl"
+        val request = HttpRequest.newBuilder(URI.create(url)).build()
+
+        def newSSLContextWithCert(path: String, pass: Array[Char]): SSLContext = {
+          val ks = KeyStore.getInstance("PKCS12")
+          ks.load(new FileInputStream(path), pass)
+
+          val keyManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+          keyManager.init(ks, pass)
+          val kms = keyManager.getKeyManagers()
+
+          val sslCtx = SSLContext.getInstance("TLS")
+          sslCtx.init(kms, null, new SecureRandom())
+          sslCtx
+        }
+
+        test("mTLS with password protected cert") {
+          val path = s"${base}/badssl.com-client.p12"
+          val pass = "badssl.com".toCharArray()
+
+          val sslCtx = newSSLContextWithCert(path, pass)
+          val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+          val response = client.send(request, BodyHandlers.ofString())
+
+          assert(response.statusCode() == 200)
+        }
+
+        test("mTLS with no password cert") {
+          val path = s"${base}/badssl.com-client-nopass.p12"
+
+          val sslCtx = newSSLContextWithCert(path, Array.emptyCharArray)
+          val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+          val response = client.send(request, BodyHandlers.ofString())
+
+          assert(response.statusCode() == 200)
+        }
+
+        test("should fail when no cert provided") {
+          withNewHttpClient { client =>
+            val response = client.send(request, BodyHandlers.ofString())
+            assert(response.statusCode() == 400)
+          }
+        }
       }
     }
