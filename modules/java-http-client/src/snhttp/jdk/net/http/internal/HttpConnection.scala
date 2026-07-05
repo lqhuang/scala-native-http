@@ -193,7 +193,7 @@ private[http] final class HttpConnection[T](
         val errCode = err.asErrCode
         if errCode != CurlErrCode.OK
         then {
-          val exc = throwStructuredException(errCode)
+          val exc = excFromErrCode(errCode)
           respBodyPublisher.closeExceptionally(exc)
           closeExceptionally(exc)
         } //
@@ -518,21 +518,21 @@ private[http] object HttpConnection:
     ret
   }
 
-  final inline def errPrefixWithCode(inline code: CurlErrCode) =
+  final inline def errMsgWithCode(inline code: CurlErrCode) =
     s"Connection error: CurlErrCode=${code} (${curl.getStrError(code)})"
-  final inline def throwStructuredException(inline err: CurlErrCode): Throwable =
-    CURL_ERR_CODE_TO_JAVA_EXC_MAP.getOrElse(err, ConnectException(errPrefixWithCode(err)))
+  final inline def excFromErrCode(inline err: CurlErrCode): Throwable =
+    CURL_ERR_CODE_TO_JAVA_THROWABLE.getOrElse(err, ConnectException(errMsgWithCode(err)))
 
   // scalafmt: { maxColumn = 300, align.preset = most }
-  final lazy val CURL_ERR_CODE_TO_JAVA_EXC_MAP: Map[CurlErrCode, Throwable] = Map(
-    CurlErrCode.COULDNT_RESOLVE_HOST     -> ConnectException(errPrefixWithCode(CurlErrCode.COULDNT_RESOLVE_HOST)).initCause(UnresolvedAddressException()),
-    CurlErrCode.COULDNT_CONNECT          -> ConnectException(errPrefixWithCode(CurlErrCode.COULDNT_CONNECT)).initCause(ClosedChannelException()),
-    CurlErrCode.OPERATION_TIMEDOUT       -> HttpConnectTimeoutException(errPrefixWithCode(CurlErrCode.OPERATION_TIMEDOUT)),
-    CurlErrCode.PEER_FAILED_VERIFICATION -> SSLHandshakeException(errPrefixWithCode(CurlErrCode.PEER_FAILED_VERIFICATION)),
-    CurlErrCode.SSL_CONNECT_ERROR        -> SSLHandshakeException(errPrefixWithCode(CurlErrCode.SSL_CONNECT_ERROR)),
+  final lazy val CURL_ERR_CODE_TO_JAVA_THROWABLE: Map[CurlErrCode, Throwable] = Map(
+    CurlErrCode.COULDNT_RESOLVE_HOST     -> ConnectException(errMsgWithCode(CurlErrCode.COULDNT_RESOLVE_HOST)).initCause(UnresolvedAddressException()),
+    CurlErrCode.COULDNT_CONNECT          -> ConnectException(errMsgWithCode(CurlErrCode.COULDNT_CONNECT)).initCause(ClosedChannelException()),
+    CurlErrCode.OPERATION_TIMEDOUT       -> HttpConnectTimeoutException(errMsgWithCode(CurlErrCode.OPERATION_TIMEDOUT)),
+    CurlErrCode.PEER_FAILED_VERIFICATION -> SSLHandshakeException(errMsgWithCode(CurlErrCode.PEER_FAILED_VERIFICATION)),
+    CurlErrCode.SSL_CONNECT_ERROR        -> SSLHandshakeException(errMsgWithCode(CurlErrCode.SSL_CONNECT_ERROR)),
     /* Unverified mapping */
-    CurlErrCode.SSL_INVALIDCERTSTATUS -> SSLPeerUnverifiedException(errPrefixWithCode(CurlErrCode.SSL_INVALIDCERTSTATUS)),
-    CurlErrCode.SSL_CLIENTCERT        -> SSLKeyException(errPrefixWithCode(CurlErrCode.SSL_CLIENTCERT)),
+    CurlErrCode.SSL_INVALIDCERTSTATUS -> SSLPeerUnverifiedException(errMsgWithCode(CurlErrCode.SSL_INVALIDCERTSTATUS)),
+    CurlErrCode.SSL_CLIENTCERT        -> SSLKeyException(errMsgWithCode(CurlErrCode.SSL_CLIENTCERT)),
   )
   // scalafmt: { maxColumn = 100 }
 

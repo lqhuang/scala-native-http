@@ -113,7 +113,7 @@ object App:
 
       if what == CurlPoll.REMOVE
       then { // Early return
-        epoll_ctl(ctxptr.epfd, epoll.EPOLL_CTL_DEL, socket.asInt, NULL)
+        epoll_ctl(ctxptr.epfd, epoll.EPOLL_CTL_DEL, socket.value, NULL)
         libcurl.multiAssign(ctxptr.multiRef, socket, NULL)
         0
       } //
@@ -200,7 +200,7 @@ object App:
         multi.addCurlEasy(curl2)
 
         /* kickstart the multi epoll event */
-        multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningHandle)
+        multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
 
         val bufferSize = 64
         val buffer = stackalloc[EpollEvent](bufferSize)
