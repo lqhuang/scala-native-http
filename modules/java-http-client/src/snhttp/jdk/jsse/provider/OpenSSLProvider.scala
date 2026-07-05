@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.{List as JList, Map as JMap, Set as JSet}
 
+import _root_.snhttp.jdk.net.ssl.SSLContextSpiImpl
+
 class OpenSSLProvider(
     private val name: String = "scala-native-openssl",
     private val versionStr: String = "0.1",
@@ -76,7 +78,7 @@ class OpenSSLProvider(
 
   private def setup(): Unit =
     if (!initialized.compareAndExchange(false, true)) {
-      for (algorithm <- Set("TLSv1.3", "TLSv1.2", "TLS", "Default"))
+      for (algorithm <- SSLContextSpiImpl.SUPPORTED_PROTOCOLS)
         putProvService(
           new OpenSSLProvService(
             this,
@@ -109,7 +111,6 @@ class OpenSSLProvider(
           JMap.of(),
         ),
       )
-
     }
 
 object OpenSSLProvider:

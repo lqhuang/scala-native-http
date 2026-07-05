@@ -422,46 +422,6 @@ private[http] object HttpConnection:
 
   final val MAX_SEEKABLE_BYTES = 4 * 1024 * 1024L
 
-  final val CURL_ERR_CODE_TO_JAVA_EXC_MAP = Map(
-    CurlErrCode.COULDNT_RESOLVE_HOST -> {
-      val exc = ConnectException(
-        s"Failed to resolve host address: ${curl.getStrError(CurlErrCode.COULDNT_RESOLVE_HOST)}",
-      )
-      exc.initCause(UnresolvedAddressException())
-    },
-    CurlErrCode.COULDNT_CONNECT -> {
-      val exc = ConnectException(
-        s"Unreachable host or port: ${curl.getStrError(CurlErrCode.COULDNT_CONNECT)}",
-      )
-      exc.initCause(ClosedChannelException())
-      exc
-    },
-    CurlErrCode.OPERATION_TIMEDOUT -> HttpConnectTimeoutException(
-      s"Connection timed out: ${curl.getStrError(CurlErrCode.OPERATION_TIMEDOUT)}",
-    ),
-    CurlErrCode.PEER_FAILED_VERIFICATION -> SSLHandshakeException(
-      s"SSL error: ${curl.getStrError(CurlErrCode.PEER_FAILED_VERIFICATION)}",
-    ),
-    /*
-     * Unverified mapping
-     */
-    CurlErrCode.SSL_CONNECT_ERROR -> SSLException(
-      s"SSL connection error: ${curl.getStrError(CurlErrCode.SSL_CONNECT_ERROR)}",
-    ),
-    CurlErrCode.SSL_INVALIDCERTSTATUS -> SSLPeerUnverifiedException(
-      s"SSL invalid certificate status: ${curl.getStrError(CurlErrCode.SSL_INVALIDCERTSTATUS)}",
-    ),
-    CurlErrCode.SSL_CLIENTCERT -> SSLKeyException(
-      s"SSL client certificate error: ${curl.getStrError(CurlErrCode.SSL_CLIENTCERT)}",
-    ),
-  )
-
-  final inline def throwStructuredException(err: CurlErrCode): Throwable =
-    CURL_ERR_CODE_TO_JAVA_EXC_MAP.getOrElse(
-      err,
-      ConnectException(s"Failed to connect to host: code ${err} (${curl.getStrError(err)})"),
-    )
-
   type CurlSendBuffer = CStruct1[DelegateSeekableInputStream]
   given Tag[DelegateSeekableInputStream] = Tag.materializeClassTag[DelegateSeekableInputStream]
   given Tag[CurlSendBuffer] = Tag.materializeCStruct1Tag[DelegateSeekableInputStream]
@@ -557,5 +517,23 @@ private[http] object HttpConnection:
 
     ret
   }
+
+  final inline def errPrefixWithCode(inline code: CurlErrCode) =
+    s"Connection error: CurlErrCode=${code} (${curl.getStrError(code)})"
+  final inline def throwStructuredException(inline err: CurlErrCode): Throwable =
+    CURL_ERR_CODE_TO_JAVA_EXC_MAP.getOrElse(err, ConnectException(errPrefixWithCode(err)))
+
+  // scalafmt: { maxColumn = 300, align.preset = most }
+  final lazy val CURL_ERR_CODE_TO_JAVA_EXC_MAP: Map[CurlErrCode, Throwable] = Map(
+    CurlErrCode.COULDNT_RESOLVE_HOST     -> ConnectException(errPrefixWithCode(CurlErrCode.COULDNT_RESOLVE_HOST)).initCause(UnresolvedAddressException()),
+    CurlErrCode.COULDNT_CONNECT          -> ConnectException(errPrefixWithCode(CurlErrCode.COULDNT_CONNECT)).initCause(ClosedChannelException()),
+    CurlErrCode.OPERATION_TIMEDOUT       -> HttpConnectTimeoutException(errPrefixWithCode(CurlErrCode.OPERATION_TIMEDOUT)),
+    CurlErrCode.PEER_FAILED_VERIFICATION -> SSLHandshakeException(errPrefixWithCode(CurlErrCode.PEER_FAILED_VERIFICATION)),
+    CurlErrCode.SSL_CONNECT_ERROR        -> SSLHandshakeException(errPrefixWithCode(CurlErrCode.SSL_CONNECT_ERROR)),
+    /* Unverified mapping */
+    CurlErrCode.SSL_INVALIDCERTSTATUS -> SSLPeerUnverifiedException(errPrefixWithCode(CurlErrCode.SSL_INVALIDCERTSTATUS)),
+    CurlErrCode.SSL_CLIENTCERT        -> SSLKeyException(errPrefixWithCode(CurlErrCode.SSL_CLIENTCERT)),
+  )
+  // scalafmt: { maxColumn = 100 }
 
 end HttpConnection

@@ -11,12 +11,15 @@ import java.net.http.HttpResponse.{BodyHandlers, BodySubscribers, PushPromiseHan
 import java.net.http.HttpRequest.BodyPublishers
 import java.nio.charset.StandardCharsets
 import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.time.Duration
 import java.util.{Base64, Optional}
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap}
 import java.util.concurrent.atomic.AtomicInteger
-import javax.net.ssl.SSLContext
+
+import javax.net.ssl.{SSLContext, TrustManager, X509TrustManager}
 import javax.net.ssl.SSLHandshakeException
 
 import scala.util.Properties
@@ -199,7 +202,6 @@ class HttpClientTest extends TestSuite:
           assert(exc.getCause().isInstanceOf[ConnectException])
           assert(exc.getCause().getCause().isInstanceOf[ClosedChannelException])
         }
-
       }
     }
 
@@ -314,9 +316,10 @@ class HttpClientTest extends TestSuite:
 
         client.close()
       }
+
     }
 
-    test("HttpClient shutdown lifecycle") {
+    test("Shutdown and lifecycle") {
       test("HttpClient should reject later operations after shutdown") {
         withNewHttpClient { client =>
           assert(client.isTerminated() == false)
@@ -400,7 +403,6 @@ class HttpClientTest extends TestSuite:
     }
 
     test("HttpClient sendAsync() with push promise handler") {
-
       test(
         "should match two-argument overload",
       ) {
@@ -470,6 +472,7 @@ class HttpClientTest extends TestSuite:
           }
           client.close()
         }
+
         test("relative redirect") {
           val client = HttpClient.newBuilder().followRedirects(Redirect.NEVER).build()
           Seq(true, false).foreach { secure =>
@@ -480,6 +483,7 @@ class HttpClientTest extends TestSuite:
           }
           client.close()
         }
+
         test("custom redirect code") {
           val client = HttpClient.newBuilder().followRedirects(Redirect.NEVER).build()
           Seq(
@@ -627,7 +631,6 @@ class HttpClientTest extends TestSuite:
         }
 
       }
-
     }
 
     test("HttpClient and status code") {
@@ -657,7 +660,7 @@ class HttpClientTest extends TestSuite:
         }
       }
 
-      test("status code 303/302/301 should switch POST to GET") {
+      test("status code 301/302/303 should switch POST to GET") {
         val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
         Seq(301, 302, 303).foreach { status =>
           val request = HttpRequest
@@ -938,5 +941,30 @@ class HttpClientTest extends TestSuite:
             val response = client.send(request, BodyHandlers.ofString())
           }
         }
+      }
+
+      test("HttpClient should allow to trust all certs via custom SSLContext") {
+        val trustAllCerts = Array[TrustManager](new X509TrustManager() {
+          def getAcceptedIssuers = new Array[X509Certificate](0)
+          def checkClientTrusted(chain: Array[X509Certificate], authType: String) = {}
+          def checkServerTrusted(chain: Array[X509Certificate], authType: String) = {}
+        })
+        val sc = SSLContext.getInstance("TLS")
+        sc.init(null, trustAllCerts, new SecureRandom())
+
+        val client = HttpClient.newBuilder().sslContext(sc).build()
+        try
+          for url <- Seq("https://expired.badssl.com", "https://self-signed.badssl.com")
+          do
+            val request = HttpRequest
+              .newBuilder()
+              .uri(URI.create("url"))
+              .GET()
+              .build()
+            val response = client.send(request, BodyHandlers.ofString())
+
+            assert(response.statusCode() == 200)
+        finally //
+          client.close()
       }
     }
