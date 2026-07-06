@@ -53,7 +53,17 @@ import scala.scalanative.unsigned.{UnsignedRichInt, UnsignedRichLong}
 
 import _root_.snhttp.experimental.curl.curl
 import _root_.snhttp.experimental.curl.libcurl
+import _root_.snhttp.experimental.curl.libcurl.CurlHandle
+import _root_.snhttp.experimental.openssl.libssl
+import _root_.snhttp.experimental.openssl.libssl.{SSL_CTX, SSL_VERIFY}
 import _root_.snhttp.experimental.curl.curl.{CurlErrCodeException, CurlException}
+import _root_.snhttp.experimental.curl.curl.{
+  CurlReadCallback,
+  CurlWriteCallback,
+  CurlHeaderCallback,
+  CurlSeekCallback,
+  CurlSslCtxCallback,
+}
 import _root_.snhttp.experimental.curl.curl.{
   CurlEasy,
   CurlMsg,
@@ -67,10 +77,6 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlErrCode,
   CurlMultiErrCode,
   CurlSocket,
-  CurlReadCallback,
-  CurlWriteCallback,
-  CurlHeaderCallback,
-  CurlSeekCallback,
   CurlSeekFunc,
   CurlOff,
 }
@@ -78,6 +84,9 @@ import _root_.snhttp.experimental.curl.curl.CurlMultiErrCode.RichCurlMultiErrCod
 import _root_.snhttp.experimental.curl.curl.CurlMsgData.asErrCode
 import _root_.snhttp.jdk.net.http.{HttpClientImpl, HttpResponseImpl, ResponseInfoImpl}
 import _root_.snhttp.jdk.net.http.internal.PropertyUtils
+import _root_.snhttp.jdk.net.http.HttpClientImpl.{SslCtxCustomData, ClientCert}
+import _root_.snhttp.jdk.net.http.HttpClientImpl.SslCtxCustomData.*
+import _root_.snhttp.jdk.net.http.HttpClientImpl.ClientCert.*
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 
 /**
@@ -250,7 +259,6 @@ private[http] final class HttpConnection[T](
    */
   private def init(): Unit = {
     // easy.setCLongOption(CurlOption.VERBOSE, 1.toSize)
-
     easy.setCStringOption(CurlOption.USERAGENT, c"sn-java-http-client/0.0.0")
     easy.setCStringOption(CurlOption.URL, toCString(request.uri().toString()))
 
@@ -264,12 +272,14 @@ private[http] final class HttpConnection[T](
       easy.setCLongOption(CurlOption.HTTP_VERSION, version.value)
     }
 
-    // default to 30 seconds
-    val timeoutMs = request.timeout().map(_.toMillis()).orElse(30 * 1000L)
-    easy.setCLongOption(CurlOption.TIMEOUT_MS, timeoutMs.toSize)
-
-    val connectTimeoutMs = client.builder._connectTimeout.map(_.toMillis).orElse(3 * 1000L)
-    easy.setCLongOption(CurlOption.CONNECTTIMEOUT_MS, connectTimeoutMs.toSize)
+    // Set connect timeout and read timeout
+    client.builder._connectTimeout
+      .map(duration => duration.toMillis())
+      .map(ms => easy.setCLongOption(CurlOption.CONNECTTIMEOUT_MS, ms.toSize))
+    request
+      .timeout()
+      .map(duration => duration.toMillis())
+      .map(ms => easy.setCLongOption(CurlOption.TIMEOUT_MS, ms.toSize))
 
     val _ = client.builder._redirect match
       case Redirect.NEVER =>
@@ -333,30 +343,12 @@ private[http] final class HttpConnection[T](
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
     easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
 
-    // /**
-    //  * TLS options
-    //  */
-    // val scheme = request.uri().getScheme().toLowerCase().strip()
-    // if !scheme.endsWith("s")
-    // then // no TLS
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.NONE.value)
-    // else // with TLS
-    //   // TODO: Register SSL context ptr to set up custom SSL context
-    //   // https://curl.se/libcurl/c/CURLINFO_TLS_SSL_PTR.html
-    //   easy.setCLongOption(CurlOption.USE_SSL, CurlUseSsl.TRY.value)
-
-    if (client.builder._sslContext.isPresent()) {
-      val ctx = {
-        val ctx = client.builder._sslContext.get()
-        if (!ctx.isInstanceOf[SSLContextImpl]) {
-          closeExceptionally(
-            RuntimeException(s"Expected internal SSLContextImpl but got ${ctx.getClass()}"),
-          )
-          return ()
-        }
-        ctx.asInstanceOf[SSLContextImpl]
-      }
-      easy.setPtrOption(CurlOption.SSL_CTX_DATA, ctx.ref)
+    /**
+     * TLS options
+     */
+    if (client.builder._sslContext.isPresent() || client.builder._sslParams.isPresent()) {
+      easy.setPtrOption(CurlOption.SSL_CTX_DATA, client._sslCtxCustomData)
+      easy.setFuncPtrOption(CurlOption.SSL_CTX_FUNCTION, sslCtxCallback.asFuncPtr)
     }
 
     /**
@@ -519,7 +511,7 @@ private[http] object HttpConnection:
   }
 
   final inline def errMsgWithCode(inline code: CurlErrCode) =
-    s"Connection error: CurlErrCode=${code} (${curl.getStrError(code)})"
+    s"Http Connection error: CurlErrCode=${code} (${curl.getStrError(code)})"
   final inline def excFromErrCode(inline err: CurlErrCode): Throwable =
     CURL_ERR_CODE_TO_JAVA_THROWABLE.getOrElse(err, ConnectException(errMsgWithCode(err)))
 
@@ -535,5 +527,46 @@ private[http] object HttpConnection:
     CurlErrCode.SSL_CLIENTCERT        -> SSLKeyException(errMsgWithCode(CurlErrCode.SSL_CLIENTCERT)),
   )
   // scalafmt: { maxColumn = 100 }
+
+  final val sslCtxCallback = CurlSslCtxCallback.fromScalaFunction {
+    (easy: Ptr[CurlHandle], sslCtx: Ptr[?], clientp: Ptr[?]) =>
+      val curlCtx = sslCtx.asInstanceOf[Ptr[SSL_CTX]]
+      val customData = clientp.asInstanceOf[Ptr[SslCtxCustomData]]
+      var code = 0
+
+      libssl.SSL_CTX_set_security_level(curlCtx, customData.securityLevel)
+
+      if (customData.insecure == 1) {
+        code += libcurl.easySetOpt(easy, CurlOption.SSL_VERIFYPEER, 0).value
+        code += libcurl.easySetOpt(easy, CurlOption.SSL_VERIFYHOST, 0).value
+      }
+
+      if (customData.lengthOfclientCerts > 0) {
+        val certs = customData.clientCerts
+        for i <- 0 until customData.lengthOfclientCerts
+        do {
+          val cert = !(certs + i)
+          val rcode = libssl.SSL_CTX_use_cert_and_key(curlCtx, cert.cert, cert.pkey, cert.chain, 0)
+          // On success, the functions return 1
+          if (rcode != 1)
+            code += 1
+        }
+
+        libssl.SSL_CTX_set_verify(curlCtx, SSL_VERIFY.PEER | SSL_VERIFY.FAIL_IF_NO_PEER_CERT, null)
+      }
+
+      if (customData.trustStore != null)
+        libssl.SSL_CTX_set_cert_store(curlCtx, customData.trustStore)
+
+      /**
+       * TODO:
+       *
+       *   1. Add support for SslCtxParameters
+       */
+
+      if code == 0
+      then CurlErrCode.OK
+      else CurlErrCode.SSL_ENGINE_INITFAILED
+  }
 
 end HttpConnection

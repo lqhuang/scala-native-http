@@ -4,6 +4,7 @@ package snhttp.jdk.net.ssl
 import java.security.{SecureRandom, Provider}
 import java.security.{KeyManagementException, NoSuchAlgorithmException}
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.Optional
 import javax.net.ssl.{
   SSLContext,
   SSLContextSpi,
@@ -13,31 +14,34 @@ import javax.net.ssl.{
   SSLSocketFactory,
   SSLEngine,
   TrustManager,
+  X509TrustManager,
   SSLServerSocketFactory,
 }
 
 import scala.collection.immutable.TreeSet
 import scala.math.Ordering.comparatorToOrdering
 import scala.scalanative.unsafe.{Ptr, fromCString}
+import scala.scalanative.unsigned.UnsignedRichInt
 
-import snhttp.experimental.openssl.libssl
-import snhttp.experimental.openssl.libssl.{SSL_CTRL, SSL_VERIFY, TLS_VERSION, SSL_OP, SSL_CTX}
+import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
+
+import snhttp.experimental.openssl.{libssl, libcrypto}
+import snhttp.experimental.openssl.libssl.{TLS_VERSION, SSL_OP, SSL_CTX}
 import snhttp.utils.PointerCleaner
 
-private[snhttp] class SSLContextImpl(spi: SSLContextSpiImpl, provider: Provider, protocol: String)
-    extends SSLContext(spi, provider, protocol):
+private[snhttp] class SSLContextImpl(
+    val spi: SSLContextSpiImpl,
+    provider: Provider,
+    protocol: String,
+) extends SSLContext(spi, provider, protocol):
 
-  private[snhttp] def ref = spi.asInstanceOf[SSLContextSpiImpl].ptr
+  def ref = spi.asInstanceOf[SSLContextSpiImpl].ptr
 
 end SSLContextImpl
 
 private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
 
-  import SSLContextSpiImpl.{
-    SUPPORTED_PROTOCOLS,
-    ALL_SSL_CONTEXT_PROTOCOLS,
-    SSL_OP_PROTOCOL_MASK_MAP,
-  }
+  import SSLContextSpiImpl.*
 
   private val tlsVersionPtr =
     if (SUPPORTED_PROTOCOLS.contains(protocol)) {
@@ -65,12 +69,23 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
   }
 
   /**
-   * Security level set to 192 bits of security. As a result RSA, DSA and DH keys shorter than 7680
-   * bits and ECC keys shorter than 384 bits are prohibited. Cipher suites using SHA1 for the MAC
-   * are prohibited.
+   * To stay compatible with the JDK, we've set the security level to 2.
+   *
+   *   - Level 2
+   *     - Security level set to 112 bits of security. As a result RSA, DSA and DH keys shorter than
+   *       2048 bits and ECC keys shorter than 224 bits are prohibited. In addition to the level 1
+   *       exclusions any cipher suite using RC4 is also prohibited. Compression is disabled.
+   *
+   * This is a debatable decision and might be revised in the future if we find a better way to
+   * handle it.
    */
-  if (libssl.SSL_CTX_get_security_level(ptr) < 4)
-    libssl.SSL_CTX_set_security_level(ptr, 4)
+  val defaultSslCtxSecurityLevel = 2
+  if (libssl.SSL_CTX_get_security_level(ptr) > defaultSslCtxSecurityLevel)
+    libssl.SSL_CTX_set_security_level(ptr, defaultSslCtxSecurityLevel)
+
+  var keys: Optional[Seq[OpenSSLKeyStore]] = Optional.empty()
+  var trustStore: Optional[Ptr[libcrypto.X509_STORE]] = Optional.empty()
+  var insecure = false
 
   // Client session context bind to current SSLContext
   // only has one ClientSessionContext instance per SSLContext instance
@@ -98,22 +113,40 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
     if (!inited.compareAndExchange(false, true)) {
       if (kms != null) {
         kms.foreach(km =>
-          if (km != null && km.isInstanceOf[X509KeyManagerImpl]) {
-            val key = km.asInstanceOf[X509KeyManagerImpl]
-            key.registerToSSLContext(this.ptr)
-          },
+          if (!km.isInstanceOf[X509KeyManagerImpl])
+            throw new KeyManagementException(
+              s"Unsupported KeyManager implementation: ${km.getClass().getName()}. Only X509KeyManagerImpl is currently supported.",
+            ),
         )
+
+        keys = Optional.of(kms.map(km => km.asInstanceOf[X509KeyManagerImpl].ks))
       }
 
       if (tms != null) {
-        tms.foreach(tm =>
-          if (tm != null && tm.isInstanceOf[X509TrustManagerKeyStoreImpl]) {
-            val trust = tm.asInstanceOf[X509TrustManagerKeyStoreImpl]
-            ???
-          },
-        )
+        if (tms.length == 0) //
+          insecure = true
+        else if (tms.length == 1) {
+          val tm = tms(0)
+          if (tm.isInstanceOf[X509TrustManagerNullImpl]) //
+            trustStore = Optional.of(tm.asInstanceOf[X509TrustManagerNullImpl].ref)
+          else if (
+            tm.isInstanceOf[X509TrustManager]
+            && tm.asInstanceOf[X509TrustManager].getAcceptedIssuers().length == 0
+          ) //
+            insecure = true
+          else
+            throw new KeyManagementException(
+              s"Unsupported TrustManager implementation: ${tms(0).getClass().getName()}. "
+                + "Only X509TrustManagerNullImpl or X509TrustManager with empty Issuers is supported now when has exact 1 TrustManager.",
+            )
+        } //
+        else
+          throw new KeyManagementException(
+            s"Unsupported TrustManager implementation: ${tms.map(_.getClass().getName()).mkString(", ")}",
+          )
       }
-    } else {
+    } //
+    else {
       throw new KeyManagementException("SSLContext already initialized")
     }
 
@@ -194,8 +227,8 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
   }
 
   private def getDefaultProtocols(): Array[String] = {
-    val _min = libssl.SSL_CTX_get_min_proto_version(ptr).toInt
-    val _max = libssl.SSL_CTX_get_max_proto_version(ptr).toInt
+    val _min = libssl.SSL_CTX_get_min_proto_version(ptr).value.toInt
+    val _max = libssl.SSL_CTX_get_max_proto_version(ptr).value.toInt
     val min = if _min == 0 then 0x0300 else _min
     val max = if _max == 0 then 0x0400 else _max
 
@@ -220,24 +253,23 @@ private[snhttp] class SSLContextSpiImpl(protocol: String) extends SSLContextSpi:
     enabled
   }
 
-object SSLContextSpiImpl:
+private[snhttp] object SSLContextSpiImpl:
 
-  private[snhttp] final val SUPPORTED_PROTOCOLS = TreeSet(
+  final val SUPPORTED_PROTOCOLS = TreeSet(
     "TLSv1.2",
     "TLSv1.3",
     "TLS",
     "SSL",
     "Default",
   )(using comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
-
-  private[snhttp] final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
+  final val ALL_SSL_CONTEXT_PROTOCOLS = Seq(
     TLS_VERSION.SSL3,
     TLS_VERSION.TLS1,
     TLS_VERSION.TLS1_1,
     TLS_VERSION.TLS1_2,
     TLS_VERSION.TLS1_3,
   )
-  private[snhttp] final val SSL_OP_PROTOCOL_MASK_MAP = Map(
+  final val SSL_OP_PROTOCOL_MASK_MAP = Map(
     TLS_VERSION.SSL3 -> SSL_OP.NO_SSLv3,
     TLS_VERSION.TLS1 -> SSL_OP.NO_TLSv1,
     TLS_VERSION.TLS1_1 -> SSL_OP.NO_TLSv1_1,

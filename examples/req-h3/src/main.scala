@@ -25,16 +25,19 @@ object Main:
     val ctx = SSLContext.getDefault()
     val client = HttpClient.newBuilder().sslContext(ctx).version(h3).build()
 
-    val request = HttpRequest
-      .newBuilder()
-      .uri(URI.create("https://www.http3check.net/"))
-      .GET()
-      .build()
+    for url <- Seq(
+        "https://www.http3check.net/",
+        "https://cloudflare-quic.com/",
+      )
+    do {
+      val request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build()
+      val response = client.send(request, BodyHandlers.ofString())
 
-    val response = client.send(request, BodyHandlers.ofString())
-    println(s"Status: ${response.statusCode()}")
-    println(s"Body: ${response.body()}")
-    println(s"Status: ${response.headers()}")
+      println(s"== Request to <${url}> completed")
+      println(s"Status: ${response.statusCode()}")
+      println(s"Headers: ${response.headers()}")
+      println(s"Body: ${response.body()}")
+    }
   }
 
   // ------------------------------------------ //

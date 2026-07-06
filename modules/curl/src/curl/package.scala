@@ -19,9 +19,15 @@ package object curl:
     CurlReadFunc,
     CurlWriteFunc,
     CurlSeekFunc,
-    CurlSeekCallback,
     CurlSocket,
     CurlGlobalFlag,
+    CurlPause,
+    CURL_MAX_READ_SIZE,
+    CURL_MAX_WRITE_SIZE,
+    CURL_MAX_HTTP_HEADER,
+  }
+  export _root_.snhttp.experimental.curl._libcurl.Curl.{
+    CurlSeekCallback,
     CurlReadCallback,
     CurlWriteCallback,
     CurlTrailerCallback,
@@ -30,12 +36,9 @@ package object curl:
     CurlSockOptCallback,
     CurlOpenSocketCallback,
     CurlCloseSocketCallback,
+    CurlSslCtxCallback,
     CurlIoCtlCallback,
     CurlHeaderCallback,
-    CurlPause,
-    CURL_MAX_READ_SIZE,
-    CURL_MAX_WRITE_SIZE,
-    CURL_MAX_HTTP_HEADER,
   }
   export _root_.snhttp.experimental.curl._libcurl.Multi.{
     CurlWaitFd,

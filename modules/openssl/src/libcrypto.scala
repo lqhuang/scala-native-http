@@ -15,6 +15,7 @@ import _root_.snhttp.experimental.openssl._openssl.conf.Functions as ConfFunctio
 import _root_.snhttp.experimental.openssl._openssl.err.Functions as ErrFunctions
 import _root_.snhttp.experimental.openssl._openssl.pkcs12.Functions as PKCS12Functions
 import _root_.snhttp.experimental.openssl._openssl.x509.Functions as X509Functions
+import _root_.snhttp.experimental.openssl._openssl.x509_vfy.Functions as X509VfyFunctions
 import _root_.snhttp.experimental.openssl._openssl.x509v3.Functions as X509v3Functions
 
 export _root_.snhttp.experimental.openssl._openssl.types.Types.*
@@ -33,6 +34,7 @@ private trait Functions
     with ErrFunctions
     with PKCS12Functions
     with X509Functions
+    with X509VfyFunctions
     with X509v3Functions
 
 @link("libcrypto")

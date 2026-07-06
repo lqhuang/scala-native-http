@@ -1315,7 +1315,32 @@ private[curl] object Curl:
 
   // TODO: add func `curl_conv_callback``
 
-  // TODO: add func `curl_ssl_ctx_callback``
+  // known as `curl_ssl_ctx_callback`
+  opaque type CurlSslCtxCallback = CFuncPtr3[
+    /** Curl Easy */
+    Ptr[CurlHandle],
+    /** ssl_ctx */
+    CVoidPtr,
+    /** clientp */
+    CVoidPtr,
+    /** return */
+    CurlErrCode,
+  ]
+  object CurlSslCtxCallback:
+
+    given Tag[CurlSslCtxCallback] =
+      Tag.materializeCFuncPtr3[Ptr[CurlHandle], CVoidPtr, CVoidPtr, CurlErrCode]
+
+    inline def fromScalaFunction(
+        inline func: (Ptr[CurlHandle], CVoidPtr, CVoidPtr) => CurlErrCode,
+    ): CurlSslCtxCallback =
+      CFuncPtr3.fromScalaFunction(func)
+
+    extension (inline func: CurlSslCtxCallback) //
+      inline def asFuncPtr: CFuncPtr3[Ptr[CurlHandle], CVoidPtr, CVoidPtr, CurlErrCode] =
+        func
+
+  end CurlSslCtxCallback
 
   // known as "CURLPROXY_*"
   opaque type CurlProxyType = CLong

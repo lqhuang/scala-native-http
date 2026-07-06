@@ -32,8 +32,10 @@ import scala.scalanative.unsafe.{
   CStruct2,
   CStruct3,
   CStruct4,
-  CStruct5,
+  CStruct6,
+  CStruct7,
   CLong,
+  CString,
   UnsafeRichInt,
   Zone,
 }
@@ -46,11 +48,15 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlException,
 }
 import _root_.snhttp.experimental.curl.curl.{
+  CurlMultiTimerCallback,
+  CurlSocketCallback,
+  CurlSslCtxCallback,
+}
+import _root_.snhttp.experimental.curl.curl.{
   CurlMulti,
   CurlMsg,
   CurlEasy,
-  CurlMultiTimerCallback,
-  CurlSocketCallback,
+  CurlErrCode,
   CurlSocket,
   CurlCSelect,
   CurlPoll,
@@ -60,6 +66,7 @@ import _root_.snhttp.experimental.curl.curl.{
 }
 import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{CurlMultiHandle, CurlHandle}
+import _root_.snhttp.experimental.openssl.libcrypto.{X509, X509_STORE, EVP_PKEY, stack_st_X509}
 import _root_.snhttp.jdk.net.http.internal.{HttpConnection, Utils}
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
@@ -102,6 +109,9 @@ class HttpClientBuilderImpl() extends Builder:
 
   def executor(executor: Executor): Builder =
     requireNonNull(executor)
+    System.out.println(
+      "[Warn] Set executor explicitly has no effect for current implementation of HttpClient, will be ignored.",
+    )
     this._executor = Optional.of(executor)
     this
 
@@ -146,13 +156,6 @@ final class HttpClientImpl(
 
   import HttpClientImpl.*
 
-  private[http] lazy val _sslContext =
-    builder._sslContext.orElse(SSLContext.getDefault())
-  private[http] lazy val _sslParams =
-    builder._sslParams.orElse(_sslContext.getDefaultSSLParameters())
-  private[http] lazy val _executor: Executor =
-    builder._executor.orElse(ExecutionContext.global)
-
   private[http] given zone: Zone = Zone.open()
 
   private[http] val multi = CurlMulti()
@@ -179,6 +182,56 @@ final class HttpClientImpl(
 
   multi.setPtrOption(CurlMultiOption.SOCKETDATA, ctxptr)
   multi.setFuncPtrOption(CurlMultiOption.SOCKETFUNCTION, socketCallback.asFuncPtr)
+
+  // private[http] lazy val _executor: Executor =
+  //   builder._executor.orElse(ExecutionContext.global)
+  private[http] lazy val _sslContext =
+    builder._sslContext.orElse(SSLContext.getDefault())
+  private[http] lazy val _sslParams =
+    builder._sslParams.orElse(_sslContext.getDefaultSSLParameters())
+  private[http] lazy val _sslCtxCustomData: Ptr[SslCtxCustomData] = {
+    if (!_sslContext.isInstanceOf[SSLContextImpl])
+      throw new IllegalArgumentException(
+        s"Unsupported SSLContext implementation: ${_sslContext.getClass().getName()}. " +
+          s"Only snhttp.jdk.net.ssl.SSLContextImpl is supported now.",
+      )
+    val ctxImpl = _sslContext.asInstanceOf[SSLContextImpl]
+
+    // TODO: Add them to SslCtxCustomData and pass them to ssl_ctx_callback
+    // _sslParams.getProtocols()
+    // _sslParams.getCipherSuites()
+    // _sslParams.getSignatureSchemes()
+
+    if ctxImpl.spi.keys.isEmpty
+    then
+      SslCtxCustomData(
+        securityLevel = ctxImpl.spi.defaultSslCtxSecurityLevel,
+        insecure = if ctxImpl.spi.insecure then 1 else 0,
+        clientCerts = null,
+        lengthOfclientCerts = 0,
+        trustStore = ctxImpl.spi.trustStore.orElse(null),
+        sslParams = null,
+      )
+    else {
+      val keys = ctxImpl.spi.keys.get()
+      val certs = alloc[ClientCert](keys.length)
+      for i <- 0 until keys.length do
+        val store = keys(i)
+        (certs + i)._1 = store.cert.asInstanceOf[Ptr[X509]]
+        (certs + i)._2 = store.pkey.asInstanceOf[Ptr[EVP_PKEY]]
+        (certs + i)._3 = store.stackOfCA.asInstanceOf[Ptr[stack_st_X509]]
+
+      SslCtxCustomData(
+        securityLevel = ctxImpl.spi.defaultSslCtxSecurityLevel,
+        insecure = if ctxImpl.spi.insecure then 1 else 0,
+        clientCerts = certs,
+        lengthOfclientCerts = keys.length,
+        trustStore = ctxImpl.spi.trustStore.orElse(null),
+        sslParams = null,
+      )
+    }
+
+  }
 
   /**
    * Main methods of HttpClient
@@ -335,7 +388,8 @@ final class HttpClientImpl(
     builder._version
 
   def executor(): Optional[Executor] =
-    builder._executor
+    // builder._executor
+    Optional.empty()
 
   override def newWebSocketBuilder(): WebSocket.Builder =
     requireNonShutdown()
@@ -481,6 +535,86 @@ private[http] object HttpClientImpl:
     inline def runningPtr: Ptr[Int] = ctx.at3 // low level pointer getter
     inline def timeout: CLong = ctx._4
     inline def timeout_=(value: CLong): Unit = !ctx.at4 = value
+
+  type SslCtxParameters = CStruct7[
+    // min_tls_version
+    CLong,
+    // max_tls_version
+    CLong,
+    // for `SSL_CTX_set_cipher_list` (TLSv1.2 and below)
+    CString,
+    // for `SSL_CTX_set_ciphersuites` (TLSv1.3)
+    CString,
+    // applicationProtocols for `SSL_CTX_set_alpn_protos`
+    CString,
+    // signatureSchemes for `SSL_CTX_set1_sigalgs_list`
+    CString,
+    // namedGroups for `SSL_CTX_set1_groups_list`
+    CString,
+  ]
+
+  type ClientCert =
+    CStruct3[
+      // cert
+      Ptr[X509],
+      // pkey
+      Ptr[EVP_PKEY],
+      // chain
+      Ptr[stack_st_X509],
+    ]
+  object ClientCert:
+    extension (inline crt: ClientCert)
+      inline def cert: Ptr[X509] = crt._1
+      inline def cert_=(value: Ptr[X509]): Unit = !crt.at1 = value
+      inline def pkey: Ptr[EVP_PKEY] = crt._2
+      inline def pkey_=(value: Ptr[EVP_PKEY]): Unit = !crt.at2 = value
+      inline def chain: Ptr[stack_st_X509] = crt._3
+      inline def chain_=(value: Ptr[stack_st_X509]): Unit = !crt.at3 = value
+
+  /**
+   * Collect tls config from Java's SSLContext and SSLParameters, and store them in a custom data
+   * structure to be used in later curl easy handle creation and configuration (ssl_ctx_callback).
+   */
+  type SslCtxCustomData = CStruct6[
+    // security level
+    Int,
+    // insecure or not, 0: insecure, 1: secure
+    Int,
+    // Client certs
+    Ptr[ClientCert],
+    // size of ClientCert array
+    Int,
+    // other certificate store, for `SSL_CTX_set_cert_store`
+    Ptr[X509_STORE],
+    // ssl parameters
+    Ptr[SslCtxParameters],
+  ]
+  object SslCtxCustomData:
+
+    def apply(
+        securityLevel: Int,
+        insecure: Int,
+        clientCerts: Ptr[ClientCert] | Null,
+        lengthOfclientCerts: Int,
+        trustStore: Ptr[X509_STORE] | Null,
+        sslParams: Ptr[SslCtxParameters] | Null,
+    )(using Zone): Ptr[SslCtxCustomData] =
+      val data = alloc[SslCtxCustomData]()
+      data._1 = securityLevel
+      data._2 = insecure
+      data._3 = clientCerts
+      data._4 = lengthOfclientCerts
+      data._5 = trustStore
+      data._6 = sslParams
+      data
+
+    extension (inline data: SslCtxCustomData)
+      inline def securityLevel: Int = data._1
+      inline def insecure: Int = data._2
+      inline def clientCerts: Ptr[ClientCert] = data._3
+      inline def lengthOfclientCerts: Int = data._4
+      inline def trustStore: Ptr[X509_STORE] = data._5
+      inline def sslCtxParams: Ptr[SslCtxParameters] = data._6
 
   final val socketCallback = CurlSocketCallback.fromScalaFunction {
     (easy: Ptr[CurlHandle], socket: CurlSocket, what: CurlPoll, clientp: Ptr[?], socketp: Ptr[?]) =>

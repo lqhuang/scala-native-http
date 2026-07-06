@@ -1332,7 +1332,7 @@ private[openssl] trait Functions extends MacroFunctions:
   def SSL_CTX_set_verify(
       ctx: Ptr[SSL_CTX],
       mode: SSL_VERIFY,
-      callback: SSL_verify_cb,
+      callback: SSL_verify_cb | Null,
   ): Unit =
     extern
 

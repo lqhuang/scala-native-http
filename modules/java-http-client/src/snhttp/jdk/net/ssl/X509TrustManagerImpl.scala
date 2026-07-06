@@ -4,38 +4,38 @@ import java.security.KeyStore
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 
-import scala.scalanative.unsafe.{Ptr, stackalloc, toCString}
-import scala.scalanative.unsafe.Zone
+import scala.scalanative.unsafe.{Ptr, Zone}
+import scala.scalanative.unsafe.{stackalloc, toCString, fromCString}
+import scala.scalanative.libc.stddef.NULL as NullPtr
 
 import com.github.lolgab.scalanativecrypto.OpenSSLProvider
 import com.github.lolgab.scalanativecrypto.crypto.OpenSSLKeyStore
 
-import _root_.snhttp.experimental.openssl.libcrypto
+import _root_.snhttp.experimental.openssl.{libssl, libcrypto}
 import _root_.snhttp.experimental.openssl.libcrypto.{X509_STORE, OsslLibCtxPtr}
+import _root_.snhttp.experimental.openssl.libcrypto.{X509, EVP_PKEY, stack_st_X509}
+import _root_.snhttp.experimental.openssl.libssl.SSL_CTX
 import _root_.snhttp.utils.PointerCleaner
 import _root_.snhttp.jdk.net.internal.PropertyUtils
 
-private[snhttp] object X509TrustManagerNullImpl:
-
-  def fromDefaultPath(): X509TrustManagerNullImpl =
-    Zone.acquire { zone =>
-      var ref: Ptr[X509_STORE] = null
-      val ret = libcrypto.X509_STORE_load_file_ex(
-        ref,
-        toCString(PropertyUtils.trustStoreProp)(using zone),
-        OpenSSLProvider.defaultLibCTX.asInstanceOf[libcrypto.OsslLibCtxPtr],
-        null,
-      )
-      if (ret != 1)
-        throw new RuntimeException(
-          s"failed to load trust store from ${PropertyUtils.trustStoreProp}",
-        )
-      new X509TrustManagerNullImpl(ref)
-    }
-
 private[snhttp] class X509TrustManagerNullImpl(val ref: Ptr[X509_STORE]) extends X509TrustManager:
 
-  PointerCleaner.register(this, ref, ptr => libcrypto.X509_STORE_free(ptr)): Unit
+  /**
+   * TODO:
+   *
+   * Both `SSL_CTX_set_cert_store` and `SSL_CTX_set1_cert_store` will take ownership of the
+   * `X509_STORE` pointer.
+   *
+   * But if we do not used by `SSL_CTX_set_cert_store`, we might need to free the `X509_STORE`
+   * pointer manually.
+   */
+  PointerCleaner.register(
+    this,
+    ref,
+    ptr =>
+      if (ptr != null)
+        libcrypto.X509_STORE_free(ptr),
+  ): Unit
 
   def checkClientTrusted(chain: Array[X509Certificate], authType: String): Unit =
     checkTrusted(chain, authType)
@@ -62,6 +62,24 @@ private[snhttp] class X509TrustManagerNullImpl(val ref: Ptr[X509_STORE]) extends
 
     ???
   }
+
+private[snhttp] object X509TrustManagerNullImpl:
+
+  def fromDefaultPath(): X509TrustManagerNullImpl =
+    Zone.acquire { zone =>
+      var ref: Ptr[X509_STORE] = null
+      val ret = libcrypto.X509_STORE_load_file_ex(
+        ref,
+        toCString(PropertyUtils.trustStoreProp)(using zone),
+        OpenSSLProvider.defaultLibCTX.asInstanceOf[libcrypto.OsslLibCtxPtr],
+        null,
+      )
+      if (ret != 1)
+        throw new RuntimeException(
+          s"failed to load trust store from ${PropertyUtils.trustStoreProp}",
+        )
+      new X509TrustManagerNullImpl(ref)
+    }
 
 end X509TrustManagerNullImpl
 

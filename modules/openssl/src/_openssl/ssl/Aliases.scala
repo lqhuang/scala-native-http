@@ -5,7 +5,10 @@ import scala.scalanative.unsafe.*
 
 import _root_.snhttp.experimental.openssl._common.size_t
 import _root_.snhttp.experimental.openssl._openssl.types.Types.EVP_MD
-import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{stack_st_SCT, stack_st_SSL_CIPHER}
+import _root_.snhttp.experimental.openssl._openssl.safestack.Types.{
+  stack_st_SCT,
+  stack_st_SSL_CIPHER,
+}
 import _root_.snhttp.experimental.openssl._openssl.x509.Types.{X509, X509_STORE_CTX}
 
 import Structs.{ssl_st, SSL, SSL_CIPHER, SSL_CTX, SSL_SESSION, CT_POLICY_EVAL_CTX}
@@ -403,6 +406,9 @@ private[openssl] object Aliases:
     extension (v: SSL_verify_cb)
       inline def value: CFuncPtr2[CInt, Ptr[X509_STORE_CTX], CInt] = v
       inline def toPtr: CVoidPtr = CFuncPtr.toPtr(v)
+
+    inline def fromScalaFunction(inline f: (CInt, Ptr[X509_STORE_CTX]) => CInt): SSL_verify_cb =
+      CFuncPtr2.fromScalaFunction(f)
 
   /**
    * [bindgen] header: /usr/include/openssl/ssl.h
