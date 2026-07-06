@@ -182,26 +182,22 @@ final class URL private (
   /// in HTTP.
   override def equals(obj: Any): Boolean =
     if !obj.isInstanceOf[URL]
-    then false
+    then //
+      false
     else {
       val that = obj.asInstanceOf[URL]
 
-      val ip = InetAddress.getByName(this.getHost())
-      val ip_ = InetAddress.getByName(that.getHost())
-
       this.getProtocol() == that.getProtocol()
-      && ip == ip_
+      && this.getHost() == that.getHost()
       && this.getPort() == that.getPort()
       && this.getFile() == that.getFile()
       && this.getRef() == that.getRef()
     }
 
-  override def hashCode(): Int = {
-    val ip = InetAddress.getByName(this.getHost())
-
+  override def hashCode(): Int =
     Seq(
       this.getProtocol(),
-      ip,
+      this.getHost(),
       this.getPort(),
       this.getFile(),
       this.getRef(),
@@ -211,7 +207,6 @@ final class URL private (
         then acc
         else (acc << 5 | acc >>> 27) + item.hashCode()
       }
-  }
 
   override def toString(): String =
     uri.toString()

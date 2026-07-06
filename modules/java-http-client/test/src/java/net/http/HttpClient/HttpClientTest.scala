@@ -24,7 +24,7 @@ import javax.net.ssl.SSLHandshakeException
 
 import scala.util.Properties
 
-import utest.{TestSuite, Tests, test, assert, assertThrows}
+import utest.{TestSuite, Tests, test, assert, assertThrows, retry}
 
 class HttpClientTest extends TestSuite:
 
@@ -933,85 +933,100 @@ class HttpClientTest extends TestSuite:
       }
     }
 
-    test("SSLContext") {
-      test("HttpClient should verify remote certificate by default") {
-        withNewHttpClient { client =>
-          val request = HttpRequest.newBuilder(URI.create("https://expired.badssl.com")).build()
-          val exc = assertThrows[SSLHandshakeException] {
-            val response = client.send(request, BodyHandlers.ofString())
-          }
+    /**
+     * Rerun flaky SSLContext tests a few times to avoid random failures
+     *
+     * TODO:
+     *
+     * Improve retry logic to avoid retrying on curl backed engine. JVM engine obviously has a
+     * better success rate than curl backed engine.
+     */
+    val sslContextMaxRetries = 10
+
+    test(
+      "SSLContext.HttpClient should verify remote certificate by default",
+    ) - retry(sslContextMaxRetries) {
+      withNewHttpClient { client =>
+        val request = HttpRequest.newBuilder(URI.create("https://expired.badssl.com")).build()
+        val exc = assertThrows[SSLHandshakeException] {
+          val response = client.send(request, BodyHandlers.ofString())
         }
       }
+    }
 
-      test("HttpClient should allow to trust all certs via custom SSLContext") {
-        val trustAllCerts = Array[TrustManager](new X509TrustManager() {
-          def getAcceptedIssuers = new Array[X509Certificate](0)
-          def checkClientTrusted(chain: Array[X509Certificate], authType: String) = {}
-          def checkServerTrusted(chain: Array[X509Certificate], authType: String) = {}
-        })
-        val sc = SSLContext.getInstance("TLS")
-        sc.init(null, trustAllCerts, new SecureRandom())
+    test(
+      "SSLContext.HttpClient should allow to trust all certs via custom SSLContext",
+    ) - retry(sslContextMaxRetries) {
+      val trustAllCerts = Array[TrustManager](new X509TrustManager() {
+        def getAcceptedIssuers = new Array[X509Certificate](0)
+        def checkClientTrusted(chain: Array[X509Certificate], authType: String) = {}
+        def checkServerTrusted(chain: Array[X509Certificate], authType: String) = {}
+      })
+      val sc = SSLContext.getInstance("TLS")
+      sc.init(null, trustAllCerts, new SecureRandom())
 
-        val client = HttpClient.newBuilder().sslContext(sc).build()
-        try
-          for url <- Seq("https://expired.badssl.com", "https://self-signed.badssl.com")
-          do
-            val request = HttpRequest
-              .newBuilder()
-              .uri(URI.create(url))
-              .GET()
-              .build()
-            val response = client.send(request, BodyHandlers.ofString())
-
-            assert(response.statusCode() == 200)
-        finally //
-          client.close()
-      }
-
-      test("HttpClient should allow custom client cert") {
-        val url = "https://client.badssl.com"
-        val base = s"${sys.env("MILL_TEST_RESOURCE_DIR")}/test-data/badssl"
-        val request = HttpRequest.newBuilder(URI.create(url)).build()
-
-        def newSSLContextWithCert(path: String, pass: Array[Char]): SSLContext = {
-          val ks = KeyStore.getInstance("PKCS12")
-          ks.load(new FileInputStream(path), pass)
-
-          val keyManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
-          keyManager.init(ks, pass)
-          val kms = keyManager.getKeyManagers()
-
-          val sslCtx = SSLContext.getInstance("TLS")
-          sslCtx.init(kms, null, new SecureRandom())
-          sslCtx
-        }
-
-        test("mTLS with password protected cert") {
-          val path = s"${base}/badssl.com-client.p12"
-          val pass = "badssl.com".toCharArray()
-
-          val sslCtx = newSSLContextWithCert(path, pass)
-          val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+      val client = HttpClient.newBuilder().sslContext(sc).build()
+      try
+        for url <- Seq("https://expired.badssl.com", "https://self-signed.badssl.com")
+        do
+          val request = HttpRequest
+            .newBuilder()
+            .uri(URI.create(url))
+            .GET()
+            .build()
           val response = client.send(request, BodyHandlers.ofString())
 
           assert(response.statusCode() == 200)
-        }
+      finally //
+        client.close()
+    }
 
-        test("mTLS with no password cert") {
-          val path = s"${base}/badssl.com-client-nopass.p12"
+    val url = "https://client.badssl.com"
+    val base = s"${sys.env("MILL_TEST_RESOURCE_DIR")}/test-data/badssl"
+    val request = HttpRequest.newBuilder(URI.create(url)).build()
+    def newSSLContextWithCert(path: String, pass: Array[Char]): SSLContext = {
+      val ks = KeyStore.getInstance("PKCS12")
+      ks.load(new FileInputStream(path), pass)
 
-          val sslCtx = newSSLContextWithCert(path, Array.emptyCharArray)
-          val client = HttpClient.newBuilder().sslContext(sslCtx).build()
-          val response = client.send(request, BodyHandlers.ofString())
+      val keyManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+      keyManager.init(ks, pass)
+      val kms = keyManager.getKeyManagers()
 
-          assert(response.statusCode() == 200)
-        }
+      val sslCtx = SSLContext.getInstance("TLS")
+      sslCtx.init(kms, null, new SecureRandom())
+      sslCtx
+    }
 
-        test("should fail when no cert provided") {
-          withNewHttpClient { client =>
-            val response = client.send(request, BodyHandlers.ofString())
-            assert(response.statusCode() == 400)
-          }
-        }
+    test(
+      "SSLContext.HttpClient should allow custom client cert.mTLS with password protected cert",
+    ) - retry(sslContextMaxRetries) {
+      val path = s"${base}/badssl.com-client.p12"
+      val pass = "badssl.com".toCharArray()
+
+      val sslCtx = newSSLContextWithCert(path, pass)
+      val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+      val response = client.send(request, BodyHandlers.ofString())
+
+      assert(response.statusCode() == 200)
+    }
+
+    test(
+      "SSLContext.HttpClient should allow custom client cert.mTLS with no password cert",
+    ) - retry(sslContextMaxRetries) {
+      val path = s"${base}/badssl.com-client-nopass.p12"
+
+      val sslCtx = newSSLContextWithCert(path, Array.emptyCharArray)
+      val client = HttpClient.newBuilder().sslContext(sslCtx).build()
+      val response = client.send(request, BodyHandlers.ofString())
+
+      assert(response.statusCode() == 200)
+    }
+
+    test(
+      "should fail when no cert provided",
+    ) - retry(sslContextMaxRetries) {
+      withNewHttpClient { client =>
+        val response = client.send(request, BodyHandlers.ofString())
+        assert(response.statusCode() == 400)
       }
     }

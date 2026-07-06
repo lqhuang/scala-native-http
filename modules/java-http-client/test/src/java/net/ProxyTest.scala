@@ -9,9 +9,10 @@ class ProxyTest extends TestSuite:
 
   def tests = Tests:
 
-    test("NO_PROXY should be of type DIRECT"):
+    test("NO_PROXY should be of type DIRECT") {
       assert(Proxy.NO_PROXY.`type`() == Proxy.Type.DIRECT)
       assert(Proxy.NO_PROXY.address() == null)
+    }
 
     test("create HTTP proxy with valid socket address") {
       val address = InetSocketAddress.createUnresolved("localhost", 8080)
@@ -37,8 +38,9 @@ class ProxyTest extends TestSuite:
       }
     }
 
-    test("toString should return 'DIRECT' for NO_PROXY"):
+    test("toString should return 'DIRECT' for NO_PROXY") {
       assert(Proxy.NO_PROXY.toString() == "DIRECT")
+    }
 
     test("toString should return type @ address for proxied connections") {
       val address = InetSocketAddress.createUnresolved("proxy.example.com", 8080)

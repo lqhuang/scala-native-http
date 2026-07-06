@@ -14,11 +14,13 @@ class ProxySelectorTest extends TestSuite:
     def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = ()
 
   def tests = Tests:
-    test("getDefault should return DIRECT when no system property is set"):
+
+    test("getDefault() should return DIRECT when no system property is set") {
       val defaultSelector = ProxySelector.getDefault()
       val proxies = defaultSelector.select(URI.create("http://example.com"))
       assert(proxies.size() == 1)
       assert(proxies.get(0) == Proxy.NO_PROXY)
+    }
 
     test("setDefault should set the system proxy selector") {
       val originalSelector = ProxySelector.getDefault()
