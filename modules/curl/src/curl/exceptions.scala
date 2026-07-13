@@ -11,7 +11,7 @@ import _root_.snhttp.experimental.curl.libcurl.{
   CurlShareErrCode,
   CurlShareOption,
 }
-import _root_.snhttp.experimental.curl.libcurl.{easyStrError, multiStrError}
+import _root_.snhttp.experimental.curl.libcurl.{easyStrError, multiStrError, shareStrError}
 import _root_.snhttp.experimental.curl.libcurl.CurlErrCode.RichCurlErrCode
 import _root_.snhttp.experimental.curl.libcurl.CurlMultiErrCode.RichCurlMultiErrCode
 
@@ -61,14 +61,14 @@ class CurlMultiException(val code: CurlMultiErrCode, val detail: Boolean = true)
           s"Details: ${fromCString(multiStrError(code))}",
     )
 
-// class CurlShareException(val code: CurlShareErrCode, val detail: Boolean = true)
-//     extends CurlException(
-//       if !detail
-//       then s"CURL share operation failed with error code: ${code} (${code.getname})."
-//       else
-//         s"CURL share operation failed with error code: ${code} (${code.getname}). " ++
-//           s"Details: ${fromCStrin(code))}",
-//     )
+class CurlShareException(val code: CurlShareErrCode, val detail: Boolean = true)
+    extends CurlException(
+      if !detail
+      then s"CURL share operation failed with error code: ${code} (${code.getName})."
+      else
+        s"CURL share operation failed with error code: ${code} (${code.getName}). " ++
+          s"Details: ${fromCString(shareStrError(code))}",
+    )
 
 class CurlOSException(val code: Int)
     extends CurlException(

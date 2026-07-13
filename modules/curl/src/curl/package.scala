@@ -10,7 +10,10 @@ package object curl:
   export _root_.snhttp.experimental.curl._libcurl.Curl.{
     CurlOption,
     CurlErrCode,
+    CurlLockData,
+    CurlLockAccess,
     CurlShareErrCode,
+    CurlShareOption,
     CurlHttpVersion,
     CurlUseSsl,
     CurlFollow,

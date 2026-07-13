@@ -56,6 +56,8 @@ import _root_.snhttp.experimental.curl.curl.{
   CurlMulti,
   CurlMsg,
   CurlEasy,
+  CurlShare,
+  CurlLockData,
   CurlErrCode,
   CurlSocket,
   CurlCSelect,
@@ -159,6 +161,7 @@ final class HttpClientImpl(
   private[http] given zone: Zone = Zone.open()
 
   private[http] val multi = CurlMulti()
+  private[http] val share = CurlShare(CurlLockData.COOKIE, CurlLockData.HSTS)
 
   private[http] val epfd = epoll_create1(epoll.EPOLL_CLOEXEC)
   if (epfd < 0)
@@ -202,18 +205,18 @@ final class HttpClientImpl(
     // _sslParams.getCipherSuites()
     // _sslParams.getSignatureSchemes()
 
-    if ctxImpl.spi.keys.isEmpty
+    if ctxImpl.underlying.keys.isEmpty
     then
       SslCtxCustomData(
-        securityLevel = ctxImpl.spi.defaultSslCtxSecurityLevel,
-        insecure = if ctxImpl.spi.insecure then 1 else 0,
+        securityLevel = ctxImpl.underlying.defaultSslCtxSecurityLevel,
+        insecure = if ctxImpl.underlying.insecure then 1 else 0,
         clientCerts = null,
         lengthOfclientCerts = 0,
-        trustStore = ctxImpl.spi.trustStore.orElse(null),
+        trustStore = ctxImpl.underlying.trustStore.orElse(null),
         sslParams = null,
       )
     else {
-      val keys = ctxImpl.spi.keys.get()
+      val keys = ctxImpl.underlying.keys.get()
       val certs = alloc[ClientCert](keys.length)
       for i <- 0 until keys.length do
         val store = keys(i)
@@ -222,11 +225,11 @@ final class HttpClientImpl(
         (certs + i)._3 = store.stackOfCA.asInstanceOf[Ptr[stack_st_X509]]
 
       SslCtxCustomData(
-        securityLevel = ctxImpl.spi.defaultSslCtxSecurityLevel,
-        insecure = if ctxImpl.spi.insecure then 1 else 0,
+        securityLevel = ctxImpl.underlying.defaultSslCtxSecurityLevel,
+        insecure = if ctxImpl.underlying.insecure then 1 else 0,
         clientCerts = certs,
         lengthOfclientCerts = keys.length,
-        trustStore = ctxImpl.spi.trustStore.orElse(null),
+        trustStore = ctxImpl.underlying.trustStore.orElse(null),
         sslParams = null,
       )
     }
@@ -289,6 +292,7 @@ final class HttpClientImpl(
         if (connections.nonEmpty)
           connections.valuesIterator.foreach(_.close())
         multi.cleanup()
+        share.cleanup()
         unistd.close(epfd): Unit
         _terminated = true
       finally //

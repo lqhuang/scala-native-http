@@ -26,6 +26,7 @@ import snhttp.experimental.curl.libcurl.{
   CurlWriteCallback,
 }
 import snhttp.experimental.curl.libcurl.CurlErrCode.RichCurlErrCode
+import snhttp.experimental.curl.curl.{CurlEasy, CurlLockData, CurlShare}
 
 import utest.{TestSuite, Tests, test, assert}
 
@@ -46,6 +47,20 @@ object LibcurlTest extends TestSuite:
   given Using.Releasable[Ptr[CurlHandle]] = curlPtr => libcurl.easyCleanup(curlPtr)
 
   def tests = Tests:
+
+    test("CurlShare can be attached to an easy handle") {
+      val share = CurlShare(CurlLockData.DNS, CurlLockData.SSL_SESSION)
+      val easy = CurlEasy()
+
+      try {
+        assert(share.ref != null)
+        assert(easy.ref != null)
+        easy.setPtrOption(CurlOption.SHARE, share.ref)
+      } finally {
+        easy.cleanup()
+        share.cleanup()
+      }
+    }
 
     test("Get Curl info after performing a request") {
       for (version <- Seq(stackalloc[CurlHttpVersion](), alloc[CurlHttpVersion]())) do {

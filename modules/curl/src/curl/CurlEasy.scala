@@ -42,7 +42,7 @@ class CurlEasy(val ref: Ptr[CurlHandle]) extends AnyVal derives CanEqual:
     if (err != CurlErrCode.OK)
       throw new CurlSetOptionException(option, value, err)
 
-  inline def setSlistOption(option: CurlOption, value: CurlSlist): Unit =
+  inline def setSlistOption(option: CurlOption, value: CurlSList): Unit =
     val err = libcurl.easySetOpt(ref, option, value.ref)
     if (err != CurlErrCode.OK)
       throw new CurlSetOptionException(option, value.ref, err)

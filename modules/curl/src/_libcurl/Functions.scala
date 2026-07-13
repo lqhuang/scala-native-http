@@ -16,7 +16,7 @@ import snhttp.experimental.curl._libcurl.Curl.{
   CurlSslBackendId,
   CurlSslBackend,
   CurlSslSet,
-  CurlSlist,
+  CurlSList,
   CurlInfo,
   CurlPause,
   CurlSocket,
@@ -123,7 +123,7 @@ trait Functions:
    * list, after appending.
    */
   @name("curl_slist_append")
-  def slistAppend(list: Ptr[CurlSlist], data: CString): Ptr[CurlSlist] = extern
+  def slistAppend(list: Ptr[CurlSList], data: CString): Ptr[CurlSList] = extern
 
   /**
    * NAME curl_slist_free_all()
@@ -133,7 +133,7 @@ trait Functions:
    * free a previously built curl_slist.
    */
   @name("curl_slist_free_all")
-  def slistFreeAll(list: Ptr[CurlSlist]): Unit = extern
+  def slistFreeAll(list: Ptr[CurlSList]): Unit = extern
 
   /**
    * NAME curl_getdate()

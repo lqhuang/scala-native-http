@@ -192,7 +192,7 @@ private[curl] object Curl:
     /**
      * contentheader: list of extra headers for this form
      */
-    Ptr[CurlSlist],
+    Ptr[CurlSList],
     /**
      * more: if one field name has more than one file, this link should link to following files
      */
@@ -229,7 +229,7 @@ private[curl] object Curl:
       CString,
       CLong,
       CString,
-      Ptr[CurlSlist],
+      Ptr[CurlSList],
       CVoidPtr, // Ptr[CurlHttpPost],
       CurlHttpPostFlag,
       CString,
@@ -592,7 +592,7 @@ private[curl] object Curl:
   // known as "curl_trailer_callback"
   opaque type CurlTrailerCallback = CFuncPtr2[
     /** instream */
-    Ptr[CurlSlist],
+    Ptr[CurlSList],
     /** userdata */
     CVoidPtr,
     /** return */
@@ -2261,30 +2261,30 @@ private[curl] object Curl:
 
   // known as "curl_slist"
   /** linked-list structure for the CURLOPT_QUOTE option (and other) */
-  opaque type CurlSlist = CStruct2[
+  opaque type CurlSList = CStruct2[
     /** data */
     CString,
     /** struct curl_slist* next */
     CVoidPtr,
   ]
-  object CurlSlist:
+  object CurlSList:
 
     given Tag[CVoidPtr]  = Tag.materializePtrWildcard
-    given Tag[CurlSlist] = Tag.materializeCStruct2Tag[CString, CVoidPtr]
+    given Tag[CurlSList] = Tag.materializeCStruct2Tag[CString, CVoidPtr]
 
-    def apply(data: CString, next: Ptr[CurlSlist])(using Zone): Ptr[CurlSlist] =
-      val ptr = alloc[CurlSlist](1)
+    def apply(data: CString, next: Ptr[CurlSList])(using Zone): Ptr[CurlSList] =
+      val ptr = alloc[CurlSList](1)
       (!ptr).data = data
       (!ptr).next = next
       ptr
 
-    extension (struct: CurlSlist)
+    extension (struct: CurlSList)
       inline def data: CString                       = struct._1
       inline def data_=(value: CString): Unit        = !struct.at1 = value
-      inline def next: Ptr[CurlSlist]                = struct._2.asInstanceOf[Ptr[CurlSlist]]
-      inline def next_=(value: Ptr[CurlSlist]): Unit = !struct.at2 = value.asInstanceOf[Ptr[Byte]]
+      inline def next: Ptr[CurlSList]                = struct._2.asInstanceOf[Ptr[CurlSList]]
+      inline def next_=(value: Ptr[CurlSList]): Unit = !struct.at2 = value.asInstanceOf[Ptr[Byte]]
 
-  end CurlSlist
+  end CurlSList
 
   /**
    * NAME curl_global_sslset()
@@ -2380,7 +2380,7 @@ private[curl] object Curl:
 
     given Tag[CurlCertInfo] = Tag.materializeCStruct2Tag[Int, Ptr[Byte]]
 
-    def apply(num_of_certs: Int, certinfo: Ptr[Ptr[CurlSlist]])(using Zone): Ptr[CurlCertInfo] =
+    def apply(num_of_certs: Int, certinfo: Ptr[Ptr[CurlSList]])(using Zone): Ptr[CurlCertInfo] =
       val ptr = alloc[CurlCertInfo](1)
       (!ptr).num_of_certs = num_of_certs
       (!ptr).certinfo = certinfo
@@ -2389,8 +2389,8 @@ private[curl] object Curl:
     extension (struct: CurlCertInfo)
       inline def num_of_certs: Int                            = struct._1
       inline def num_of_certs_=(value: Int): Unit             = !struct.at1 = value
-      inline def certinfo: Ptr[Ptr[CurlSlist]]                = struct._2.asInstanceOf[Ptr[Ptr[CurlSlist]]]
-      inline def certinfo_=(value: Ptr[Ptr[CurlSlist]]): Unit = !struct.at2 = value.asInstanceOf[Ptr[Byte]]
+      inline def certinfo: Ptr[Ptr[CurlSList]]                = struct._2.asInstanceOf[Ptr[Ptr[CurlSList]]]
+      inline def certinfo_=(value: Ptr[Ptr[CurlSList]]): Unit = !struct.at2 = value.asInstanceOf[Ptr[Byte]]
 
   end CurlCertInfo
 
@@ -2675,12 +2675,45 @@ private[curl] object Curl:
 
   end CurlGlobalFlag
 
+  // known as "curl_lock_data"
+  opaque type CurlLockData = CInt
+  object CurlLockData extends _BindgenEnumCInt[CurlLockData]:
+
+    given Tag[CurlLockData] = Tag.Int
+
+    private inline def define(inline a: Int): CurlLockData = a
+
+    private final val NONE  = define(0)
+    private final val SHARE = define(1)
+    final val COOKIE        = define(2)
+    final val DNS           = define(3)
+    final val SSL_SESSION   = define(4)
+    final val CONNECT       = define(5)
+    final val PSL           = define(6)
+    final val HSTS          = define(7)
+    private final val LAST  = define(8)
+
+  end CurlLockData
+
+  // known as "curl_lock_access"
+  opaque type CurlLockAccess = CInt
+  object CurlLockAccess extends _BindgenEnumCInt[CurlLockAccess]:
+
+    given Tag[CurlLockAccess] = Tag.Int
+
+    private inline def define(inline a: Int): CurlLockAccess = a
+
+    final val NONE   = define(0) /* unspecified action */
+    final val SHARED = define(1) /* for read perhaps */
+    final val SINGLE = define(2) /* for write perhaps */
+    final val LAST   = define(3) /* never use */
+
+  end CurlLockAccess
+
   // TODO:
   //
-  // 1. add typedef enum `curl_lock_data`
-  // 2. add typedef enum `curl_lock_access`
-  // 3. add func `curl_lock_function`
-  // 4. add func `curl_unlock_function`
+  // 1. add func `curl_lock_function`
+  // 2. add func `curl_unlock_function`
 
   // known as "CURLSHcode" in C header
   opaque type CurlShareErrCode = CInt
@@ -2690,15 +2723,15 @@ private[curl] object Curl:
 
     private inline def define(inline a: Int): CurlShareErrCode = a
 
-    val OK           = define(0)
-    val BAD_OPTION   = define(1)
-    val IN_USE       = define(2)
-    val INVALID      = define(3)
-    val NOMEM        = define(4)
-    val NOT_BUILT_IN = define(5)
-    val LAST         = define(6)
+    final val OK           = define(0) /* all is fine */
+    final val BAD_OPTION   = define(1)
+    final val IN_USE       = define(2)
+    final val INVALID      = define(3)
+    final val NOMEM        = define(4) /* 4 out of memory */
+    final val NOT_BUILT_IN = define(5) /* 5 feature not present in lib */
+    final val LAST         = define(6) /* never use */
 
-    extension (value: CurlShareErrCode)
+    extension (inline value: CurlShareErrCode)
       inline def getName: String =
         value match
           case OK           => "CURLSHE_OK"
@@ -2719,13 +2752,13 @@ private[curl] object Curl:
 
     private inline def define(inline a: Int): CurlShareOption = a
 
-    final val CURLSHOPT_NONE       = define(0)
-    final val CURLSHOPT_SHARE      = define(1)
-    final val CURLSHOPT_UNSHARE    = define(2)
-    final val CURLSHOPT_LOCKFUNC   = define(3)
-    final val CURLSHOPT_UNLOCKFUNC = define(4)
-    final val CURLSHOPT_USERDATA   = define(5)
-    final val CURLSHOPT_LAST       = define(6)
+    final val NONE       = define(0) /* do not use */
+    final val SHARE      = define(1) /* specify a data type to share */
+    final val UNSHARE    = define(2) /* specify which data type to stop sharing */
+    final val LOCKFUNC   = define(3) /* pass in a 'curl_lock_function' pointer */
+    final val UNLOCKFUNC = define(4) /* pass in a 'curl_unlock_function' pointer */
+    final val USERDATA   = define(5) /* pass in a user data pointer used in the lock/unlock callback functions */
+    final val LAST       = define(6) /* never use */
 
     // def getName(value: CurlShareOption): Option[String] =
     //   value match

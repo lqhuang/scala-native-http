@@ -30,12 +30,14 @@ import snhttp.experimental.openssl.libssl.{TLS_VERSION, SSL_OP, SSL_CTX}
 import snhttp.utils.PointerCleaner
 
 private[snhttp] class SSLContextImpl(
-    val spi: SSLContextSpiImpl,
+    spi: SSLContextSpiImpl,
     provider: Provider,
     protocol: String,
 ) extends SSLContext(spi, provider, protocol):
 
   def ref = spi.asInstanceOf[SSLContextSpiImpl].ptr
+
+  def underlying = spi
 
 end SSLContextImpl
 

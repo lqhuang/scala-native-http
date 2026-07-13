@@ -67,7 +67,7 @@ import _root_.snhttp.experimental.curl.curl.{
 import _root_.snhttp.experimental.curl.curl.{
   CurlEasy,
   CurlMsg,
-  CurlSlist,
+  CurlSList,
   CurlFollow,
   CurlRedir,
   CurlUseSsl,
@@ -110,11 +110,11 @@ private[http] final class HttpConnection[T](
   private val closed = AtomicBoolean(false)
 
   /**
-   * When `CurlSlist`(alias `curl_slist`) option is passed to `curl_easy_setopt`, libcurl does not
+   * When `CurlSList`(alias `curl_slist`) option is passed to `curl_easy_setopt`, libcurl does not
    * copy the entire list so you **must** keep it around until you no longer use this _handle_ for a
    * transfer before you call `curl_slist_free_all` on the list.
    */
-  private var slist: Optional[CurlSlist] = Optional.empty()
+  private var slist: Optional[CurlSList] = Optional.empty()
 
   private var respInfo: ResponseInfoImpl = _
   private var respBodySubscriber: BodySubscriber[T] = _
@@ -210,6 +210,7 @@ private[http] final class HttpConnection[T](
           if (!response.isDone())
             ensureResponseFutureCompleted()
           respBodyPublisher.close()
+          close()
         }
       case _ => // data is CVoidPtr
         val errStr = fromCString(err.asInstanceOf[Ptr[Byte]])
@@ -222,12 +223,6 @@ private[http] final class HttpConnection[T](
 
   def close(): Unit =
     if (!closed.compareAndExchange(false, true)) {
-      // if (
-      //   request.bodyPublisher().isPresent()
-      //   && request.bodyPublisher().get().contentLength() != 0
-      // )
-      //   readData.instream.close(): Unit
-
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
       slist.map(_.freeAll()): Unit
@@ -238,11 +233,6 @@ private[http] final class HttpConnection[T](
     if (!closed.compareAndExchange(false, true)) {
       if (!response.isDone())
         response.completeExceptionally(exc): Unit
-      // if (
-      //   request.bodyPublisher().isPresent()
-      //   && request.bodyPublisher().get() != BodyPublishers.noBody()
-      // )
-      //   readData.instream.close(): Unit
 
       client.connections.remove(easy): Unit
       client.multi.removeCurlEasy(easy): Unit
@@ -259,6 +249,7 @@ private[http] final class HttpConnection[T](
    */
   private def init(): Unit = {
     // easy.setCLongOption(CurlOption.VERBOSE, 1.toSize)
+    easy.setPtrOption(CurlOption.SHARE, client.share.ref)
     easy.setCStringOption(CurlOption.USERAGENT, c"sn-java-http-client/0.0.0")
     easy.setCStringOption(CurlOption.URL, toCString(request.uri().toString()))
 
@@ -313,7 +304,7 @@ private[http] final class HttpConnection[T](
     if headers.isEmpty()
     then {
       // reset the `Content-Type` and `Accept` header of curl to empty
-      val _slist = CurlSlist(c"Content-Type:", c"Accept:")
+      val _slist = CurlSList(c"Content-Type:", c"Accept:")
       slist = Optional.of(_slist)
       easy.setSlistOption(CurlOption.HTTPHEADER, _slist)
     } else {
@@ -332,7 +323,7 @@ private[http] final class HttpConnection[T](
       if (!headers.containsKey("Accept"))
         headerStrs = headerStrs :+ c"Accept:"
 
-      val _slist = CurlSlist(headerStrs*)
+      val _slist = CurlSList(headerStrs*)
       slist = Optional.of(_slist)
       easy.setSlistOption(CurlOption.HTTPHEADER, _slist)
     }
