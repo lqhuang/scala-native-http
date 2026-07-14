@@ -4,10 +4,8 @@ import java.io.{IOException, UncheckedIOException}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{Executor, ForkJoinPool}
+import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
-
-import scala.util.control.NonFatal
 
 /**
  * Pull-based Single publisher single subscribers. Also known as SPSC (Single Producer Single
@@ -18,7 +16,7 @@ import scala.util.control.NonFatal
  *
  * TODO:
  *   1. Imperfect implementation, needs more testing and improvements.
- *   2. Failed with concurrent requests / cancellations
+ *   2. Failed with concurrent requests / cancellations.
  */
 private[snhttp] final class PullPublisher[T](
     private[PullPublisher] val iterator: Iterator[T],
@@ -56,23 +54,6 @@ private[snhttp] final class PullPublisher[T](
 
 object PullPublisher:
 
-  /**
-   * Default executor -- ForkJoinPool.commonPool() unless it cannot support parallelism.
-   */
-  private val ASYNC_POOL: Executor =
-    if (ForkJoinPool.getCommonPoolParallelism() > 1)
-      ForkJoinPool.commonPool()
-    else
-      new ThreadPerTaskExecutor()
-
-  /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
-  private[PullPublisher] final class ThreadPerTaskExecutor extends Executor:
-    override def execute(r: Runnable): Unit = {
-      requireNonNull(r)
-      new Thread(r).start()
-    }
-  end ThreadPerTaskExecutor
-
   private[PullPublisher] final class DelegateSubscription[T](
       publisher: PullPublisher[T],
       subscriber: Subscriber[? >: T],
@@ -81,7 +62,7 @@ object PullPublisher:
     private val cancelled = new AtomicBoolean(false)
     private val terminated = new AtomicBoolean(false)
 
-    private val seqExecutor: Executor = ForkJoinPool(1)
+    private val seqExecutor: Executor = ForkJoinPool.commonPool()
     private val iterator: Iterator[T] = publisher.iterator
 
     @volatile

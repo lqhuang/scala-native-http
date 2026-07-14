@@ -8,7 +8,7 @@ import java.nio.file.{Files, Path}
 import java.nio.file.StandardOpenOption
 import java.util.{ArrayList, Optional}
 import java.util.List as JList
-import java.util.concurrent.ExecutionException
+import java.util.concurrent.{CompletableFuture, CountDownLatch, ExecutionException, TimeUnit}
 import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.function.{Consumer, Function}
 
@@ -807,6 +807,40 @@ class BodySubscribersTest extends TestSuite:
       inputStream.readAllBytes() // drain
       assert(inputStream.read() == -1)
       inputStream.close()
+    }
+
+    test("ofInputStream bulk read should wait for delayed data") {
+      val subscriber = BodySubscribers.ofInputStream()
+      subscriber.onSubscribe(MockSubscription())
+      val inputStream = subscriber.getBody().toCompletableFuture().get()
+      val readerStarted = new CountDownLatch(1)
+      val readResult = new CompletableFuture[(Int, String)]()
+      val reader = new Thread(() => {
+        readerStarted.countDown()
+        try {
+          val bytes = new Array[Byte](32)
+          val count = inputStream.read(bytes, 0, bytes.length)
+          readResult.complete((count, new String(bytes, 0, count, StandardCharsets.UTF_8))): Unit
+        } catch {
+          case exc: Throwable => readResult.completeExceptionally(exc): Unit
+        }
+      })
+      reader.setDaemon(true)
+
+      reader.start()
+      assert(readerStarted.await(5L, TimeUnit.SECONDS))
+      Thread.sleep(50L)
+      assert(!readResult.isDone())
+
+      subscriber.onNext(JList.of(ByteBuffer.wrap("delayed data".getBytes(StandardCharsets.UTF_8))))
+      subscriber.onComplete()
+
+      val (count, body) = readResult.get(5L, TimeUnit.SECONDS)
+      reader.join(1000L)
+      inputStream.close()
+      assert(count == "delayed data".length)
+      assert(body == "delayed data")
+      assert(!reader.isAlive())
     }
 
     // ============================== //

@@ -2,7 +2,7 @@ package snhttp.experimental.curl
 package _libcurl
 
 import scala.scalanative.unsafe.{Ptr, CString, CVoidPtr, CLong}
-import scala.scalanative.unsafe.{extern, name, define}
+import scala.scalanative.unsafe.{blocking, extern, name, define}
 import scala.scalanative.unsigned.UInt
 import scala.scalanative.posix.time.time_t
 import scala.scalanative.posix.stddef.size_t
@@ -390,6 +390,7 @@ trait Functions:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_wait")
+  @blocking
   def multiWait(
       handle: Ptr[CurlMultiHandle],
       extraFds: Ptr[CurlWaitFd],
@@ -406,6 +407,7 @@ trait Functions:
    * Returns: CURLMcode type, general multi error code.
    */
   @name("curl_multi_poll")
+  @blocking
   def multiPoll(
       handle: Ptr[CurlMultiHandle],
       extraFds: Ptr[CurlWaitFd],

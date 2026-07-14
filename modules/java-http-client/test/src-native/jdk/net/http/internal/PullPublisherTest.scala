@@ -39,6 +39,25 @@ class PullPublisherTest extends TestSuite:
       assert(subscriber.errors == 0)
     }
 
+    test("subscriptions reuse the shared worker pool") {
+      def consumeOne(): Unit = {
+        val publisher = PullPublisher(Iterator.single(1))
+        val subscriber = MockSubscriber[Int]()
+        publisher.subscribe(subscriber)
+        subscriber.sub.request(1)
+        subscriber.awaitComplete()
+        assert(subscriber.received.sameElements(Seq(1)))
+      }
+
+      consumeOne() // initialize the shared executor before measuring
+      val initialThreadCount = Thread.activeCount()
+
+      (1 to 40).foreach(_ => consumeOne())
+
+      val threadGrowth = Thread.activeCount() - initialThreadCount
+      assert(threadGrowth < 8)
+    }
+
     test("publishes staged demand in order and completes once exhausted") {
       val items = Seq(1, 2, 3, 4, 5)
       val publisher = PullPublisher(items.iterator)
