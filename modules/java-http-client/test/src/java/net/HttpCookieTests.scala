@@ -63,10 +63,10 @@ class HttpCookieTests extends TestSuite:
     }
 
     test("leading spaces before Set-Cookie prefix are rejected") {
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         HttpCookie.parse("       Set-Cookie: e=5"): Unit
       }
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         HttpCookie.parse(" Set-Cookie"): Unit
       }
     }
@@ -310,10 +310,10 @@ class HttpCookieTests extends TestSuite:
     }
 
     test("parse with whitespace-only header throws IllegalArgumentException") {
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         HttpCookie.parse(" "): Unit
       }
-      assertThrows[IllegalArgumentException] {
+      val _ = assertThrows[IllegalArgumentException] {
         HttpCookie.parse("   "): Unit
       }
     }

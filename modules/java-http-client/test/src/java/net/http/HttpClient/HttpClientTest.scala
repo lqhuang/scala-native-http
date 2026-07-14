@@ -28,17 +28,14 @@ import utest.{TestSuite, Tests, test, assert, assertThrows, retry}
 
 class HttpClientTest extends TestSuite:
 
+  import ClientUtils.withNewHttpClient
+
   val isNative = Properties.propOrEmpty("java.vm.name") == "Scala Native"
 
   inline def httpbinEndpoint(path: String, secure: Boolean = true): URI =
     if secure
     then URI.create(s"https://httpbingo.org${path}")
     else URI.create(s"http://httpbingo.org${path}")
-
-  inline def withNewHttpClient[T](func: HttpClient => T): T =
-    val client = HttpClient.newHttpClient()
-    try func(client)
-    finally client.close()
 
   def postEchoJson(
       client: HttpClient,
@@ -146,6 +143,27 @@ class HttpClientTest extends TestSuite:
             val _ = client.sendAsync(request, null, pushPromiseHandler)
         }
       }
+
+      test("sendAsync should return before a request completes") {
+        ServerUtils.usingEchoServer { port =>
+          withNewHttpClient { client =>
+            val request = HttpRequest
+              .newBuilder()
+              .uri(URI.create(s"http://localhost:${port}/never"))
+              .timeout(Duration.ofSeconds(5L))
+              .GET()
+              .build()
+
+            val response = client.sendAsync(request, BodyHandlers.ofString())
+            assert(!response.isDone())
+
+            client.shutdownNow()
+            assert(client.awaitTermination(Duration.ofSeconds(5L)))
+            assert(response.isDone())
+          }
+        }
+      }
+
     }
 
     test("HttpClient should raise ConnectException") {

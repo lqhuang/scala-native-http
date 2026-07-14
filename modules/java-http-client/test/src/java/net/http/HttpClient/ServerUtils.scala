@@ -1,0 +1,100 @@
+package snhttp.test.java.net.http
+
+import java.io._
+import java.util.zip.{GZIPInputStream, InflaterInputStream}
+
+import scala.annotation.tailrec
+import scala.collection.mutable.StringBuilder
+import scala.concurrent.duration.DurationInt
+
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import com.comcast.ip4s._
+import org.http4s.HttpRoutes
+import org.http4s.dsl.io._
+import org.http4s.ember.server.EmberServerBuilder
+import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.noop.NoOpFactory
+
+object ServerUtils {
+  def usingEchoServer(f: Int => Unit): Unit = {
+    val server = new EchoServer
+    try f(server.getPort())
+    finally server.stop()
+  }
+
+  private class EchoServer {
+    private given LoggerFactory[IO] = NoOpFactory[IO]
+
+    private val ember = EmberServerBuilder
+      .default[IO]
+      .withHost(ipv4"127.0.0.1")
+      .withPort(port"0")
+      .withShutdownTimeout(1.second)
+      .withHttpApp(echoRoutes.orNotFound)
+      .build
+      .allocated
+      .unsafeRunSync()
+    private val server = ember._1
+    private val release = ember._2
+
+    def getPort(): Int = server.address.port.value
+
+    def stop(): Unit = release.unsafeRunSync()
+  }
+
+  private val echoRoutes = HttpRoutes.of[IO] {
+    case GET -> Root / "never" =>
+      IO.never
+
+    case req @ POST -> Root / "echo" =>
+      val c: Option["gzip" | "deflate"] =
+        req.headers.headers
+          .find(_.name.toString.equalsIgnoreCase("content-encoding"))
+          .map(_.value)
+          .collect {
+            case "gzip"    => "gzip"
+            case "deflate" => "deflate"
+          }
+
+      req.body.compile.to(Array).flatMap { compressed =>
+        IO(new Plumper(c).decompress(new ByteArrayInputStream(compressed))).flatMap(Ok(_))
+      }
+  }
+
+  /**
+   * Stream uncompresser
+   * @param c
+   *   Compression mode
+   */
+  private class Plumper(c: Option["gzip" | "deflate"]) {
+
+    private def wrap(is: InputStream): InputStream =
+      c match {
+        case None            => is
+        case Some("gzip")    => new GZIPInputStream(is)
+        case Some("deflate") => new InflaterInputStream(is)
+      }
+
+    def decompress(compressed: InputStream): String = {
+      val gis = wrap(compressed)
+      val br = new BufferedReader(new InputStreamReader(gis, "UTF-8"))
+      val sb = new StringBuilder()
+
+      @tailrec
+      def read(): Unit = {
+        val line = br.readLine
+        if (line != null) {
+          sb.append(line)
+          read()
+        }
+      }
+
+      read()
+      br.close()
+      gis.close()
+      compressed.close()
+      sb.toString()
+    }
+  }
+}

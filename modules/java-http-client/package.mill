@@ -3,6 +3,13 @@ package build.modules.`java-http-client`
 import mill.api.Task
 import mill.scalalib.{DepSyntax, ScalaModule}
 
+private val sharedTestOnlyDeps = Seq(
+  mvn"com.lihaoyi::ujson::4.4.3",
+  mvn"com.lihaoyi::os-lib::0.11.8",
+  mvn"org.http4s::http4s-dsl::1.0.0-M47",
+  mvn"org.http4s::http4s-ember-server::1.0.0-M47",
+)
+
 object `package` extends build.CommonModule:
   upper =>
 
@@ -17,15 +24,12 @@ object `package` extends build.CommonModule:
   def mvnDeps = Seq(
     mvn"io.github.cquiroz::scala-java-locales::1.5.4",
     mvn"io.github.cquiroz::scala-java-time::2.6.0",
-    mvn"com.github.lolgab::scala-native-crypto::0.0.0-65-ee25bf-DIRTYd35a9930",
+    mvn"com.github.lolgab::scala-native-crypto::0.0.0-69-78a6dc-DIRTYb5e5f947",
   )
 
   object test extends ScalaNativeTests with build.UTestModule:
 
-    def mvnDeps = Seq(
-      mvn"com.lihaoyi::ujson::4.4.3",
-      mvn"com.lihaoyi::os-lib::0.11.8",
-    )
+    def mvnDeps = sharedTestOnlyDeps
 
     def sources = Task.Sources(
       moduleDir / "src", // modules/java-http-client/test/src
@@ -43,9 +47,7 @@ object `package` extends build.CommonModule:
 
     object test extends ScalaTests with build.UTestModule:
 
-      def mvnDeps = Seq(
-        mvn"com.lihaoyi::ujson::4.4.3",
-        mvn"com.lihaoyi::os-lib::0.11.8",
+      def mvnDeps = sharedTestOnlyDeps ++ Seq(
         // BC kits are Java only deps
         mvn"org.bouncycastle:bcutil-jdk18on:1.83",
         mvn"org.bouncycastle:bcpkix-jdk18on:1.83",
