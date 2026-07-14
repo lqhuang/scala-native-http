@@ -372,8 +372,9 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
   require(capacity > 0, "capacity must be positive")
 
   private var subscription: Subscription = _
-  private var error: Throwable = _
   private val subscribed = new AtomicBoolean(false)
+  @volatile
+  private var error: Throwable = _
 
   private val queue = new ArrayBlockingQueue[ByteBuffer](roundToPowerOfTwo(capacity))
   private val closed = new AtomicBoolean(false)
@@ -418,8 +419,8 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
   override def onComplete(): Unit = {
     if (subscription != null)
       subscription = null
-    queue.offer(lastBuffer)
-    ()
+
+    queue.put(lastBuffer): Unit
   }
 
   override def onError(throwable: Throwable): Unit = {
@@ -429,8 +430,7 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
     requireNonNull(throwable)
     error = throwable
 
-    queue.offer(lastBuffer)
-    ()
+    queue.put(lastBuffer): Unit
   }
 
   override def getBody(): CompletionStage[InputStream] =
@@ -441,9 +441,9 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
    */
 
   override def available(): Int =
-    if error != null then //
+    if (error != null) //
       throw new IOException("Error occurred in InputStreamBodySubscriber", error)
-    else if closed.get() then //
+    else if (closed.get()) //
       0
     else //
       queue.stream().mapToInt(_.remaining()).sum()
@@ -462,16 +462,9 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
     else { //
       currBufferLock.lock()
       try
-        if (currBuffer eq lastBuffer) //
-          -1
-        else {
-          if (currBuffer == null || !currBuffer.hasRemaining())
-            currBuffer = queue.take()
-
-          if currBuffer eq lastBuffer
-          then -1
-          else currBuffer.get().toInt
-        }
+        if waitCurrentBuffer()
+        then currBuffer.get().toInt & 0xff
+        else -1 // is lastBuffer
       finally //
         currBufferLock.unlock()
     }
@@ -483,32 +476,30 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
 
     if (length == 0)
       0
-    else if (error != null)
-      throw new IOException("Error occurred in InputStreamBodySubscriber", error)
     else if (closed.get())
       throw new IOException("InputStream is closed")
     else {
       currBufferLock.lock()
-      try {
-        var totalRead = 0
+      try
+        if !waitCurrentBuffer()
+        then -1
+        else {
+          var totalRead = 0
+          var continue = true
 
-        while totalRead < length && !queue.isEmpty()
-        do {
-          if (currBuffer == null || !currBuffer.hasRemaining())
-            currBuffer = queue.take()
+          while totalRead < length && continue
+          do {
+            val readBytes = currBuffer.remaining().min(length - totalRead)
+            currBuffer.get(bytes, offset + totalRead, readBytes)
+            totalRead += readBytes
 
-          val readBytes = currBuffer.remaining().min(length - totalRead)
-          currBuffer.get(bytes, offset + totalRead, readBytes)
-          totalRead += readBytes
+            if (totalRead < length)
+              continue = ensureCurrentBuffer()
+          }
+
+          totalRead
         }
-
-        val readed =
-          if (currBuffer eq lastBuffer) && totalRead == 0
-          then -1
-          else totalRead
-
-        readed
-      } //
+      //
       finally //
         currBufferLock.unlock()
     }
@@ -520,13 +511,46 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
         subscription.cancel()
 
       queue.clear()
+      queue.offer(lastBuffer): Unit
 
-      if (error != null) throw new IOException("Error occurred in InputStreamBodySubscriber", error)
+      if (error != null)
+        throw new IOException("Error occurred in InputStreamBodySubscriber", error)
     }
 
   /*
    * Helpers
    */
+
+  /**
+   * Ensures that the current buffer is set to a valid buffer with remaining data. Returns true if a
+   * valid buffer is available, false if the end of the stream has been reached (lastBuffer).
+   */
+  private inline def ensureCurrentBuffer(): Boolean = {
+    if (!currBuffer.hasRemaining() && (currBuffer ne lastBuffer)) // lastBuffer also is empty
+      currBuffer = queue.poll()
+
+    if (currBuffer == null) //
+      false
+    else if (currBuffer eq lastBuffer) //
+      false
+    else //
+      true
+  }
+
+  private inline def waitCurrentBuffer(): Boolean =
+    if (
+      currBuffer == null
+      || (!currBuffer.hasRemaining() && (currBuffer ne lastBuffer)) // lastBuffer also is empty
+    )
+      val next = queue.take()
+      currBuffer = next
+    if currBuffer eq lastBuffer
+    then false
+    else true
+
+  private inline def throwIfError(): Unit =
+    if (error != null)
+      throw new IOException("Error occurred in InputStreamBodySubscriber", error)
 
   private inline def roundToPowerOfTwo(cap: Int): Int = {
     var n = cap - 1

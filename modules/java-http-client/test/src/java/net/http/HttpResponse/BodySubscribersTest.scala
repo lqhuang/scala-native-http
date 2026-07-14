@@ -813,6 +813,7 @@ class BodySubscribersTest extends TestSuite:
       val subscriber = BodySubscribers.ofInputStream()
       subscriber.onSubscribe(MockSubscription())
       val inputStream = subscriber.getBody().toCompletableFuture().get()
+
       val readerStarted = new CountDownLatch(1)
       val readResult = new CompletableFuture[(Int, String)]()
       val reader = new Thread(() => {
@@ -826,8 +827,8 @@ class BodySubscribersTest extends TestSuite:
         }
       })
       reader.setDaemon(true)
-
       reader.start()
+
       assert(readerStarted.await(5L, TimeUnit.SECONDS))
       Thread.sleep(50L)
       assert(!readResult.isDone())

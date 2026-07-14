@@ -1,21 +1,23 @@
-# java.net Cookie Infrastructure
+# Http Cookie
 
-This directory contains a Scala Native implementation of the JDK `java.net` cookie APIs.
+Design Document for Java Http Client Cookie support in Scala Native.
+
+written by [Rishi Jat (@rishi-jat)](https://github.com/rishi-jat)
 
 ## Scope
 
 The following types are implemented:
 
-- `CookieHandler` — abstract base for cookie management
-- `CookieManager` — concrete `CookieHandler` implementation
-- `CookiePolicy` — acceptance policies (`ACCEPT_ALL`, `ACCEPT_NONE`, `ACCEPT_ORIGINAL_SERVER`)
-- `CookieStore` — storage interface
-- `InMemoryCookieStore` — thread-safe internal in-memory store (`snhttp.jdk.net`)
-- `HttpCookie` — cookie representation and parsing
+- `CookieHandler` - abstract base for cookie management
+- `CookieManager` - concrete `CookieHandler` implementation
+- `CookiePolicy` - acceptance policies (`ACCEPT_ALL`, `ACCEPT_NONE`, `ACCEPT_ORIGINAL_SERVER`)
+- `CookieStore` - storage interface
+- `InMemoryCookieStore` - thread-safe internal in-memory store (`snhttp.jdk.net`)
+- `HttpCookie` - cookie representation and parsing
 
 ## Integration
 
-`HttpClient.Builder.cookieHandler(CookieHandler)` accepts any `CookieHandler`.  
+`HttpClient.Builder.cookieHandler(CookieHandler)` accepts any `CookieHandler`.
 `CookieManager` handles request/response cookie header processing.
 
 ## Semantics
@@ -32,7 +34,3 @@ The following types are implemented:
 - Cookie jar serialization
 - Public suffix list enforcement
 - `HttpURLConnection` integration (separate module concern)
-
-## Testing
-
-Tests are located in `modules/java-http-client/test/src/java/net/` and use utest.
