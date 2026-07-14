@@ -181,12 +181,9 @@ private[http] final class HttpConnection[T](
         if errCode != CurlErrCode.OK
         then {
           val exc = excFromErrCode(errCode)
-          respBodyPublisher.closeExceptionally(exc)
           closeExceptionally(exc)
         } //
         else {
-          if (!respBodyReceived.get())
-            ensureResponseInitialized()
           respBodyPublisher.close()
           close()
         }
@@ -195,7 +192,6 @@ private[http] final class HttpConnection[T](
         val exc = new CurlException(
           s"CURL message indicates error: code ${code}, data (recast to String) is ${errStr}",
         )
-        respBodyPublisher.closeExceptionally(exc)
         closeExceptionally(exc)
   }
 
@@ -219,10 +215,6 @@ private[http] final class HttpConnection[T](
     respBodyPublisher.closeExceptionally(exc)
     response.completeExceptionally(exc): Unit
     close()
-
-  /*
-   * Private methods
-   */
 
   /**
    * Setup options for this connection based on the `request` and `client` config.
@@ -259,7 +251,6 @@ private[http] final class HttpConnection[T](
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
       case Redirect.NORMAL =>
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
-
     /*
      * When this option is used in combination with telling libcurl to follow redirects with
      * `CURLOPT_FOLLOWLOCATION`, the data might need to be rewound and sent again. The

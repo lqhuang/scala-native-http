@@ -111,7 +111,7 @@ class HttpClientTest extends TestSuite:
       }
     }
 
-    test("HttpClient sendAsync()") {
+    test("HttpClient sendAsync") {
       test("should reject null parameters") {
         withNewHttpClient { client =>
           val request = HttpRequest.newBuilder(URI.create("http://example.com/")).build()
@@ -144,7 +144,7 @@ class HttpClientTest extends TestSuite:
         }
       }
 
-      test("sendAsync should return before a request completes") {
+      test("should return before a request completes") {
         ServerUtils.usingEchoServer { port =>
           withNewHttpClient { client =>
             val request = HttpRequest
@@ -155,6 +155,7 @@ class HttpClientTest extends TestSuite:
               .build()
 
             val response = client.sendAsync(request, BodyHandlers.ofString())
+            println(response.whenComplete((r, t) => println(s"Response completed: $r, $t")))
             assert(!response.isDone())
 
             client.shutdownNow()
