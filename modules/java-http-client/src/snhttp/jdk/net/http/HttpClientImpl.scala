@@ -2,74 +2,68 @@ package snhttp.jdk.net.http
 
 import java.io.IOException
 import java.net.{Authenticator, CookieHandler, InetAddress, ProxySelector}
-import java.net.{ConnectException, UnknownHostException}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket}
 import java.net.http.HttpClient.{Builder, Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, PushPromiseHandler}
-import java.net.http.HttpTimeoutException
-import java.nio.channels.UnresolvedAddressException
 import java.time.Duration
 import java.util.Optional
 import java.util.Objects.requireNonNull
-import java.util.concurrent.{CompletableFuture, Executor}
+import java.util.concurrent.{
+  CompletableFuture,
+  ConcurrentLinkedQueue,
+  CountDownLatch,
+  Executor,
+  ForkJoinPool,
+  TimeUnit,
+}
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.{SSLContext, SSLParameters}
-import javax.net.ssl.SSLException
 
 import scala.collection.mutable.HashMap
-import scala.concurrent.ExecutionContext
-import scala.scalanative.linux.epoll
+import scala.scalanative.linux.{epoll, eventfd}
 import scala.scalanative.linux.epoll.{epoll_create1, epoll_ctl, epoll_wait}
 import scala.scalanative.libc.stddef.NULL as NullPtr
 import scala.scalanative.posix.{unistd, errno}
-import scala.scalanative.posix.timer.timer_create
 import scala.scalanative.unsafe.{
-  Ptr,
-  Tag,
-  CVoidPtr,
+  CLong,
+  CString,
   CStruct2,
   CStruct3,
   CStruct4,
   CStruct6,
   CStruct7,
-  CLong,
-  CString,
+  CVoidPtr,
+  Ptr,
+  sizeof,
+  Tag,
   UnsafeRichInt,
   Zone,
 }
 import scala.scalanative.unsafe.{stackalloc, alloc}
 import scala.scalanative.unsigned.UnsignedRichInt
+import scala.util.control.NonFatal
 
-import _root_.snhttp.experimental.curl.curl.{
-  CurlErrCodeException,
-  CurlMultiException,
-  CurlException,
-}
-import _root_.snhttp.experimental.curl.curl.{
-  CurlMultiTimerCallback,
-  CurlSocketCallback,
-  CurlSslCtxCallback,
-}
 import _root_.snhttp.experimental.curl.curl.{
   CurlMulti,
   CurlMsg,
   CurlEasy,
   CurlShare,
   CurlLockData,
-  CurlErrCode,
   CurlSocket,
   CurlCSelect,
   CurlPoll,
   CurlMultiErrCode,
-  CurlWaitFd,
+  CurlSocketCallback,
+  CurlMultiTimerCallback,
   CurlMultiOption,
 }
+import _root_.snhttp.experimental.curl.curl.CurlException
 import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.{CurlMultiHandle, CurlHandle}
 import _root_.snhttp.experimental.openssl.libcrypto.{X509, X509_STORE, EVP_PKEY, stack_st_X509}
-import _root_.snhttp.jdk.net.http.internal.{HttpConnection, Utils}
+import _root_.snhttp.jdk.net.http.internal.{HttpConnection, SequentialScheduler, Utils}
 import _root_.snhttp.jdk.net.ssl.SSLContextImpl
 import _root_.snhttp.utils.PointerCleaner
 
@@ -111,9 +105,6 @@ class HttpClientBuilderImpl() extends Builder:
 
   def executor(executor: Executor): Builder =
     requireNonNull(executor)
-    System.out.println(
-      "[Warn] Set executor explicitly has no effect for current implementation of HttpClient, will be ignored.",
-    )
     this._executor = Optional.of(executor)
     this
 
@@ -175,10 +166,17 @@ final class HttpClientImpl(
 
   private[http] val connections = HashMap.empty[CurlEasy, HttpConnection[?]]
 
-  private val _shutdownCalled = new AtomicBoolean(false)
+  private val _mainLoopScheduling = new AtomicBoolean(false)
+  private val _cleanupScheduled = new AtomicBoolean(false)
+
+  @volatile
+  private var _shutdownCalled = false
+  @volatile
+  private var _shutdownNowCalled = false
   @volatile
   private var _terminated = false
-  private val _lock = new ReentrantLock()
+  private val _shutdownLock = new ReentrantLock()
+  private val _terminatedLatch = new CountDownLatch(1)
 
   multi.setPtrOption(CurlMultiOption.TIMERDATA, ctxptr)
   multi.setFuncPtrOption(CurlMultiOption.TIMERFUNCTION, timerCallback.asFuncPtr)
@@ -186,8 +184,9 @@ final class HttpClientImpl(
   multi.setPtrOption(CurlMultiOption.SOCKETDATA, ctxptr)
   multi.setFuncPtrOption(CurlMultiOption.SOCKETFUNCTION, socketCallback.asFuncPtr)
 
-  // private[http] lazy val _executor: Executor =
-  //   builder._executor.orElse(ExecutionContext.global)
+  private[http] val _executor = builder._executor.orElse(ForkJoinPool.commonPool())
+  private val _scheduler = SequentialScheduler(_executor, maxTasksPerTurn = 4)
+
   private[http] lazy val _sslContext =
     builder._sslContext.orElse(SSLContext.getDefault())
   private[http] lazy val _sslParams =
@@ -273,30 +272,22 @@ final class HttpClientImpl(
     if (pushPromiseHandler != null)
       throw new NotImplementedError("`PushPromiseHandler` feature is not implemented yet.")
 
-    if (!_shutdownCalled.get())
-      val conn = HttpConnection(request, responseBodyHandler, this)
-      submitConnReq(conn)
-      conn.response
+    val response = new CompletableFuture[HttpResponse[T]]()
+
+    if !_shutdownCalled
+    then
+      val conn = new HttpConnection[T](request, response, responseBodyHandler, this)
+      signalStart()
     else
-      CompletableFuture.failedFuture(
-        new IOException(
-          "HttpClient has been shutdown, no new request will be accepted.",
-        ),
+      response.completeExceptionally(
+        new IOException("HttpClient has been shutdown, no new request will be accepted."),
       )
+
+    response
   }
 
   override def shutdown(): Unit =
-    if (!_shutdownCalled.compareAndExchange(false, true))
-      _lock.lock()
-      try
-        if (connections.nonEmpty)
-          connections.valuesIterator.foreach(_.close())
-        multi.cleanup()
-        share.cleanup()
-        unistd.close(epfd): Unit
-        _terminated = true
-      finally //
-        _lock.unlock()
+    requestShutdown(immediate = false)
 
   /**
    * Note from JDK docs:
@@ -311,16 +302,10 @@ final class HttpClientImpl(
   override def awaitTermination(duration: Duration): Boolean = {
     requireNonNull(duration, "duration cannot be null")
 
-    if (duration.isNegative() || duration.isZero())
-      return false
-
-    CompletableFuture[Boolean]
-      .newIncompleteFuture()
-      .completeAsync { () =>
-        Thread.sleep(duration.toMillis())
-        isTerminated()
-      }
-      .join()
+    if (duration.isNegative() || duration.isZero()) //
+      isTerminated()
+    else
+      _terminatedLatch.await(duration.toNanos(), TimeUnit.NANOSECONDS)
   }
 
   /**
@@ -330,24 +315,23 @@ final class HttpClientImpl(
    * first.
    */
   override def isTerminated(): Boolean =
-    _shutdownCalled.get() && _terminated
+    _shutdownCalled && _terminated
 
   override def shutdownNow(): Unit =
-    shutdown()
+    requestShutdown(immediate = true)
 
   override def close(): Unit = {
     var interrupted = false
+    shutdown()
 
     while !isTerminated()
-    do {
-      shutdown()
-      try
-        awaitTermination(Duration.ofMillis(3L)): Unit
+    do
+      try _terminatedLatch.await()
       catch {
-        case e: InterruptedException =>
+        case _: InterruptedException =>
           interrupted = true
+          shutdownNow()
       }
-    }
 
     if (interrupted)
       Thread.currentThread().interrupt()
@@ -392,8 +376,7 @@ final class HttpClientImpl(
     builder._version
 
   def executor(): Optional[Executor] =
-    // builder._executor
-    Optional.empty()
+    builder._executor
 
   override def newWebSocketBuilder(): WebSocket.Builder =
     requireNonShutdown()
@@ -403,13 +386,9 @@ final class HttpClientImpl(
    * Non-JDK public methods
    */
 
-  private[http] def isStillRunning: Boolean =
-    ctxptr.running > 0
-
-  private[http] def tryStart(): Unit =
-    if !isStillRunning
-    then mainLoop()
-    else ()
+  private[http] def signalStart(): Unit =
+    if (!_shutdownNowCalled && !_mainLoopScheduling.compareAndExchange(false, true))
+      _scheduler.execute(() => runMainLoop())
 
   private[http] def collectInfo(): Unit = {
     val msgCount = stackalloc[Int]()
@@ -434,50 +413,62 @@ final class HttpClientImpl(
     do ()
   }
 
+  private[http] inline def unregisterConnection(conn: HttpConnection[?]): Unit =
+    connections.remove(conn.easy): Unit
+    multi.removeCurlEasy(conn.easy): Unit
+
+  private[http] inline def registerConnection(conn: HttpConnection[?]): Unit =
+    connections.put(conn.easy, conn): Unit
+    multi.addCurlEasy(conn.easy): Unit
+
   /*
    * Private methods
    */
 
   private transparent inline def requireNonShutdown(): Unit =
-    if (_shutdownCalled.get())
+    if (_shutdownCalled)
       throw new IOException(
         "HttpClient has been shutdown, no new request will be accepted.",
       )
-
-  private inline def submitConnReq(conn: HttpConnection[?]): Unit =
-    if (!isTerminated())
-      connections.put(conn.easy, conn): Unit
-      multi.addCurlEasy(conn.easy): Unit
-      tryStart()
 
   private transparent inline def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
     Math.clamp(curlSocketActionTimeout.toInt, -1, Int.MaxValue)
 
   private def mainLoop(): Unit = {
-    var err = CurlMultiErrCode.OK
+    if (_shutdownNowCalled)
+      return
+
+    var break = false
 
     val bufferSize = 64
     val events = alloc[EpollEvent](bufferSize)
 
     // first kickstart
-    err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
+    var err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
     collectInfo()
     // main loop, will be waken up by either socket events or timer events
-    while ctxptr.running > 0 && err == CurlMultiErrCode.OK
+    while //
+      !break && ctxptr.running > 0 && err == CurlMultiErrCode.OK && !_shutdownNowCalled
     do {
       val timeout = toEpollTimeout(ctxptr.timeout)
       val recvEvents = epoll_wait(ctxptr.epfd, events, bufferSize, timeout)
 
       if (recvEvents < 0)
-        if errno.errno == errno.EINTR
-        then () // Retry if interrupted by signal
-        else throw new CurlException(s"epoll_wait failed with error ${errno.errno}")
+        if (errno.errno == errno.EINTR)
+          () // Retry if interrupted by signal
+        else if (_shutdownNowCalled)
+          break = true
+        else //
+          throw new CurlException(s"epoll_wait failed with error ${errno.errno}")
+      else if (_shutdownNowCalled) //
+        break = true
       else if (recvEvents == 0) // timeout expired, simply kick the multi socket action again
         ctxptr.timeout = -1
         err = multi.socketAction(CurlSocket.TIMEOUT, CurlCSelect.NONE, ctxptr.runningPtr)
         collectInfo()
       else
-        for i <- 0 until recvEvents do {
+        for i <- 0 until recvEvents
+        do {
           val event = events(i)
 
           var action: CurlCSelect = CurlCSelect.NONE
@@ -489,15 +480,80 @@ final class HttpClientImpl(
             action |= CurlCSelect.ERR
 
           val epfd = event.data.asInstanceOf[FileDescriptor]
-          err = multi.socketAction(
-            CurlSocket.fromFileDescriptor(epfd),
-            action,
-            ctxptr.runningPtr,
-          )
+          err = multi.socketAction(CurlSocket.fromFileDescriptor(epfd), action, ctxptr.runningPtr)
         }
 
       collectInfo()
     }
+
+    _mainLoopScheduling.set(false)
+    if (_shutdownCalled)
+      scheduleCleanup()
+  }
+
+  private def runMainLoop(): Unit =
+    try //
+      mainLoop()
+    catch
+      case exc: Throwable =>
+        _mainLoopScheduling.set(false)
+        failAllConnections(exc)
+        if (_shutdownCalled)
+          scheduleCleanup()
+        throw exc
+
+  private inline def failAllConnections(exc: Throwable): Unit =
+    connections.valuesIterator.foreach(_.closeExceptionally(exc))
+
+  private def requestShutdown(immediate: Boolean): Unit = {
+    _shutdownLock.lock()
+    try
+      if (!_terminated) {
+        if (immediate)
+          _shutdownNowCalled = true
+        _shutdownCalled = true
+      }
+    finally //
+      _shutdownLock.unlock()
+
+    scheduleCleanup()
+  }
+
+  private def scheduleCleanup(): Unit =
+    if (!_cleanupScheduled.compareAndExchange(false, true))
+      _scheduler.execute(() => cleanupResources())
+
+  private def cleanupResources(): Unit = {
+    var retryGracefulShutdown = false
+
+    _shutdownLock.lock()
+    try
+      if (!_terminated) {
+        if !_shutdownNowCalled && (connections.nonEmpty)
+        then
+          _cleanupScheduled.set(false)
+          retryGracefulShutdown = true
+        else {
+          try
+            if (connections.nonEmpty)
+              failAllConnections(
+                new IOException("HttpClient was shut down before the operation completed."),
+              )
+          finally {
+            multi.cleanup()
+            share.cleanup()
+            ctxptr.epfd = -1
+            unistd.close(epfd): Unit
+            _terminated = true
+            _terminatedLatch.countDown()
+          }
+        }
+      }
+    finally //
+      _shutdownLock.unlock()
+
+    if (retryGracefulShutdown)
+      signalStart()
   }
 
 private[http] object HttpClientImpl:

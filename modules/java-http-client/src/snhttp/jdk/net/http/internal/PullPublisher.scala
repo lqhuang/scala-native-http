@@ -3,9 +3,9 @@ package snhttp.jdk.net.http.internal
 import java.io.{IOException, UncheckedIOException}
 import java.util.Objects.requireNonNull
 import java.util.concurrent.Flow.{Publisher, Subscriber, Subscription}
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.Executor
-import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
+
+import scala.util.control.NonFatal
 
 /**
  * Pull-based Single publisher single subscribers. Also known as SPSC (Single Producer Single
@@ -62,12 +62,11 @@ object PullPublisher:
     private val cancelled = new AtomicBoolean(false)
     private val terminated = new AtomicBoolean(false)
 
-    private val seqExecutor: Executor = ForkJoinPool.commonPool()
+    private val scheduler = new SequentialScheduler(maxTasksPerTurn = 4)
     private val iterator: Iterator[T] = publisher.iterator
 
-    @volatile
-    private var demand = 0L
-    private val demandLock = new ReentrantLock()
+    private val demand = new AtomicLong(0L)
+    private val draining = new AtomicBoolean(false) // indicates whether a drain turn is in progress
 
     /**
      * Notes from JDK docs:
@@ -77,49 +76,52 @@ object PullPublisher:
      * additional `onNext` invocations (or fewer if terminated).
      */
     override def request(n: Long): Unit =
-      if n <= 0
-      then //
+      if (n <= 0)
         signalError(new IllegalArgumentException(s"Non-positive request: ${n}"))
-      else {
-        seqExecutor.execute { () =>
-          demandLock.lock()
-          demand += n
-          try {
-            while //
-              !cancelled.get() && !terminated.get() && demand > 0
-            do
-              try
-                if iterator.hasNext
-                then {
-                  subscriber.onNext(iterator.next())
-                  demand -= 1
-                } //
-                else //
-                  signalComplete()
-              catch {
-                case exc: IOException => signalError(UncheckedIOException(exc))
-                case exc: Exception   => signalError(exc)
-              }
-
-            try
-              if (!iterator.hasNext) signalComplete()
-            catch {
-              case exc: IOException => signalError(UncheckedIOException(exc))
-              case exc: Exception   => signalError(exc)
-            }
-          } //
-          finally //
-            demandLock.unlock()
+      scheduler.execute { () =>
+        demand.updateAndGet { curr =>
+          val residual = Long.MaxValue - curr
+          if residual < n then Long.MaxValue else curr + n
         }
+        scheduleDrain()
       }
 
     override def cancel(): Unit =
       if (!cancelled.compareAndExchange(false, true))
-        publisher.close()
+        scheduler.execute(() => publisher.close())
 
     /*
      * Non-public methods
      */
+
+    private def scheduleDrain(): Unit =
+      if (!draining.compareAndExchange(false, true) && !cancelled.get() && !terminated.get())
+        scheduler.execute(() => drainDemand())
+
+    private def drainDemand(): Unit = {
+      try
+        while //
+          !cancelled.get() && !terminated.get()
+          && demand.get() > 0L
+        do
+          if iterator.hasNext
+          then {
+            val item = iterator.next()
+            demand.decrementAndGet()
+            subscriber.onNext(item)
+          } //
+          else //
+            signalComplete()
+
+        if (!cancelled.get() && !terminated.get() && !iterator.hasNext)
+          signalComplete()
+      catch {
+        case exc: IOException => signalError(UncheckedIOException(exc))
+        case NonFatal(exc)    => signalError(exc)
+      }
+
+      draining.compareAndExchange(true, false): Unit
+    }
 
     private inline def signalError(exc: Throwable): Unit =
       if (!terminated.compareAndExchange(false, true))

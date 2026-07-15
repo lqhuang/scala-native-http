@@ -84,6 +84,7 @@ private[http] final class HttpConnection[T](
    * transfer before you call `curl_slist_free_all` on the list.
    */
   private var slist: Optional[CurlSList] = Optional.empty()
+  private val registered = AtomicBoolean(false)
   private val closed = AtomicBoolean(false)
 
   private val respBodyPublisher: SubmissionPublisher[JList[ByteBuffer]] =
@@ -184,21 +185,24 @@ private[http] final class HttpConnection[T](
           closeExceptionally(exc)
         } //
         else {
+          // HEAD or 30x code might not have body, so ensure response is initialized
+          if (!respBodyReceived.get())
+            ensureResponseInitialized()
           respBodyPublisher.close()
           close()
         }
       case _ => // data is CVoidPtr
         val errStr = fromCString(err.asInstanceOf[Ptr[Byte]])
-        val exc = new CurlException(
-          s"CURL message indicates error: code ${code}, data (recast to String) is ${errStr}",
+        closeExceptionally(
+          new CurlException(
+            s"CURL message indicates error: code ${code}, data (recast to String) is ${errStr}",
+          ),
         )
-        closeExceptionally(exc)
   }
 
   def close(): Unit =
     if (!closed.compareAndExchange(false, true)) {
-      client.connections.remove(easy): Unit
-      client.multi.removeCurlEasy(easy): Unit
+      client.unregisterConnection(this): Unit
       slist.map(_.freeAll()): Unit
       easy.cleanup()
 
@@ -365,9 +369,12 @@ private[http] final class HttpConnection[T](
           s"HTTP method ${other} is not supported yet",
         )
 
-    /**
+    /*
      * TODO: set error buffer? https://curl.se/libcurl/c/CURLOPT_ERRORBUFFER.html
      */
+
+    if (!registered.compareAndExchange(false, true))
+      client.registerConnection(this): Unit
   }
 
   private inline def requireNonShutdown(): Unit =
