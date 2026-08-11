@@ -20,6 +20,7 @@ The development of first three types is the milestone in current stage.
 Besides, TLS support is also a important part of HTTP Client, so we also implement `javax.net.ssl` related types as well.
 
 - [x] `javax.net.ssl.SSLContext`
+- [x] `javax.net.ssl.SSLParameters`
 
 There are also other auxiliary types are enforced by the Java Networking API and are missing in Scala Native core, such as:
 
@@ -39,17 +40,17 @@ There are also other auxiliary types are enforced by the Java Networking API and
 Classes don't have checkbox mean they are implemented in Scala Native itself. Classes with checkbox and are checked mean they are implemented in this project.
 
 - java.net
-  - [ ] Authenticator
+  - [x] Authenticator
   - [ ] CacheRequest
   - [ ] CacheResponse
   - [ ] ContentHandler
   - [ ] ContentHandlerFactory
-  - [ ] CookieHandler
-  - [ ] CookieManager
-  - [ ] CookiePolicy
-  - [ ] CookieStore
+  - [x] CookieHandler
+  - [x] CookieManager
+  - [x] CookiePolicy
+  - [x] CookieStore
   - [x] FileNameMap
-  - [ ] HttpCookie
+  - [x] HttpCookie
   - [x] HttpURLConnection
   - JarURLConnection
   - [ ] PasswordAuthentication
@@ -99,19 +100,25 @@ Classes don't have checkbox mean they are implemented in Scala Native itself. Cl
     - [x] SSLEngine
       - partially implemented, only client side is supported
     - [x] SSLEngineResult
-    - [x] SSLException
     - [x] SSLParameters
-    - [x] SSLSession
+    - [ ] SSLSession
+      - partially implemented, only client side is supported
     - [x] SSLSessionContext
+      - partially implemented, only client side is supported
     - [x] TrustManager
     - [x] X509TrustManager
     - exceptions
+      - [x] SSLException
+      - [x] SSLHandshakeException
+      - [x] SSLKeyException
+      - [x] SSLPeerUnverifiedException
+      - [x] SSLProtocolException
 
 ## Dev guides
 
 This project is developed in Scala 3 and Scala Native 0.5.7 with mill build tool.
 
-Please ensure you have `libcurl` installed.
+Please ensure you have `libcurl-dev` and `openssl-dev` installed.
 
 - For Linux user with Debian / Ubuntu, the package name would be `libcurl4-openssl-dev`.
 - For macOS user, install `curl` by Homebrew first.

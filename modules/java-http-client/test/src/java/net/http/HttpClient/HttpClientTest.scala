@@ -37,6 +37,18 @@ class HttpClientTest extends TestSuite:
     then URI.create(s"https://httpbingo.org${path}")
     else URI.create(s"http://httpbingo.org${path}")
 
+  /**
+   * <httpbingo.org> seems disable /redirect-to endpoint
+   *
+   * > Forbidden redirect URL. Please be careful with this link.
+   *
+   * Sad news but understandable. So we use <httpbin.org> instead
+   */
+  inline def httpbinRedirecToEndpoint(url: String, code3xx: Int, secure: Boolean = true): URI =
+    if secure
+    then URI.create(s"https://httpbin.org/redirect-to?url=${url}&status_code=${code3xx}")
+    else URI.create(s"http://httpbin.org/redirect-to?url=${url}&status_code=${code3xx}")
+
   def postEchoJson(
       client: HttpClient,
       contentType: String,
@@ -511,7 +523,7 @@ class HttpClientTest extends TestSuite:
             val request =
               HttpRequest
                 .newBuilder(
-                  httpbinEndpoint(s"/redirect-to?url=www.example.org&status_code=${status}"),
+                  httpbinRedirecToEndpoint("www.example.org", status),
                 )
                 .build()
             val response = client.send(request, BodyHandlers.ofString())
@@ -528,12 +540,7 @@ class HttpClientTest extends TestSuite:
         test("http -> http") {
           val request =
             HttpRequest
-              .newBuilder(
-                httpbinEndpoint(
-                  "/redirect-to?url=http://example.org&status_code=302",
-                  secure = false,
-                ),
-              )
+              .newBuilder(httpbinRedirecToEndpoint("http://example.org", 302, secure = false))
               .build()
           val response = client.send(request, BodyHandlers.ofString())
           assert(response.statusCode() == 200)
@@ -544,9 +551,7 @@ class HttpClientTest extends TestSuite:
 
         test("https -> https") {
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint("/redirect-to?url=https://example.org&status_code=302", secure = true),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://example.org", 302, secure = true))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
           assert(response.statusCode() == 200)
@@ -557,12 +562,7 @@ class HttpClientTest extends TestSuite:
 
         test("http -> https") {
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint(
-                "/redirect-to?url=https://example.org&status_code=302",
-                secure = false,
-              ),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://example.org", 302, secure = false))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
           assert(response.statusCode() == 200)
@@ -573,9 +573,7 @@ class HttpClientTest extends TestSuite:
 
         test("https -> http") {
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint("/redirect-to?http://example.org&status_code=302"),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("http://example.org", 302))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
           // 400 Bad Request due to https -> http redirect not allowed
@@ -592,12 +590,7 @@ class HttpClientTest extends TestSuite:
         test("http -> http") {
           val request =
             HttpRequest
-              .newBuilder(
-                httpbinEndpoint(
-                  "/redirect-to?url=http://example.org&status_code=302",
-                  secure = false,
-                ),
-              )
+              .newBuilder(httpbinRedirecToEndpoint("http://example.org", 302, secure = false))
               .build()
           val response = client.send(request, BodyHandlers.ofString())
           assert(response.statusCode() == 200)
@@ -608,9 +601,7 @@ class HttpClientTest extends TestSuite:
 
         test("https -> https") {
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint("/redirect-to?url=https://example.org&status_code=302", secure = true),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://example.org", 302, secure = true))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
           assert(response.statusCode() == 200)
@@ -622,10 +613,7 @@ class HttpClientTest extends TestSuite:
         test("http -> https") {
           val request = HttpRequest
             .newBuilder(
-              httpbinEndpoint(
-                "/redirect-to?url=https://example.org&status_code=302",
-                secure = false,
-              ),
+              httpbinRedirecToEndpoint("https://example.org", 302, secure = false),
             )
             .build()
           val response = client.send(request, BodyHandlers.ofString())
@@ -638,9 +626,7 @@ class HttpClientTest extends TestSuite:
         test("https -> http") {
           // XXX: ????? different behavior with documentation
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint("/redirect-to?http://example.org&status_code=302", secure = true),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("http://example.org", 302, secure = true))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
           assert(response.statusCode() == 400)
@@ -658,9 +644,7 @@ class HttpClientTest extends TestSuite:
         List(307, 308).foreach { status =>
           val client = HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build()
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint(s"/redirect-to?status_code=${status}&url=https://httpbingo.org/post"),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://httpbingo.org/post", status))
             .POST(BodyPublishers.ofString("keep-me"))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
@@ -683,9 +667,7 @@ class HttpClientTest extends TestSuite:
         val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
         Seq(301, 302, 303).foreach { status =>
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint(s"/redirect-to?status_code=${status}&url=https://httpbingo.org/get"),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://httpbingo.org/get", status))
             .POST(BodyPublishers.ofString("do-not-repeat"))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
@@ -702,9 +684,7 @@ class HttpClientTest extends TestSuite:
 
         Seq(301, 302).foreach { status =>
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint(s"/redirect-to?status_code=${status}&url=https://httpbingo.org/put"),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://httpbingo.org/put", status))
             .PUT(BodyPublishers.ofString("do-not-repeat"))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
@@ -726,11 +706,7 @@ class HttpClientTest extends TestSuite:
 
         Seq("PUT", "DELETE").foreach { method =>
           val request = HttpRequest
-            .newBuilder(
-              httpbinEndpoint(
-                s"/redirect-to?status_code=303&url=https://httpbingo.org/get",
-              ),
-            )
+            .newBuilder(httpbinRedirecToEndpoint("https://httpbingo.org/get", 303))
             .method(method, BodyPublishers.ofString("do-not-repeat"))
             .build()
           val response = client.send(request, BodyHandlers.ofString())
@@ -757,11 +733,7 @@ class HttpClientTest extends TestSuite:
         val client = HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build()
 
         val request = HttpRequest
-          .newBuilder(
-            httpbinEndpoint(
-              s"/redirect-to?status_code=303&url=https://httpbingo.org/head",
-            ),
-          )
+          .newBuilder(httpbinRedirecToEndpoint("https://httpbingo.org/head", 303))
           .method("HEAD", BodyPublishers.noBody())
           .build()
         val headResponse = client.send(request, BodyHandlers.ofString())
