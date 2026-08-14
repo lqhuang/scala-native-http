@@ -41,6 +41,7 @@ import _root_.snhttp.experimental.openssl.libssl.{SSL_CTX, SSL_VERIFY}
 import _root_.snhttp.experimental.curl.curl.CurlException
 import _root_.snhttp.experimental.curl.curl.{
   CurlReadCallback,
+  CurlHeaderCallback,
   CurlWriteCallback,
   CurlSeekCallback,
   CurlSslCtxCallback,
@@ -95,20 +96,26 @@ private[http] final class HttpConnection[T](
 
   /* Most operations concentrate in one thread, no data racing */
   private val redirPolicy = client.builder._redirect
-  private var redirSchemeIsAllowed = true
-  private var redirBlocked = false
-  private var lastRedirCode = 0
-  private var lastRedirMethod = request.method()
-  private var lastRedirURI = request.uri()
+  private var redirRejected = false
+  private var redirStatusCode = 0
+  // Last used effective request method and URI, which may be rewritten by multi-hop redirects.
+  private var effectiveRequestMethod = request.method()
+  private var effectiveRequestURI = request.uri()
 
   private final def inspectResponseHeader(header: String): Unit = {
     // Example of response header lines:
+    //
     // ```
     // < HTTP/2 307
     // < Location: https://httpbingo.org/get
     // ```
+    //
+    // ```
+    // < HTTP/2 307
+    // < Location: /put
+    // ```
     if (header.startsWith("HTTP/"))
-      lastRedirCode = header
+      redirStatusCode = header
         .dropWhile(_ != ' ')
         .trim
         .takeWhile(_.isDigit)
@@ -116,30 +123,25 @@ private[http] final class HttpConnection[T](
         .getOrElse(0)
 
     if (
-      is3xxRedirCode(lastRedirCode)
+      redirPolicy != Redirect.NEVER
+      && is3xxRedirStatusCode(redirStatusCode)
       && header.regionMatches(true, 0, "Location:", 0, "Location:".length())
     ) {
-      val lastURI = URI.create(easy.info.effectiveURL)
-      lastRedirURI = lastURI.resolve(header.substring("Location:".length()).trim())
-      val initScheme = request.uri().getScheme()
-      val lastRedirScheme = lastRedirURI.getScheme()
+      val redirectURI = effectiveRequestURI.resolve(header.substring("Location:".length()).trim())
+      val redirectsFromHTTPS = effectiveRequestURI.getScheme().equalsIgnoreCase("https")
+      val redirectsToHTTP = redirectURI.getScheme().equalsIgnoreCase("http")
 
-      val redirSchemeIsAllowed =
-        (
-          redirPolicy == Redirect.NORMAL
-            && !(
-              // cannot downgrade from https to http, but allow other redirects
-              initScheme.equalsIgnoreCase("https")
-                && lastRedirScheme.equalsIgnoreCase("http")
-            )
-        )
-          || redirPolicy == Redirect.ALWAYS
+      if redirPolicy == Redirect.NORMAL && redirectsFromHTTPS && redirectsToHTTP
+      then redirRejected = true
+      else {
+        // Once NORMAL upgrades to HTTPS, restrict every later redirect to HTTPS as well.
+        if (redirPolicy == Redirect.NORMAL && redirectURI.getScheme().equalsIgnoreCase("https"))
+          easy.setCStringOption(CurlOption.REDIR_PROTOCOLS_STR, c"https")
 
-      if redirPolicy == Redirect.NORMAL && !redirSchemeIsAllowed
-      then //
-        redirBlocked = true
-      else //
-        lastRedirMethod = rewriteRequestMethodForRedirect(lastRedirCode, lastRedirMethod)
+        effectiveRequestURI = redirectURI
+        effectiveRequestMethod =
+          rewriteRequestMethodForRedirect(redirStatusCode, effectiveRequestMethod)
+      }
     }
   }
 
@@ -166,13 +168,13 @@ private[http] final class HttpConnection[T](
     val respBodySubscriber = responseBodyHandler(respInfo)
     respBodyPublisher.subscribe(respBodySubscriber)
 
-    val _request =
-      if redirBlocked || (easy.info.redirectCount > 0)
+    val effectiveRequest =
+      if effectiveRequestURI != request.uri() || effectiveRequestMethod != request.method()
       then
         buildRedirectedRequest(
           prevRequest = request,
-          uri = lastRedirURI,
-          method = lastRedirMethod,
+          uri = effectiveRequestURI,
+          method = effectiveRequestMethod,
           version = version,
         )
       else //
@@ -180,7 +182,7 @@ private[http] final class HttpConnection[T](
 
     val body = respBodySubscriber.getBody()
     val resp = HttpResponseImpl(
-      _request,
+      effectiveRequest,
       respInfo,
       body,
       // _sslSession = easy.info.sslSession,
@@ -196,7 +198,19 @@ private[http] final class HttpConnection[T](
     )
   }
 
-  var readData: Ptr[CurlSendData] = null
+  private val headerData = alloc[CurlHeaderData]()
+  if (headerData == NullPtr)
+    throw CurlException("Failed to allocate memory for curl header callback data")
+  headerData.inspectResponseHeader = inspectResponseHeader
+
+  private val writeData = alloc[CurlRecvData]()
+  if (writeData == NullPtr)
+    throw CurlException("Failed to allocate memory for curl callback data")
+  writeData.isBodyReceived = respBodyReceived
+  writeData.ensureResponseInitialized = ensureResponseInitialized
+  writeData.publisher = respBodyPublisher
+
+  private var readData: Ptr[CurlSendData] = null
   // alloc[CurlSendData]()
   // if (readData == NullPtr)
   //   closeExceptionally(new CurlException("Failed to allocate memory for CurlReadData"))
@@ -224,14 +238,14 @@ private[http] final class HttpConnection[T](
           errCode != CurlErrCode.OK
           // it's ok to ignore `UNSUPPORTED_PROTOCOL` error
           // when redirect is blocked from `NORMAL` redirect policy
-          && !(errCode == CurlErrCode.UNSUPPORTED_PROTOCOL && redirBlocked)
+          && !(errCode == CurlErrCode.UNSUPPORTED_PROTOCOL && redirRejected)
         } //
         then {
           val exc = excFromErrCode(errCode)
           closeExceptionally(exc)
         } //
         else {
-          // HEAD or 30x code might not have body, so ensure response is initialized
+          // HEAD or 3xx code might not have body, so ensure response is initialized
           if (!respBodyReceived.get())
             ensureResponseInitialized()
           respBodyPublisher.close()
@@ -301,9 +315,9 @@ private[http] final class HttpConnection[T](
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
       case Redirect.NORMAL =>
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
-        if (request.uri().getScheme() == "https")
+        if (request.uri().getScheme().equalsIgnoreCase("https"))
           // DO NOT follow downgraded http scheme redirects
-          easy.setCStringOption(CurlOption.PROTOCOLS_STR, c"https")
+          easy.setCStringOption(CurlOption.REDIR_PROTOCOLS_STR, c"https")
     /*
      * Extra notes after setting `CURLOPT_FOLLOWLOCATION`:
      *
@@ -359,22 +373,12 @@ private[http] final class HttpConnection[T](
     /**
      * Set write data callback and data pointer
      */
-    val writeData = alloc[CurlRecvData]()
-    if (writeData == NullPtr)
-      throw CurlException("Failed to allocate memory for curl callback data")
-    writeData.isBodyReceived = respBodyReceived
-    writeData.ensureResponseInitialized = ensureResponseInitialized
-    writeData.publisher = respBodyPublisher
-
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
     easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
 
     /**
      * Set response header data callback and data pointer
      */
-    val headerData = alloc[CurlHeaderData]()
-    headerData.inspectResponseHeader = inspectResponseHeader
-
     easy.setPtrOption(CurlOption.HEADERDATA, headerData)
     easy.setFuncPtrOption(CurlOption.HEADERFUNCTION, headerDataCallback.asFuncPtr)
 
@@ -452,24 +456,24 @@ private[http] object HttpConnection:
 
   final val MAX_SEEKABLE_BYTES = 4 * 1024 * 1024L
 
-  private inline def is3xxRedirCode(statusCode: Int): Boolean =
+  /*
+   * 301 - 301 = 0
+   * 302 - 301 = 1
+   * 303 - 301 = 2
+   * 307 - 301 = 6
+   * 308 - 301 = 7
+   *
+   * bitmask = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 6) | (1 << 7) = 199 = 0xC7
+   */
+  private inline def is3xxRedirStatusCode(statusCode: Int): Boolean =
     val offset = statusCode - 301
-    // 301 - 301 = 0
-    // 302 - 301 = 1
-    // 303 - 301 = 2
-    // 307 - 301 = 6
-    // 308 - 301 = 7
-    //
-    // bitmask =
-    //   (1 << 0) | (1 << 1) | (1 << 2) | (1 << 6) | (1 << 7) = 199 = 0xC7
-    //
     offset >= 0 && offset <= 7 && ((0xc7 & (1 << offset)) != 0)
 
   private inline def rewriteRequestMethodForRedirect(
-      inline statusCode: Int,
-      inline method: String,
+      statusCode: Int,
+      method: String,
   ): String =
-    inline statusCode match
+    statusCode match
       case 301 | 302 if method == "POST" => "GET"
       case 303 if method != "HEAD"       => "GET"
       case _                             => method
@@ -568,7 +572,7 @@ private[http] object HttpConnection:
       loaded.size.toUSize
   }
 
-  final val headerDataCallback = CurlWriteCallback.fromScalaFunction {
+  final val headerDataCallback = CurlHeaderCallback.fromScalaFunction {
     (payload: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
       userdata
         .asInstanceOf[Ptr[CurlHeaderData]]
