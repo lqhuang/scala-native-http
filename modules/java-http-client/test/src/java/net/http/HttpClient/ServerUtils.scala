@@ -1,6 +1,6 @@
 package snhttp.test.java.net.http
 
-import java.io._
+import java.io.{InputStream, BufferedReader, ByteArrayInputStream, InputStreamReader}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import scala.annotation.tailrec
@@ -46,7 +46,6 @@ object ServerUtils {
   private val echoRoutes = HttpRoutes.of[IO] {
     case GET -> Root / "never" =>
       IO.never
-
     case req @ POST -> Root / "echo" =>
       val c: Option["gzip" | "deflate"] =
         req.headers.headers

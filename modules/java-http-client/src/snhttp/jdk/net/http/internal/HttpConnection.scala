@@ -9,6 +9,7 @@ import java.net.http.HttpClient.{Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandler, BodySubscriber}
 import java.nio.ByteBuffer
 import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
+import java.nio.charset.StandardCharsets
 import java.util.{Map as JMap, List as JList, Optional}
 import java.util.concurrent.Flow
 import java.util.concurrent.{CompletableFuture, SubmissionPublisher}
@@ -28,7 +29,7 @@ import scala.scalanative.unsafe.{
   UnsafeRichLong,
   Zone,
 }
-import scala.scalanative.unsafe.{alloc, fromCString, toCString}
+import scala.scalanative.unsafe.{alloc, fromCString, fromCStringSlice, toCString}
 import scala.scalanative.unsafe.CQuote as c
 import scala.scalanative.unsigned.UnsignedRichInt
 
@@ -92,6 +93,56 @@ private[http] final class HttpConnection[T](
   private val respBodyReceived =
     AtomicBoolean(false)
 
+  /* Most operations concentrate in one thread, no data racing */
+  private val redirPolicy = client.builder._redirect
+  private var redirSchemeIsAllowed = true
+  private var redirBlocked = false
+  private var lastRedirCode = 0
+  private var lastRedirMethod = request.method()
+  private var lastRedirURI = request.uri()
+
+  private final def inspectResponseHeader(header: String): Unit = {
+    // Example of response header lines:
+    // ```
+    // < HTTP/2 307
+    // < Location: https://httpbingo.org/get
+    // ```
+    if (header.startsWith("HTTP/"))
+      lastRedirCode = header
+        .dropWhile(_ != ' ')
+        .trim
+        .takeWhile(_.isDigit)
+        .toIntOption
+        .getOrElse(0)
+
+    if (
+      is3xxRedirCode(lastRedirCode)
+      && header.regionMatches(true, 0, "Location:", 0, "Location:".length())
+    ) {
+      val lastURI = URI.create(easy.info.effectiveURL)
+      lastRedirURI = lastURI.resolve(header.substring("Location:".length()).trim())
+      val initScheme = request.uri().getScheme()
+      val lastRedirScheme = lastRedirURI.getScheme()
+
+      val redirSchemeIsAllowed =
+        (
+          redirPolicy == Redirect.NORMAL
+            && !(
+              // cannot downgrade from https to http, but allow other redirects
+              initScheme.equalsIgnoreCase("https")
+                && lastRedirScheme.equalsIgnoreCase("http")
+            )
+        )
+          || redirPolicy == Redirect.ALWAYS
+
+      if redirPolicy == Redirect.NORMAL && !redirSchemeIsAllowed
+      then //
+        redirBlocked = true
+      else //
+        lastRedirMethod = rewriteRequestMethodForRedirect(lastRedirCode, lastRedirMethod)
+    }
+  }
+
   /**
    * invoke when receiving header data, this callback will be invoked to assemble necessary response
    * info and initialize the `BodyHandler` to transform the response body.
@@ -116,17 +167,14 @@ private[http] final class HttpConnection[T](
     respBodyPublisher.subscribe(respBodySubscriber)
 
     val _request =
-      if easy.info.redirectCount > 0
+      if redirBlocked || (easy.info.redirectCount > 0)
       then
-        HttpRequest
-          .newBuilder(request, (_, _) => true)
-          .uri(URI.create(easy.info.effectiveURL))
-          .method(
-            easy.info.effectiveMethod,
-            request.bodyPublisher().orElse(BodyPublishers.noBody()),
-          )
-          .version(version)
-          .build()
+        buildRedirectedRequest(
+          prevRequest = request,
+          uri = lastRedirURI,
+          method = lastRedirMethod,
+          version = version,
+        )
       else //
         request
 
@@ -148,15 +196,8 @@ private[http] final class HttpConnection[T](
     )
   }
 
-  private val writeData = alloc[CurlRecvBuffer]()
-  if (writeData == NullPtr)
-    throw CurlException("Failed to allocate memory for curl callback data")
-  writeData.isBodyReceived = respBodyReceived
-  writeData.ensureResponseInitialized = ensureResponseInitialized
-  writeData.publisher = respBodyPublisher
-
-  var readData: Ptr[CurlSendBuffer] = null
-  // alloc[CurlSendBuffer]()
+  var readData: Ptr[CurlSendData] = null
+  // alloc[CurlSendData]()
   // if (readData == NullPtr)
   //   closeExceptionally(new CurlException("Failed to allocate memory for CurlReadData"))
 
@@ -179,7 +220,12 @@ private[http] final class HttpConnection[T](
     code match
       case CurlMsgCode.DONE => // data is CurlErrCode
         val errCode = err.asErrCode
-        if errCode != CurlErrCode.OK
+        if {
+          errCode != CurlErrCode.OK
+          // it's ok to ignore `UNSUPPORTED_PROTOCOL` error
+          // when redirect is blocked from `NORMAL` redirect policy
+          && !(errCode == CurlErrCode.UNSUPPORTED_PROTOCOL && redirBlocked)
+        } //
         then {
           val exc = excFromErrCode(errCode)
           closeExceptionally(exc)
@@ -248,14 +294,19 @@ private[http] final class HttpConnection[T](
       .map(duration => duration.toMillis())
       .map(ms => easy.setCLongOption(CurlOption.TIMEOUT_MS, ms.toSize))
 
-    val _ = client.builder._redirect match
+    val _ = redirPolicy match
       case Redirect.NEVER =>
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.DISABLED.value)
       case Redirect.ALWAYS =>
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
       case Redirect.NORMAL =>
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
+        if (request.uri().getScheme() == "https")
+          // DO NOT follow downgraded http scheme redirects
+          easy.setCStringOption(CurlOption.PROTOCOLS_STR, c"https")
     /*
+     * Extra notes after setting `CURLOPT_FOLLOWLOCATION`:
+     *
      * When this option is used in combination with telling libcurl to follow redirects with
      * `CURLOPT_FOLLOWLOCATION`, the data might need to be rewound and sent again. The
      * `CURLOPT_SEEKFUNCTION` can then be invoked for that rewind operation.
@@ -306,10 +357,26 @@ private[http] final class HttpConnection[T](
     }
 
     /**
-     * Set data write callback and data pointer
+     * Set write data callback and data pointer
      */
+    val writeData = alloc[CurlRecvData]()
+    if (writeData == NullPtr)
+      throw CurlException("Failed to allocate memory for curl callback data")
+    writeData.isBodyReceived = respBodyReceived
+    writeData.ensureResponseInitialized = ensureResponseInitialized
+    writeData.publisher = respBodyPublisher
+
     easy.setPtrOption(CurlOption.WRITEDATA, writeData)
     easy.setFuncPtrOption(CurlOption.WRITEFUNCTION, writeDataCallback.asFuncPtr)
+
+    /**
+     * Set response header data callback and data pointer
+     */
+    val headerData = alloc[CurlHeaderData]()
+    headerData.inspectResponseHeader = inspectResponseHeader
+
+    easy.setPtrOption(CurlOption.HEADERDATA, headerData)
+    easy.setFuncPtrOption(CurlOption.HEADERFUNCTION, headerDataCallback.asFuncPtr)
 
     /**
      * TLS options
@@ -333,7 +400,7 @@ private[http] final class HttpConnection[T](
         else new CurlBodyUploader(maxCachedBytes = 0)
       bodyPublisher.subscribe(subscriber)
 
-      readData = alloc[CurlSendBuffer]()
+      readData = alloc[CurlSendData]()
       if (readData == NullPtr) {
         if (!response.isDone())
           closeExceptionally(new CurlException("Failed to allocate memory for CurlReadData"))
@@ -385,25 +452,70 @@ private[http] object HttpConnection:
 
   final val MAX_SEEKABLE_BYTES = 4 * 1024 * 1024L
 
-  type CurlSendBuffer = CStruct1[DelegateSeekableInputStream]
+  private inline def is3xxRedirCode(statusCode: Int): Boolean =
+    val offset = statusCode - 301
+    // 301 - 301 = 0
+    // 302 - 301 = 1
+    // 303 - 301 = 2
+    // 307 - 301 = 6
+    // 308 - 301 = 7
+    //
+    // bitmask =
+    //   (1 << 0) | (1 << 1) | (1 << 2) | (1 << 6) | (1 << 7) = 199 = 0xC7
+    //
+    offset >= 0 && offset <= 7 && ((0xc7 & (1 << offset)) != 0)
+
+  private inline def rewriteRequestMethodForRedirect(
+      inline statusCode: Int,
+      inline method: String,
+  ): String =
+    inline statusCode match
+      case 301 | 302 if method == "POST" => "GET"
+      case 303 if method != "HEAD"       => "GET"
+      case _                             => method
+
+  private def buildRedirectedRequest(
+      prevRequest: HttpRequest,
+      uri: URI,
+      method: String,
+      version: Version,
+  ): HttpRequest =
+    val bodyPublisher =
+      if method == prevRequest.method()
+      then prevRequest.bodyPublisher().orElse(BodyPublishers.noBody())
+      else BodyPublishers.noBody()
+    HttpRequest
+      .newBuilder(prevRequest, (_, _) => true)
+      .uri(uri)
+      .method(method, bodyPublisher)
+      .version(version)
+      .build()
+
+  type CurlHeaderData = CStruct1[Function1[String, Unit]]
+  given Tag[CurlHeaderData] = Tag.materializeCStruct1Tag[Function1[String, Unit]]
+  extension (struct: CurlHeaderData)
+    def inspectResponseHeader: Function1[String, Unit] = struct._1
+    def inspectResponseHeader_=(value: Function1[String, Unit]): Unit = !struct.at1 = value
+
+  type CurlSendData = CStruct1[DelegateSeekableInputStream]
   given Tag[DelegateSeekableInputStream] = Tag.materializeClassTag[DelegateSeekableInputStream]
-  given Tag[CurlSendBuffer] = Tag.materializeCStruct1Tag[DelegateSeekableInputStream]
-  extension (inline struct: CurlSendBuffer)
+  given Tag[CurlSendData] = Tag.materializeCStruct1Tag[DelegateSeekableInputStream]
+  extension (inline struct: CurlSendData)
     inline def instream: DelegateSeekableInputStream = struct._1
     inline def instream_=(value: DelegateSeekableInputStream): Unit = !struct.at1 = value
 
-  type CurlRecvBuffer = CStruct3[
+  type CurlRecvData = CStruct3[
     AtomicBoolean, // Ptr[atomic_bool] // flag for resp body received
     Function0[Unit], // resp body received callback
     SubmissionPublisher[JList[ByteBuffer]], // publisher for response body chunks
   ]
-  given Tag[CurlRecvBuffer] = Tag.materializeCStruct3Tag[
+  given Tag[CurlRecvData] = Tag.materializeCStruct3Tag[
     AtomicBoolean,
     Function0[Unit],
     SubmissionPublisher[JList[ByteBuffer]],
   ]
   // scalafmt: { maxColumn = 150 }
-  extension (inline struct: CurlRecvBuffer)
+  extension (inline struct: CurlRecvData)
     inline def isBodyReceived: AtomicBoolean = struct._1
     inline def isBodyReceived_=(value: AtomicBoolean): Unit = !struct.at1 = value
     inline def ensureResponseInitialized: Function0[Unit] = struct._2
@@ -426,7 +538,7 @@ private[http] object HttpConnection:
    */
   final val writeDataCallback = CurlWriteCallback.fromScalaFunction {
     (payload: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
-      val writedata = userdata.asInstanceOf[Ptr[CurlRecvBuffer]]
+      val writedata = userdata.asInstanceOf[Ptr[CurlRecvData]]
 
       // Only invoke on the first body chunk, after headers are available.
       if (!writedata.isBodyReceived.compareAndExchange(false, true))
@@ -445,7 +557,7 @@ private[http] object HttpConnection:
 
   final val readDataCallback = CurlReadCallback.fromScalaFunction {
     (buffer: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
-      val readdata = userdata.asInstanceOf[Ptr[CurlSendBuffer]]
+      val readdata = userdata.asInstanceOf[Ptr[CurlSendData]]
       val is = readdata.instream
       val loaded = is.readNBytes((size * nmemb).toInt)
 
@@ -456,8 +568,19 @@ private[http] object HttpConnection:
       loaded.size.toUSize
   }
 
+  final val headerDataCallback = CurlWriteCallback.fromScalaFunction {
+    (payload: Ptr[Byte], size: CSize, nmemb: CSize, userdata: Ptr[?]) =>
+      userdata
+        .asInstanceOf[Ptr[CurlHeaderData]]
+        .inspectResponseHeader(
+          // curl doesn't ensure the provided header line is `\0`-terminated
+          fromCStringSlice(payload, size * nmemb, StandardCharsets.ISO_8859_1),
+        )
+      size * nmemb
+  }
+
   final val seekCallback = CurlSeekCallback.fromScalaFunction { (userdata: Ptr[?], offset: CurlOff, origin: Int) =>
-    val readdata = userdata.asInstanceOf[Ptr[CurlSendBuffer]]
+    val readdata = userdata.asInstanceOf[Ptr[CurlSendData]]
     val instream = readdata.instream
 
     // From curl documentation <https://curl.se/libcurl/c/CURLOPT_SEEKFUNCTION.html>

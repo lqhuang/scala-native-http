@@ -10,3 +10,8 @@ object ClientUtils:
     val client = HttpClient.newHttpClient()
     try func(client)
     finally client.close()
+
+  inline def withNewHttpClient[T](policy: Redirect)(func: HttpClient => T): T =
+    val client = HttpClient.newBuilder().followRedirects(policy).build()
+    try func(client)
+    finally client.close()
