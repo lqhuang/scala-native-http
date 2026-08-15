@@ -312,9 +312,9 @@ private[http] final class HttpConnection[T](
       case Redirect.NEVER =>
         easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.DISABLED.value)
       case Redirect.ALWAYS =>
-        easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
+        easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.FIRSTONLY.value)
       case Redirect.NORMAL =>
-        easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.OBEYCODE.value)
+        easy.setCLongOption(CurlOption.FOLLOWLOCATION, CurlFollow.FIRSTONLY.value)
         if (request.uri().getScheme().equalsIgnoreCase("https"))
           // DO NOT follow downgraded http scheme redirects
           easy.setCStringOption(CurlOption.REDIR_PROTOCOLS_STR, c"https")
@@ -388,6 +388,11 @@ private[http] final class HttpConnection[T](
     if (client.builder._sslContext.isPresent() || client.builder._sslParams.isPresent()) {
       easy.setPtrOption(CurlOption.SSL_CTX_DATA, client._sslCtxCustomData)
       easy.setFuncPtrOption(CurlOption.SSL_CTX_FUNCTION, sslCtxCallback.asFuncPtr)
+      val sslCtxData = !client._sslCtxCustomData
+      if (sslCtxData.insecure == 1) {
+        easy.setCLongOption(CurlOption.SSL_VERIFYPEER, 0.toSize)
+        easy.setCLongOption(CurlOption.SSL_VERIFYHOST, 0.toSize)
+      }
     }
 
     /**
