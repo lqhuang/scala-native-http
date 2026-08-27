@@ -62,6 +62,49 @@ jobs:
         run: |
           ./mill modules.java-http-client.test
 
+  test-macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - "11"
+          - "17"
+          - "21"
+          - "25"
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: "temurin"
+      - uses: actions/checkout@v6
+
+      - uses: coursier/cache-action@v7
+      - uses: coursier/setup-action@v2
+        with:
+          apps: mill
+
+      - name: Install Dependencies
+        run: brew install curl openssl@3
+
+      - name: Run tests for Java HTTP Client on JVM
+        run: |
+          ./mill modules.java-http-client.jvm.test
+
+      - name: Run tests for curl bindings
+        run: |
+          ./mill show modules.curl.nativeLinkingOptions
+          ./mill modules.curl.test
+
+      - name: Run tests for openssl bindings
+        run: |
+          ./mill show modules.openssl.nativeLinkingOptions
+          ./mill modules.openssl.test
+
+      - name: Run tests for Java HTTP Client
+        run: |
+          ./mill modules.java-http-client.test
+
   test-windows:
     runs-on: windows-latest
     needs:
@@ -134,6 +177,7 @@ jobs:
     if: github.repository == 'lqhuang/scala-native-http' && contains(github.ref, 'refs/tags/')
     needs:
       - test-linux
+      - test-macos
       - test-windows
     runs-on: ubuntu-latest
     env:

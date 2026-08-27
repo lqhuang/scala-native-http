@@ -29,6 +29,11 @@ object `package` extends build.CommonModule:
     mvn"com.github.lolgab::scala-native-crypto::0.4.0",
   )
 
+  override def sources = Task.Sources(
+    moduleDir / "src",
+    moduleDir / (if Properties.isLinux then "src-epoll" else "src-plain"),
+  )
+
   object test extends ScalaNativeTests with build.UTestModule:
 
     def nativeLinkingOptions =

@@ -136,11 +136,6 @@ Serveral convenient recipes have been provided by `Makefile`, for example
 
 Check `Makefile` for more.
 
-## Known Inconsistencies
-
-- `curl` will not change `HEAD` / `PUT` to `GET` when redirecting with 303 status code, which is different from Java Http Client's behavior.
-  - So the test case `STATUS Code 303 should not change HEAD to GET` will fail.
-
 ## Known Fixable Issues (not supported yet)
 
 - Client session resumption
