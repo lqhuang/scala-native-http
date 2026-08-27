@@ -1,5 +1,7 @@
 package build.modules.`java-http-client`
 
+import scala.util.Properties
+
 import mill.api.Task
 import mill.scalalib.{DepSyntax, ScalaModule}
 
@@ -28,6 +30,18 @@ object `package` extends build.CommonModule:
   )
 
   object test extends ScalaNativeTests with build.UTestModule:
+
+    def nativeLinkingOptions =
+      (
+        if Properties.isMac
+        then
+          Seq(s"-L${
+              if Properties.propOrEmpty("os.arch") == "aarch64"
+              then "/opt/homebrew"
+              else "/usr/local"
+            }/opt/curl/lib")
+        else Seq.empty
+      ) ++ super.nativeLinkingOptions()
 
     def mvnDeps = sharedTestOnlyDeps
 

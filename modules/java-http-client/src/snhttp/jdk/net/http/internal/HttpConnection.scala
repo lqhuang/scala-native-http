@@ -341,10 +341,11 @@ private[http] final class HttpConnection[T](
      *   2. https://curl.se/libcurl/c/curl_slist_append.html
      */
     val headers = request.headers().map()
+    val expectHeader = if request.expectContinue() then c"Expect: 100-continue" else c"Expect:"
     if headers.isEmpty()
     then {
       // reset the `Content-Type` and `Accept` header of curl to empty
-      val _slist = CurlSList(c"Content-Type:", c"Accept:")
+      val _slist = CurlSList(c"Content-Type:", c"Accept:", expectHeader)
       slist = Optional.of(_slist)
       easy.setSlistOption(CurlOption.HTTPHEADER, _slist)
     } else {
@@ -362,8 +363,7 @@ private[http] final class HttpConnection[T](
         headerStrs = headerStrs :+ c"Content-Type:"
       if (!headers.containsKey("Accept"))
         headerStrs = headerStrs :+ c"Accept:"
-      // if (!headers.containsKey("Expect"))
-      //   headerStrs = headerStrs :+ c"Expect:"
+      headerStrs = headerStrs :+ expectHeader
 
       val _slist = CurlSList(headerStrs*)
       slist = Optional.of(_slist)

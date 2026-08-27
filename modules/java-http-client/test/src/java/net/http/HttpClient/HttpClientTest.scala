@@ -188,10 +188,12 @@ class HttpClientTest extends TestSuite:
       test("for invalid host") {
         val client = HttpClient.newHttpClient()
         val bodyHandler = BodyHandlers.ofString()
+        // RFC 1035 limits each DNS label to 63 octets, so this cannot be resolved by fake-IP DNS.
+        val invalidHost = URI.create(s"http://${"a" * 64}.invalid")
 
         test("send") {
           val request = HttpRequest
-            .newBuilder(URI.create("http://nonexistent.invalid"))
+            .newBuilder(invalidHost)
             .GET()
             .build()
           assertThrows[ConnectException]:
@@ -200,7 +202,7 @@ class HttpClientTest extends TestSuite:
 
         test("sendAsync") {
           val request = HttpRequest
-            .newBuilder(URI.create("http://nonexistent.invalid"))
+            .newBuilder(invalidHost)
             .GET()
             .build()
           val future = client.sendAsync(request, bodyHandler)
@@ -849,6 +851,24 @@ class HttpClientTest extends TestSuite:
           assert(jsonBody("headers")("X-Test-2")(0).str == "metadata-2")
           assert(jsonBody("headers")("Content-Type")(0).str == "application/json")
           assert(jsonBody("headers")("User-Agent")(0).str.contains("/"))
+        }
+      }
+
+      test("HttpClient should honor the expectContinue setting") {
+        ServerUtils.usingEchoServer { port =>
+          withNewHttpClient { client =>
+            Seq(false -> "", true -> "100-continue").foreach { (enabled, expectedHeader) =>
+              val request = HttpRequest
+                .newBuilder(URI.create(s"http://localhost:${port}/expect"))
+                .expectContinue(enabled)
+                .POST(BodyPublishers.ofString("body"))
+                .build()
+              val response = client.send(request, BodyHandlers.ofString())
+
+              assert(response.statusCode() == 200)
+              assert(response.body().equalsIgnoreCase(expectedHeader))
+            }
+          }
         }
       }
     }

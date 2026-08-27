@@ -46,6 +46,12 @@ object ServerUtils {
   private val echoRoutes = HttpRoutes.of[IO] {
     case GET -> Root / "never" =>
       IO.never
+    case req @ POST -> Root / "expect" =>
+      val expect = req.headers.headers
+        .find(_.name.toString.equalsIgnoreCase("expect"))
+        .map(_.value)
+        .getOrElse("")
+      Ok(expect)
     case req @ POST -> Root / "echo" =>
       val c: Option["gzip" | "deflate"] =
         req.headers.headers
