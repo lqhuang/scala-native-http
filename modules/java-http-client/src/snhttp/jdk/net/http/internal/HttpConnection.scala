@@ -34,7 +34,6 @@ import scala.scalanative.unsafe.CQuote as c
 import scala.scalanative.unsigned.UnsignedRichInt
 
 import _root_.snhttp.experimental.curl.curl
-import _root_.snhttp.experimental.curl.libcurl
 import _root_.snhttp.experimental.curl.libcurl.CurlHandle
 import _root_.snhttp.experimental.openssl.libssl
 import _root_.snhttp.experimental.openssl.libssl.{SSL_CTX, SSL_VERIFY}
@@ -138,9 +137,17 @@ private[http] final class HttpConnection[T](
         if (redirPolicy == Redirect.NORMAL && redirectURI.getScheme().equalsIgnoreCase("https"))
           easy.setCStringOption(CurlOption.REDIR_PROTOCOLS_STR, c"https")
 
-        effectiveRequestURI = redirectURI
-        effectiveRequestMethod =
+        val redirectedMethod =
           rewriteRequestMethodForRedirect(redirStatusCode, effectiveRequestMethod)
+        if (redirectedMethod == "GET" && effectiveRequestMethod != "GET") {
+          // Before libcurl 8.13, CURLOPT_FOLLOWLOCATION always reused CURLOPT_CUSTOMREQUEST.
+          // Reset both the custom method and transfer mode before libcurl creates the follow-up.
+          easy.setCStringOption(CurlOption.CUSTOMREQUEST, null)
+          easy.setCLongOption(CurlOption.HTTPGET, 1.toSize)
+        }
+
+        effectiveRequestURI = redirectURI
+        effectiveRequestMethod = redirectedMethod
       }
     }
   }
@@ -386,6 +393,11 @@ private[http] final class HttpConnection[T](
      * TLS options
      */
     if (client.builder._sslContext.isPresent() || client.builder._sslParams.isPresent()) {
+      if (client._sslCtxCustomData.insecure == 1) {
+        easy.setCLongOption(CurlOption.SSL_VERIFYPEER, 0.toSize)
+        easy.setCLongOption(CurlOption.SSL_VERIFYHOST, 0.toSize)
+      }
+
       easy.setPtrOption(CurlOption.SSL_CTX_DATA, client._sslCtxCustomData)
       easy.setFuncPtrOption(CurlOption.SSL_CTX_FUNCTION, sslCtxCallback.asFuncPtr)
     }
@@ -629,17 +641,12 @@ private[http] object HttpConnection:
   // scalafmt: { maxColumn = 100 }
 
   final val sslCtxCallback = CurlSslCtxCallback.fromScalaFunction {
-    (easy: Ptr[CurlHandle], sslCtx: Ptr[?], clientp: Ptr[?]) =>
+    (_: Ptr[CurlHandle], sslCtx: Ptr[?], clientp: Ptr[?]) =>
       val curlCtx = sslCtx.asInstanceOf[Ptr[SSL_CTX]]
       val customData = clientp.asInstanceOf[Ptr[SslCtxCustomData]]
       var code = 0
 
       libssl.SSL_CTX_set_security_level(curlCtx, customData.securityLevel)
-
-      if (customData.insecure == 1) {
-        code += libcurl.easySetOpt(easy, CurlOption.SSL_VERIFYPEER, 0).value
-        code += libcurl.easySetOpt(easy, CurlOption.SSL_VERIFYHOST, 0).value
-      }
 
       if (customData.lengthOfclientCerts > 0) {
         val certs = customData.clientCerts

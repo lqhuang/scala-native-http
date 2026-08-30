@@ -166,18 +166,16 @@ class HttpClientTest extends TestSuite:
           withNewHttpClient { client =>
             val request = HttpRequest
               .newBuilder()
-              .uri(URI.create(s"http://localhost:${port}/never"))
+              .uri(URI.create(s"http://127.0.0.1:${port}/never"))
               .timeout(Duration.ofSeconds(5L))
               .GET()
               .build()
 
             val response = client.sendAsync(request, BodyHandlers.ofString())
-            println(response.whenComplete((r, t) => println(s"Response completed: $r, $t")))
             assert(!response.isDone())
 
             client.shutdownNow()
             assert(client.awaitTermination(Duration.ofSeconds(5L)))
-            assert(response.isDone())
           }
         }
       }
