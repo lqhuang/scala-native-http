@@ -418,7 +418,10 @@ private[http] final class HttpConnection[T](
       easy.setPtrOption(CurlOption.SEEKDATA, readData)
       easy.setFuncPtrOption(CurlOption.SEEKFUNCTION, seekCallback.asFuncPtr)
 
-      easy.setCLongOption(CurlOption.INFILESIZE_LARGE, contentLength.toSize)
+      val sizeOption =
+        if request.method() == "POST" then CurlOption.POSTFIELDSIZE_LARGE
+        else CurlOption.INFILESIZE_LARGE
+      easy.setCLongOption(sizeOption, contentLength.toSize)
     }
 
     // NOTES:

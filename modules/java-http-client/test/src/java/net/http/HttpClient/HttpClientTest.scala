@@ -858,15 +858,18 @@ class HttpClientTest extends TestSuite:
         ServerUtils.usingEchoServer { port =>
           withNewHttpClient { client =>
             Seq(false -> "", true -> "100-continue").foreach { (enabled, expectedHeader) =>
+              val publisher = BodyPublishers.ofString("body")
               val request = HttpRequest
                 .newBuilder(URI.create(s"http://localhost:${port}/expect"))
                 .expectContinue(enabled)
-                .POST(BodyPublishers.ofString("body"))
+                .POST(publisher)
                 .build()
               val response = client.send(request, BodyHandlers.ofString())
 
               assert(response.statusCode() == 200)
-              assert(response.body().equalsIgnoreCase(expectedHeader))
+              assert(
+                response.body().equalsIgnoreCase(s"${expectedHeader}|${publisher.contentLength()}"),
+              )
             }
           }
         }

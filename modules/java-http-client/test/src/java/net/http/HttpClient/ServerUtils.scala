@@ -51,7 +51,7 @@ object ServerUtils {
         .find(_.name.toString.equalsIgnoreCase("expect"))
         .map(_.value)
         .getOrElse("")
-      Ok(expect)
+      Ok(s"${expect}|${req.contentLength.getOrElse(-1L)}")
     case req @ POST -> Root / "echo" =>
       val c: Option["gzip" | "deflate"] =
         req.headers.headers
