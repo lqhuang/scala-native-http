@@ -64,6 +64,8 @@ object `package` extends build.CommonModule:
     def scalaVersion = build.scalaVersion
     def sources = Seq() // no sources for JVM
 
+    override def jvmVersion = "25"
+
     object test extends ScalaTests with build.UTestModule:
 
       def mvnDeps = sharedTestOnlyDeps ++ Seq(

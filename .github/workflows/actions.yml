@@ -19,6 +19,8 @@ env:
 jobs:
   test-linux:
     runs-on: ubuntu-latest
+    env:
+      SNHTTP_DEV_JVM_VERSION: "${{ matrix.java }}"
     strategy:
       fail-fast: false
       matrix:
@@ -28,10 +30,10 @@ jobs:
           - "21"
           - "25"
     steps:
-      - uses: actions/setup-java@v5
-        with:
-          java-version: ${{ matrix.java }}
-          distribution: "temurin"
+      # - uses: actions/setup-java@v5
+      #   with:
+      #     java-version: ${{ matrix.java }}
+      #     distribution: "temurin"
       - uses: actions/checkout@v6
 
       - uses: coursier/cache-action@v7
@@ -43,6 +45,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Collect build information on Linux
+        run: |
+          uname -a
+          clang++ --version
+          openssl version
+          echo "installed curl: $(dpkg-query -W -f='${Version}\n' curl)"
+          echo "SNHTTP_DEV_JVM_VERSION=${SNHTTP_DEV_JVM_VERSION}"
+          ./mill java -version
 
       - name: Run tests for Java HTTP Client on JVM
         run: |
@@ -64,6 +75,8 @@ jobs:
 
   test-macos:
     runs-on: macos-latest
+    env:
+      SNHTTP_DEV_JVM_VERSION: "${{ matrix.java }}"
     strategy:
       fail-fast: false
       matrix:
@@ -73,10 +86,10 @@ jobs:
           - "21"
           - "25"
     steps:
-      - uses: actions/setup-java@v5
-        with:
-          java-version: ${{ matrix.java }}
-          distribution: "temurin"
+      # - uses: actions/setup-java@v5
+      #   with:
+      #     java-version: ${{ matrix.java }}
+      #     distribution: "temurin"
       - uses: actions/checkout@v6
 
       - uses: coursier/cache-action@v7
@@ -86,6 +99,15 @@ jobs:
 
       - name: Install Dependencies
         run: brew install curl openssl@3
+
+      - name: Collect build information on macOS
+        run: |
+          uname -a
+          clang++ --version
+          openssl version
+          brew list --versions curl
+          echo "SNHTTP_DEV_JVM_VERSION=${SNHTTP_DEV_JVM_VERSION}"
+          ./mill java -version
 
       - name: Run tests for Java HTTP Client on JVM
         run: |
@@ -110,6 +132,7 @@ jobs:
     needs:
       - test-linux
     env:
+      SNHTTP_DEV_JVM_VERSION: "${{ matrix.java }}"
       VCPKG_DEFAULT_TRIPLET: x64-windows # x64-windows-static
       VCPKG_ROOT: "${{ github.workspace }}\\vcpkg"
       VCPKG_INSTALLED_DIR: "${{ github.workspace }}\\vcpkg\\installed"
@@ -123,10 +146,10 @@ jobs:
           # - "21"
           - "25"
     steps:
-      - uses: actions/setup-java@v5
-        with:
-          java-version: ${{ matrix.java }}
-          distribution: "temurin"
+      # - uses: actions/setup-java@v5
+      #   with:
+      #     java-version: ${{ matrix.java }}
+      #     distribution: "temurin"
       - uses: actions/checkout@v6
 
       - uses: coursier/cache-action@v7
@@ -189,12 +212,12 @@ jobs:
       LC_MESSAGES: "en_US.UTF-8"
       LC_ALL: "en_US.UTF-8"
     steps:
+      # - uses: actions/setup-java@v5
+      #   with:
+      #     java-version: ${{ matrix.java }}
+      #     distribution: "temurin"
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-java@v5
-        with:
-          java-version: ${{ matrix.java }}
-          distribution: "temurin"
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v2
         with:
