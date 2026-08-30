@@ -1279,7 +1279,7 @@ class BodySubscribersTest extends TestSuite:
 
     test("limiting should reject negative capacity") {
       if (Properties.isJavaAtLeast(25) || isNative) {
-        assertThrows[IllegalArgumentException] {
+        val _ = assertThrows[IllegalArgumentException] {
           BodySubscribers.limiting(BodySubscribers.ofString(StandardCharsets.UTF_8), -1L): Unit
         }
       }

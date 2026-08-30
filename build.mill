@@ -24,7 +24,6 @@ import scalalib.{ScalaModule, TestModule, PublishModule}
 import scalalib.publish.{Developer, License, PomSettings, VersionControl}
 import scalalib.scalafmt.ScalafmtModule
 import scalanativelib.ScalaNativeModule
-import scalanativelib.api.{LTO, ReleaseMode}
 
 import com.goyeau.mill.scalafix.ScalafixModule
 
@@ -71,12 +70,6 @@ trait CommonModule extends ScalaNativeModule with CommonPublishModule with Scala
     "-P:scalanative:genStaticForwardersForNonTopLevelObjects",
     // "-explain",
   )
-
-  /// Define Scala Native Module
-  // def releaseMode = ReleaseMode.ReleaseFast
-  def releaseMode = ReleaseMode.Debug
-
-  // def nativeLTO = LTO.Thin
 
   def nativeIncrementalCompilation = true
 

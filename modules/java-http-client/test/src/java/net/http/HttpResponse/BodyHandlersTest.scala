@@ -1062,7 +1062,7 @@ class BodyHandlersTest extends TestSuite:
     test("limiting should reject negative capacity") {
       if (Properties.isJavaAtLeast(25) || isNative) {
         val downstreamHandler = BodyHandlers.ofString()
-        assertThrows[IllegalArgumentException] {
+        val _ = assertThrows[IllegalArgumentException] {
           BodyHandlers.limiting(downstreamHandler, -1L): Unit
         }
       }
