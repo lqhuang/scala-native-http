@@ -813,7 +813,52 @@ class BodySubscribersTest extends TestSuite:
       inputStream.close()
     }
 
-    test("ofInputStream bulk read should wait for delayed data") {
+    test("ofInputStream should skip empty buffers during single-byte reads") {
+      val subscriber = BodySubscribers.ofInputStream()
+      subscriber.onSubscribe(MockSubscription())
+      val inputStream = subscriber.getBody().toCompletableFuture().get()
+      val exhausted = ByteBuffer.wrap(Array[Byte](42))
+      exhausted.position(exhausted.limit())
+
+      subscriber.onNext(
+        JList.of(
+          ByteBuffer.allocate(0),
+          exhausted,
+          ByteBuffer.wrap(Array[Byte](127, -1)),
+          ByteBuffer.allocate(0),
+        ),
+      )
+      subscriber.onComplete()
+
+      try {
+        assert(inputStream.read() == 127)
+        assert(inputStream.read() == 255)
+        assert(inputStream.read() == -1)
+        assert(inputStream.read() == -1)
+      } finally inputStream.close()
+    }
+
+    test("ofInputStream should skip empty buffers during bulk reads and at EOF") {
+      for (data <- Seq(Array.empty[Byte], Array[Byte](1, 2, 3))) {
+        val subscriber = BodySubscribers.ofInputStream()
+        subscriber.onSubscribe(MockSubscription())
+        val inputStream = subscriber.getBody().toCompletableFuture().get()
+        subscriber.onNext(
+          JList.of(ByteBuffer.allocate(0), ByteBuffer.wrap(data), ByteBuffer.allocate(0)),
+        )
+        subscriber.onComplete()
+
+        try {
+          val bytes = new Array[Byte](8)
+          val count = inputStream.read(bytes, 0, bytes.length)
+          assert(count == (if data.isEmpty then -1 else data.length))
+          assert(bytes.take(data.length).sameElements(data))
+          assert(inputStream.read(bytes, 0, bytes.length) == -1)
+        } finally inputStream.close()
+      }
+    }
+
+    test("ofInputStream bulk read should wait for delayed data after empty buffers") {
       val subscriber = BodySubscribers.ofInputStream()
       subscriber.onSubscribe(MockSubscription())
       val inputStream = subscriber.getBody().toCompletableFuture().get()
@@ -834,6 +879,7 @@ class BodySubscribersTest extends TestSuite:
       reader.start()
 
       assert(readerStarted.await(5L, TimeUnit.SECONDS))
+      subscriber.onNext(JList.of(ByteBuffer.allocate(0)))
       Thread.sleep(50L)
       assert(!readResult.isDone())
 

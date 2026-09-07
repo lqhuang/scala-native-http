@@ -410,7 +410,8 @@ private[snhttp] class InputStreamBodySubscriber(capacity: Int = 8)
       while //
         iter.hasNext()
       do
-        queue.put(iter.next()); ()
+        val buffer = iter.next()
+        if (buffer.hasRemaining()) queue.put(buffer)
 
       subscription.request(Math.max(1, queue.remainingCapacity() - 1))
     }
