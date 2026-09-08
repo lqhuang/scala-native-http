@@ -3,7 +3,7 @@ package snhttp.test.java.net.http
 import java.net.http.HttpHeaders
 import java.util.List as JList
 import java.util.Map as JMap
-import java.util.TreeMap
+import java.util.{ArrayList, TreeMap}
 import java.util.function.BiPredicate
 
 import utest.{Tests, TestSuite, test, assert, assertThrows}
@@ -193,6 +193,44 @@ class HttpHeadersTest extends TestSuite:
       assert(values.size() == 2)
       assert(values.get(0) == "application/json")
       assert(values.get(1) == "charset=utf-8")
+    }
+
+    test("allValues returns an unmodifiable list for an existing header") {
+      val original = JList.of("text/plain", "application/json")
+      val headers = HttpHeaders.of(JMap.of("Accept", original), accpetAllFilter)
+      val values = headers.allValues("accept")
+
+      assertThrows[UnsupportedOperationException] {
+        values.add("text/html"): Unit
+      }: Unit
+      assertThrows[UnsupportedOperationException] {
+        values.set(0, "text/html"): Unit
+      }: Unit
+      assertThrows[UnsupportedOperationException] {
+        val iterator = values.iterator()
+        iterator.next(): Unit
+        iterator.remove()
+      }: Unit
+      assert(headers.allValues("Accept") == original)
+    }
+
+    test("map exposes unmodifiable header value lists") {
+      val original = JList.of("text/plain", "application/json")
+      val headers = HttpHeaders.of(JMap.of("Accept", original), accpetAllFilter)
+
+      assertThrows[UnsupportedOperationException] {
+        headers.map().get("ACCEPT").clear()
+      }: Unit
+      assert(headers.allValues("Accept") == original)
+    }
+
+    test("header values are independent of the caller's mutable input list") {
+      val input = new ArrayList[String](JList.of("text/plain"))
+      val headers = HttpHeaders.of(JMap.of("Accept", input), accpetAllFilter)
+
+      input.set(0, "application/json"): Unit
+      input.add("text/html"): Unit
+      assert(headers.allValues("Accept") == JList.of("text/plain"))
     }
 
     test("firstValue returns empty optional for non-existent header") {

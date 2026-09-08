@@ -99,7 +99,7 @@ object HttpHeaders:
       }
 
       if (!headerValues.isEmpty)
-        newHeaderMap.put(headerKey, headerValues): Unit
+        newHeaderMap.put(headerKey, Collections.unmodifiableList(headerValues)): Unit
     }
 
     if newHeaderMap.isEmpty
