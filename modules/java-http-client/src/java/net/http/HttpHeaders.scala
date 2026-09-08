@@ -65,7 +65,6 @@ object HttpHeaders:
 
       requireNonNull(key)
       requireNonNull(values, s"values for key '${key}' can not be null")
-      require(!values.isEmpty, s"empty values for key '${key}'")
 
       val headerKey = key.trim()
       require(!headerKey.isEmpty, "empty key")
@@ -92,7 +91,6 @@ object HttpHeaders:
       values.forEach { s =>
         requireNonNull(s, s"header value can not be null")
         val trimedValue = requireNonNull(s).trim()
-        require(!trimedValue.isEmpty, s"empty value for key '${headerKey}'")
 
         if (filter.test(headerKey, trimedValue))
           headerValues.add(trimedValue): Unit
