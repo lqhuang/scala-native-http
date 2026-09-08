@@ -287,18 +287,25 @@ private[snhttp] class PathBodySubscriber(file: Path, openOptions: OpenOption*)
         fh = FileChannel.open(file, openOptions*)
         this.subscription.request(1)
       catch //
-        case exc: IOException => onError(exc)
+        case exc: IOException =>
+          this.subscription.cancel()
+          onError(exc)
     } //
     else //
       subscription.cancel()
   }
 
   override def onNext(item: JList[ByteBuffer]): Unit =
-    item.stream().forEach { buf =>
-      requireNonNull(buf)
-      if (buf.hasRemaining()) fh.write(buf.duplicate()): Unit
-    }
-    subscription.request(1)
+    try
+      item.stream().forEach { buf =>
+        requireNonNull(buf)
+        if (buf.hasRemaining()) fh.write(buf.duplicate()): Unit
+      }
+      subscription.request(1)
+    catch
+      case exc: IOException =>
+        subscription.cancel()
+        onError(exc)
 
   override def onError(e: Throwable): Unit =
     closeFileChannel()
