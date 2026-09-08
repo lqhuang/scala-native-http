@@ -432,7 +432,7 @@ final class HttpClientImpl(
       )
 
   private transparent inline def toEpollTimeout(curlSocketActionTimeout: CLong): Int =
-    Math.clamp(curlSocketActionTimeout.toInt, -1, Int.MaxValue)
+    Math.min(Math.max(curlSocketActionTimeout.toInt, -1), Int.MaxValue)
 
   private def mainLoop(): Unit = {
     if (_shutdownNowCalled)

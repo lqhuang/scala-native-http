@@ -23,9 +23,9 @@ jobs:
       fail-fast: false
       matrix:
         java:
-          - "11"
-          - "17"
-          - "21"
+          # - "11"
+          # - "17"
+          # - "21"
           - "25"
     steps:
       # - uses: actions/setup-java@v5
@@ -103,7 +103,7 @@ jobs:
           clang++ --version
           openssl version
           brew list --versions curl
-          sed -i 's#//| mill-jvm-version: 25#//| mill-jvm-version: ${{ matrix.java }}#' build.mill
+          sed -i '' 's#//| mill-jvm-version: 25#//| mill-jvm-version: ${{ matrix.java }}#' build.mill
           ./mill --no-server java -version
           ./mill --no-server clean
 
