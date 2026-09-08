@@ -65,15 +65,16 @@ object HttpRequest:
     requireNonNull(request)
     requireNonNull(filter)
 
-    val builder = newBuilder(request.uri()).expectContinue(request.expectContinue())
+    val method = snhttp.core.Method(request.method()).getOrElse {
+      throw new IllegalArgumentException(s"Invalid HTTP method: ${request.method()}")
+    }
+    val builder = new HttpRequestBuilderImpl(
+      _method = method,
+      _bodyPublisher = request.bodyPublisher(),
+    ).uri(request.uri()).expectContinue(request.expectContinue())
 
     if (request.version().isPresent()) builder.version(request.version().get()): Unit
     if (request.timeout().isPresent()) builder.timeout(request.timeout().get()): Unit
-
-    val publisher =
-      if request.bodyPublisher().isPresent() then request.bodyPublisher().get()
-      else BodyPublishers.noBody()
-    builder.method(request.method(), publisher): Unit
 
     val newHeaders = HttpHeaders.of(request.headers().map(), filter)
     newHeaders
