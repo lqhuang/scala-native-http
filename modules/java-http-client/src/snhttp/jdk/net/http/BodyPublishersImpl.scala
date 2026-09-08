@@ -174,9 +174,20 @@ private[snhttp] class InputStreamBodyPublisher(
     val stream = supplier.get()
     if stream == null
     then {
-      val publisher = new PullPublisher(Iterator.empty[ByteBuffer], () => ())
-      publisher.subscribe(subscriber)
-      subscriber.onError(new IOException("stream supplier returned null"))
+      val terminated = new AtomicBoolean(false)
+      def fail(error: Throwable): Unit =
+        if (terminated.compareAndSet(false, true))
+          subscriber.onError(error)
+
+      subscriber.onSubscribe(new Subscription {
+        override def request(n: Long): Unit =
+          if (n <= 0)
+            fail(new IllegalArgumentException(s"Non-positive request: ${n}"))
+
+        override def cancel(): Unit =
+          terminated.set(true)
+      })
+      fail(new IOException("stream supplier returned null"))
     } else {
       val closeStream = () =>
         try stream.close()
