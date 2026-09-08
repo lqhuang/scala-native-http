@@ -19,15 +19,13 @@ env:
 jobs:
   test-linux:
     runs-on: ubuntu-latest
-    env:
-      SNHTTP_DEV_JVM_VERSION: "${{ matrix.java }}"
     strategy:
       fail-fast: false
       matrix:
         java:
-          # - "11"
-          # - "17"
-          # - "21"
+          - "11"
+          - "17"
+          - "21"
           - "25"
     steps:
       # - uses: actions/setup-java@v5
@@ -52,7 +50,7 @@ jobs:
           clang++ --version
           openssl version
           echo "installed curl: $(dpkg-query -W -f='${Version}\n' curl)"
-          echo "SNHTTP_DEV_JVM_VERSION=${SNHTTP_DEV_JVM_VERSION}"
+          sed -i 's#//| mill-jvm-version: 25#//| mill-jvm-version: ${{ matrix.java }}#' build.mill
           ./mill --no-server java -version
           ./mill --no-server clean
 
@@ -76,15 +74,13 @@ jobs:
 
   test-macos:
     runs-on: macos-latest
-    env:
-      SNHTTP_DEV_JVM_VERSION: "${{ matrix.java }}"
     strategy:
       fail-fast: false
       matrix:
         java:
-          # - "11"
-          # - "17"
-          # - "21"
+          - "11"
+          - "17"
+          - "21"
           - "25"
     steps:
       # - uses: actions/setup-java@v5
@@ -107,7 +103,7 @@ jobs:
           clang++ --version
           openssl version
           brew list --versions curl
-          echo "SNHTTP_DEV_JVM_VERSION=${SNHTTP_DEV_JVM_VERSION}"
+          sed -i 's#//| mill-jvm-version: 25#//| mill-jvm-version: ${{ matrix.java }}#' build.mill
           ./mill --no-server java -version
           ./mill --no-server clean
 
