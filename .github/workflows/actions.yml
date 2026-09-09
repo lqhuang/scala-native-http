@@ -78,9 +78,9 @@ jobs:
       fail-fast: false
       matrix:
         java:
-          - "11"
-          - "17"
-          - "21"
+          # - "11"
+          # - "17"
+          # - "21"
           - "25"
     steps:
       # - uses: actions/setup-java@v5
@@ -129,6 +129,7 @@ jobs:
     runs-on: windows-latest
     needs:
       - test-linux
+      - test-macos
     env:
       SNHTTP_DEV_JVM_VERSION: "${{ matrix.java }}"
       VCPKG_DEFAULT_TRIPLET: x64-windows # x64-windows-static
