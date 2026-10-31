@@ -10,3 +10,7 @@ out/
 .mill/
 .scala-build
 .DS_Store
+
+.agents/
+AGENTS.md
+

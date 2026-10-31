@@ -24,8 +24,8 @@ jobs:
       matrix:
         java:
           # - "11"
-          # - "17"
-          # - "21"
+          - "17"
+          - "21"
           - "25"
     steps:
       # - uses: actions/setup-java@v5
@@ -79,8 +79,8 @@ jobs:
       matrix:
         java:
           # - "11"
-          # - "17"
-          # - "21"
+          - "17"
+          - "21"
           - "25"
     steps:
       # - uses: actions/setup-java@v5
