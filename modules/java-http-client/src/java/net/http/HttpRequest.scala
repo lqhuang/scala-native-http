@@ -162,6 +162,9 @@ object HttpRequest:
     def noBody(): BodyPublisher =
       BodyPublishersImpl.noBody()
 
+    def concat(publishers: BodyPublisher*): BodyPublisher =
+      concat(publishers.toArray)
+
     def concat(publishers: Array[BodyPublisher]): BodyPublisher =
       BodyPublishersImpl.concat(publishers*)
 

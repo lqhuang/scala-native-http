@@ -99,6 +99,9 @@ object HttpResponse:
     def ofString(charset: Charset): BodyHandler[String] =
       _ => BodySubscribers.ofString(charset)
 
+    def ofFile(file: Path, openOptions: OpenOption*): BodyHandler[Path] =
+      ofFile(file, openOptions.toArray)
+
     def ofFile(file: Path, openOptions: Array[OpenOption]): BodyHandler[Path] = {
       requireNonNull(file)
       require(
@@ -117,6 +120,9 @@ object HttpResponse:
      * if the given path does not exist, is not of the default file system, is not a directory, is
      * not writable, or if an invalid set of open options are specified
      */
+    def ofFileDownload(directory: Path, openOptions: OpenOption*): BodyHandler[Path] =
+      ofFileDownload(directory, openOptions.toArray)
+
     def ofFileDownload(directory: Path, openOptions: Array[OpenOption]): BodyHandler[Path] = {
       require(
         !openOptions.contains(DELETE_ON_CLOSE) && !openOptions.contains(READ),
@@ -218,6 +224,9 @@ object HttpResponse:
 
     def ofByteArray(): BodySubscriber[Array[Byte]] =
       BodySubscribersImpl.ofByteArray(identity)
+
+    def ofFile(file: Path, openOptions: OpenOption*): BodySubscriber[Path] =
+      ofFile(file, openOptions.toArray)
 
     def ofFile(file: Path, openOptions: Array[OpenOption]): BodySubscriber[Path] =
       requireNonNull(file)
