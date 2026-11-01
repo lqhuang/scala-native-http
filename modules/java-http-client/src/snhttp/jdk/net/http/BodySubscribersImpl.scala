@@ -3,8 +3,8 @@ package snhttp.jdk.net.http
 import java.io.IOException
 import java.io.{BufferedReader, InputStream, InputStreamReader}
 import java.net.http.HttpResponse.BodySubscriber
-import java.nio.ByteBuffer
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.{ByteBuffer, CharBuffer}
+import java.nio.charset.{Charset, CodingErrorAction, StandardCharsets}
 import java.nio.channels.FileChannel
 import java.nio.file.{Path, OpenOption}
 import java.util.{ArrayList, Optional, List as JList}
@@ -19,7 +19,6 @@ import java.util.function.{Consumer, Function}
 import java.util.concurrent.Flow.{Publisher, Subscription, Subscriber}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
-import java.util.regex.Pattern
 import java.util.stream.Stream
 
 object BodySubscribersImpl:
@@ -145,7 +144,13 @@ private[snhttp] class LineSubscriberWrapper[S <: Subscriber[? >: String], R](
   private val cf = new CompletableFuture[R]()
   private val subscribed = new AtomicBoolean()
   private val sbuilder = new StringBuilder()
-  private val lineSeparator = if eol == null then System.lineSeparator() else eol
+  private val decoder = charset
+    .newDecoder()
+    .onMalformedInput(CodingErrorAction.REPLACE)
+    .onUnmappableCharacter(CodingErrorAction.REPLACE)
+  private val chars = CharBuffer.allocate(1024)
+  private var pending = ByteBuffer.allocate(0)
+  private var skipLF = false
 
   @volatile
   private var subscription: Subscription = _
@@ -161,19 +166,50 @@ private[snhttp] class LineSubscriberWrapper[S <: Subscriber[? >: String], R](
       subscription.cancel()
   }
 
-  override def onNext(item: JList[ByteBuffer]): Unit = {
-    val text = item
-      .forEach(bb => sbuilder.append(charset.decode(bb.duplicate()).toString))
+  override def onNext(item: JList[ByteBuffer]): Unit =
+    item.forEach { bb =>
+      val input =
+        if !pending.hasRemaining() then bb.duplicate()
+        else {
+          val combined = ByteBuffer.allocate(pending.remaining() + bb.remaining())
+          combined.put(pending).put(bb.duplicate()).flip()
+        }
+      decode(input, false)
+      // Copy only the incomplete character; do not retain the publisher's buffer.
+      pending = ByteBuffer.allocate(input.remaining())
+      pending.put(input).flip(): Unit
+    }
 
-    val lines = sbuilder.toString().split(Pattern.quote(lineSeparator), -1)
-    // Process all complete lines except the last line.
-    // Keep the last line in builder, the last line will be processed in `onComplete`.
-    // Avoid splitting the last line with incorrect chunks.
-    lines.init.foreach(x => subscriber.onNext(x))
+  private def decode(input: ByteBuffer, endOfInput: Boolean): Unit = {
+    var overflow = true
+    while (overflow) {
+      val result = decoder.decode(input, chars, endOfInput)
+      emitChars()
+      overflow = result.isOverflow()
+    }
+  }
 
-    // Clear processed
-    sbuilder.clear()
-    sbuilder.append(lines.last)
+  private def emitChars(): Unit = {
+    chars.flip()
+    while (chars.hasRemaining()) {
+      val ch = chars.get()
+      if (eol == null) {
+        if (!(skipLF && ch == '\n')) {
+          if (ch == '\r' || ch == '\n') {
+            subscriber.onNext(sbuilder.toString)
+            sbuilder.clear()
+          } else sbuilder.append(ch): Unit
+        }
+        skipLF = ch == '\r'
+      } else {
+        sbuilder.append(ch)
+        if (sbuilder.endsWith(eol)) {
+          subscriber.onNext(sbuilder.substring(0, sbuilder.length - eol.length))
+          sbuilder.clear()
+        }
+      }
+    }
+    chars.clear(): Unit
   }
 
   override def onError(throwable: Throwable): Unit =
@@ -183,6 +219,13 @@ private[snhttp] class LineSubscriberWrapper[S <: Subscriber[? >: String], R](
 
   override def onComplete(): Unit =
     try {
+      decode(pending, true)
+      var overflow = true
+      while (overflow) {
+        val result = decoder.flush(chars)
+        emitChars()
+        overflow = result.isOverflow()
+      }
       if (sbuilder.nonEmpty) subscriber.onNext(sbuilder.toString)
       subscriber.onComplete()
     } //

@@ -25,7 +25,7 @@ class BodySubscribersLineTest extends TestSuite:
     subscriber.onSubscribe(MockSubscription())
     events.foreach { chunks =>
       val buffers = new java.util.ArrayList[ByteBuffer]()
-      chunks.foreach(chunk => (buffers.add(ByteBuffer.wrap(chunk)): Unit))
+      chunks.foreach(chunk => buffers.add(ByteBuffer.wrap(chunk)): Unit)
       subscriber.onNext(buffers)
     }
     subscriber.onComplete()
@@ -116,4 +116,19 @@ class BodySubscribersLineTest extends TestSuite:
       )
     }
 
-end BodySubscribersLineTest
+    test("long lines preserve supplementary characters across decoder output chunks") {
+      val line = "a" * 1023 + "\ud83d\ude00" + "z" * 2048
+      checkLines(
+        Seq(Seq((line + "\r\nlast").getBytes(UTF_8))),
+        null,
+        Seq(line, "last"),
+      )
+    }
+
+    test("literal multi-character separator spans events and preserves partial suffix") {
+      checkLines(
+        Seq("a|", "|", "|", "|b|", "tail|").map(s => Seq(s.getBytes(UTF_8))),
+        "||",
+        Seq("a", "", "b|tail|"),
+      )
+    }
