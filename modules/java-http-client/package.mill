@@ -12,6 +12,8 @@ private val sharedTestOnlyDeps = Seq(
   mvn"org.http4s::http4s-ember-server::1.0.0-M47",
 )
 
+private val testApiVersions = Seq(21, 25) // minimum supported API versions for testing
+
 object `package` extends build.CommonModule:
   upper =>
 
@@ -36,6 +38,9 @@ object `package` extends build.CommonModule:
 
   object test extends ScalaNativeTests with build.UTestModule:
 
+    // Avoid loading jointly compiled java.* shim classes in the JVM test discoverer.
+    override def discoverTestsWithZinc = true
+
     def nativeLinkingOptions =
       (
         if Properties.isMac
@@ -51,8 +56,14 @@ object `package` extends build.CommonModule:
     def mvnDeps = sharedTestOnlyDeps
 
     def sources = Task.Sources(
-      moduleDir / "src", // modules/java-http-client/test/src
-      moduleDir / "src-native", // modules/java-http-client/test/src-native
+      (
+        Seq(
+          moduleDir / "src", // modules/java-http-client/test/src
+          moduleDir / "src-native", // modules/java-http-client/test/src-native
+        )
+          ++ testApiVersions.map(version => moduleDir / s"src-jdk${version}")
+          // modules/java-http-client/test/src-jdk??
+      )*,
     )
 
   end test
@@ -64,8 +75,6 @@ object `package` extends build.CommonModule:
     def scalaVersion = build.scalaVersion
     def sources = Seq() // no sources for JVM
 
-    override def jvmVersion = "25"
-
     object test extends ScalaTests with build.UTestModule:
 
       def mvnDeps = sharedTestOnlyDeps ++ Seq(
@@ -75,8 +84,18 @@ object `package` extends build.CommonModule:
       )
 
       def sources = Task.Sources(
-        upperModuleTestDir / "src", // modules/java-http-client/test/src
-        upperModuleTestDir / "src-jvm", // modules/java-http-client/test/src-jvm
+        (
+          Seq(
+            upperModuleTestDir / "src", // modules/java-http-client/test/src
+            upperModuleTestDir / "src-jvm", // modules/java-http-client/test/src-jvm
+          )
+            ++ testApiVersions
+              .filter(Properties.isJavaAtLeast)
+              .map(version => upperModuleTestDir / s"src-jdk${version}")
+            ++ (if Properties.isJavaAtLeast(21)
+                then Seq.empty
+                else Seq(upperModuleTestDir / "src-jvm-pre21"))
+        )*,
       )
 
       def resources = Task.Sources(

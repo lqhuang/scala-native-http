@@ -221,55 +221,13 @@ class HttpClientBuilderTest extends TestSuite:
         builder.priority(-1): Unit
     }
 
-    test("HttpClient builder should configure local address") {
-      val localAddr = InetAddress.getLoopbackAddress()
-      val client = HttpClient
-        .newBuilder()
-        .localAddress(localAddr)
-        .build()
-
-      // The client should be created successfully
-      assert(client != null)
-    }
-
-    test("HttpClient should handle various local address configurations") {
-      val loopback = InetAddress.getLoopbackAddress()
-      val anyLocal = InetAddress.getByName("0.0.0.0")
-
-      val client1 = HttpClient
-        .newBuilder()
-        .localAddress(loopback)
-        .build()
-
-      val client2 = HttpClient
-        .newBuilder()
-        .localAddress(anyLocal)
-        .build()
-
-      // Both should be created successfully
-      assert(client1 != null)
-      assert(client2 != null)
-    }
-
-    /*
-     * doesn't pass on JVM
-     */
-    // test("HttpClient builder should reject null local address") {
-    //   val builder = HttpClient.newBuilder()
-    //   assertThrows[NullPointerException] {
-    //     builder.localAddress(null): Unit
-    //   }
-    // }
-
     test("HttpClient builder should chain method calls") {
-      val localAddr = InetAddress.getLoopbackAddress()
       val client = HttpClient
         .newBuilder()
         .version(Version.HTTP_2)
         .followRedirects(Redirect.ALWAYS)
         .connectTimeout(Duration.ofSeconds(10))
         .priority(100)
-        .localAddress(localAddr)
         .build()
 
       assert(client.version() == Version.HTTP_2)

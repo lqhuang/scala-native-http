@@ -5,7 +5,7 @@ import java.io.{FileInputStream, ByteArrayInputStream}
 import java.net.URI
 import java.net.ConnectException
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.net.http.HttpConnectTimeoutException
+import java.net.http.{HttpConnectTimeoutException, HttpTimeoutException}
 import java.net.http.HttpClient.{Redirect, Version}
 import java.net.http.HttpResponse.{BodyHandlers, BodySubscribers, PushPromiseHandler}
 import java.net.http.HttpRequest.BodyPublishers
@@ -111,7 +111,6 @@ class HttpClientTest extends TestSuite:
         assert(client.proxy().isEmpty())
         assert(client.sslContext() == SSLContext.getDefault())
         assert(client.sslParameters() != null)
-        assert(client.isTerminated() == false)
       }
     }
 
@@ -174,8 +173,7 @@ class HttpClientTest extends TestSuite:
             val response = client.sendAsync(request, BodyHandlers.ofString())
             assert(!response.isDone())
 
-            client.shutdownNow()
-            assert(client.awaitTermination(Duration.ofSeconds(5L)))
+            val _ = response.cancel(true)
           }
         }
       }
@@ -293,7 +291,7 @@ class HttpClientTest extends TestSuite:
               val request = method match {
                 case "GET"    => requestBuilder.GET().build()
                 case "DELETE" => requestBuilder.DELETE().build()
-                case "HEAD"   => requestBuilder.HEAD().build()
+                case "HEAD"   => requestBuilder.method("HEAD", BodyPublishers.noBody()).build()
                 // FIXME: eject http + `POST` / "PUT" test case for now, there should be a bug when JVM meets httpbingo.org
                 case "PUT" =>
                   requestBuilder
@@ -364,92 +362,9 @@ class HttpClientTest extends TestSuite:
         // assert(response.sslSession().isPresent())
         // assert(response.connectionLabel().isPresent())
 
-        client.close()
+        ClientUtils.closeClient(client)
       }
 
-    }
-
-    test("Shutdown and lifecycle") {
-      test("HttpClient should reject later operations after shutdown") {
-        withNewHttpClient { client =>
-          assert(client.isTerminated() == false)
-
-          // Shutdown
-          client.shutdown()
-
-          // Further requests should fail
-          val request = HttpRequest.newBuilder(URI.create("http://example.com")).build()
-          val bodyHandler = BodyHandlers.ofString()
-
-          val _ = assertThrows[IOException] {
-            client.send(request, bodyHandler): Unit
-          }
-
-          val cf = client.sendAsync(request, bodyHandler)
-          val exc = assertThrows[ExecutionException] {
-            cf.get(): Unit
-          }
-          assert(exc.getCause().isInstanceOf[IOException])
-        }
-      }
-
-      test("awaitTermination should report termination after shutdownNow") {
-        withNewHttpClient { client =>
-
-          client.sendAsync(
-            HttpRequest.newBuilder(URI.create("https://example.org")).build(),
-            BodyHandlers.ofString(),
-          )
-
-          val result1 = client.awaitTermination(Duration.ofMillis(50))
-          assert(result1 == false)
-
-          // Shutdown and wait
-          client.shutdownNow()
-          val result2 = client.awaitTermination(Duration.ofSeconds(1))
-          assert(result2 == true)
-        }
-      }
-
-      test("awaitTermination should reject null and non-positive durations") {
-        withNewHttpClient { client =>
-          val _ = assertThrows[NullPointerException] {
-            client.awaitTermination(null): Unit
-          }
-          assert(client.awaitTermination(Duration.ofSeconds(-1)) == false)
-          assert(client.awaitTermination(Duration.ofSeconds(0)) == false)
-        }
-      }
-
-      test("close() should shutdown gracefully") {
-        val client = HttpClient.newHttpClient()
-        assert(client.isTerminated() == false)
-        // This should not throw
-        client.close()
-        // Should be terminated after close
-        assert(client.isTerminated() == true)
-      }
-
-      test("HttpClient should handle interrupted threads during close") {
-        val client = HttpClient.newHttpClient()
-        var interrupted = false
-
-        val thread = new Thread(() =>
-          try client.close()
-          catch
-            case _: InterruptedException =>
-              interrupted = true,
-        )
-
-        thread.start()
-        // Give it a moment to start, then interrupt
-        Thread.sleep(50)
-        thread.interrupt()
-        thread.join(1000)
-
-        // The thread should have been interrupted
-        assert(thread.isInterrupted() || interrupted)
-      }
     }
 
     test("HttpClient sendAsync() with push promise handler") {
@@ -683,7 +598,7 @@ class HttpClientTest extends TestSuite:
               assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
             }
           finally //
-            client.close()
+            ClientUtils.closeClient(client)
         }
       }
 
@@ -704,7 +619,7 @@ class HttpClientTest extends TestSuite:
               assert(response.version().ordinal() >= Version.HTTP_2.ordinal())
             }
           finally //
-            client.close()
+            ClientUtils.closeClient(client)
         }
       }
 
@@ -793,19 +708,6 @@ class HttpClientTest extends TestSuite:
         }
       }
 
-      test("should get response status code 200 when sending HEAD") {
-        withNewHttpClient { client =>
-          val request = HttpRequest
-            .newBuilder(httpbinEndpoint("/get"))
-            .HEAD()
-            .build()
-          val response = client.send(request, BodyHandlers.ofString())
-
-          assert(response.statusCode() == 200)
-          assert(response.request() == request)
-          assert(response.body() == "")
-        }
-      }
     }
 
     test("Headers") {
@@ -966,18 +868,20 @@ class HttpClientTest extends TestSuite:
             client.send(request, BodyHandlers.ofString()): Unit
           }
         finally //
-          client.close()
+          ClientUtils.closeClient(client)
       }
 
       test("HttpClient should handle timeout (readTimeout) for HttpRequest") {
-        withNewHttpClient { client =>
-          val request = HttpRequest
-            .newBuilder(httpbinEndpoint("/delay/2")) // 2 seconds delay
-            .timeout(Duration.ofMillis(10))
-            .build()
+        ServerUtils.usingEchoServer { port =>
+          withNewHttpClient { client =>
+            val request = HttpRequest
+              .newBuilder(URI.create(s"http://127.0.0.1:${port}/never"))
+              .timeout(Duration.ofMillis(250))
+              .build()
 
-          val exc = assertThrows[HttpConnectTimeoutException] {
-            client.send(request, BodyHandlers.ofString()): Unit
+            val exc = assertThrows[HttpTimeoutException] {
+              client.send(request, BodyHandlers.ofString()): Unit
+            }
           }
         }
       }
@@ -1028,7 +932,7 @@ class HttpClientTest extends TestSuite:
 
           assert(response.statusCode() == 200)
       finally //
-        client.close()
+        ClientUtils.closeClient(client)
     }
 
     val url = "https://client.badssl.com"

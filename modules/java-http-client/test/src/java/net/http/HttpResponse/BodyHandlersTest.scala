@@ -14,8 +14,6 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.function.{Consumer, Function}
 
-import scala.util.Properties
-
 import _root_.snhttp.test.jdk.net.http.{
   MockBodySubscriber,
   MockSubscription,
@@ -31,8 +29,6 @@ import _root_.snhttp.test.jdk.net.http.HttpClientTestUtils.{
 import utest.{TestSuite, Tests, test, assert, assertThrows}
 
 class BodyHandlersTest extends TestSuite:
-
-  val isNative = Properties.propOrEmpty("java.vm.name") == "Scala Native"
 
   def rmdir(path: Path): Unit =
     try //
@@ -1021,109 +1017,6 @@ class BodyHandlersTest extends TestSuite:
       val downstreamHandler = BodyHandlers.ofString()
       assertThrows[IllegalArgumentException] {
         BodyHandlers.buffering(downstreamHandler, -1): Unit
-      }
-    }
-
-    // ============================== //
-    // Test BodyHandlers.limiting()   //
-    // ============================== //
-
-    test("limiting should create limiting handler") {
-      if (Properties.isJavaAtLeast(25) || isNative) {
-        val downstreamHandler = BodyHandlers.ofString()
-        val handler = BodyHandlers.limiting(downstreamHandler, 1024L)
-        val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
-        val subscriber = handler(responseInfo)
-
-        subscriber.onSubscribe(MockSubscription())
-        subscriber.onNext(JList.of(ByteBuffer.wrap("Hello".getBytes(StandardCharsets.UTF_8))))
-        subscriber.onComplete()
-
-        val result = subscriber.getBody().toCompletableFuture().get()
-        assert(result == "Hello")
-      }
-    }
-
-    test("limiting should accept zero capacity with no data") {
-      if (Properties.isJavaAtLeast(25) || isNative) {
-        val downstreamHandler = BodyHandlers.ofString()
-        val handler = BodyHandlers.limiting(downstreamHandler, 0L)
-        val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
-        val subscriber = handler(responseInfo)
-
-        subscriber.onSubscribe(MockSubscription())
-        subscriber.onComplete()
-
-        val result = subscriber.getBody().toCompletableFuture().get()
-        assert(result == "")
-      }
-    }
-
-    test("limiting should reject negative capacity") {
-      if (Properties.isJavaAtLeast(25) || isNative) {
-        val downstreamHandler = BodyHandlers.ofString()
-        val _ = assertThrows[IllegalArgumentException] {
-          BodyHandlers.limiting(downstreamHandler, -1L): Unit
-        }
-      }
-    }
-
-    test("limiting should pass data at exact capacity boundary") {
-      if (Properties.isJavaAtLeast(25) || isNative) {
-        val downstreamHandler = BodyHandlers.ofString()
-        val handler = BodyHandlers.limiting(downstreamHandler, 5L)
-        val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
-        val subscriber = handler(responseInfo)
-
-        subscriber.onSubscribe(MockSubscription())
-        subscriber.onNext(
-          JList.of(ByteBuffer.wrap("Hello".getBytes(StandardCharsets.UTF_8))),
-        ) // 5 == 5
-        subscriber.onComplete()
-
-        val result = subscriber.getBody().toCompletableFuture().get()
-        assert(result == "Hello")
-      }
-    }
-
-    test("limiting should error when data exceeds capacity") {
-      if (Properties.isJavaAtLeast(25) || isNative) {
-        val downstreamHandler = BodyHandlers.ofString()
-        val handler = BodyHandlers.limiting(downstreamHandler, 3L)
-        val responseInfo = createResponseInfo(Map("Content-Type" -> "text/plain; charset=utf-8"))
-        val subscriber = handler(responseInfo)
-
-        subscriber.onSubscribe(MockSubscription())
-        subscriber.onNext(
-          JList.of(ByteBuffer.wrap("Hello".getBytes(StandardCharsets.UTF_8))),
-        ) // 5 > 3
-
-        val exc = assertThrows[ExecutionException] {
-          subscriber.getBody().toCompletableFuture().get(): Unit
-        }
-        assert(exc.getCause().isInstanceOf[IOException])
-      }
-    }
-
-    test("limiting should error when multiple buffers in one onNext together exceed capacity") {
-      if (Properties.isJavaAtLeast(25) || isNative) {
-        val downstreamHandler = BodyHandlers.ofByteArray()
-        val handler = BodyHandlers.limiting(downstreamHandler, 4L)
-        val subscriber = handler(createResponseInfo())
-
-        subscriber.onSubscribe(MockSubscription())
-        // two buffers: "He" (2 bytes) + "llo" (3 bytes) = 5 > 4
-        subscriber.onNext(
-          JList.of(
-            ByteBuffer.wrap("He".getBytes(StandardCharsets.UTF_8)),
-            ByteBuffer.wrap("llo".getBytes(StandardCharsets.UTF_8)),
-          ),
-        )
-
-        val exc = assertThrows[ExecutionException] {
-          subscriber.getBody().toCompletableFuture().get(): Unit
-        }
-        assert(exc.getCause().isInstanceOf[IOException])
       }
     }
 

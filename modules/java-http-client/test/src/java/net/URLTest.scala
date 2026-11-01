@@ -64,19 +64,6 @@ class URLTest extends TestSuite:
       assert(url.getPath() == "/path/to/resource")
     }
 
-    test("of") {
-      val url = URL.of(
-        URI.create("http://www.example.com:8080/path/to/resource?query=param#fragment"),
-        null,
-      )
-      assert(url.getProtocol() == "http")
-      assert(url.getHost() == "www.example.com")
-      assert(url.getPort() == 8080)
-      assert(url.getPath() == "/path/to/resource")
-      assert(url.getQuery() == "query=param")
-      assert(url.getRef() == "fragment")
-    }
-
     test("equals") {
       val url1 = new URL("http://www.example.com:8080/path/to/resource?query=param#fragment")
       val url2 = new URL("http://www.example.com:8080/path/to/resource?query=param#fragment")
