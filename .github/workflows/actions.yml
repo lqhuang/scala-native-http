@@ -56,6 +56,7 @@ jobs:
 
       - name: Run tests for Java HTTP Client on JVM
         run: |
+          ./mill --no-server show modules.java-http-client.jvm.test.sources
           ./mill --no-server modules.java-http-client.jvm.test
 
       - name: Run tests for curl bindings
@@ -70,6 +71,7 @@ jobs:
 
       - name: Run tests for Java HTTP Client
         run: |
+          ./mill --no-server show modules.java-http-client.test.sources
           ./mill --no-server modules.java-http-client.test
 
   test-macos:
@@ -109,6 +111,7 @@ jobs:
 
       - name: Run tests for Java HTTP Client on JVM
         run: |
+          ./mill --no-server show modules.java-http-client.jvm.test.sources
           ./mill --no-server modules.java-http-client.jvm.test
 
       - name: Run tests for curl bindings
@@ -123,6 +126,7 @@ jobs:
 
       - name: Run tests for Java HTTP Client
         run: |
+          ./mill --no-server show modules.java-http-client.test.sources
           ./mill --no-server modules.java-http-client.test
 
   test-windows:
