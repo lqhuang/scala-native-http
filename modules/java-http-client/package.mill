@@ -58,6 +58,9 @@ object `package` extends build.CommonModule:
     def sources = Task.Sources(
       (
         Seq(
+          // Compile versioned API shims jointly so they take precedence over the host JDK.
+          upper.moduleDir / "src" / "java" / "net" / "http",
+          upper.moduleDir / "src" / "java" / "net" / "URL.scala",
           moduleDir / "src", // modules/java-http-client/test/src
           moduleDir / "src-native", // modules/java-http-client/test/src-native
         )
