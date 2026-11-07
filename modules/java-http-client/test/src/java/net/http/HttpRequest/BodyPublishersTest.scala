@@ -406,24 +406,27 @@ class BodyPublishersTest extends TestSuite:
     }
 
     test("ofFile - not readable file throw AccessDeniedException via onError") {
-      val data = Array[Byte](10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
-      val tmp = Files.createTempFile("body-publisher-test", ".bin")
-      try {
-        Files.write(tmp, data)
-        Files.setPosixFilePermissions(tmp, PosixFilePermissions.fromString("---------"))
-        val publisher = BodyPublishers.ofFile(tmp)
-        val subscriber = MockSubscriber[ByteBuffer]()
+      if scala.util.Properties.isWin then
+        println("Skipped: this fixture requires POSIX file permissions")
+      else
+        val data = Array[Byte](10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+        val tmp = Files.createTempFile("body-publisher-test", ".bin")
+        try {
+          Files.write(tmp, data)
+          Files.setPosixFilePermissions(tmp, PosixFilePermissions.fromString("---------"))
+          val publisher = BodyPublishers.ofFile(tmp)
+          val subscriber = MockSubscriber[ByteBuffer]()
 
-        publisher.subscribe(subscriber)
-        subscriber.sub.request(10)
+          publisher.subscribe(subscriber)
+          subscriber.sub.request(10)
 
-        subscriber.awaitError()
-        assert(publisher.contentLength() == data.length.toLong)
-        assert(subscriber.errors == 1)
-        assert(subscriber.lastError.isInstanceOf[FileNotFoundException])
-      } //
-      finally //
-        Files.deleteIfExists(tmp): Unit
+          subscriber.awaitError()
+          assert(publisher.contentLength() == data.length.toLong)
+          assert(subscriber.errors == 1)
+          assert(subscriber.lastError.isInstanceOf[FileNotFoundException])
+        } //
+        finally //
+          Files.deleteIfExists(tmp): Unit
     }
 
     // Align to JVM behavior

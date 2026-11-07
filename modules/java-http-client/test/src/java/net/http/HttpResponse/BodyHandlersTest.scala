@@ -546,18 +546,23 @@ class BodyHandlersTest extends TestSuite:
           val responseInfo = createResponseInfo(
             Map("Content-Disposition" -> contentDisposition),
           )
-          val subscriber = handler(responseInfo)
+          if scala.util.Properties.isWin && expected.exists("?*:<>|".contains(_)) then
+            assertThrows[java.nio.file.InvalidPathException] {
+              handler(responseInfo): Unit
+            }
+          else
+            val subscriber = handler(responseInfo)
 
-          subscriber.onSubscribe(MockSubscription())
-          subscriber.onNext(
-            JList.of(ByteBuffer.wrap("file content".getBytes(StandardCharsets.UTF_8))),
-          )
-          subscriber.onComplete()
+            subscriber.onSubscribe(MockSubscription())
+            subscriber.onNext(
+              JList.of(ByteBuffer.wrap("file content".getBytes(StandardCharsets.UTF_8))),
+            )
+            subscriber.onComplete()
 
-          val resultPath = subscriber.getBody().toCompletableFuture().get()
-          assert(resultPath.getFileName().toString() == expected)
-          assert(Files.exists(resultPath))
-          assert(Files.deleteIfExists(resultPath))
+            val resultPath = subscriber.getBody().toCompletableFuture().get()
+            assert(resultPath.getFileName().toString() == expected)
+            assert(Files.exists(resultPath))
+            assert(Files.deleteIfExists(resultPath))
         } //
         finally Files.deleteIfExists(tempDir): Unit
       }
@@ -707,16 +712,19 @@ class BodyHandlersTest extends TestSuite:
     test(
       "ofFileDownload should raise IOException If the destination directory cannot be written to",
     ) {
-      val tempDir = Files.createTempDirectory(
-        "test-downloads",
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("r-xr-xr-x")),
-      )
-      try
-        assertThrows[IllegalArgumentException] {
-          BodyHandlers.ofFileDownload(tempDir): Unit
-        }
-      finally
-        Files.deleteIfExists(tempDir): Unit
+      if scala.util.Properties.isWin then
+        println("Skipped: this fixture requires POSIX directory permissions")
+      else
+        val tempDir = Files.createTempDirectory(
+          "test-downloads",
+          PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("r-xr-xr-x")),
+        )
+        try
+          assertThrows[IllegalArgumentException] {
+            BodyHandlers.ofFileDownload(tempDir): Unit
+          }
+        finally
+          Files.deleteIfExists(tempDir): Unit
     }
 
     test("ofFileDownload should throw IllegalArgumentException for non-existent directory") {
